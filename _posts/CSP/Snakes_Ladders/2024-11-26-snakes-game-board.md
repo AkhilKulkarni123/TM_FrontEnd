@@ -5,7 +5,6 @@ description: A multiplayer snakes and ladders game with mini-games and boss batt
 categories: [Games]
 permalink: /snakes-game
 type: hacks
-courses: { csa: {week: 1} }
 ---
 
 <div style="text-align: center; padding: 20px;">
