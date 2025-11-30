@@ -424,7 +424,7 @@
             <div class="board-row" id="row4"></div>
             <!-- Row 5: Squares 21-25 -->
             <div class="board-row" id="row5"></div>
-            
+
             <!-- Boss Battle - Centered Below -->
             <div class="boss-row">
                 <div class="square boss" id="boss-square">
@@ -449,7 +449,8 @@
 
     <script>
         const API_BASE = 'http://localhost:8587';
-        
+
+        // IMPROVED SESSION MANAGEMENT
         function saveSession(username) {
             localStorage.setItem('gameUsername', username);
             localStorage.setItem('gameSessionTime', Date.now());
@@ -458,7 +459,6 @@
         function getSession() {
             const username = localStorage.getItem('gameUsername');
             const sessionTime = localStorage.getItem('gameSessionTime');
-            
             if (username && sessionTime && (Date.now() - sessionTime < 24 * 60 * 60 * 1000)) {
                 return username;
             }
@@ -469,6 +469,7 @@
             localStorage.removeItem('gameUsername');
             localStorage.removeItem('gameSessionTime');
             localStorage.removeItem('playerSprite');
+            localStorage.removeItem('gameProgress');
         }
 
         let gameState = {
@@ -483,9 +484,8 @@
 
         const snakes = {14: 7, 19: 8, 22: 3};
         const ladders = {4: 14, 9: 21, 17: 23};
-
         const squareIcons = ['🎯', '🎪', '🎨', '🎭', '🎵', '🎸', '🎮', '🎲', '🎰', '🎳', 
-                            '⚽', '🏀', '🎾', '🎱', '🏆', '🎖️', '🎗️', '🏅', '🥇', '🥈',
+                            '⚽', '🏀', '🎾', '🎱', '🏆', '🎖️', '🎗️', '🏅', '🥇', '🥈', 
                             '🥉', '🏐', '🏈', '⚾', '🏁'];
 
         function selectCharacter(sprite) {
@@ -515,7 +515,7 @@
             for (let rowNum = 1; rowNum <= 5; rowNum++) {
                 document.getElementById(`row${rowNum}`).innerHTML = '';
             }
-            
+
             for (let i = 1; i <= 25; i++) {
                 const square = document.createElement('div');
                 square.className = 'square';
@@ -528,34 +528,32 @@
                 if (ladders[i]) {
                     square.classList.add('has-ladder');
                 }
-                
-                square.innerHTML = `
-                    <div class="square-icon">${squareIcons[i-1]}</div>
+
+                square.innerHTML = `<div class="square-icon">${squareIcons[i-1]}</div>
                     <div class="square-number">${i}</div>
                     <div class="square-label">Challenge ${i}</div>
                 `;
-                
+
                 if (snakes[i]) {
                     square.innerHTML += `<div class="snake-indicator">🐍</div>`;
                 }
                 if (ladders[i]) {
                     square.innerHTML += `<div class="ladder-indicator">🪜</div>`;
                 }
-                
+
                 const rowNum = Math.floor((i - 1) / 5) + 1;
                 square.onclick = () => openSquare(i, rowNum);
-                
+
                 if (i === gameState.currentPosition) {
                     square.classList.add('current');
                 }
-                
                 if (gameState.completedSquares.includes(i)) {
                     square.classList.add('completed');
                 }
-                
+
                 document.getElementById(`row${rowNum}`).appendChild(square);
             }
-            
+
             const bossSquare = document.getElementById('boss-square');
             bossSquare.onclick = () => {
                 if (gameState.currentPosition === 25) {
@@ -565,11 +563,11 @@
                     showMessage('You must reach square 25 first to challenge the boss!');
                 }
             };
-            
+
             if (gameState.currentPosition === 25) {
                 bossSquare.classList.add('current');
             }
-            
+
             updateStats();
             positionPlayerSprite(gameState.currentPosition);
         }
@@ -577,13 +575,13 @@
         function positionPlayerSprite(squareNum) {
             const playerSprite = document.getElementById('playerSprite');
             let targetSquare;
-            
+
             if (squareNum === 25) {
                 targetSquare = document.getElementById('boss-square');
             } else {
                 targetSquare = document.getElementById(`square-${squareNum}`);
             }
-            
+
             if (targetSquare) {
                 const rect = targetSquare.getBoundingClientRect();
                 const boardRect = document.getElementById('gameBoard').getBoundingClientRect();
@@ -601,7 +599,6 @@
             snake.style.left = square.offsetLeft + 'px';
             snake.style.top = square.offsetTop + 'px';
             document.getElementById('gameBoard').appendChild(snake);
-            
             setTimeout(() => snake.remove(), 2000);
         }
 
@@ -613,7 +610,6 @@
             ladder.style.left = square.offsetLeft + 'px';
             ladder.style.top = square.offsetTop + 'px';
             document.getElementById('gameBoard').appendChild(ladder);
-            
             setTimeout(() => ladder.remove(), 2000);
         }
 
@@ -628,7 +624,7 @@
         async function rollDice() {
             const btn = document.getElementById('rollBtn');
             btn.disabled = true;
-            
+
             const diceDisplay = document.getElementById('diceDisplay');
             let rolls = 0;
             const rollInterval = setInterval(() => {
@@ -647,53 +643,56 @@
         function movePlayer(steps) {
             const oldPos = gameState.currentPosition;
             let newPos = oldPos + steps;
-            
+
             if (newPos > 25) {
                 newPos = 25;
             }
-            
+
             const oldSquare = document.getElementById(`square-${oldPos}`);
             if (oldSquare) oldSquare.classList.remove('current');
-            
+
             // Animate movement
             setTimeout(() => {
                 positionPlayerSprite(newPos);
             }, 100);
-            
+
             // Check for snakes and ladders
             if (snakes[newPos]) {
                 setTimeout(() => {
                     showSnakeAnimation(newPos);
                     showMessage(`Oh no! You hit a snake 🐍! Sliding down from ${newPos} to ${snakes[newPos]}`);
                 }, 1000);
-                
+
                 setTimeout(() => {
                     newPos = snakes[newPos];
                     gameState.currentPosition = newPos;
                     positionPlayerSprite(newPos);
                     updateCurrentSquare(newPos);
                     updateStats();
+                    saveProgress(); // AUTO-SAVE
                 }, 2500);
             } else if (ladders[newPos]) {
                 setTimeout(() => {
                     showLadderAnimation(newPos);
                     showMessage(`Lucky! You found a ladder 🪜! Climbing up from ${newPos} to ${ladders[newPos]}`);
                 }, 1000);
-                
+
                 setTimeout(() => {
                     newPos = ladders[newPos];
                     gameState.currentPosition = newPos;
                     positionPlayerSprite(newPos);
                     updateCurrentSquare(newPos);
                     updateStats();
+                    saveProgress(); // AUTO-SAVE
                 }, 2500);
             } else {
                 showMessage(`You rolled ${steps}! Moved from square ${oldPos} to ${newPos}`);
                 gameState.currentPosition = newPos;
                 updateCurrentSquare(newPos);
                 updateStats();
+                saveProgress(); // AUTO-SAVE
             }
-            
+
             if (newPos === 25) {
                 setTimeout(() => {
                     if (confirm('You reached square 25! Ready for the boss battle?')) {
@@ -726,19 +725,19 @@
             document.getElementById('timePlayed').textContent = `${hours}h ${minutes}m`;
         }
 
-        function showMessage(msg) {
+        function showMessage(msg, type = 'info') {
             document.getElementById('message').textContent = msg;
         }
 
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            
+
             if (!username || !password) {
                 alert('Please enter username and password');
                 return;
             }
-            
+
             try {
                 const response = await fetch(`${API_BASE}/api/authenticate`, {
                     method: 'POST',
@@ -746,11 +745,12 @@
                     credentials: 'include',
                     body: JSON.stringify({uid: username, password: password})
                 });
-                
+
                 if (response.ok) {
                     gameState.username = username;
                     saveSession(username);
                     await loadProgress();
+                    
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('characterSelectContainer').style.display = 'block';
                 } else {
@@ -762,75 +762,141 @@
             }
         }
 
+        // IMPROVED PROGRESS LOADING
         async function loadProgress() {
+            // First try localStorage
+            const localProgress = localStorage.getItem('gameProgress');
+            if (localProgress) {
+                try {
+                    const data = JSON.parse(localProgress);
+                    console.log('Loaded progress from localStorage:', data);
+                    
+                    // Merge with current state
+                    gameState.currentPosition = data.currentPosition || 1;
+                    gameState.bullets = data.bullets || 0;
+                    gameState.lives = data.lives || 3;
+                    gameState.completedSquares = data.completedSquares || [];
+                    gameState.timePlayed = data.timePlayed || 0;
+                } catch (e) {
+                    console.error('Error parsing localStorage:', e);
+                }
+            }
+
+            // Then try to load from backend (will overwrite if successful)
             try {
                 const response = await fetch(`${API_BASE}/api/game/progress`, {
                     credentials: 'include'
                 });
+                
                 if (response.ok) {
                     const data = await response.json();
-                    gameState = {...gameState, ...data};
+                    console.log('Loaded progress from backend:', data);
+                    
+                    // Update game state with backend data
+                    if (data.current_position) gameState.currentPosition = data.current_position;
+                    if (data.bullets !== undefined) gameState.bullets = data.bullets;
+                    if (data.lives !== undefined) gameState.lives = data.lives;
+                    if (data.completed_squares) gameState.completedSquares = data.completed_squares;
+                    if (data.time_played_minutes) gameState.timePlayed = data.time_played_minutes;
+                    
+                    // Save merged data back to localStorage
+                    localStorage.setItem('gameProgress', JSON.stringify(gameState));
                 }
             } catch (error) {
-                console.error('Load progress error:', error);
+                console.log('Backend unavailable, using localStorage only');
             }
         }
 
+        // IMPROVED PROGRESS SAVING
         async function saveProgress() {
+            // Save to localStorage first (always works)
+            localStorage.setItem('gameProgress', JSON.stringify(gameState));
+
+            // Then try to save to backend
             try {
                 const response = await fetch(`${API_BASE}/api/game/progress`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
-                    body: JSON.stringify(gameState)
+                    body: JSON.stringify({
+                        current_position: gameState.currentPosition,
+                        bullets: gameState.bullets,
+                        lives: gameState.lives,
+                        completed_squares: gameState.completedSquares || [],
+                        time_played_minutes: gameState.timePlayed
+                    })
                 });
+
                 if (response.ok) {
+                    console.log('Progress saved to backend');
                     showMessage('✅ Progress saved!');
-                } else {
-                    showMessage('❌ Save failed!');
-                }
-            } catch (error) {
-                console.error('Save error:', error);
-                showMessage('❌ Cannot connect to server!');
+            } else {
+                console.warn('Backend save failed, using localStorage');
+                showMessage('✅ Progress saved locally!');
             }
+        } catch (error) {
+            console.warn('Backend unavailable, using localStorage:', error);
+            showMessage('✅ Progress saved locally!');
+        }
+    }
+
+    function logout() {
+        if (confirm('Save progress before logging out?')) {
+            saveProgress();
+        }
+        clearSession();
+        location.reload();
+    }
+
+    function startTimer() {
+        setInterval(() => {
+            gameState.timePlayed++;
+            updateStats();
+        }, 60000);
+    }
+
+    function showSignup() {
+        alert('Visit the main site to create an account!');
+    }
+
+    // IMPROVED WINDOW ONLOAD
+    window.onload = async () => {
+        const savedUsername = getSession();
+        const savedSprite = localStorage.getItem('playerSprite');
+
+        if (savedSprite) {
+            gameState.playerSprite = savedSprite;
         }
 
-        function logout() {
-            if (confirm('Save progress before logging out?')) {
-                saveProgress();
-            }
-            clearSession();
-            location.reload();
-        }
-
-        function startTimer() {
-            setInterval(() => {
-                gameState.timePlayed++;
-                updateStats();
-            }, 60000);
-        }
-
-        function showSignup() {
-            alert('Visit the main site to create an account!');
-        }
-
-        window.onload = () => {
-            const savedUsername = getSession();
-            const savedSprite = localStorage.getItem('playerSprite');
+        if (savedUsername) {
+            gameState.username = savedUsername;
             
+            // Load progress before showing the game
+            await loadProgress();
+            
+            console.log('Restored session for:', savedUsername);
+            console.log('Current position:', gameState.currentPosition);
+            console.log('Bullets:', gameState.bullets);
+            console.log('Lives:', gameState.lives);
+
+            // If character is already selected, go straight to game
             if (savedSprite) {
-                gameState.playerSprite = savedSprite;
-            }
-            
-            if (savedUsername) {
-                gameState.username = savedUsername;
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('characterSelectContainer').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                document.getElementById('playerSprite').textContent = gameState.playerSprite;
+                document.getElementById('playerCharacter').textContent = gameState.playerSprite;
+                initGame();
+                startTimer();
+            } else {
+                // Show character select
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('characterSelectContainer').style.display = 'block';
-                loadProgress();
-            } else {
-                document.getElementById('loginContainer').style.display = 'block';
             }
-        };
-    </script>
+        } else {
+            document.getElementById('loginContainer').style.display = 'block';
+        }
+    };
+</script>
 </body>
 </html>
