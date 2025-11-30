@@ -69,6 +69,7 @@
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .board-row {
@@ -126,6 +127,14 @@
             height: 200px;
         }
 
+        .square.has-ladder {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        }
+
+        .square.has-snake {
+            background: linear-gradient(135deg, #fa709a 0%, #c71585 100%);
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -151,7 +160,34 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            font-size: 1.2em;
+            font-size: 1.5em;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .player-sprite {
+            position: absolute;
+            font-size: 3em;
+            z-index: 100;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            pointer-events: none;
+        }
+
+        .ladder-visual, .snake-visual {
+            position: absolute;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .ladder-visual.active, .snake-visual.active {
+            opacity: 1;
         }
 
         .control-panel {
@@ -212,19 +248,20 @@
             font-size: 1.1em;
         }
 
-        .login-panel {
+        .login-panel, .character-select-panel {
             background: rgba(255,255,255,0.95);
             color: #333;
             border-radius: 20px;
             padding: 40px;
-            max-width: 400px;
+            max-width: 600px;
             margin: 100px auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .login-panel h2 {
+        .login-panel h2, .character-select-panel h2 {
             margin-bottom: 20px;
             color: #667eea;
+            text-align: center;
         }
 
         .input-group {
@@ -242,6 +279,65 @@
         .input-group input:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .character-option {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .character-option:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .character-option.selected {
+            border: 3px solid #FFD700;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .snake-animation {
+            position: absolute;
+            font-size: 4em;
+            animation: slither 2s ease-in-out;
+            z-index: 150;
+            pointer-events: none;
+        }
+
+        @keyframes slither {
+            0% { transform: rotate(0deg) scale(0.5); opacity: 0; }
+            50% { transform: rotate(180deg) scale(1.5); opacity: 1; }
+            100% { transform: rotate(360deg) scale(0.5); opacity: 0; }
+        }
+
+        .ladder-animation {
+            position: absolute;
+            font-size: 4em;
+            animation: climb 2s ease-in-out;
+            z-index: 150;
+            pointer-events: none;
+        }
+
+        @keyframes climb {
+            0% { transform: translateY(50px) scale(0.5); opacity: 0; }
+            50% { transform: translateY(0) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-50px) scale(0.5); opacity: 0; }
         }
     </style>
 </head>
@@ -262,6 +358,26 @@
         </div>
     </div>
 
+    <div class="container" id="characterSelectContainer" style="display: none;">
+        <div class="character-select-panel">
+            <h2>🎭 Choose Your Character</h2>
+            <p style="text-align: center; margin-bottom: 20px;">Select your player sprite for the adventure!</p>
+            <div class="character-grid" id="characterGrid">
+                <div class="character-option" data-sprite="🦸" onclick="selectCharacter('🦸')">🦸</div>
+                <div class="character-option" data-sprite="🧙" onclick="selectCharacter('🧙')">🧙</div>
+                <div class="character-option" data-sprite="🧚" onclick="selectCharacter('🧚')">🧚</div>
+                <div class="character-option" data-sprite="🦹" onclick="selectCharacter('🦹')">🦹</div>
+                <div class="character-option" data-sprite="🤖" onclick="selectCharacter('🤖')">🤖</div>
+                <div class="character-option" data-sprite="👨‍🚀" onclick="selectCharacter('👨‍🚀')">👨‍🚀</div>
+                <div class="character-option" data-sprite="🧛" onclick="selectCharacter('🧛')">🧛</div>
+                <div class="character-option" data-sprite="🦊" onclick="selectCharacter('🦊')">🦊</div>
+                <div class="character-option" data-sprite="🐉" onclick="selectCharacter('🐉')">🐉</div>
+                <div class="character-option" data-sprite="🦄" onclick="selectCharacter('🦄')">🦄</div>
+            </div>
+            <button class="btn btn-roll" onclick="startGame()" id="startGameBtn" style="width: 100%; margin-top: 20px;" disabled>Start Adventure!</button>
+        </div>
+    </div>
+
     <div class="container" id="gameContainer" style="display: none;">
         <div class="header">
             <h1>🐍 Snakes & Ladders Adventure 🎲</h1>
@@ -272,6 +388,10 @@
             <div class="stat-item">
                 <div class="stat-label">Player</div>
                 <div class="stat-value" id="playerName">Guest</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Character</div>
+                <div class="stat-value" id="playerCharacter">🦸</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">💰 Bullets</div>
@@ -313,6 +433,9 @@
                     <div class="square-label">FINAL BATTLE</div>
                 </div>
             </div>
+
+            <!-- Player Sprite -->
+            <div class="player-sprite" id="playerSprite">🦸</div>
         </div>
 
         <div class="control-panel">
@@ -327,7 +450,6 @@
     <script>
         const API_BASE = 'http://localhost:8587';
         
-        // Session management
         function saveSession(username) {
             localStorage.setItem('gameUsername', username);
             localStorage.setItem('gameSessionTime', Date.now());
@@ -346,6 +468,7 @@
         function clearSession() {
             localStorage.removeItem('gameUsername');
             localStorage.removeItem('gameSessionTime');
+            localStorage.removeItem('playerSprite');
         }
 
         let gameState = {
@@ -354,7 +477,8 @@
             lives: 3,
             completedSquares: [],
             timePlayed: 0,
-            username: ''
+            username: '',
+            playerSprite: '🦸'
         };
 
         const snakes = {14: 7, 19: 8, 22: 3};
@@ -364,17 +488,46 @@
                             '⚽', '🏀', '🎾', '🎱', '🏆', '🎖️', '🎗️', '🏅', '🥇', '🥈',
                             '🥉', '🏐', '🏈', '⚾', '🏁'];
 
+        function selectCharacter(sprite) {
+            gameState.playerSprite = sprite;
+            localStorage.setItem('playerSprite', sprite);
+            
+            // Update visual selection
+            document.querySelectorAll('.character-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            
+            // Enable start button
+            document.getElementById('startGameBtn').disabled = false;
+        }
+
+        function startGame() {
+            document.getElementById('characterSelectContainer').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('playerSprite').textContent = gameState.playerSprite;
+            document.getElementById('playerCharacter').textContent = gameState.playerSprite;
+            initGame();
+            startTimer();
+        }
+
         function initGame() {
-            // Clear existing squares
             for (let rowNum = 1; rowNum <= 5; rowNum++) {
                 document.getElementById(`row${rowNum}`).innerHTML = '';
             }
             
-            // Create squares 1-25 in their proper rows
             for (let i = 1; i <= 25; i++) {
                 const square = document.createElement('div');
                 square.className = 'square';
                 square.id = `square-${i}`;
+                
+                // Add special styling for snakes and ladders
+                if (snakes[i]) {
+                    square.classList.add('has-snake');
+                }
+                if (ladders[i]) {
+                    square.classList.add('has-ladder');
+                }
                 
                 square.innerHTML = `
                     <div class="square-icon">${squareIcons[i-1]}</div>
@@ -389,31 +542,24 @@
                     square.innerHTML += `<div class="ladder-indicator">🪜</div>`;
                 }
                 
-                // Calculate which row this square belongs to
                 const rowNum = Math.floor((i - 1) / 5) + 1;
-                const colNum = ((i - 1) % 5) + 1;
+                square.onclick = () => openSquare(i, rowNum);
                 
-                // Add click handler
-                square.onclick = () => openSquare(i, rowNum, colNum);
-                
-                // Mark as current position
                 if (i === gameState.currentPosition) {
                     square.classList.add('current');
                 }
                 
-                // Mark as completed
                 if (gameState.completedSquares.includes(i)) {
                     square.classList.add('completed');
                 }
                 
-                // Add to appropriate row
                 document.getElementById(`row${rowNum}`).appendChild(square);
             }
             
-            // Setup boss square
             const bossSquare = document.getElementById('boss-square');
             bossSquare.onclick = () => {
                 if (gameState.currentPosition === 25) {
+                    localStorage.setItem('playerSprite', gameState.playerSprite);
                     window.location.href = 'boss-battle.html';
                 } else {
                     showMessage('You must reach square 25 first to challenge the boss!');
@@ -425,14 +571,57 @@
             }
             
             updateStats();
+            positionPlayerSprite(gameState.currentPosition);
         }
 
-        function openSquare(num, row, col) {
+        function positionPlayerSprite(squareNum) {
+            const playerSprite = document.getElementById('playerSprite');
+            let targetSquare;
+            
+            if (squareNum === 25) {
+                targetSquare = document.getElementById('boss-square');
+            } else {
+                targetSquare = document.getElementById(`square-${squareNum}`);
+            }
+            
+            if (targetSquare) {
+                const rect = targetSquare.getBoundingClientRect();
+                const boardRect = document.getElementById('gameBoard').getBoundingClientRect();
+                
+                playerSprite.style.left = (rect.left - boardRect.left + rect.width / 2 - 25) + 'px';
+                playerSprite.style.top = (rect.top - boardRect.top + rect.height / 2 - 25) + 'px';
+            }
+        }
+
+        function showSnakeAnimation(squareNum) {
+            const square = document.getElementById(`square-${squareNum}`);
+            const snake = document.createElement('div');
+            snake.className = 'snake-animation';
+            snake.textContent = '🐍';
+            snake.style.left = square.offsetLeft + 'px';
+            snake.style.top = square.offsetTop + 'px';
+            document.getElementById('gameBoard').appendChild(snake);
+            
+            setTimeout(() => snake.remove(), 2000);
+        }
+
+        function showLadderAnimation(squareNum) {
+            const square = document.getElementById(`square-${squareNum}`);
+            const ladder = document.createElement('div');
+            ladder.className = 'ladder-animation';
+            ladder.textContent = '🪜';
+            ladder.style.left = square.offsetLeft + 'px';
+            ladder.style.top = square.offsetTop + 'px';
+            document.getElementById('gameBoard').appendChild(ladder);
+            
+            setTimeout(() => ladder.remove(), 2000);
+        }
+
+        function openSquare(num, row) {
             if (num > gameState.currentPosition && !gameState.completedSquares.includes(num)) {
                 showMessage('You need to roll to reach this square!');
                 return;
             }
-            // Navigate to the square's HTML file
             window.location.href = `row${row}/square${num}.html`;
         }
 
@@ -463,39 +652,66 @@
                 newPos = 25;
             }
             
-            // Remove current marker from old position
             const oldSquare = document.getElementById(`square-${oldPos}`);
             if (oldSquare) oldSquare.classList.remove('current');
             
+            // Animate movement
+            setTimeout(() => {
+                positionPlayerSprite(newPos);
+            }, 100);
+            
             // Check for snakes and ladders
             if (snakes[newPos]) {
-                showMessage(`Oh no! You hit a snake 🐍! Sliding down from ${newPos} to ${snakes[newPos]}`);
-                newPos = snakes[newPos];
+                setTimeout(() => {
+                    showSnakeAnimation(newPos);
+                    showMessage(`Oh no! You hit a snake 🐍! Sliding down from ${newPos} to ${snakes[newPos]}`);
+                }, 1000);
+                
+                setTimeout(() => {
+                    newPos = snakes[newPos];
+                    gameState.currentPosition = newPos;
+                    positionPlayerSprite(newPos);
+                    updateCurrentSquare(newPos);
+                    updateStats();
+                }, 2500);
             } else if (ladders[newPos]) {
-                showMessage(`Lucky! You found a ladder 🪜! Climbing up from ${newPos} to ${ladders[newPos]}`);
-                newPos = ladders[newPos];
+                setTimeout(() => {
+                    showLadderAnimation(newPos);
+                    showMessage(`Lucky! You found a ladder 🪜! Climbing up from ${newPos} to ${ladders[newPos]}`);
+                }, 1000);
+                
+                setTimeout(() => {
+                    newPos = ladders[newPos];
+                    gameState.currentPosition = newPos;
+                    positionPlayerSprite(newPos);
+                    updateCurrentSquare(newPos);
+                    updateStats();
+                }, 2500);
             } else {
                 showMessage(`You rolled ${steps}! Moved from square ${oldPos} to ${newPos}`);
+                gameState.currentPosition = newPos;
+                updateCurrentSquare(newPos);
+                updateStats();
             }
-            
-            gameState.currentPosition = newPos;
-            
-            // Add current marker to new position
-            if (newPos === 25) {
-                document.getElementById('boss-square').classList.add('current');
-            } else {
-                const newSquare = document.getElementById(`square-${newPos}`);
-                if (newSquare) newSquare.classList.add('current');
-            }
-            
-            updateStats();
             
             if (newPos === 25) {
                 setTimeout(() => {
                     if (confirm('You reached square 25! Ready for the boss battle?')) {
+                        localStorage.setItem('playerSprite', gameState.playerSprite);
                         window.location.href = 'boss-battle.html';
                     }
-                }, 1000);
+                }, 3000);
+            }
+        }
+
+        function updateCurrentSquare(pos) {
+            document.querySelectorAll('.square').forEach(sq => sq.classList.remove('current'));
+            
+            if (pos === 25) {
+                document.getElementById('boss-square').classList.add('current');
+            } else {
+                const square = document.getElementById(`square-${pos}`);
+                if (square) square.classList.add('current');
             }
         }
 
@@ -511,8 +727,7 @@
         }
 
         function showMessage(msg) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = msg;
+            document.getElementById('message').textContent = msg;
         }
 
         async function login() {
@@ -525,8 +740,6 @@
             }
             
             try {
-                console.log('Attempting login to:', `${API_BASE}/api/authenticate`);
-                
                 const response = await fetch(`${API_BASE}/api/authenticate`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -539,9 +752,7 @@
                     saveSession(username);
                     await loadProgress();
                     document.getElementById('loginContainer').style.display = 'none';
-                    document.getElementById('gameContainer').style.display = 'block';
-                    initGame();
-                    startTimer();
+                    document.getElementById('characterSelectContainer').style.display = 'block';
                 } else {
                     alert('Login failed! Check your credentials.');
                 }
@@ -576,7 +787,7 @@
                 if (response.ok) {
                     showMessage('✅ Progress saved!');
                 } else {
-                    showMessage('❌ Save failed! Please login first.');
+                    showMessage('❌ Save failed!');
                 }
             } catch (error) {
                 console.error('Save error:', error);
@@ -605,15 +816,17 @@
 
         window.onload = () => {
             const savedUsername = getSession();
+            const savedSprite = localStorage.getItem('playerSprite');
+            
+            if (savedSprite) {
+                gameState.playerSprite = savedSprite;
+            }
             
             if (savedUsername) {
                 gameState.username = savedUsername;
                 document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('gameContainer').style.display = 'block';
-                loadProgress().then(() => {
-                    initGame();
-                    startTimer();
-                });
+                document.getElementById('characterSelectContainer').style.display = 'block';
+                loadProgress();
             } else {
                 document.getElementById('loginContainer').style.display = 'block';
             }
