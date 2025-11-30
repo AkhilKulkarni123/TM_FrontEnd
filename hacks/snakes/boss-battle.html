@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Battle - Final Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            color: white;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: radial-gradient(circle, #0f3460 0%, #1a1a2e 100%);
+            border: 3px solid #e94560;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: rgba(233, 69, 96, 0.9);
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            min-width: 150px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .health-bar {
+            width: 300px;
+            height: 30px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #fff;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            transition: width 0.3s ease;
+        }
+
+        .players-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(233, 69, 96, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-item.dead {
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .game-over h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .message-box {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(233, 69, 96, 0.95);
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud">
+        <div class="stat-box">
+            <div class="stat-label">Boss Health</div>
+            <div class="health-bar">
+                <div class="health-fill" id="bossHealth" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Your Lives</div>
+            <div class="stat-value">❤️ <span id="playerLives">3</span></div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">💰 Bullets</div>
+            <div class="stat-value" id="bulletsCount">50</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Players Alive</div>
+            <div class="stat-value" id="playersAlive">1</div>
+        </div>
+    </div>
+
+    <div class="players-panel">
+        <h3>🎮 Active Players</h3>
+        <div id="playersList"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="controls">
+        <div style="margin-bottom: 15px; font-size: 1.2em;">
+            Use WASD or Arrow Keys to move | SPACE to shoot
+        </div>
+        <button class="btn" onclick="startBattle()" id="startBtn">⚔️ Start Battle</button>
+        <button class="btn" onclick="leaveBattle()">🚪 Leave Arena</button>
+    </div>
+
+    <div class="message-box" id="messageBox"></div>
+
+    <div class="game-over" id="gameOver">
+        <h1 id="gameOverTitle">Victory!</h1>
+        <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+        <button class="btn" onclick="returnToBoard()">Return to Board</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const API_BASE = 'http://localhost:8001';  // For local development
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 200;
+
+        let gameActive = false;
+        let roomId = null;
+        let ws = null;
+
+        const gameState = {
+            player: {
+                x: canvas.width / 2,
+                y: canvas.height - 100,
+                size: 30,
+                speed: 5,
+                lives: 3,
+                bullets: 50,
+                color: '#4facfe'
+            },
+            boss: {
+                x: canvas.width / 2,
+                y: 100,
+                size: 80,
+                health: 1000,
+                maxHealth: 1000
+            },
+            playerBullets: [],
+            bossProjectiles: [],
+            keys: {},
+            players: []
+        };
+
+        window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameActive) {
+                e.preventDefault();
+                shoot();
+            }
+        });
+
+        async function startBattle() {
+            try {
+                const response = await fetch(`${API_BASE}/api/boss/join`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    roomId = data.room_id;
+                    connectWebSocket();
+                    gameActive = true;
+                    document.getElementById('startBtn').disabled = true;
+                    gameLoop();
+                }
+            } catch (error) {
+                console.error('Join battle error:', error);
+                gameActive = true;
+                gameLoop();
+            }
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket('wss://your-flask-api.com/ws/boss');
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'boss_health') {
+                    gameState.boss.health = data.health;
+                    updateBossHealthBar();
+                }
+                else if (data.type === 'player_hit') {
+                    if (data.player === 'you') {
+                        gameState.player.lives--;
+                        updateLives();
+                        showMessage('💥 You were hit!');
+                    } else {
+                        showMessage(`💀 ${data.player} was hit!`);
+                    }
+                }
+                else if (data.type === 'player_died') {
+                    showMessage(`☠️ ${data.player} has fallen!`);
+                    updatePlayersList();
+                }
+                else if (data.type === 'boss_defeated') {
+                    endGame(true);
+                }
+                else if (data.type === 'players_update') {
+                    gameState.players = data.players;
+                    updatePlayersList();
+                }
+            };
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            movePlayer();
+            moveBullets();
+            moveBossProjectiles();
+            spawnBossProjectiles();
+            drawGame();
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function movePlayer() {
+            if (gameState.keys['a'] || gameState.keys['arrowleft']) {
+                gameState.player.x = Math.max(gameState.player.size, gameState.player.x - gameState.player.speed);
+            }
+            if (gameState.keys['d'] || gameState.keys['arrowright']) {
+                gameState.player.x = Math.min(canvas.width - gameState.player.size, gameState.player.x + gameState.player.speed);
+            }
+            if (gameState.keys['w'] || gameState.keys['arrowup']) {
+                gameState.player.y = Math.max(gameState.player.size + 200, gameState.player.y - gameState.player.speed);
+            }
+            if (gameState.keys['s'] || gameState.keys['arrowdown']) {
+                gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + gameState.player.speed);
+            }
+        }
+
+        function shoot() {
+            if (gameState.player.bullets > 0) {
+                gameState.playerBullets.push({
+                    x: gameState.player.x,
+                    y: gameState.player.y - gameState.player.size,
+                    size: 8,
+                    speed: 8
+                });
+                gameState.player.bullets--;
+                updateBulletsDisplay();
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({type: 'shoot', bullets: gameState.player.bullets}));
+                }
+            }
+        }
+
+        function moveBullets() {
+            gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                return bullet.y > 0;
+            });
+        }
+
+        function moveBossProjectiles() {
+            gameState.bossProjectiles = gameState.bossProjectiles.filter(proj => {
+                proj.y += proj.speed;
+                proj.x += proj.dx;
+                return proj.y < canvas.height;
+            });
+        }
+
+        function spawnBossProjectiles() {
+            if (Math.random() < 0.02) {
+                const angle = Math.random() * Math.PI / 2 + Math.PI / 4;
+                gameState.bossProjectiles.push({
+                    x: gameState.boss.x,
+                    y: gameState.boss.y + gameState.boss.size,
+                    size: 12,
+                    speed: 4,
+                    dx: Math.cos(angle) * 2 - 1
+                });
+            }
+        }
+
+        function checkCollisions() {
+            gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                const distance = Math.hypot(bullet.x - gameState.boss.x, bullet.y - gameState.boss.y);
+                if (distance < gameState.boss.size) {
+                    gameState.boss.health = Math.max(0, gameState.boss.health - 10);
+                    updateBossHealthBar();
+                    
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({type: 'damage', amount: 10}));
+                    }
+                    
+                    if (gameState.boss.health <= 0) {
+                        endGame(true);
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            gameState.bossProjectiles.forEach(proj => {
+                const distance = Math.hypot(proj.x - gameState.player.x, proj.y - gameState.player.y);
+                if (distance < gameState.player.size + proj.size) {
+                    gameState.player.lives--;
+                    updateLives();
+                    proj.y = canvas.height + 100;
+                    
+                    if (gameState.player.lives <= 0) {
+                        endGame(false);
+                    }
+                }
+            });
+        }
+
+        function drawGame() {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#e94560';
+            
+            ctx.fillStyle = '#ff4757';
+            ctx.beginPath();
+            ctx.arc(gameState.boss.x, gameState.boss.y, gameState.boss.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🐍', gameState.boss.x, gameState.boss.y + 15);
+
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = gameState.player.color;
+            ctx.fillStyle = gameState.player.color;
+            ctx.beginPath();
+            ctx.arc(gameState.player.x, gameState.player.y, gameState.player.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 5;
+            ctx.fillStyle = '#FFD700';
+            gameState.playerBullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.fillStyle = '#e94560';
+            gameState.bossProjectiles.forEach(proj => {
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function updateBossHealthBar() {
+            const percentage = (gameState.boss.health / gameState.boss.maxHealth) * 100;
+            document.getElementById('bossHealth').style.width = percentage + '%';
+        }
+
+        function updateLives() {
+            document.getElementById('playerLives').textContent = gameState.player.lives;
+        }
+
+        function updateBulletsDisplay() {
+            document.getElementById('bulletsCount').textContent = gameState.player.bullets;
+        }
+
+        function updatePlayersList() {
+            const list = document.getElementById('playersList');
+            list.innerHTML = '';
+            
+            gameState.players.forEach(player => {
+                const item = document.createElement('div');
+                item.className = 'player-item' + (player.lives <= 0 ? ' dead' : '');
+                item.innerHTML = `
+                    <span>${player.name}</span>
+                    <span>❤️ ${player.lives}</span>
+                `;
+                list.appendChild(item);
+            });
+            
+            const alive = gameState.players.filter(p => p.lives > 0).length;
+            document.getElementById('playersAlive').textContent = alive;
+        }
+
+        function showMessage(msg) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 3000);
+        }
+
+        function endGame(victory) {
+            gameActive = false;
+            const gameOver = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const text = document.getElementById('gameOverText');
+            
+            if (victory) {
+                title.textContent = '🎉 VICTORY! 🎉';
+                text.textContent = 'You and your team defeated the boss!';
+            } else {
+                title.textContent = '💀 GAME OVER 💀';
+                text.textContent = 'The boss was too powerful...';
+            }
+            
+            gameOver.style.display = 'block';
+            
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function leaveBattle() {
+            if (confirm('Are you sure you want to leave the battle?')) {
+                returnToBoard();
+            }
+        }
+
+        function returnToBoard() {
+            window.location.href = 'game-board.html';
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 200;
+        });
+    </script>
+</body>
+</html>

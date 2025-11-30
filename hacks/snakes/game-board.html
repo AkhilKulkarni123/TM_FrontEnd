@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snakes & Ladders Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .stats-panel {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .game-board {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .board-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .boss-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 3px dashed rgba(255,255,255,0.3);
+        }
+
+        .square {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .square:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .square.completed {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .square.current {
+            animation: pulse 1.5s infinite;
+            border: 4px solid #FFD700;
+        }
+
+        .square.locked {
+            background: linear-gradient(135deg, #868f96 0%, #596164 100%);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .square.boss {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            width: 200px;
+            height: 200px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .square-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .square-icon {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .square-label {
+            font-size: 0.8em;
+            text-align: center;
+        }
+
+        .ladder-indicator, .snake-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 1.2em;
+        }
+
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-roll {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dice-display {
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 3em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+
+        .login-panel {
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            margin: 100px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .login-panel h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="loginContainer">
+        <div class="login-panel">
+            <h2>🎮 Login to Play</h2>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Username">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Password">
+            </div>
+            <button class="btn btn-roll" onclick="login()" style="width: 100%;">Login</button>
+            <p style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="showSignup()" style="color: #667eea;">Create Account</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="container" id="gameContainer" style="display: none;">
+        <div class="header">
+            <h1>🐍 Snakes & Ladders Adventure 🎲</h1>
+            <p>Complete challenges, collect bullets, and defeat the boss!</p>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-item">
+                <div class="stat-label">Player</div>
+                <div class="stat-value" id="playerName">Guest</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">❤️ Lives</div>
+                <div class="stat-value" id="lives">3</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">⏱️ Time Played</div>
+                <div class="stat-value" id="timePlayed">0h 0m</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">📍 Position</div>
+                <div class="stat-value" id="position">1</div>
+            </div>
+        </div>
+
+        <div class="dice-display" id="diceDisplay">🎲</div>
+
+        <div class="game-board" id="gameBoard">
+            <!-- Row 1: Squares 1-5 -->
+            <div class="board-row" id="row1"></div>
+            <!-- Row 2: Squares 6-10 -->
+            <div class="board-row" id="row2"></div>
+            <!-- Row 3: Squares 11-15 -->
+            <div class="board-row" id="row3"></div>
+            <!-- Row 4: Squares 16-20 -->
+            <div class="board-row" id="row4"></div>
+            <!-- Row 5: Squares 21-25 -->
+            <div class="board-row" id="row5"></div>
+            
+            <!-- Boss Battle - Centered Below -->
+            <div class="boss-row">
+                <div class="square boss" id="boss-square">
+                    <div class="square-icon">🐲</div>
+                    <div class="square-number">BOSS</div>
+                    <div class="square-label">FINAL BATTLE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button class="btn btn-roll" onclick="rollDice()" id="rollBtn">🎲 Roll Dice</button>
+            <button class="btn btn-save" onclick="saveProgress()">💾 Save Progress</button>
+            <button class="btn btn-save" onclick="logout()">🚪 Logout</button>
+        </div>
+
+        <div class="message" id="message">Roll the dice to start your adventure!</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8587';
+        
+        // Session management
+        function saveSession(username) {
+            localStorage.setItem('gameUsername', username);
+            localStorage.setItem('gameSessionTime', Date.now());
+        }
+
+        function getSession() {
+            const username = localStorage.getItem('gameUsername');
+            const sessionTime = localStorage.getItem('gameSessionTime');
+            
+            if (username && sessionTime && (Date.now() - sessionTime < 24 * 60 * 60 * 1000)) {
+                return username;
+            }
+            return null;
+        }
+
+        function clearSession() {
+            localStorage.removeItem('gameUsername');
+            localStorage.removeItem('gameSessionTime');
+        }
+
+        let gameState = {
+            currentPosition: 1,
+            bullets: 0,
+            lives: 3,
+            completedSquares: [],
+            timePlayed: 0,
+            username: ''
+        };
+
+        const snakes = {14: 7, 19: 8, 22: 3};
+        const ladders = {4: 14, 9: 21, 17: 23};
+
+        const squareIcons = ['🎯', '🎪', '🎨', '🎭', '🎵', '🎸', '🎮', '🎲', '🎰', '🎳', 
+                            '⚽', '🏀', '🎾', '🎱', '🏆', '🎖️', '🎗️', '🏅', '🥇', '🥈',
+                            '🥉', '🏐', '🏈', '⚾', '🏁'];
+
+        function initGame() {
+            // Clear existing squares
+            for (let rowNum = 1; rowNum <= 5; rowNum++) {
+                document.getElementById(`row${rowNum}`).innerHTML = '';
+            }
+            
+            // Create squares 1-25 in their proper rows
+            for (let i = 1; i <= 25; i++) {
+                const square = document.createElement('div');
+                square.className = 'square';
+                square.id = `square-${i}`;
+                
+                square.innerHTML = `
+                    <div class="square-icon">${squareIcons[i-1]}</div>
+                    <div class="square-number">${i}</div>
+                    <div class="square-label">Challenge ${i}</div>
+                `;
+                
+                if (snakes[i]) {
+                    square.innerHTML += `<div class="snake-indicator">🐍</div>`;
+                }
+                if (ladders[i]) {
+                    square.innerHTML += `<div class="ladder-indicator">🪜</div>`;
+                }
+                
+                // Calculate which row this square belongs to
+                const rowNum = Math.floor((i - 1) / 5) + 1;
+                const colNum = ((i - 1) % 5) + 1;
+                
+                // Add click handler
+                square.onclick = () => openSquare(i, rowNum, colNum);
+                
+                // Mark as current position
+                if (i === gameState.currentPosition) {
+                    square.classList.add('current');
+                }
+                
+                // Mark as completed
+                if (gameState.completedSquares.includes(i)) {
+                    square.classList.add('completed');
+                }
+                
+                // Add to appropriate row
+                document.getElementById(`row${rowNum}`).appendChild(square);
+            }
+            
+            // Setup boss square
+            const bossSquare = document.getElementById('boss-square');
+            bossSquare.onclick = () => {
+                if (gameState.currentPosition === 25) {
+                    window.location.href = 'boss-battle.html';
+                } else {
+                    showMessage('You must reach square 25 first to challenge the boss!');
+                }
+            };
+            
+            if (gameState.currentPosition === 25) {
+                bossSquare.classList.add('current');
+            }
+            
+            updateStats();
+        }
+
+        function openSquare(num, row, col) {
+            if (num > gameState.currentPosition && !gameState.completedSquares.includes(num)) {
+                showMessage('You need to roll to reach this square!');
+                return;
+            }
+            // Navigate to the square's HTML file
+            window.location.href = `row${row}/square${num}.html`;
+        }
+
+        async function rollDice() {
+            const btn = document.getElementById('rollBtn');
+            btn.disabled = true;
+            
+            const diceDisplay = document.getElementById('diceDisplay');
+            let rolls = 0;
+            const rollInterval = setInterval(() => {
+                diceDisplay.textContent = Math.floor(Math.random() * 6) + 1;
+                rolls++;
+                if (rolls > 10) {
+                    clearInterval(rollInterval);
+                    const finalRoll = Math.floor(Math.random() * 6) + 1;
+                    diceDisplay.textContent = finalRoll;
+                    movePlayer(finalRoll);
+                    btn.disabled = false;
+                }
+            }, 100);
+        }
+
+        function movePlayer(steps) {
+            const oldPos = gameState.currentPosition;
+            let newPos = oldPos + steps;
+            
+            if (newPos > 25) {
+                newPos = 25;
+            }
+            
+            // Remove current marker from old position
+            const oldSquare = document.getElementById(`square-${oldPos}`);
+            if (oldSquare) oldSquare.classList.remove('current');
+            
+            // Check for snakes and ladders
+            if (snakes[newPos]) {
+                showMessage(`Oh no! You hit a snake 🐍! Sliding down from ${newPos} to ${snakes[newPos]}`);
+                newPos = snakes[newPos];
+            } else if (ladders[newPos]) {
+                showMessage(`Lucky! You found a ladder 🪜! Climbing up from ${newPos} to ${ladders[newPos]}`);
+                newPos = ladders[newPos];
+            } else {
+                showMessage(`You rolled ${steps}! Moved from square ${oldPos} to ${newPos}`);
+            }
+            
+            gameState.currentPosition = newPos;
+            
+            // Add current marker to new position
+            if (newPos === 25) {
+                document.getElementById('boss-square').classList.add('current');
+            } else {
+                const newSquare = document.getElementById(`square-${newPos}`);
+                if (newSquare) newSquare.classList.add('current');
+            }
+            
+            updateStats();
+            
+            if (newPos === 25) {
+                setTimeout(() => {
+                    if (confirm('You reached square 25! Ready for the boss battle?')) {
+                        window.location.href = 'boss-battle.html';
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('bullets').textContent = gameState.bullets;
+            document.getElementById('lives').textContent = gameState.lives;
+            document.getElementById('position').textContent = gameState.currentPosition;
+            document.getElementById('playerName').textContent = gameState.username || 'Guest';
+            
+            const hours = Math.floor(gameState.timePlayed / 60);
+            const minutes = gameState.timePlayed % 60;
+            document.getElementById('timePlayed').textContent = `${hours}h ${minutes}m`;
+        }
+
+        function showMessage(msg) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = msg;
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+            
+            try {
+                console.log('Attempting login to:', `${API_BASE}/api/authenticate`);
+                
+                const response = await fetch(`${API_BASE}/api/authenticate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({uid: username, password: password})
+                });
+                
+                if (response.ok) {
+                    gameState.username = username;
+                    saveSession(username);
+                    await loadProgress();
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('gameContainer').style.display = 'block';
+                    initGame();
+                    startTimer();
+                } else {
+                    alert('Login failed! Check your credentials.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Cannot connect to backend! Make sure Flask is running on port 8587');
+            }
+        }
+
+        async function loadProgress() {
+            try {
+                const response = await fetch(`${API_BASE}/api/game/progress`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    gameState = {...gameState, ...data};
+                }
+            } catch (error) {
+                console.error('Load progress error:', error);
+            }
+        }
+
+        async function saveProgress() {
+            try {
+                const response = await fetch(`${API_BASE}/api/game/progress`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify(gameState)
+                });
+                if (response.ok) {
+                    showMessage('✅ Progress saved!');
+                } else {
+                    showMessage('❌ Save failed! Please login first.');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                showMessage('❌ Cannot connect to server!');
+            }
+        }
+
+        function logout() {
+            if (confirm('Save progress before logging out?')) {
+                saveProgress();
+            }
+            clearSession();
+            location.reload();
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                gameState.timePlayed++;
+                updateStats();
+            }, 60000);
+        }
+
+        function showSignup() {
+            alert('Visit the main site to create an account!');
+        }
+
+        window.onload = () => {
+            const savedUsername = getSession();
+            
+            if (savedUsername) {
+                gameState.username = savedUsername;
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                loadProgress().then(() => {
+                    initGame();
+                    startTimer();
+                });
+            } else {
+                document.getElementById('loginContainer').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
