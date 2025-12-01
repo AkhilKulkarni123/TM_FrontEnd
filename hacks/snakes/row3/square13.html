@@ -3,381 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 13 - Arrow Command</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: 'Arial', sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 20px;
+            color: white;
         }
-        .game-container {
-            background: white;
+
+        .container {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
+            padding: 40px;
             max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
-            color: #fa709a;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+            color: #333;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
             margin-bottom: 10px;
         }
-        .instructions {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin: 20px 0;
-            font-size: 18px;
-            font-weight: bold;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+
         .stat-item {
-            padding: 10px 20px;
-            background: #fa709a;
-            color: white;
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
+            min-width: 120px;
         }
-        .bullets {
-            color: #ffd700;
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        .game-area {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 40px;
-            margin: 20px 0;
-            min-height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 5px;
         }
-        .timer-bar {
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
+        }
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
             width: 100%;
             height: 10px;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             border-radius: 5px;
-            position: absolute;
-            top: 10px;
-            left: 0;
             overflow: hidden;
+            margin-bottom: 20px;
         }
-        .timer-fill {
+
+        .progress-fill {
             height: 100%;
-            background: #fee140;
-            width: 100%;
-            transition: width 0.1s linear;
-        }
-        .arrow-display {
-            font-size: 120px;
-            margin: 30px 0;
-            animation: pulse 0.5s ease-in-out;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        .command-text {
-            font-size: 32px;
-            color: white;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .feedback {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-            min-height: 60px;
-        }
-        .feedback.correct {
-            color: #51cf66;
-            animation: bounce 0.5s;
-        }
-        .feedback.wrong {
-            color: #ff6b6b;
-            animation: shake 0.5s;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        .arrow-keys {
-            display: grid;
-            grid-template-columns: repeat(3, 80px);
-            gap: 10px;
-            margin: 20px auto;
-            width: fit-content;
-        }
-        .arrow-key {
-            width: 80px;
-            height: 80px;
-            border: 3px solid #fa709a;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            background: white;
-            transition: all 0.1s;
-        }
-        .arrow-key.pressed {
-            background: #fa709a;
-            transform: scale(0.95);
-        }
-        .arrow-key:nth-child(1) { grid-column: 2; }
-        .arrow-key:nth-child(2) { grid-column: 1; grid-row: 2; }
-        .arrow-key:nth-child(3) { grid-column: 3; grid-row: 2; }
-        .arrow-key:nth-child(4) { grid-column: 2; grid-row: 2; }
-        button {
-            background: #fa709a;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            background: #fee140;
-            color: #333;
-            transform: scale(1.05);
-        }
-        .result {
-            display: none;
-            background: #51cf66;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>⬆️ Arrow Command</h1>
-        <div class="instructions">
-            Press the <strong>correct arrow key</strong> that matches the displayed arrow!<br>
-            React quickly and accurately to earn bullets!
-        </div>
-        
+    <div class="container">
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
         <div class="stats">
-            <div class="stat-item">Round: <span id="round">0</span>/20</div>
-            <div class="stat-item">Correct: <span id="correct">0</span></div>
-            <div class="stat-item bullets">Bullets: <span id="bullets">0</span></div>
-        </div>
-
-        <div class="game-area" id="gameArea" style="display:none;">
-            <div class="timer-bar">
-                <div class="timer-fill" id="timerFill"></div>
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
             </div>
-            <div class="command-text" id="commandText">Get Ready!</div>
-            <div class="arrow-display" id="arrowDisplay">➡️</div>
-            <div class="feedback" id="feedback"></div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
 
-        <div class="arrow-keys">
-            <div class="arrow-key" id="keyUp">⬆️</div>
-            <div class="arrow-key" id="keyLeft">⬅️</div>
-            <div class="arrow-key" id="keyRight">➡️</div>
-            <div class="arrow-key" id="keyDown">⬇️</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
         </div>
 
-        <div class="result" id="result"></div>
+        <div class="timer" id="timer">Time: 0:00</div>
 
-        <button id="startBtn" onclick="startGame()">Start Game</button>
-        <button id="restartBtn" onclick="restartGame()" style="display:none;">Play Again</button>
+        <div class="message" id="message"></div>
+
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        let gameRunning = false;
-        let round = 0;
-        let correct = 0;
-        let bullets = 0;
-        let currentArrow = null;
-        let timeLeft = 0;
-        let timerInterval = null;
-        const maxRounds = 20;
-        const timePerRound = 2000; // 2 seconds
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
 
-        const arrows = [
-            { key: 'ArrowUp', symbol: '⬆️', name: 'UP' },
-            { key: 'ArrowDown', symbol: '⬇️', name: 'DOWN' },
-            { key: 'ArrowLeft', symbol: '⬅️', name: 'LEFT' },
-            { key: 'ArrowRight', symbol: '➡️', name: 'RIGHT' }
-        ];
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
+        };
 
-        document.addEventListener('keydown', (e) => {
-            if (!gameRunning || !currentArrow) return;
+        let timerInterval;
 
-            const keyMap = {
-                'ArrowUp': 'keyUp',
-                'ArrowDown': 'keyDown',
-                'ArrowLeft': 'keyLeft',
-                'ArrowRight': 'keyRight'
-            };
-
-            if (keyMap[e.key]) {
-                document.getElementById(keyMap[e.key]).classList.add('pressed');
-                checkAnswer(e.key);
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
+                }
+                
+                problems.push({question, answer});
             }
-        });
+            return problems;
+        }
 
-        document.addEventListener('keyup', (e) => {
-            const keyMap = {
-                'ArrowUp': 'keyUp',
-                'ArrowDown': 'keyDown',
-                'ArrowLeft': 'keyLeft',
-                'ArrowRight': 'keyRight'
-            };
-
-            if (keyMap[e.key]) {
-                document.getElementById(keyMap[e.key]).classList.remove('pressed');
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
+            } else {
+                completeChallenge();
             }
-        });
+        }
 
-        function showArrow() {
-            currentArrow = arrows[Math.floor(Math.random() * arrows.length)];
-            document.getElementById('arrowDisplay').textContent = currentArrow.symbol;
-            document.getElementById('commandText').textContent = `Press ${currentArrow.name}!`;
-            document.getElementById('feedback').textContent = '';
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
             
-            startTimer();
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
+                
+                setTimeout(() => {
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
+            } else {
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
         }
 
         function startTimer() {
-            timeLeft = timePerRound;
-            const timerFill = document.getElementById('timerFill');
-            
-            clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                timeLeft -= 50;
-                const percentage = (timeLeft / timePerRound) * 100;
-                timerFill.style.width = percentage + '%';
-                
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    if (currentArrow) {
-                        showFeedback(false);
-                        setTimeout(nextRound, 1000);
-                    }
-                }
-            }, 50);
-        }
-
-        function checkAnswer(key) {
-            if (!currentArrow) return;
-            
-            clearInterval(timerInterval);
-            const isCorrect = key === currentArrow.key;
-            
-            if (isCorrect) {
-                correct++;
-                updateDisplay();
-            }
-            
-            showFeedback(isCorrect);
-            currentArrow = null;
-            
-            setTimeout(nextRound, 1000);
-        }
-
-        function showFeedback(isCorrect) {
-            const feedback = document.getElementById('feedback');
-            if (isCorrect) {
-                feedback.textContent = '✓ Correct!';
-                feedback.className = 'feedback correct';
-            } else {
-                feedback.textContent = '✗ Wrong!';
-                feedback.className = 'feedback wrong';
-            }
-        }
-
-        function nextRound() {
-            round++;
-            updateDisplay();
-            
-            if (round >= maxRounds) {
-                endGame();
-            } else {
-                showArrow();
-            }
-        }
-
-        function updateDisplay() {
-            document.getElementById('round').textContent = round;
-            document.getElementById('correct').textContent = correct;
-            document.getElementById('bullets').textContent = bullets;
-        }
-
-        function calculateBullets() {
-            const accuracy = (correct / maxRounds) * 100;
-            if (accuracy >= 90) bullets = 5;
-            else if (accuracy >= 75) bullets = 4;
-            else if (accuracy >= 60) bullets = 3;
-            else if (accuracy >= 45) bullets = 2;
-            else if (accuracy >= 30) bullets = 1;
-            else bullets = 0;
-            updateDisplay();
-        }
-
-        function startGame() {
-            gameRunning = true;
-            round = 0;
-            correct = 0;
-            bullets = 0;
-            currentArrow = null;
-            
-            document.getElementById('gameArea').style.display = 'flex';
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('restartBtn').style.display = 'none';
-            
-            updateDisplay();
-            
-            setTimeout(() => {
-                showArrow();
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
 
-        function endGame() {
-            gameRunning = false;
+        async function completeChallenge() {
             clearInterval(timerInterval);
-            calculateBullets();
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            const accuracy = Math.round((correct / maxRounds) * 100);
-            const result = document.getElementById('result');
-            result.innerHTML = `
-                <h2>🎯 Game Complete!</h2>
-                <p>Correct: ${correct}/${maxRounds}</p>
-                <p>Accuracy: ${accuracy}%</p>
-                <p>Bullets Earned: ${bullets}</p>
-            `;
-            result.style.display = 'block';
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
             
-            document.getElementById('gameArea').style.display = 'none';
-            document.getElementById('restartBtn').style.display = 'inline-block';
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+            
+            setTimeout(() => {
+                window.location.href = '../game-board.html';
+            }, 2000);
         }
 
-        function restartGame() {
-            startGame();
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
+            }
         }
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
+        };
     </script>
 </body>
 </html>
+

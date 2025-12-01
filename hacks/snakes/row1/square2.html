@@ -3,288 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 2 - Color Sequence</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: 'Arial', sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 20px;
+            color: white;
         }
-        .game-container {
-            background: white;
+
+        .container {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 40px;
             max-width: 600px;
             width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
             text-align: center;
-            color: #f5576c;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+            color: #333;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
             margin-bottom: 10px;
         }
-        .instructions {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 14px;
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
-        .game-stats {
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .stats {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            font-weight: bold;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .stat {
-            background: #f0f0f0;
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        .bullets { color: #ff6b6b; }
-        .level { color: #4ecdc4; }
-        .status { color: #f39c12; }
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            max-width: 400px;
-            margin: 30px auto;
-        }
-        .color-button {
-            width: 100%;
-            aspect-ratio: 1;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .color-button:active {
-            transform: scale(0.95);
-        }
-        .color-button.flash {
-            animation: flash 0.5s;
-        }
-        @keyframes flash {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.05); }
-        }
-        .color-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        #redBtn { background: #ff6b6b; }
-        #blueBtn { background: #4ecdc4; }
-        #greenBtn { background: #95e77d; }
-        #yellowBtn { background: #ffd93d; }
-        .controls {
+
+        .stat-item {
             text-align: center;
-            margin-top: 20px;
-        }
-        button.game-btn {
-            background: #f5576c;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 16px;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 5px;
+            min-width: 120px;
         }
-        button.game-btn:hover {
-            background: #f093fb;
-            transform: translateY(-2px);
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        button.game-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 5px;
         }
+
         .message {
             text-align: center;
-            font-size: 18px;
-            margin-top: 20px;
-            color: #f5576c;
-            font-weight: bold;
-            min-height: 30px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
+        }
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>🌈 Color Sequence Challenge</h1>
-        <div class="instructions">
-            Watch the colors light up, then repeat the sequence! Reach level 5 to win bullets!
+    <div class="container">
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
-        
-        <div class="game-stats">
-            <div class="stat bullets">💣 Bullets: <span id="bullets">0</span></div>
-            <div class="stat level">📊 Level: <span id="level">0</span></div>
-            <div class="stat status">🎯 Status: <span id="status">Ready</span></div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
         </div>
-        
-        <div class="color-grid">
-            <button class="color-button" id="redBtn" onclick="playerClick('red')" disabled>🔴</button>
-            <button class="color-button" id="blueBtn" onclick="playerClick('blue')" disabled>🔵</button>
-            <button class="color-button" id="greenBtn" onclick="playerClick('green')" disabled>🟢</button>
-            <button class="color-button" id="yellowBtn" onclick="playerClick('yellow')" disabled>🟡</button>
+
+        <div class="timer" id="timer">Time: 0:00</div>
+
+        <div class="message" id="message"></div>
+
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
         </div>
-        
-        <div class="controls">
-            <button class="game-btn" id="startBtn" onclick="startGame()">Start Game</button>
-            <button class="game-btn" id="resetBtn" onclick="resetGame()" style="display:none;">Play Again</button>
-        </div>
-        
-        <div id="message" class="message"></div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const colors = ['red', 'blue', 'green', 'yellow'];
-        let sequence = [];
-        let playerSequence = [];
-        let level = 0;
-        let bullets = 0;
-        let gameActive = false;
-        let showingSequence = false;
-        
-        const colorButtons = {
-            red: document.getElementById('redBtn'),
-            blue: document.getElementById('blueBtn'),
-            green: document.getElementById('greenBtn'),
-            yellow: document.getElementById('yellowBtn')
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
+
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
         };
-        
-        function startGame() {
-            gameActive = true;
-            sequence = [];
-            playerSequence = [];
-            level = 0;
-            bullets = 0;
-            
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('message').textContent = '';
-            updateStats();
-            
-            nextRound();
-        }
-        
-        function nextRound() {
-            level++;
-            playerSequence = [];
-            sequence.push(colors[Math.floor(Math.random() * colors.length)]);
-            
-            updateStats();
-            document.getElementById('status').textContent = 'Watch!';
-            
-            showSequence();
-        }
-        
-        async function showSequence() {
-            showingSequence = true;
-            disableButtons();
-            
-            await sleep(1000);
-            
-            for (let color of sequence) {
-                await flashColor(color);
-                await sleep(300);
+
+        let timerInterval;
+
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
+                }
+                
+                problems.push({question, answer});
             }
-            
-            showingSequence = false;
-            enableButtons();
-            document.getElementById('status').textContent = 'Your Turn!';
+            return problems;
         }
-        
-        function flashColor(color) {
-            return new Promise(resolve => {
-                const btn = colorButtons[color];
-                btn.classList.add('flash');
+
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
+            } else {
+                completeChallenge();
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+            
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
                 
                 setTimeout(() => {
-                    btn.classList.remove('flash');
-                    resolve();
-                }, 500);
-            });
-        }
-        
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-        
-        function playerClick(color) {
-            if (!gameActive || showingSequence) return;
-            
-            playerSequence.push(color);
-            flashColor(color);
-            
-            const currentIndex = playerSequence.length - 1;
-            
-            if (playerSequence[currentIndex] !== sequence[currentIndex]) {
-                gameOver(false);
-                return;
-            }
-            
-            if (playerSequence.length === sequence.length) {
-                if (level >= 5) {
-                    gameOver(true);
-                } else {
-                    disableButtons();
-                    document.getElementById('status').textContent = 'Correct!';
-                    setTimeout(nextRound, 1500);
-                }
-            }
-        }
-        
-        function enableButtons() {
-            Object.values(colorButtons).forEach(btn => btn.disabled = false);
-        }
-        
-        function disableButtons() {
-            Object.values(colorButtons).forEach(btn => btn.disabled = true);
-        }
-        
-        function updateStats() {
-            document.getElementById('bullets').textContent = bullets;
-            document.getElementById('level').textContent = level;
-        }
-        
-        function gameOver(won) {
-            gameActive = false;
-            disableButtons();
-            
-            if (won) {
-                bullets = 3;
-                document.getElementById('message').textContent = '🎉 Perfect! You completed 5 levels! +3 Bullets!';
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
             } else {
-                bullets = Math.max(1, Math.floor(level / 2));
-                document.getElementById('message').textContent = `💥 Wrong sequence! You reached level ${level}. +${bullets} Bullets!`;
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        async function completeChallenge() {
+            clearInterval(timerInterval);
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+            
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
             }
             
-            updateStats();
-            document.getElementById('status').textContent = 'Game Over';
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('resetBtn').style.display = 'inline-block';
+            setTimeout(() => {
+                window.location.href = '../game-board.html';
+            }, 2000);
         }
-        
-        function resetGame() {
-            enableButtons();
-            disableButtons();
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('startBtn').style.display = 'inline-block';
-            document.getElementById('resetBtn').style.display = 'none';
-            document.getElementById('message').textContent = '';
-            document.getElementById('status').textContent = 'Ready';
-            level = 0;
-            bullets = 0;
-            updateStats();
+
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
+            }
         }
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
+        };
     </script>
 </body>
 </html>
+

@@ -3,297 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 23 - Castle Builder</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            color: white;
         }
+
         .container {
-            background: white;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 800px;
+            padding: 40px;
+            max-width: 600px;
             width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
-            color: #8E2DE2;
             text-align: center;
             margin-bottom: 10px;
+            font-size: 2.5em;
         }
-        .instructions {
+
+        .subtitle {
             text-align: center;
-            color: #666;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
             margin-bottom: 20px;
         }
-        .game-area {
-            position: relative;
+
+        input[type="number"], input[type="text"] {
             width: 100%;
-            height: 450px;
-            background: linear-gradient(180deg, #87CEEB 0%, #90EE90 80%, #8B4513 100%);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid #4A00E0;
-        }
-        .block-palette {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
             padding: 15px;
-            background: #f0f0f0;
+            font-size: 1.5em;
+            border: none;
             border-radius: 10px;
-            margin-bottom: 15px;
+            text-align: center;
+            background: white;
+            color: #333;
         }
-        .block-type {
-            width: 60px;
-            height: 60px;
-            border: 3px solid #333;
-            border-radius: 5px;
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s;
-            font-size: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
-        .block-type:hover {
-            transform: scale(1.1);
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
-        .block-type.selected {
-            border-color: #8E2DE2;
-            box-shadow: 0 0 10px #8E2DE2;
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
         }
-        .placed-block {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            font-size: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.2s;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        .placed-block:hover {
-            opacity: 0.7;
-        }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin: 20px 0;
-            font-size: 18px;
-            font-weight: bold;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .stat {
-            background: #f0f0f0;
-            padding: 10px 20px;
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
+            min-width: 120px;
         }
-        .buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
+
+        .stat-value {
+            font-size: 2em;
             font-weight: bold;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 5px;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: none;
         }
-        .reset-btn {
-            background: #FF6B6B;
-            color: white;
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
         }
-        .claim-btn {
-            background: #51CF66;
-            color: white;
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
         }
-        .claim-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 15px;
         }
-        .clear-btn {
-            background: #FFD93D;
-            color: #333;
-        }
-        .height-marker {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 10px;
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
             border-radius: 5px;
-            font-weight: bold;
-            color: #8E2DE2;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏰 Castle Builder Challenge 🏰</h1>
-        <p class="instructions">Build a tall castle! Click blocks below, then click in the game area to place them!</p>
-        
-        <div class="block-palette">
-            <div class="block-type selected" data-block="🧱" onclick="selectBlock('🧱')">🧱</div>
-            <div class="block-type" data-block="🪨" onclick="selectBlock('🪨')">🪨</div>
-            <div class="block-type" data-block="🪵" onclick="selectBlock('🪵')">🪵</div>
-            <div class="block-type" data-block="⬜" onclick="selectBlock('⬜')">⬜</div>
-        </div>
-        
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
         <div class="stats">
-            <div class="stat">Blocks: <span id="blocks">0</span>/30</div>
-            <div class="stat">Height: <span id="height">0</span></div>
-            <div class="stat">Bullets: <span id="bullets">0</span></div>
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
-        
-        <div class="game-area" id="gameArea">
-            <div class="height-marker">Max Height: <span id="maxHeight">0</span></div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
         </div>
-        
-        <div class="buttons">
-            <button class="clear-btn" onclick="clearCastle()">Clear Castle</button>
-            <button class="reset-btn" onclick="resetGame()">Reset Game</button>
-            <button class="claim-btn" id="claimBtn" onclick="claimBullets()" disabled>Claim Bullets</button>
+
+        <div class="timer" id="timer">Time: 0:00</div>
+
+        <div class="message" id="message"></div>
+
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
         </div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        let blocksPlaced = 0;
-        let maxHeight = 0;
-        let bullets = 0;
-        let selectedBlock = '🧱';
-        let placedBlocks = [];
-        
-        const gameArea = document.getElementById('gameArea');
-        
-        function selectBlock(block) {
-            selectedBlock = block;
-            document.querySelectorAll('.block-type').forEach(el => {
-                el.classList.remove('selected');
-                if (el.dataset.block === block) {
-                    el.classList.add('selected');
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
+
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
+        };
+
+        let timerInterval;
+
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
                 }
-            });
-        }
-        
-        gameArea.addEventListener('click', (e) => {
-            if (blocksPlaced >= 30) {
-                alert('Maximum blocks placed! Submit your castle!');
-                return;
+                
+                problems.push({question, answer});
             }
-            
-            const rect = gameArea.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const gridX = Math.floor(x / 50) * 50;
-            const gridY = Math.floor(y / 50) * 50;
-            
-            const existingBlock = placedBlocks.find(b => 
-                b.x === gridX && b.y === gridY
-            );
-            
-            if (existingBlock) {
-                return;
-            }
-            
-            placeBlock(gridX, gridY);
-        });
-        
-        function placeBlock(x, y) {
-            const block = document.createElement('div');
-            block.className = 'placed-block';
-            block.textContent = selectedBlock;
-            block.style.left = x + 'px';
-            block.style.top = y + 'px';
-            
-            block.addEventListener('click', (e) => {
-                e.stopPropagation();
-                removeBlock(block, x, y);
-            });
-            
-            gameArea.appendChild(block);
-            placedBlocks.push({ x, y, element: block });
-            
-            blocksPlaced++;
-            document.getElementById('blocks').textContent = blocksPlaced;
-            
-            calculateHeight();
-            
-            if (blocksPlaced >= 30) {
-                endGame();
-            }
+            return problems;
         }
-        
-        function removeBlock(blockElement, x, y) {
-            blockElement.remove();
-            placedBlocks = placedBlocks.filter(b => !(b.x === x && b.y === y));
-            blocksPlaced--;
-            document.getElementById('blocks').textContent = blocksPlaced;
-            calculateHeight();
-        }
-        
-        function calculateHeight() {
-            if (placedBlocks.length === 0) {
-                maxHeight = 0;
+
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
             } else {
-                const bottomY = gameArea.offsetHeight;
-                const minY = Math.min(...placedBlocks.map(b => b.y));
-                maxHeight = Math.floor((bottomY - minY) / 50);
+                completeChallenge();
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+            
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
+                
+                setTimeout(() => {
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
+            } else {
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        async function completeChallenge() {
+            clearInterval(timerInterval);
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+            
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
             }
             
-            bullets = Math.floor(maxHeight / 2);
-            
-            document.getElementById('height').textContent = maxHeight;
-            document.getElementById('maxHeight').textContent = maxHeight;
-            document.getElementById('bullets').textContent = bullets;
+            setTimeout(() => {
+                window.location.href = '../game-board.html';
+            }, 2000);
         }
-        
-        function clearCastle() {
-            placedBlocks.forEach(block => block.element.remove());
-            placedBlocks = [];
-            blocksPlaced = 0;
-            maxHeight = 0;
-            bullets = 0;
-            
-            document.getElementById('blocks').textContent = '0';
-            document.getElementById('height').textContent = '0';
-            document.getElementById('maxHeight').textContent = '0';
-            document.getElementById('bullets').textContent = '0';
-        }
-        
-        function endGame() {
-            document.getElementById('claimBtn').disabled = false;
-            alert(`Castle complete! You built to height ${maxHeight} and earned ${bullets} bullets!`);
-        }
-        
-        function resetGame() {
-            clearCastle();
-            document.getElementById('claimBtn').disabled = true;
-        }
-        
-        function claimBullets() {
-            if (bullets === 0) {
-                alert('Build a taller castle to earn bullets!');
-                return;
+
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
             }
-            alert(`You earned ${bullets} bullets! Returning to game...`);
-            window.location.href = '/';
         }
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
+        };
     </script>
 </body>
 </html>
+

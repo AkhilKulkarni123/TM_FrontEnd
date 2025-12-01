@@ -3,394 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 14 - Ball Keeper</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: 'Arial', sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 20px;
+            color: white;
         }
-        .game-container {
-            background: white;
+
+        .container {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 650px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
-            color: #fe9a8e;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+            color: #333;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
             margin-bottom: 10px;
         }
-        .instructions {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
-        canvas {
-            border: 3px solid #fe9a8e;
-            border-radius: 10px;
-            display: block;
-            margin: 20px auto;
-            background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 100%);
-            cursor: none;
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
         }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin: 20px 0;
-            font-size: 18px;
-            font-weight: bold;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+
         .stat-item {
-            padding: 10px 20px;
-            background: #fe9a8e;
-            color: white;
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
+            min-width: 120px;
         }
-        .bullets {
-            color: #ffd700;
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        button {
-            background: #fe9a8e;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 18px;
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
             border-radius: 10px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            background: #fed6e3;
-            color: #333;
-            transform: scale(1.05);
-        }
-        .result {
+            margin-bottom: 15px;
+            font-size: 1.1em;
             display: none;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
         }
-        .result.show {
-            display: block;
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
         }
-        .result.success {
-            background: #51cf66;
-            color: white;
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
         }
-        .result.fail {
-            background: #ff6b6b;
-            color: white;
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 15px;
         }
-        .lives-display {
-            font-size: 32px;
-            margin: 10px 0;
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>🏐 Ball Keeper</h1>
-        <div class="instructions">
-            Move your <strong>mouse</strong> or use <strong>Arrow Keys</strong> to control the paddle!<br>
-            Keep the ball bouncing and don't let it fall! Survive to earn bullets!
-        </div>
-        
+    <div class="container">
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
         <div class="stats">
-            <div class="stat-item">Bounces: <span id="bounces">0</span></div>
-            <div class="stat-item">Score: <span id="score">0</span></div>
-            <div class="stat-item bullets">Bullets: <span id="bullets">0</span></div>
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
 
-        <div class="lives-display" id="lives">❤️❤️❤️</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
 
-        <canvas id="gameCanvas" width="600" height="500"></canvas>
+        <div class="timer" id="timer">Time: 0:00</div>
 
-        <div class="result" id="result"></div>
+        <div class="message" id="message"></div>
 
-        <button id="startBtn" onclick="startGame()">Start Game</button>
-        <button id="restartBtn" onclick="restartGame()" style="display:none;">Play Again</button>
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let gameRunning = false;
-        let score = 0;
-        let bullets = 0;
-        let bounces = 0;
-        let lives = 3;
-        let animationId;
-        let mouseX = canvas.width / 2;
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
 
-        // Paddle
-        const paddle = {
-            x: canvas.width / 2 - 60,
-            y: canvas.height - 40,
-            width: 120,
-            height: 15,
-            speed: 8,
-            dx: 0
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
         };
 
-        // Ball
-        const ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: 10,
-            speed: 4,
-            dx: 4,
-            dy: -4,
-            maxSpeed: 8
+        let timerInterval;
+
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
+                }
+                
+                problems.push({question, answer});
+            }
+            return problems;
+        }
+
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
+            } else {
+                completeChallenge();
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+            
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
+                
+                setTimeout(() => {
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
+            } else {
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        async function completeChallenge() {
+            clearInterval(timerInterval);
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+            
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
+            }
+            
+            setTimeout(() => {
+                window.location.href = '../game-board.html';
+            }, 2000);
+        }
+
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
+            }
+        }
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
         };
-
-        // Mouse control
-        canvas.addEventListener('mousemove', (e) => {
-            if (!gameRunning) return;
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-            paddle.x = mouseX - paddle.width / 2;
-            
-            // Boundaries
-            if (paddle.x < 0) paddle.x = 0;
-            if (paddle.x + paddle.width > canvas.width) {
-                paddle.x = canvas.width - paddle.width;
-            }
-        });
-
-        // Keyboard control
-        const keys = {};
-        document.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
-            if (gameRunning) {
-                if (e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
-                if (e.key === 'ArrowRight') paddle.dx = paddle.speed;
-            }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                paddle.dx = 0;
-            }
-        });
-
-        function drawPaddle() {
-            // Gradient paddle
-            const gradient = ctx.createLinearGradient(
-                paddle.x, paddle.y,
-                paddle.x + paddle.width, paddle.y + paddle.height
-            );
-            gradient.addColorStop(0, '#ff6b6b');
-            gradient.addColorStop(0.5, '#ff8787');
-            gradient.addColorStop(1, '#ff6b6b');
-            
-            ctx.fillStyle = gradient;
-            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
-        }
-
-        function drawBall() {
-            // Ball shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.beginPath();
-            ctx.arc(ball.x + 3, ball.y + 3, ball.radius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Ball
-            const gradient = ctx.createRadialGradient(
-                ball.x - 3, ball.y - 3, 0,
-                ball.x, ball.y, ball.radius
-            );
-            gradient.addColorStop(0, '#fff');
-            gradient.addColorStop(0.3, '#ffd700');
-            gradient.addColorStop(1, '#ff6347');
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-
-        function updatePaddle() {
-            paddle.x += paddle.dx;
-            
-            // Boundaries
-            if (paddle.x < 0) paddle.x = 0;
-            if (paddle.x + paddle.width > canvas.width) {
-                paddle.x = canvas.width - paddle.width;
-            }
-        }
-
-        function updateBall() {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-            
-            // Wall collision
-            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
-                ball.dx = -ball.dx;
-            }
-            
-            // Top collision
-            if (ball.y - ball.radius < 0) {
-                ball.dy = -ball.dy;
-            }
-            
-            // Paddle collision
-            if (ball.y + ball.radius > paddle.y &&
-                ball.y - ball.radius < paddle.y + paddle.height &&
-                ball.x > paddle.x &&
-                ball.x < paddle.x + paddle.width) {
-                
-                // Calculate hit position on paddle
-                const hitPos = (ball.x - paddle.x) / paddle.width;
-                const angle = (hitPos - 0.5) * Math.PI / 3; // -60 to 60 degrees
-                
-                const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-                ball.dx = speed * Math.sin(angle);
-                ball.dy = -Math.abs(speed * Math.cos(angle));
-                
-                bounces++;
-                score += 10;
-                
-                // Increase speed gradually
-                if (bounces % 5 === 0 && ball.speed < ball.maxSpeed) {
-                    ball.speed += 0.3;
-                    const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-                    const ratio = ball.speed / currentSpeed;
-                    ball.dx *= ratio;
-                    ball.dy *= ratio;
-                }
-                
-                updateDisplay();
-            }
-            
-            // Ball falls
-            if (ball.y - ball.radius > canvas.height) {
-                lives--;
-                updateLives();
-                
-                if (lives <= 0) {
-                    endGame();
-                } else {
-                    resetBall();
-                }
-            }
-        }
-
-        function resetBall() {
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height / 2;
-            ball.speed = 4;
-            ball.dx = (Math.random() > 0.5 ? 1 : -1) * 4;
-            ball.dy = -4;
-        }
-
-        function updateLives() {
-            const hearts = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
-            document.getElementById('lives').textContent = hearts;
-        }
-
-        function draw() {
-            // Clear with gradient sky
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#87ceeb');
-            gradient.addColorStop(1, '#e0f6ff');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw clouds
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            for (let i = 0; i < 3; i++) {
-                const x = (i * 200 + bounces) % (canvas.width + 100);
-                ctx.beginPath();
-                ctx.arc(x, 50 + i * 30, 20, 0, Math.PI * 2);
-                ctx.arc(x + 20, 50 + i * 30, 25, 0, Math.PI * 2);
-                ctx.arc(x + 40, 50 + i * 30, 20, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            drawPaddle();
-            drawBall();
-        }
-
-        function updateDisplay() {
-            document.getElementById('bounces').textContent = bounces;
-            document.getElementById('score').textContent = score;
-            document.getElementById('bullets').textContent = bullets;
-        }
-
-        function calculateBullets() {
-            bullets = Math.floor(bounces / 10) + Math.floor(score / 200);
-            updateDisplay();
-        }
-
-        function gameLoop() {
-            if (!gameRunning) return;
-            
-            updatePaddle();
-            updateBall();
-            draw();
-            calculateBullets();
-            
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function startGame() {
-            gameRunning = true;
-            score = 0;
-            bullets = 0;
-            bounces = 0;
-            lives = 3;
-            
-            paddle.x = canvas.width / 2 - 60;
-            resetBall();
-            
-            document.getElementById('result').classList.remove('show');
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('restartBtn').style.display = 'none';
-            
-            updateDisplay();
-            updateLives();
-            gameLoop();
-        }
-
-        function endGame() {
-            gameRunning = false;
-            cancelAnimationFrame(animationId);
-            
-            const result = document.getElementById('result');
-            result.innerHTML = `
-                <h2>${bullets > 0 ? '🎉 Great Job!' : '💔 Game Over'}</h2>
-                <p>Total Bounces: ${bounces}</p>
-                <p>Final Score: ${score}</p>
-                <p>Bullets Earned: ${bullets}</p>
-            `;
-            result.className = 'result show ' + (bullets > 0 ? 'success' : 'fail');
-            
-            document.getElementById('restartBtn').style.display = 'inline-block';
-        }
-
-        function restartGame() {
-            startGame();
-        }
-
-        draw();
     </script>
 </body>
 </html>
+

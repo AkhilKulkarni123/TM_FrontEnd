@@ -448,8 +448,10 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';
-
+// Auto-detect environment
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8587'  // Local development
+    : 'https://tm-flask-backend.onrender.com';  // Production - REPLACE WITH YOUR ACTUAL URL
         // IMPROVED SESSION MANAGEMENT
         function saveSession(username) {
             localStorage.setItem('gameUsername', username);

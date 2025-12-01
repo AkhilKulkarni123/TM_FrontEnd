@@ -3,331 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 21 - Fish Feeder</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            color: white;
         }
+
         .container {
-            background: white;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 800px;
+            padding: 40px;
+            max-width: 600px;
             width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
-            color: #667eea;
             text-align: center;
             margin-bottom: 10px;
+            font-size: 2.5em;
         }
-        .instructions {
+
+        .subtitle {
             text-align: center;
-            color: #666;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
             margin-bottom: 20px;
         }
-        .game-area {
-            position: relative;
+
+        input[type="number"], input[type="text"] {
             width: 100%;
-            height: 400px;
-            background: linear-gradient(180deg, #87CEEB 0%, #4682B4 100%);
+            padding: 15px;
+            font-size: 1.5em;
+            border: none;
             border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid #4682B4;
-        }
-        .fish {
-            position: absolute;
-            width: 60px;
-            height: 40px;
-            background: #FF6B6B;
-            border-radius: 50% 50% 50% 0;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .fish::before {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 20px solid #FF6B6B;
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent;
-            right: -15px;
-            top: 10px;
-        }
-        .fish::after {
-            content: '';
-            position: absolute;
-            width: 8px;
-            height: 8px;
+            text-align: center;
             background: white;
-            border-radius: 50%;
-            top: 12px;
-            left: 10px;
-            border: 2px solid black;
+            color: #333;
         }
-        .food {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            cursor: grab;
-            font-size: 40px;
-            user-select: none;
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
-        .food.dragging {
-            cursor: grabbing;
-            opacity: 0.7;
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin: 20px 0;
-            font-size: 18px;
-            font-weight: bold;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .stat {
-            background: #f0f0f0;
-            padding: 10px 20px;
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
+            min-width: 120px;
         }
-        .buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
+
+        .stat-value {
+            font-size: 2em;
             font-weight: bold;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 5px;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: none;
         }
-        .reset-btn {
-            background: #FF6B6B;
-            color: white;
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
         }
-        .claim-btn {
-            background: #51CF66;
-            color: white;
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
         }
-        .claim-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+
         .timer {
             text-align: center;
-            font-size: 24px;
-            color: #667eea;
-            font-weight: bold;
-            margin: 10px 0;
+            font-size: 1.5em;
+            margin-bottom: 15px;
         }
-        .bubble {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            animation: rise 3s infinite;
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
         }
-        @keyframes rise {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-400px); opacity: 0; }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🐟 Fish Feeder Challenge 🐟</h1>
-        <p class="instructions">Drag food to the hungry fish! Feed them quickly to earn bullets!</p>
-        
-        <div class="timer" id="timer">Time: 30s</div>
-        
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
         <div class="stats">
-            <div class="stat">Fed: <span id="fed">0</span>/15</div>
-            <div class="stat">Bullets: <span id="bullets">0</span></div>
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
-        
-        <div class="game-area" id="gameArea"></div>
-        
-        <div class="buttons">
-            <button class="reset-btn" onclick="resetGame()">Reset Game</button>
-            <button class="claim-btn" id="claimBtn" onclick="claimBullets()" disabled>Claim Bullets</button>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
         </div>
+
+        <div class="timer" id="timer">Time: 0:00</div>
+
+        <div class="message" id="message"></div>
+
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        let fed = 0;
-        let bullets = 0;
-        let timeLeft = 30;
-        let gameActive = false;
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
+
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
+        };
+
         let timerInterval;
-        let fish = [];
-        
-        const gameArea = document.getElementById('gameArea');
-        
-        function createBubbles() {
-            for (let i = 0; i < 10; i++) {
-                const bubble = document.createElement('div');
-                bubble.className = 'bubble';
-                bubble.style.left = Math.random() * 100 + '%';
-                bubble.style.animationDelay = Math.random() * 3 + 's';
-                gameArea.appendChild(bubble);
+
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
+                }
+                
+                problems.push({question, answer});
+            }
+            return problems;
+        }
+
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
+            } else {
+                completeChallenge();
             }
         }
-        
-        function createFish() {
-            const fishEl = document.createElement('div');
-            fishEl.className = 'fish';
-            fishEl.style.left = Math.random() * (gameArea.offsetWidth - 60) + 'px';
-            fishEl.style.top = Math.random() * (gameArea.offsetHeight - 40) + 'px';
-            fishEl.dataset.hungry = 'true';
-            gameArea.appendChild(fishEl);
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
             
-            moveFish(fishEl);
-            return fishEl;
-        }
-        
-        function moveFish(fishEl) {
-            setInterval(() => {
-                if (fishEl.dataset.hungry === 'true') {
-                    const newX = Math.random() * (gameArea.offsetWidth - 60);
-                    const newY = Math.random() * (gameArea.offsetHeight - 40);
-                    fishEl.style.left = newX + 'px';
-                    fishEl.style.top = newY + 'px';
-                }
-            }, 2000);
-        }
-        
-        function createFood() {
-            const foods = ['🍕', '🍔', '🌭', '🍟', '🍪'];
-            const food = document.createElement('div');
-            food.className = 'food';
-            food.textContent = foods[Math.floor(Math.random() * foods.length)];
-            food.style.left = Math.random() * (gameArea.offsetWidth - 50) + 'px';
-            food.style.top = '10px';
-            food.draggable = true;
-            
-            food.addEventListener('dragstart', (e) => {
-                e.dataTransfer.effectAllowed = 'move';
-                food.classList.add('dragging');
-            });
-            
-            food.addEventListener('dragend', (e) => {
-                food.classList.remove('dragging');
-                checkFoodCollision(e.clientX, e.clientY, food);
-            });
-            
-            gameArea.appendChild(food);
-        }
-        
-        function checkFoodCollision(x, y, food) {
-            const rect = gameArea.getBoundingClientRect();
-            const relX = x - rect.left;
-            const relY = y - rect.top;
-            
-            fish.forEach(fishEl => {
-                if (fishEl.dataset.hungry === 'true') {
-                    const fishRect = fishEl.getBoundingClientRect();
-                    const fishX = fishRect.left - rect.left;
-                    const fishY = fishRect.top - rect.top;
-                    
-                    if (Math.abs(relX - fishX - 30) < 50 && Math.abs(relY - fishY - 20) < 50) {
-                        feedFish(fishEl, food);
-                    }
-                }
-            });
-        }
-        
-        function feedFish(fishEl, food) {
-            fishEl.dataset.hungry = 'false';
-            fishEl.style.background = '#51CF66';
-            food.remove();
-            
-            fed++;
-            bullets = Math.floor(fed / 3);
-            
-            document.getElementById('fed').textContent = fed;
-            document.getElementById('bullets').textContent = bullets;
-            
-            setTimeout(() => {
-                fishEl.remove();
-                fish = fish.filter(f => f !== fishEl);
-                if (gameActive && fed < 15) {
-                    fish.push(createFish());
-                    createFood();
-                }
-            }, 500);
-            
-            if (fed >= 15) {
-                endGame();
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
+                
+                setTimeout(() => {
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
+            } else {
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
             }
         }
-        
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
         function startTimer() {
             timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
-                
-                if (timeLeft <= 0) {
-                    endGame();
-                }
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
-        
-        function endGame() {
-            gameActive = false;
+
+        async function completeChallenge() {
             clearInterval(timerInterval);
-            document.getElementById('claimBtn').disabled = false;
-        }
-        
-        function resetGame() {
-            gameActive = true;
-            fed = 0;
-            bullets = 0;
-            timeLeft = 30;
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            document.getElementById('fed').textContent = '0';
-            document.getElementById('bullets').textContent = '0';
-            document.getElementById('timer').textContent = 'Time: 30s';
-            document.getElementById('claimBtn').disabled = true;
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
             
-            gameArea.innerHTML = '';
-            fish = [];
-            
-            createBubbles();
-            
-            for (let i = 0; i < 5; i++) {
-                fish.push(createFish());
-                createFood();
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
             }
             
-            clearInterval(timerInterval);
-            startTimer();
+            setTimeout(() => {
+                window.location.href = '../game-board.html';
+            }, 2000);
         }
-        
-        function claimBullets() {
-            alert(`You earned ${bullets} bullets! Returning to game...`);
-            window.location.href = '/';
+
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
+            }
         }
-        
-        gameArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
         });
-        
-        resetGame();
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
+        };
     </script>
 </body>
 </html>
+

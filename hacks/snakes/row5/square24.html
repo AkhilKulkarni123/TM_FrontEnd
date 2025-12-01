@@ -3,336 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 24 - Garden Planter</title>
+    <title>Square 1 - Math Challenge</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            color: white;
         }
+
         .container {
-            background: white;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 800px;
+            padding: 40px;
+            max-width: 600px;
             width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
         h1 {
-            color: #56ab2f;
             text-align: center;
             margin-bottom: 10px;
+            font-size: 2.5em;
         }
-        .instructions {
+
+        .subtitle {
             text-align: center;
-            color: #666;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .challenge-box {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .input-group {
             margin-bottom: 20px;
         }
-        .game-area {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            padding: 20px;
-            background: linear-gradient(180deg, #8B4513 0%, #654321 100%);
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5em;
+            border: none;
             border-radius: 10px;
-            margin: 20px 0;
-        }
-        .plot {
-            aspect-ratio: 1;
-            background: #D2691E;
-            border: 3px solid #8B4513;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            transition: transform 0.2s, background 0.3s;
-            position: relative;
-        }
-        .plot:hover {
-            transform: scale(1.05);
-            background: #CD853F;
-        }
-        .plot.planted {
-            background: #90EE90;
-        }
-        .plot.grown {
-            background: #32CD32;
-            animation: grow 0.5s;
-        }
-        @keyframes grow {
-            0% { transform: scale(0.5); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        .seed-selector {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            padding: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .seed {
-            width: 70px;
-            height: 70px;
-            border: 3px solid #333;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
             background: white;
+            color: #333;
         }
-        .seed:hover {
-            transform: scale(1.1);
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
-        .seed.selected {
-            border-color: #56ab2f;
-            box-shadow: 0 0 15px #56ab2f;
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
         }
-        .seed-icon {
-            font-size: 35px;
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
         }
-        .seed-name {
-            font-size: 10px;
-            margin-top: 2px;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin: 20px 0;
-            font-size: 18px;
-            font-weight: bold;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .stat {
-            background: #f0f0f0;
-            padding: 10px 20px;
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
             border-radius: 10px;
+            min-width: 120px;
         }
-        .buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
+
+        .stat-value {
+            font-size: 2em;
             font-weight: bold;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 5px;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: none;
         }
-        .harvest-btn {
-            background: #FFD93D;
-            color: #333;
+
+        .message.success {
+            background: rgba(67, 233, 123, 0.3);
         }
-        .reset-btn {
-            background: #FF6B6B;
-            color: white;
+
+        .message.error {
+            background: rgba(245, 87, 108, 0.3);
         }
-        .claim-btn {
-            background: #51CF66;
-            color: white;
-        }
-        .claim-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+
         .timer {
             text-align: center;
-            font-size: 16px;
-            color: #56ab2f;
-            font-weight: bold;
-            margin: 10px 0;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌱 Garden Planter Challenge 🌱</h1>
-        <p class="instructions">Plant seeds and watch them grow! Harvest when ready to earn bullets!</p>
-        
-        <div class="seed-selector">
-            <div class="seed selected" data-seed="🌻" data-time="3" onclick="selectSeed('🌻', 3)">
-                <div class="seed-icon">🌻</div>
-                <div class="seed-name">3s</div>
-            </div>
-            <div class="seed" data-seed="🌹" data-time="4" onclick="selectSeed('🌹', 4)">
-                <div class="seed-icon">🌹</div>
-                <div class="seed-name">4s</div>
-            </div>
-            <div class="seed" data-seed="🌷" data-time="5" onclick="selectSeed('🌷', 5)">
-                <div class="seed-icon">🌷</div>
-                <div class="seed-name">5s</div>
-            </div>
-            <div class="seed" data-seed="🌺" data-time="6" onclick="selectSeed('🌺', 6)">
-                <div class="seed-icon">🌺</div>
-                <div class="seed-name">6s</div>
-            </div>
-        </div>
-        
-        <div class="timer" id="timer">Select seeds and plant them!</div>
-        
+        <h1>🎯 Square 1</h1>
+        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+
         <div class="stats">
-            <div class="stat">Planted: <span id="planted">0</span></div>
-            <div class="stat">Harvested: <span id="harvested">0</span>/24</div>
-            <div class="stat">Bullets: <span id="bullets">0</span></div>
+            <div class="stat-item">
+                <div class="stat-label">Problems Solved</div>
+                <div class="stat-value" id="solved">0/5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">💰 Bullets Earned</div>
+                <div class="stat-value" id="bullets">0</div>
+            </div>
         </div>
-        
-        <div class="game-area" id="gameArea"></div>
-        
-        <div class="buttons">
-            <button class="harvest-btn" onclick="harvestAll()">Harvest All Grown</button>
-            <button class="reset-btn" onclick="resetGame()">Reset Garden</button>
-            <button class="claim-btn" id="claimBtn" onclick="claimBullets()" disabled>Claim Bullets</button>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
         </div>
+
+        <div class="timer" id="timer">Time: 0:00</div>
+
+        <div class="message" id="message"></div>
+
+        <div class="challenge-box">
+            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Enter your answer">
+            </div>
+            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        let planted = 0;
-        let harvested = 0;
-        let bullets = 0;
-        let selectedSeed = '🌻';
-        let selectedTime = 3;
-        let plots = [];
-        
-        const gameArea = document.getElementById('gameArea');
-        
-        function selectSeed(seed, time) {
-            selectedSeed = seed;
-            selectedTime = time;
-            document.querySelectorAll('.seed').forEach(el => {
-                el.classList.remove('selected');
-                if (el.dataset.seed === seed) {
-                    el.classList.add('selected');
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
+
+        let gameState = {
+            currentProblem: 0,
+            totalProblems: 5,
+            bulletsEarned: 0,
+            startTime: Date.now(),
+            problems: []
+        };
+
+        let timerInterval;
+
+        function generateProblems() {
+            const problems = [];
+            for (let i = 0; i < 5; i++) {
+                const a = Math.floor(Math.random() * 50) + 1;
+                const b = Math.floor(Math.random() * 50) + 1;
+                const operations = ['+', '-', '*'];
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                
+                let answer;
+                let question;
+                
+                switch(op) {
+                    case '+':
+                        answer = a + b;
+                        question = `${a} + ${b} = ?`;
+                        break;
+                    case '-':
+                        answer = a - b;
+                        question = `${a} - ${b} = ?`;
+                        break;
+                    case '*':
+                        answer = a * b;
+                        question = `${a} × ${b} = ?`;
+                        break;
                 }
-            });
+                
+                problems.push({question, answer});
+            }
+            return problems;
         }
-        
-        function createPlots() {
-            for (let i = 0; i < 24; i++) {
-                const plot = document.createElement('div');
-                plot.className = 'plot';
-                plot.dataset.index = i;
-                plot.addEventListener('click', () => plantSeed(plot, i));
-                gameArea.appendChild(plot);
-                plots.push({ element: plot, planted: false, grown: false });
+
+        function displayProblem() {
+            if (gameState.currentProblem < gameState.totalProblems) {
+                const problem = gameState.problems[gameState.currentProblem];
+                document.getElementById('question').textContent = problem.question;
+                document.getElementById('answer').value = '';
+                document.getElementById('answer').focus();
+            } else {
+                completeChallenge();
             }
         }
-        
-        function plantSeed(plot, index) {
-            if (plots[index].planted) {
-                if (plots[index].grown) {
-                    harvest(plot, index);
-                }
-                return;
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+            
+            if (userAnswer === correctAnswer) {
+                gameState.currentProblem++;
+                gameState.bulletsEarned += 5;
+                showMessage('✓ Correct! +5 bullets', 'success');
+                updateStats();
+                
+                setTimeout(() => {
+                    hideMessage();
+                    displayProblem();
+                }, 1000);
+            } else {
+                showMessage('✗ Wrong answer! Try again', 'error');
+                setTimeout(hideMessage, 2000);
             }
+        }
+
+        function updateStats() {
+            document.getElementById('solved').textContent = 
+                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('bullets').textContent = gameState.bulletsEarned;
             
-            plot.textContent = '🌱';
-            plot.classList.add('planted');
-            plots[index].planted = true;
-            plots[index].seed = selectedSeed;
+            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        async function completeChallenge() {
+            clearInterval(timerInterval);
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            planted++;
-            document.getElementById('planted').textContent = planted;
+            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            
+            try {
+                await fetch(`${API_BASE}/api/game/complete-square`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        square: 1,
+                        bullets: gameState.bulletsEarned,
+                        timeSpent: timeSpent
+                    })
+                });
+            } catch (error) {
+                console.error('Save error:', error);
+            }
             
             setTimeout(() => {
-                growPlant(plot, index);
-            }, selectedTime * 1000);
+                window.location.href = '../game-board.html';
+            }, 2000);
         }
-        
-        function growPlant(plot, index) {
-            if (!plots[index].planted) return;
-            
-            plot.textContent = plots[index].seed;
-            plot.classList.add('grown');
-            plots[index].grown = true;
-        }
-        
-        function harvest(plot, index) {
-            if (!plots[index].grown) return;
-            
-            plot.textContent = '';
-            plot.classList.remove('planted', 'grown');
-            plots[index].planted = false;
-            plots[index].grown = false;
-            
-            harvested++;
-            bullets = Math.floor(harvested / 4);
-            
-            document.getElementById('harvested').textContent = harvested;
-            document.getElementById('bullets').textContent = bullets;
-            
-            if (harvested >= 24) {
-                endGame();
+
+        function returnToBoard() {
+            if (confirm('Leave challenge? Progress will not be saved.')) {
+                window.location.href = '../game-board.html';
             }
         }
-        
-        function harvestAll() {
-            plots.forEach((plot, index) => {
-                if (plot.grown) {
-                    harvest(plot.element, index);
-                }
-            });
-        }
-        
-        function endGame() {
-            document.getElementById('claimBtn').disabled = false;
-            alert(`🎉 Garden complete! You harvested all plants and earned ${bullets} bullets!`);
-        }
-        
-        function resetGame() {
-            plots.forEach((plot) => {
-                plot.element.textContent = '';
-                plot.element.classList.remove('planted', 'grown');
-                plot.planted = false;
-                plot.grown = false;
-            });
-            
-            planted = 0;
-            harvested = 0;
-            bullets = 0;
-            
-            document.getElementById('planted').textContent = '0';
-            document.getElementById('harvested').textContent = '0';
-            document.getElementById('bullets').textContent = '0';
-            document.getElementById('claimBtn').disabled = true;
-        }
-        
-        function claimBullets() {
-            if (bullets === 0) {
-                alert('Harvest more plants to earn bullets!');
-                return;
+
+        document.getElementById('answer').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
             }
-            alert(`You earned ${bullets} bullets! Returning to game...`);
-            window.location.href = '/';
-        }
-        
-        createPlots();
-        
-        setInterval(() => {
-            const growing = plots.filter(p => p.planted && !p.grown).length;
-            if (growing > 0) {
-                document.getElementById('timer').textContent = `🌱 ${growing} plant(s) growing...`;
-            } else {
-                document.getElementById('timer').textContent = 'Plant more seeds or harvest!';
-            }
-        }, 500);
+        });
+
+        window.onload = () => {
+            gameState.problems = generateProblems();
+            displayProblem();
+            updateStats();
+            startTimer();
+        };
     </script>
 </body>
 </html>
+
