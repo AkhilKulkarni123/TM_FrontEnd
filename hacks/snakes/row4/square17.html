@@ -3,355 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 17 - Space Defender</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: white;
+            min-height: 100vh;
         }
-
-        .container {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
+        .game-container {
+            background: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
         h1 {
+            color: #2c5364;
             text-align: center;
             margin-bottom: 10px;
-            font-size: 2.5em;
         }
-
-        .subtitle {
+        .instructions {
             text-align: center;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
+            color: #666;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 14px;
         }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
         .stats {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 2em;
             font-weight: bold;
-            margin-top: 5px;
         }
-
-        .message {
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        #gameCanvas {
+            border: 3px solid #2c5364;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            background: #000814;
+        }
+        .controls {
             text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        #backButton {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: #2c5364;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #backButton:hover {
+            background: #203a43;
+            transform: scale(1.05);
+        }
+        .bullet-reward {
+            background: #4CAF50;
+            color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            display: none;
-        }
-
-        .message.success {
-            background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
-        }
-
-        .timer {
             text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            width: 0%;
-            transition: width 0.3s ease;
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
-
+    <div class="game-container">
+        <h1>🚀 Space Defender</h1>
+        <p class="instructions">Move with WASD/Arrows and press SPACE to shoot! Destroy asteroids before they hit Earth!</p>
+        
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">💰 Bullets Earned</div>
-                <div class="stat-value" id="bullets">0</div>
-            </div>
+            <div class="stat">Score: <span id="score">0</span></div>
+            <div class="stat">Time: <span id="timer">45</span>s</div>
+            <div class="stat">Bullets: <span id="bullets">0</span></div>
         </div>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
-        </div>
-
-        <div class="timer" id="timer">Time: 0:00</div>
-
-        <div class="message" id="message"></div>
-
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
-        </div>
-
-        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
+        <canvas id="gameCanvas" width="500" height="400"></canvas>
+        
+        <div class="controls">Controls: WASD/Arrows to move, SPACE to shoot</div>
+        
+        <div id="reward" class="bullet-reward" style="display: none;"></div>
+        
+        <button id="backButton" onclick="goBack()">Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
-        let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
-            bulletsEarned: 0,
-            startTime: Date.now(),
-            problems: []
+        let score = 0;
+        let bullets = 0;
+        let timeLeft = 45;
+        let gameActive = true;
+        
+        const player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 60,
+            width: 30,
+            height: 40,
+            speed: 6,
+            dx: 0,
+            dy: 0
         };
 
-        let timerInterval;
+        const projectiles = [];
+        const asteroids = [];
+        const explosions = [];
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
-                }
-                
-                problems.push({question, answer});
+        function drawPlayer() {
+            ctx.fillStyle = '#00d4ff';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x, player.y + player.height);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff6b00';
+            ctx.fillRect(player.x + 10, player.y + player.height - 10, 4, 8);
+            ctx.fillRect(player.x + 16, player.y + player.height - 10, 4, 8);
+        }
+
+        function drawProjectile(proj) {
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(proj.x - 2, proj.y, 4, 10);
+        }
+
+        function drawAsteroid(ast) {
+            ctx.fillStyle = ast.color;
+            ctx.beginPath();
+            const points = 8;
+            for (let i = 0; i < points; i++) {
+                const angle = (Math.PI * 2 * i) / points;
+                const radius = ast.size + Math.sin(ast.rotation + i) * 3;
+                const x = ast.x + Math.cos(angle) * radius;
+                const y = ast.y + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             }
-            return problems;
+            ctx.closePath();
+            ctx.fill();
         }
 
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
-            }
+        function shoot() {
+            projectiles.push({
+                x: player.x + player.width / 2,
+                y: player.y,
+                speed: 8
+            });
         }
 
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
-            
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
-            }
+        function createAsteroid() {
+            asteroids.push({
+                x: Math.random() * canvas.width,
+                y: -30,
+                size: 15 + Math.random() * 15,
+                speed: 1 + Math.random() * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.1,
+                color: ['#8b4513', '#a0522d', '#cd853f'][Math.floor(Math.random() * 3)]
+            });
         }
 
-        function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
-            document.getElementById('bullets').textContent = gameState.bulletsEarned;
-            
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
-            document.getElementById('progress').style.width = progress + '%';
-        }
-
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
-        }
-
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        async function completeChallenge() {
-            clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
-            
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
-            
-            try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        square: 1,
-                        bullets: gameState.bulletsEarned,
-                        timeSpent: timeSpent
-                    })
+        function createExplosion(x, y) {
+            for (let i = 0; i < 12; i++) {
+                explosions.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 40,
+                    color: ['#ff6600', '#ffaa00', '#ff0000'][Math.floor(Math.random() * 3)]
                 });
-            } catch (error) {
-                console.error('Save error:', error);
+            }
+        }
+
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                projectiles[i].y -= projectiles[i].speed;
+                
+                if (projectiles[i].y < 0) {
+                    projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateAsteroids() {
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const ast = asteroids[i];
+                ast.y += ast.speed;
+                ast.rotation += ast.rotSpeed;
+                
+                if (ast.y > canvas.height + 30) {
+                    asteroids.splice(i, 1);
+                    continue;
+                }
+
+                for (let j = projectiles.length - 1; j >= 0; j--) {
+                    const proj = projectiles[j];
+                    const dist = Math.hypot(proj.x - ast.x, proj.y - ast.y);
+                    
+                    if (dist < ast.size) {
+                        createExplosion(ast.x, ast.y);
+                        score += 15;
+                        asteroids.splice(i, 1);
+                        projectiles.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function updateExplosions() {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const exp = explosions[i];
+                exp.x += exp.vx;
+                exp.y += exp.vy;
+                exp.life--;
+                
+                if (exp.life <= 0) {
+                    explosions.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = exp.life / 40;
+                    ctx.fillStyle = exp.color;
+                    ctx.beginPath();
+                    ctx.arc(exp.x, exp.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        function movePlayer() {
+            player.x += player.dx;
+            player.y += player.dy;
+            
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000814';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < 50; i++) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
             }
             
-            setTimeout(() => {
-                window.location.href = '../game-board.html';
-            }, 2000);
+            drawPlayer();
+            projectiles.forEach(drawProjectile);
+            asteroids.forEach(drawAsteroid);
+            updateExplosions();
         }
 
-        function returnToBoard() {
-            if (confirm('Leave challenge? Progress will not be saved.')) {
-                window.location.href = '../game-board.html';
+        function update() {
+            if (!gameActive) return;
+            
+            movePlayer();
+            updateProjectiles();
+            updateAsteroids();
+            draw();
+            
+            document.getElementById('score').textContent = score;
+            bullets = Math.floor(score / 25);
+            document.getElementById('bullets').textContent = bullets;
+            
+            requestAnimationFrame(update);
+        }
+
+        let keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            if (e.key === ' ') {
+                e.preventDefault();
+                shoot();
             }
-        }
+            
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) player.dx = player.speed;
+            else if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.dx = -player.speed;
+            else player.dx = 0;
+            
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) player.dy = player.speed;
+            else if (keys['ArrowUp'] || keys['w'] || keys['W']) player.dy = -player.speed;
+            else player.dy = 0;
+        });
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            
+            if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') ||
+                (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A')) {
+                player.dx = 0;
+            }
+            
+            if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') ||
+                (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W')) {
+                player.dy = 0;
             }
         });
 
-        window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
-            startTimer();
-        };
+        setInterval(() => {
+            if (gameActive) createAsteroid();
+        }, 1200);
+
+        const timerInterval = setInterval(() => {
+            if (gameActive && timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft === 0) {
+                    endGame();
+                }
+            }
+        }, 1000);
+
+        function endGame() {
+            gameActive = false;
+            const reward = document.getElementById('reward');
+            reward.style.display = 'block';
+            reward.textContent = `Mission Complete! You earned ${bullets} bullets for the boss battle!`;
+            
+            localStorage.setItem('gameBullets', bullets);
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        update();
     </script>
 </body>
 </html>

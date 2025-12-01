@@ -3,355 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 18 - Block Breaker</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: white;
+            min-height: 100vh;
         }
-
-        .container {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
+        .game-container {
+            background: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
         h1 {
+            color: #fc4a1a;
             text-align: center;
             margin-bottom: 10px;
-            font-size: 2.5em;
         }
-
-        .subtitle {
+        .instructions {
             text-align: center;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
+            color: #666;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 14px;
         }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
         .stats {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 2em;
             font-weight: bold;
-            margin-top: 5px;
         }
-
-        .message {
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        #gameCanvas {
+            border: 3px solid #fc4a1a;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            background: #2d2d2d;
+            cursor: none;
+        }
+        .controls {
             text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        #backButton {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: #fc4a1a;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #backButton:hover {
+            background: #f7b733;
+            transform: scale(1.05);
+        }
+        .bullet-reward {
+            background: #4CAF50;
+            color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            display: none;
-        }
-
-        .message.success {
-            background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
-        }
-
-        .timer {
             text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            width: 0%;
-            transition: width 0.3s ease;
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
-
+    <div class="game-container">
+        <h1>🧱 Block Breaker</h1>
+        <p class="instructions">Move your mouse to control the paddle and break all the blocks!</p>
+        
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">💰 Bullets Earned</div>
-                <div class="stat-value" id="bullets">0</div>
-            </div>
+            <div class="stat">Score: <span id="score">0</span></div>
+            <div class="stat">Lives: <span id="lives">3</span></div>
+            <div class="stat">Bullets: <span id="bullets">0</span></div>
         </div>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
-        </div>
-
-        <div class="timer" id="timer">Time: 0:00</div>
-
-        <div class="message" id="message"></div>
-
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
-        </div>
-
-        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
+        <canvas id="gameCanvas" width="500" height="400"></canvas>
+        
+        <div class="controls">Move your mouse to control the paddle</div>
+        
+        <div id="reward" class="bullet-reward" style="display: none;"></div>
+        
+        <button id="backButton" onclick="goBack()">Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
-        let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
-            bulletsEarned: 0,
-            startTime: Date.now(),
-            problems: []
+        let score = 0;
+        let bullets = 0;
+        let lives = 3;
+        let gameActive = true;
+        
+        const paddle = {
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 30,
+            width: 100,
+            height: 15,
+            speed: 8
         };
 
-        let timerInterval;
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 8,
+            dx: 4,
+            dy: -4,
+            speed: 4
+        };
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
+        const blocks = [];
+        const blockRows = 5;
+        const blockCols = 8;
+        const blockWidth = 55;
+        const blockHeight = 20;
+        const blockPadding = 5;
+        const blockOffsetTop = 40;
+        const blockOffsetLeft = 20;
+
+        const particles = [];
+
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8'];
+
+        function initBlocks() {
+            for (let row = 0; row < blockRows; row++) {
+                for (let col = 0; col < blockCols; col++) {
+                    blocks.push({
+                        x: blockOffsetLeft + col * (blockWidth + blockPadding),
+                        y: blockOffsetTop + row * (blockHeight + blockPadding),
+                        width: blockWidth,
+                        height: blockHeight,
+                        color: colors[row % colors.length],
+                        visible: true
+                    });
                 }
-                
-                problems.push({question, answer});
-            }
-            return problems;
-        }
-
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
             }
         }
 
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
-            
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
-            }
+        function drawPaddle() {
+            const gradient = ctx.createLinearGradient(paddle.x, 0, paddle.x + paddle.width, 0);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
         }
 
-        function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
-            document.getElementById('bullets').textContent = gameState.bulletsEarned;
-            
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
-            document.getElementById('progress').style.width = progress + '%';
+        function drawBall() {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffdd00';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         }
 
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
+        function drawBlocks() {
+            blocks.forEach(block => {
+                if (block.visible) {
+                    ctx.fillStyle = block.color;
+                    ctx.fillRect(block.x, block.y, block.width, block.height);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(block.x, block.y, block.width, block.height);
+                }
+            });
         }
 
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        async function completeChallenge() {
-            clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
-            
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
-            
-            try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        square: 1,
-                        bullets: gameState.bulletsEarned,
-                        timeSpent: timeSpent
-                    })
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 30,
+                    color: color
                 });
-            } catch (error) {
-                console.error('Save error:', error);
             }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3;
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life / 30;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx = -ball.dx;
+            }
+
+            if (ball.y - ball.radius < 0) {
+                ball.dy = -ball.dy;
+            }
+
+            if (ball.y + ball.radius > canvas.height) {
+                lives--;
+                document.getElementById('lives').textContent = lives;
+                
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    resetBall();
+                }
+            }
+
+            if (ball.y + ball.radius > paddle.y &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width &&
+                ball.dy > 0) {
+                
+                let hitPos = (ball.x - paddle.x) / paddle.width;
+                ball.dx = (hitPos - 0.5) * 8;
+                ball.dy = -ball.dy;
+                
+                createParticles(ball.x, ball.y, '#667eea');
+            }
+
+            blocks.forEach(block => {
+                if (block.visible) {
+                    if (ball.x + ball.radius > block.x &&
+                        ball.x - ball.radius < block.x + block.width &&
+                        ball.y + ball.radius > block.y &&
+                        ball.y - ball.radius < block.y + block.height) {
+                        
+                        ball.dy = -ball.dy;
+                        block.visible = false;
+                        score += 10;
+                        createParticles(block.x + block.width / 2, block.y + block.height / 2, block.color);
+                        
+                        if (blocks.every(b => !b.visible)) {
+                            endGame();
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * 4;
+            ball.dy = -4;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#2d2d2d';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            setTimeout(() => {
-                window.location.href = '../game-board.html';
-            }, 2000);
+            drawPaddle();
+            drawBall();
+            drawBlocks();
+            updateParticles();
         }
 
-        function returnToBoard() {
-            if (confirm('Leave challenge? Progress will not be saved.')) {
-                window.location.href = '../game-board.html';
-            }
+        function update() {
+            if (!gameActive) return;
+            
+            moveBall();
+            draw();
+            
+            document.getElementById('score').textContent = score;
+            bullets = Math.floor(score / 30);
+            document.getElementById('bullets').textContent = bullets;
+            
+            requestAnimationFrame(update);
         }
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            paddle.x = e.clientX - rect.left - paddle.width / 2;
+            
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) {
+                paddle.x = canvas.width - paddle.width;
             }
         });
 
-        window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
-            startTimer();
-        };
+        function endGame() {
+            gameActive = false;
+            const reward = document.getElementById('reward');
+            reward.style.display = 'block';
+            
+            if (lives > 0) {
+                reward.textContent = `Amazing! All blocks destroyed! You earned ${bullets} bullets!`;
+            } else {
+                reward.textContent = `Game Over! You earned ${bullets} bullets for the boss battle!`;
+            }
+            
+            localStorage.setItem('gameBullets', bullets);
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        initBlocks();
+        update();
     </script>
 </body>
 </html>

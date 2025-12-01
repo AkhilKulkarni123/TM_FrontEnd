@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 10 - Platform Jumper</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
@@ -43,62 +43,6 @@
             opacity: 0.9;
             margin-bottom: 30px;
             font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .stats {
@@ -128,6 +72,50 @@
             margin-top: 5px;
         }
 
+        .game-area {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvas {
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .message {
             text-align: center;
             padding: 15px;
@@ -139,10 +127,6 @@
 
         .message.success {
             background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
         }
 
         .timer {
@@ -170,13 +154,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+        <h1>🎯 Square 10</h1>
+        <div class="subtitle">Platform Jumper - Collect coins and reach the flag!</div>
 
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
+                <div class="stat-label">Coins Collected</div>
+                <div class="stat-value" id="coins">0/10</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">💰 Bullets Earned</div>
@@ -192,98 +176,218 @@
 
         <div class="message" id="message"></div>
 
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
+        <div class="game-area">
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <div class="controls">
+                Arrow Keys or A/D to move | Space or W to jump
             </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
         </div>
 
         <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const API_BASE = 'http://localhost:8587';
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
         let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
+            coinsCollected: 0,
+            totalCoins: 10,
             bulletsEarned: 0,
             startTime: Date.now(),
-            problems: []
+            completed: false
         };
 
-        let timerInterval;
+        const player = {
+            x: 50,
+            y: 300,
+            width: 30,
+            height: 30,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 5,
+            jumpPower: 12,
+            onGround: false
+        };
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
-                }
-                
-                problems.push({question, answer});
-            }
-            return problems;
+        const gravity = 0.5;
+        const keys = {};
+
+        const platforms = [
+            { x: 0, y: 370, width: 200, height: 30 },
+            { x: 250, y: 320, width: 150, height: 20 },
+            { x: 450, y: 270, width: 150, height: 20 },
+            { x: 350, y: 220, width: 100, height: 20 },
+            { x: 150, y: 170, width: 120, height: 20 },
+            { x: 320, y: 120, width: 150, height: 20 },
+            { x: 500, y: 170, width: 100, height: 20 },
+            { x: 0, y: 250, width: 100, height: 20 }
+        ];
+
+        const coins = [
+            { x: 120, y: 330, collected: false },
+            { x: 320, y: 280, collected: false },
+            { x: 520, y: 230, collected: false },
+            { x: 400, y: 180, collected: false },
+            { x: 210, y: 130, collected: false },
+            { x: 390, y: 80, collected: false },
+            { x: 550, y: 130, collected: false },
+            { x: 50, y: 210, collected: false },
+            { x: 480, y: 320, collected: false },
+            { x: 270, y: 370, collected: false }
+        ];
+
+        const flag = { x: 550, y: 130, width: 40, height: 50 };
+
+        let timerInterval;
+        let gameInterval;
+
+        function drawPlayer() {
+            // Player body
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
+            ctx.fillRect(player.x + 16, player.y + 8, 6, 6);
+            
+            // Pupils
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x + 10, player.y + 10, 2, 2);
+            ctx.fillRect(player.x + 18, player.y + 10, 2, 2);
         }
 
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
+        function drawPlatforms() {
+            platforms.forEach(platform => {
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                ctx.strokeStyle = '#229954';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    ctx.fillStyle = '#f39c12';
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#f1c40f';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawFlag() {
+            // Pole
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(flag.x, flag.y, 5, flag.height);
+            
+            // Flag
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.moveTo(flag.x + 5, flag.y);
+            ctx.lineTo(flag.x + 40, flag.y + 15);
+            ctx.lineTo(flag.x + 5, flag.y + 30);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function updatePlayer() {
+            // Horizontal movement
+            if (keys['ArrowLeft'] || keys['a']) {
+                player.velocityX = -player.speed;
+            } else if (keys['ArrowRight'] || keys['d']) {
+                player.velocityX = player.speed;
             } else {
+                player.velocityX = 0;
+            }
+
+            // Jump
+            if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.onGround) {
+                player.velocityY = -player.jumpPower;
+                player.onGround = false;
+            }
+
+            // Apply gravity
+            player.velocityY += gravity;
+            
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Boundary checks
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // Platform collision
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.velocityY >= 0) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                }
+            });
+
+            // Coin collection
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    const dx = player.x + player.width/2 - coin.x;
+                    const dy = player.y + player.height/2 - coin.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (distance < 20) {
+                        coin.collected = true;
+                        gameState.coinsCollected++;
+                        gameState.bulletsEarned += 4;
+                        updateStats();
+                    }
+                }
+            });
+
+            // Flag collision (win condition)
+            if (player.x + player.width > flag.x &&
+                player.x < flag.x + flag.width &&
+                player.y + player.height > flag.y &&
+                player.y < flag.y + flag.height) {
                 completeChallenge();
             }
+
+            // Fall off screen
+            if (player.y > canvas.height) {
+                player.x = 50;
+                player.y = 300;
+                player.velocityY = 0;
+            }
         }
 
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
-            }
+            drawPlatforms();
+            drawCoins();
+            drawFlag();
+            updatePlayer();
+            drawPlayer();
         }
 
         function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('coins').textContent = 
+                `${gameState.coinsCollected}/${gameState.totalCoins}`;
             document.getElementById('bullets').textContent = gameState.bulletsEarned;
             
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            const progress = (gameState.coinsCollected / gameState.totalCoins) * 100;
             document.getElementById('progress').style.width = progress + '%';
         }
 
@@ -309,10 +413,24 @@
         }
 
         async function completeChallenge() {
+            if (gameState.completed) return;
+            gameState.completed = true;
             clearInterval(timerInterval);
+            clearInterval(gameInterval);
+            
             const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            // Completion bonus
+            gameState.bulletsEarned += 20;
+            
+            // Bonus for collecting all coins
+            if (gameState.coinsCollected === gameState.totalCoins) {
+                gameState.bulletsEarned += 15;
+            }
+            
+            updateStats();
+            
+            showMessage('🎉 Level Complete! Returning to board...', 'success');
             
             try {
                 await fetch(`${API_BASE}/api/game/complete-square`, {
@@ -320,7 +438,7 @@
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
                     body: JSON.stringify({
-                        square: 1,
+                        square: 10,
                         bullets: gameState.bulletsEarned,
                         timeSpent: timeSpent
                     })
@@ -340,16 +458,20 @@
             }
         }
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
             }
         });
 
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
         window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
+            gameInterval = setInterval(gameLoop, 1000 / 60);
             startTimer();
         };
     </script>

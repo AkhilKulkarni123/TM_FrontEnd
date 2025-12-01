@@ -3,355 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 5 - Pattern Builder</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: white;
+            min-height: 100vh;
         }
-
-        .container {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
+        .game-container {
+            background: white;
             border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 700px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
         h1 {
             text-align: center;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-
-        .subtitle {
-            text-align: center;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: #a8edea;
             margin-bottom: 10px;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .stats {
+        .game-stats {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 2em;
             font-weight: bold;
-            margin-top: 5px;
         }
-
-        .message {
-            text-align: center;
-            padding: 15px;
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            display: none;
         }
-
-        .message.success {
-            background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
-        }
-
-        .timer {
-            text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            overflow: hidden;
+        .bullets { color: #ff6b6b; }
+        .round { color: #4ecdc4; }
+        .timer { color: #f39c12; }
+        .pattern-section {
             margin-bottom: 20px;
         }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            width: 0%;
-            transition: width 0.3s ease;
+        .section-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 350px;
+            margin: 0 auto 20px;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .grid-cell {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .target-cell {
+            cursor: default;
+        }
+        .player-cell {
+            cursor: pointer;
+            background: white;
+            border: 2px solid #ddd;
+        }
+        .player-cell:hover {
+            transform: scale(1.05);
+            border-color: #a8edea;
+        }
+        .player-cell.filled {
+            border-color: #4ecdc4;
+        }
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        .color-option.selected {
+            border-color: #333;
+            transform: scale(1.15);
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            background: #a8edea;
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #fed6e3;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            color: #a8edea;
+            font-weight: bold;
+            min-height: 30px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
-
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">💰 Bullets Earned</div>
-                <div class="stat-value" id="bullets">0</div>
-            </div>
+    <div class="game-container">
+        <h1>🎨 Pattern Builder Challenge</h1>
+        <div class="instructions">
+            Recreate the pattern shown above! Complete 5 rounds to win bullets!
         </div>
-
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
+        
+        <div class="game-stats">
+            <div class="stat bullets">💣 Bullets: <span id="bullets">0</span></div>
+            <div class="stat round">🎯 Round: <span id="round">0</span>/5</div>
+            <div class="stat timer">⏱️ Time: <span id="timer">30</span>s</div>
         </div>
-
-        <div class="timer" id="timer">Time: 0:00</div>
-
-        <div class="message" id="message"></div>
-
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        
+        <div class="pattern-section">
+            <div class="section-title">🎯 Target Pattern</div>
+            <div class="grid" id="targetGrid"></div>
         </div>
-
-        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
+        
+        <div class="pattern-section">
+            <div class="section-title">🖌️ Your Pattern</div>
+            <div class="color-palette" id="colorPalette"></div>
+            <div class="grid" id="playerGrid"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startGame()">Start Game</button>
+            <button id="checkBtn" onclick="checkPattern()" style="display:none;">Check Pattern</button>
+            <button id="clearBtn" onclick="clearPlayerGrid()" style="display:none;">Clear Grid</button>
+            <button id="resetBtn" onclick="resetGame()" style="display:none;">Play Again</button>
+        </div>
+        
+        <div id="message" class="message"></div>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const colors = ['#ff6b6b', '#4ecdc4', '#95e77d', '#ffd93d', '#a8edea', '#fed6e3', '#c44569', '#f8b500'];
+        const gridSize = 5;
+        let gameActive = false;
+        let bullets = 0;
+        let round = 0;
+        let timeLeft = 30;
+        let selectedColor = null;
+        let targetPattern = [];
+        let playerPattern = [];
+        let gameTimer;
         
-        let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
-            bulletsEarned: 0,
-            startTime: Date.now(),
-            problems: []
-        };
-
-        let timerInterval;
-
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
-                }
-                
-                problems.push({question, answer});
-            }
-            return problems;
-        }
-
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
-            }
-        }
-
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+        function initGrids() {
+            const targetGrid = document.getElementById('targetGrid');
+            const playerGrid = document.getElementById('playerGrid');
+            targetGrid.innerHTML = '';
+            playerGrid.innerHTML = '';
             
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const targetCell = document.createElement('div');
+                targetCell.className = 'grid-cell target-cell';
+                targetCell.id = `target-${i}`;
+                targetGrid.appendChild(targetCell);
+                
+                const playerCell = document.createElement('div');
+                playerCell.className = 'grid-cell player-cell';
+                playerCell.id = `player-${i}`;
+                playerCell.onclick = () => fillCell(i);
+                playerGrid.appendChild(playerCell);
+            }
+        }
+        
+        function initColorPalette() {
+            const palette = document.getElementById('colorPalette');
+            palette.innerHTML = '';
+            
+            colors.forEach((color, index) => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'color-option';
+                colorDiv.style.background = color;
+                colorDiv.onclick = () => selectColor(color, colorDiv);
+                colorDiv.id = `color-${index}`;
+                palette.appendChild(colorDiv);
+            });
+        }
+        
+        function selectColor(color, element) {
+            document.querySelectorAll('.color-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedColor = color;
+        }
+        
+        function startGame() {
+            gameActive = true;
+            round = 0;
+            bullets = 0;
+            timeLeft = 30;
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('clearBtn').style.display = 'inline-block';
+            document.getElementById('message').textContent = '';
+            
+            initGrids();
+            initColorPalette();
+            updateStats();
+            nextRound();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
                 updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
-            document.getElementById('bullets').textContent = gameState.bulletsEarned;
-            
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
-            document.getElementById('progress').style.width = progress + '%';
-        }
-
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
-        }
-
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
             }, 1000);
         }
-
-        async function completeChallenge() {
-            clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
-            
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
-            
-            try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        square: 1,
-                        bullets: gameState.bulletsEarned,
-                        timeSpent: timeSpent
-                    })
-                });
-            } catch (error) {
-                console.error('Save error:', error);
-            }
-            
-            setTimeout(() => {
-                window.location.href = '../game-board.html';
-            }, 2000);
-        }
-
-        function returnToBoard() {
-            if (confirm('Leave challenge? Progress will not be saved.')) {
-                window.location.href = '../game-board.html';
-            }
-        }
-
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
-        });
-
-        window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
+        
+        function nextRound() {
+            round++;
+            timeLeft = 30;
             updateStats();
-            startTimer();
-        };
+            
+            generatePattern();
+            clearPlayerGrid();
+            
+            document.getElementById('message').textContent = '';
+        }
+        
+        function generatePattern() {
+            targetPattern = [];
+            playerPattern = Array(gridSize * gridSize).fill(null);
+            
+            const numFilledCells = 5 + round * 2;
+            const indices = [];
+            
+            while (indices.length < numFilledCells) {
+                const index = Math.floor(Math.random() * (gridSize * gridSize));
+                if (!indices.includes(index)) {
+                    indices.push(index);
+                }
+            }
+            
+            indices.forEach(index => {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                targetPattern[index] = color;
+                document.getElementById(`target-${index}`).style.background = color;
+            });
+            
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                if (!targetPattern[i]) {
+                    document.getElementById(`target-${i}`).style.background = 'white';
+                }
+            }
+        }
+        
+        function fillCell(index) {
+            if (!gameActive || !selectedColor) return;
+            
+            playerPattern[index] = selectedColor;
+            const cell = document.getElementById(`player-${index}`);
+            cell.style.background = selectedColor;
+            cell.classList.add('filled');
+        }
+        
+        function clearPlayerGrid() {
+            playerPattern = Array(gridSize * gridSize).fill(null);
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cell = document.getElementById(`player-${i}`);
+                cell.style.background = 'white';
+                cell.classList.remove('filled');
+            }
+        }
+        
+        function checkPattern() {
+            if (!gameActive) return;
+            
+            let correct = true;
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                if (targetPattern[i] !== playerPattern[i]) {
+                    correct = false;
+                    break;
+                }
+            }
+            
+            if (correct) {
+                if (round >= 5) {
+                    endGame(true);
+                } else {
+                    document.getElementById('message').textContent = '✅ Perfect! Get ready for the next round...';
+                    setTimeout(nextRound, 2000);
+                }
+            } else {
+                document.getElementById('message').textContent = '❌ Not quite right. Keep trying!';
+                setTimeout(() => {
+                    document.getElementById('message').textContent = '';
+                }, 2000);
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('bullets').textContent = bullets;
+            document.getElementById('round').textContent = round;
+            document.getElementById('timer').textContent = timeLeft;
+        }
+        
+        function endGame(won) {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            if (won) {
+                bullets = 3;
+                document.getElementById('message').textContent = '🎉 Incredible! You completed all 5 rounds! +3 Bullets!';
+            } else {
+                bullets = Math.max(1, round - 1);
+                document.getElementById('message').textContent = `⏰ Time's up! You completed ${round - 1} rounds. +${bullets} Bullets!`;
+            }
+            
+            updateStats();
+            document.getElementById('checkBtn').style.display = 'none';
+            document.getElementById('clearBtn').style.display = 'none';
+            document.getElementById('resetBtn').style.display = 'inline-block';
+        }
+        
+        function resetGame() {
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('resetBtn').style.display = 'none';
+            document.getElementById('message').textContent = '';
+            
+            const targetGrid = document.getElementById('targetGrid');
+            const playerGrid = document.getElementById('playerGrid');
+            targetGrid.innerHTML = '';
+            playerGrid.innerHTML = '';
+            
+            round = 0;
+            bullets = 0;
+            timeLeft = 30;
+            updateStats();
+        }
     </script>
 </body>
 </html>

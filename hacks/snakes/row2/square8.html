@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 8 - Memory Match</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
@@ -43,62 +43,6 @@
             opacity: 0.9;
             margin-bottom: 30px;
             font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .stats {
@@ -128,6 +72,101 @@
             margin-top: 5px;
         }
 
+        .game-area {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card.flipped {
+            background: white;
+            color: #333;
+        }
+
+        .card.matched {
+            background: #27ae60;
+            color: white;
+            cursor: default;
+            animation: match 0.5s ease;
+        }
+
+        .card.wrong {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes match {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 2em;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .message {
             text-align: center;
             padding: 15px;
@@ -139,10 +178,6 @@
 
         .message.success {
             background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
         }
 
         .timer {
@@ -170,17 +205,21 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+        <h1>🎯 Square 8</h1>
+        <div class="subtitle">Memory Match - Find all pairs!</div>
 
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
+                <div class="stat-label">Pairs Found</div>
+                <div class="stat-value" id="pairs">0/8</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">💰 Bullets Earned</div>
                 <div class="stat-value" id="bullets">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Moves</div>
+                <div class="stat-value" id="moves">0</div>
             </div>
         </div>
 
@@ -192,98 +231,122 @@
 
         <div class="message" id="message"></div>
 
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        <div class="game-area">
+            <div class="card-grid" id="cardGrid"></div>
         </div>
 
         <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const API_BASE = 'http://localhost:8587';
+        
+        const emojis = ['🎮', '🎯', '🎨', '🎭', '🎪', '🎸', '🎺', '🎲'];
         
         let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            totalPairs: 8,
             bulletsEarned: 0,
+            moves: 0,
             startTime: Date.now(),
-            problems: []
+            completed: false,
+            canFlip: true
         };
 
         let timerInterval;
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
-                }
-                
-                problems.push({question, answer});
-            }
-            return problems;
-        }
-
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
-            }
-        }
-
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+        function createCards() {
+            const cardPairs = [...emojis, ...emojis];
+            cardPairs.sort(() => Math.random() - 0.5);
             
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+            
+            cardPairs.forEach((emoji, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.emoji = emoji;
+                card.dataset.index = index;
+                
+                const back = document.createElement('div');
+                back.className = 'card-back';
+                back.textContent = '?';
+                card.appendChild(back);
+                
+                card.addEventListener('click', () => flipCard(card));
+                grid.appendChild(card);
+                gameState.cards.push(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (!gameState.canFlip || card.classList.contains('flipped') || 
+                card.classList.contains('matched') || gameState.completed) {
+                return;
+            }
+
+            card.classList.add('flipped');
+            card.querySelector('.card-back').style.display = 'none';
+            card.textContent = card.dataset.emoji;
+            gameState.flippedCards.push(card);
+
+            if (gameState.flippedCards.length === 2) {
+                gameState.canFlip = false;
+                gameState.moves++;
                 updateStats();
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = gameState.flippedCards;
+            
+            if (card1.dataset.emoji === card2.dataset.emoji) {
+                // Match!
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    gameState.matchedPairs++;
+                    gameState.bulletsEarned += 5;
+                    
+                    updateStats();
+                    gameState.flippedCards = [];
+                    gameState.canFlip = true;
+                    
+                    if (gameState.matchedPairs === gameState.totalPairs) {
+                        completeChallenge();
+                    }
+                }, 500);
+            } else {
+                // No match
+                card1.classList.add('wrong');
+                card2.classList.add('wrong');
                 
                 setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
+                    card1.classList.remove('flipped', 'wrong');
+                    card2.classList.remove('flipped', 'wrong');
+                    card1.querySelector('.card-back').style.display = 'flex';
+                    card2.querySelector('.card-back').style.display = 'flex';
+                    card1.textContent = '';
+                    card2.textContent = '';
+                    card1.appendChild(card1.querySelector('.card-back'));
+                    card2.appendChild(card2.querySelector('.card-back'));
+                    
+                    gameState.flippedCards = [];
+                    gameState.canFlip = true;
                 }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
             }
         }
 
         function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('pairs').textContent = 
+                `${gameState.matchedPairs}/${gameState.totalPairs}`;
             document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            document.getElementById('moves').textContent = gameState.moves;
             
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            const progress = (gameState.matchedPairs / gameState.totalPairs) * 100;
             document.getElementById('progress').style.width = progress + '%';
         }
 
@@ -309,10 +372,21 @@
         }
 
         async function completeChallenge() {
+            if (gameState.completed) return;
+            gameState.completed = true;
             clearInterval(timerInterval);
+            
             const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            // Bonus for efficiency
+            if (gameState.moves <= 12) gameState.bulletsEarned += 20;
+            else if (gameState.moves <= 16) gameState.bulletsEarned += 15;
+            else if (gameState.moves <= 20) gameState.bulletsEarned += 10;
+            else gameState.bulletsEarned += 5;
+            
+            updateStats();
+            
+            showMessage('🎉 All Pairs Found! Returning to board...', 'success');
             
             try {
                 await fetch(`${API_BASE}/api/game/complete-square`, {
@@ -320,7 +394,7 @@
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
                     body: JSON.stringify({
-                        square: 1,
+                        square: 8,
                         bullets: gameState.bulletsEarned,
                         timeSpent: timeSpent
                     })
@@ -340,16 +414,8 @@
             }
         }
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
-        });
-
         window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
+            createCards();
             startTimer();
         };
     </script>

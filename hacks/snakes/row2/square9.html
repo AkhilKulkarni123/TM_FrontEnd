@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 9 - Speed Typer</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
@@ -43,62 +43,6 @@
             opacity: 0.9;
             margin-bottom: 30px;
             font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .stats {
@@ -128,6 +72,81 @@
             margin-top: 5px;
         }
 
+        .game-area {
+            background: rgba(255,255,255,0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .word-display {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            letter-spacing: 2px;
+        }
+
+        .word-display .correct {
+            color: #27ae60;
+        }
+
+        .word-display .incorrect {
+            color: #e74c3c;
+        }
+
+        .word-display .pending {
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #43e97b;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .message {
             text-align: center;
             padding: 15px;
@@ -139,10 +158,6 @@
 
         .message.success {
             background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
         }
 
         .timer {
@@ -166,21 +181,32 @@
             width: 0%;
             transition: width 0.3s ease;
         }
+
+        .instructions {
+            text-align: center;
+            margin-top: 15px;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
+        <h1>⌨️ Square 9</h1>
+        <div class="subtitle">Speed Typer - Type 15 words correctly!</div>
 
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
+                <div class="stat-label">Words Typed</div>
+                <div class="stat-value" id="words">0/15</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">💰 Bullets Earned</div>
                 <div class="stat-value" id="bullets">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">WPM</div>
+                <div class="stat-value" id="wpm">0</div>
             </div>
         </div>
 
@@ -192,98 +218,120 @@
 
         <div class="message" id="message"></div>
 
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
+        <div class="game-area">
+            <div class="word-display" id="wordDisplay">javascript</div>
+            <input type="text" id="typingInput" placeholder="Start typing..." autocomplete="off">
+            <div class="instructions">Type the word exactly as shown and press Enter</div>
         </div>
 
         <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const API_BASE = 'http://localhost:8587';
+        
+        const wordList = [
+            'javascript', 'python', 'coding', 'algorithm', 'function',
+            'variable', 'database', 'computer', 'program', 'software',
+            'developer', 'keyboard', 'terminal', 'command', 'debug',
+            'compile', 'execute', 'syntax', 'boolean', 'integer',
+            'string', 'array', 'object', 'method', 'class'
+        ];
         
         let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
+            currentWord: '',
+            wordsTyped: 0,
+            totalWords: 15,
+            correctChars: 0,
             bulletsEarned: 0,
             startTime: Date.now(),
-            problems: []
+            firstKeyPressed: false,
+            completed: false
         };
 
         let timerInterval;
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
-                
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
-                }
-                
-                problems.push({question, answer});
-            }
-            return problems;
+        function getRandomWord() {
+            return wordList[Math.floor(Math.random() * wordList.length)];
         }
 
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
-            }
+        function displayNewWord() {
+            gameState.currentWord = getRandomWord();
+            document.getElementById('wordDisplay').innerHTML = 
+                `<span class="pending">${gameState.currentWord}</span>`;
+            document.getElementById('typingInput').value = '';
         }
 
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
+        function updateWordDisplay(typed) {
+            const word = gameState.currentWord;
+            let html = '';
             
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
+            for (let i = 0; i < word.length; i++) {
+                if (i < typed.length) {
+                    if (typed[i] === word[i]) {
+                        html += `<span class="correct">${word[i]}</span>`;
+                    } else {
+                        html += `<span class="incorrect">${word[i]}</span>`;
+                    }
+                } else {
+                    html += `<span class="pending">${word[i]}</span>`;
+                }
             }
+            
+            document.getElementById('wordDisplay').innerHTML = html;
+        }
+
+        const typingInput = document.getElementById('typingInput');
+
+        typingInput.addEventListener('input', (e) => {
+            if (!gameState.firstKeyPressed) {
+                gameState.firstKeyPressed = true;
+                gameState.startTime = Date.now();
+                startTimer();
+            }
+
+            const typed = e.target.value;
+            updateWordDisplay(typed);
+        });
+
+        typingInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const typed = typingInput.value;
+                
+                if (typed === gameState.currentWord) {
+                    gameState.wordsTyped++;
+                    gameState.correctChars += typed.length;
+                    gameState.bulletsEarned += 3;
+                    
+                    updateStats();
+                    
+                    if (gameState.wordsTyped >= gameState.totalWords) {
+                        completeChallenge();
+                    } else {
+                        displayNewWord();
+                    }
+                } else {
+                    typingInput.style.borderColor = '#e74c3c';
+                    setTimeout(() => {
+                        typingInput.style.borderColor = 'rgba(255,255,255,0.3)';
+                    }, 500);
+                }
+            }
+        });
+
+        function calculateWPM() {
+            const minutes = (Date.now() - gameState.startTime) / 60000;
+            if (minutes === 0) return 0;
+            return Math.round((gameState.correctChars / 5) / minutes);
         }
 
         function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
+            document.getElementById('words').textContent = 
+                `${gameState.wordsTyped}/${gameState.totalWords}`;
             document.getElementById('bullets').textContent = gameState.bulletsEarned;
+            document.getElementById('wpm').textContent = calculateWPM();
             
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
+            const progress = (gameState.wordsTyped / gameState.totalWords) * 100;
             document.getElementById('progress').style.width = progress + '%';
         }
 
@@ -305,14 +353,28 @@
                 const seconds = elapsed % 60;
                 document.getElementById('timer').textContent = 
                     `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                updateStats(); // Update WPM continuously
             }, 1000);
         }
 
         async function completeChallenge() {
+            if (gameState.completed) return;
+            gameState.completed = true;
             clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
             
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const wpm = calculateWPM();
+            
+            // WPM bonus
+            if (wpm >= 60) gameState.bulletsEarned += 20;
+            else if (wpm >= 45) gameState.bulletsEarned += 15;
+            else if (wpm >= 30) gameState.bulletsEarned += 10;
+            else gameState.bulletsEarned += 5;
+            
+            updateStats();
+            
+            showMessage(`🎉 Challenge Complete! ${wpm} WPM! Returning to board...`, 'success');
             
             try {
                 await fetch(`${API_BASE}/api/game/complete-square`, {
@@ -320,7 +382,7 @@
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
                     body: JSON.stringify({
-                        square: 1,
+                        square: 9,
                         bullets: gameState.bulletsEarned,
                         timeSpent: timeSpent
                     })
@@ -340,17 +402,9 @@
             }
         }
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
-        });
-
         window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
-            startTimer();
+            displayNewWord();
+            typingInput.focus();
         };
     </script>
 </body>

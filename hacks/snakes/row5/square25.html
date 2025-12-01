@@ -3,355 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 25 - Potion Mixer</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #6B0F5C 0%, #A81F8C 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: white;
         }
-
         .container {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-
-        .subtitle {
-            text-align: center;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
             background: white;
-            color: #333;
-        }
-
-        .btn {
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
             width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        }
+        h1 {
+            color: #6B0F5C;
+            text-align: center;
             margin-bottom: 10px;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
         }
-
-        .btn-secondary {
+        .game-area {
+            display: flex;
+            gap: 20px;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .ingredients-section {
+            flex: 1;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #6B0F5C;
+        }
+        .ingredients-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #6B0F5C;
+        }
+        .ingredient {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+        .ingredient:hover {
+            transform: scale(1.05);
+            border-color: #6B0F5C;
+        }
+        .ingredient.used {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .cauldron-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .cauldron {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(180deg, #333 0%, #555 100%);
+            border-radius: 0 0 100px 100px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+            border: 5px solid #222;
+        }
+        .potion-liquid {
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(180deg, #9D50BB 0%, #6E48AA 100%);
+            transition: height 0.5s, background 0.5s;
+            position: relative;
+            border-radius: 0 0 95px 95px;
+        }
+        .potion-liquid::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 20px;
             background: rgba(255,255,255,0.3);
-            color: white;
+            top: 0;
+            animation: bubble 2s infinite;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        @keyframes bubble {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
         }
-
+        .recipe-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: #FFF9E6;
+            border-radius: 10px;
+            border: 2px dashed #6B0F5C;
+            text-align: center;
+        }
+        .recipe-title {
+            font-weight: bold;
+            color: #6B0F5C;
+            margin-bottom: 10px;
+        }
+        .recipe-items {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            font-size: 24px;
+        }
+        .current-mix {
+            margin-top: 15px;
+            padding: 10px;
+            background: #E6F7FF;
+            border-radius: 8px;
+            min-height: 30px;
+            text-align: center;
+        }
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 2em;
+            margin: 20px 0;
+            font-size: 18px;
             font-weight: bold;
-            margin-top: 5px;
         }
-
-        .message {
-            text-align: center;
-            padding: 15px;
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            display: none;
         }
-
-        .message.success {
-            background: rgba(67, 233, 123, 0.3);
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
         }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .timer {
-            text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 15px;
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 20px;
+        .brew-btn {
+            background: #9D50BB;
+            color: white;
         }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            width: 0%;
-            transition: width 0.3s ease;
+        .brew-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .clear-btn {
+            background: #FFD93D;
+            color: #333;
+        }
+        .reset-btn {
+            background: #FF6B6B;
+            color: white;
+        }
+        .claim-btn {
+            background: #51CF66;
+            color: white;
+        }
+        .claim-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
-
+        <h1>🧪 Potion Mixer Challenge 🧪</h1>
+        <p class="instructions">Mix ingredients to match the recipe! Complete potions to earn bullets!</p>
+        
+        <div class="recipe-display">
+            <div class="recipe-title">Target Recipe:</div>
+            <div class="recipe-items" id="targetRecipe"></div>
+        </div>
+        
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
+            <div class="stat">Potions Made: <span id="potions">0</span>/10</div>
+            <div class="stat">Bullets: <span id="bullets">0</span></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="ingredients-section">
+                <div class="ingredients-title">Available Ingredients</div>
+                <div id="ingredientsList"></div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">💰 Bullets Earned</div>
-                <div class="stat-value" id="bullets">0</div>
+            
+            <div class="cauldron-section">
+                <div class="cauldron">
+                    <div class="potion-liquid" id="potionLiquid"></div>
+                </div>
+                <div class="current-mix">
+                    <strong>Current Mix:</strong>
+                    <div id="currentMix">Empty cauldron</div>
+                </div>
+                <div class="buttons" style="margin-top: 15px;">
+                    <button class="brew-btn" id="brewBtn" onclick="brewPotion()" disabled>Brew Potion!</button>
+                    <button class="clear-btn" onclick="clearCauldron()">Clear Cauldron</button>
+                </div>
             </div>
         </div>
-
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
+        
+        <div class="buttons">
+            <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+            <button class="claim-btn" id="claimBtn" onclick="claimBullets()" disabled>Claim Bullets</button>
         </div>
-
-        <div class="timer" id="timer">Time: 0:00</div>
-
-        <div class="message" id="message"></div>
-
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
-        </div>
-
-        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const allIngredients = [
+            { emoji: '🍄', name: 'Mushroom' },
+            { emoji: '🌿', name: 'Herb' },
+            { emoji: '⭐', name: 'Star Dust' },
+            { emoji: '🦎', name: 'Lizard Tail' },
+            { emoji: '🕷️', name: 'Spider' },
+            { emoji: '🌙', name: 'Moon Stone' },
+        ];
         
-        let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
-            bulletsEarned: 0,
-            startTime: Date.now(),
-            problems: []
-        };
-
-        let timerInterval;
-
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
+        let potionsMade = 0;
+        let bullets = 0;
+        let currentRecipe = [];
+        let currentMix = [];
+        let usedIngredients = [];
+        
+        function generateRecipe() {
+            const count = 3;
+            currentRecipe = [];
+            for (let i = 0; i < count; i++) {
+                const ingredient = allIngredients[Math.floor(Math.random() * allIngredients.length)];
+                currentRecipe.push(ingredient);
+            }
+            displayRecipe();
+        }
+        
+        function displayRecipe() {
+            const recipeEl = document.getElementById('targetRecipe');
+            recipeEl.innerHTML = currentRecipe.map(ing => ing.emoji).join(' + ');
+        }
+        
+        function createIngredientsList() {
+            const list = document.getElementById('ingredientsList');
+            list.innerHTML = '';
+            
+            allIngredients.forEach((ing, index) => {
+                const div = document.createElement('div');
+                div.className = 'ingredient';
+                div.innerHTML = `<span>${ing.emoji}</span><span>${ing.name}</span>`;
+                div.dataset.index = index;
                 
-                let answer;
-                let question;
-                
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
+                if (usedIngredients.includes(index)) {
+                    div.classList.add('used');
+                } else {
+                    div.addEventListener('click', () => addIngredient(ing, index));
                 }
                 
-                problems.push({question, answer});
-            }
-            return problems;
+                list.appendChild(div);
+            });
         }
-
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
+        
+        function addIngredient(ingredient, index) {
+            if (currentMix.length >= 3) {
+                alert('Cauldron is full! Brew or clear it first.');
+                return;
             }
-        }
-
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
             
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
+            currentMix.push(ingredient);
+            usedIngredients.push(index);
+            updateCauldron();
+            createIngredientsList();
+        }
+        
+        function updateCauldron() {
+            const mixEl = document.getElementById('currentMix');
+            const liquidEl = document.getElementById('potionLiquid');
+            
+            if (currentMix.length === 0) {
+                mixEl.textContent = 'Empty cauldron';
+                liquidEl.style.height = '0%';
+            } else {
+                mixEl.innerHTML = currentMix.map(ing => ing.emoji).join(' + ');
+                liquidEl.style.height = (currentMix.length * 33) + '%';
+            }
+            
+            document.getElementById('brewBtn').disabled = currentMix.length !== 3;
+        }
+        
+        function clearCauldron() {
+            currentMix = [];
+            usedIngredients = [];
+            updateCauldron();
+            createIngredientsList();
+        }
+        
+        function brewPotion() {
+            const match = currentMix.length === currentRecipe.length &&
+                currentMix.every((ing, i) => ing.emoji === currentRecipe[i].emoji);
+            
+            if (match) {
+                potionsMade++;
+                bullets = Math.floor(potionsMade / 2);
+                
+                document.getElementById('potions').textContent = potionsMade;
+                document.getElementById('bullets').textContent = bullets;
+                
+                const liquidEl = document.getElementById('potionLiquid');
+                liquidEl.style.background = 'linear-gradient(180deg, #51CF66 0%, #2EA043 100%)';
                 
                 setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
+                    liquidEl.style.background = 'linear-gradient(180deg, #9D50BB 0%, #6E48AA 100%)';
+                    clearCauldron();
+                    
+                    if (potionsMade >= 10) {
+                        endGame();
+                    } else {
+                        generateRecipe();
+                    }
                 }, 1000);
             } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
+                const liquidEl = document.getElementById('potionLiquid');
+                liquidEl.style.background = 'linear-gradient(180deg, #FF6B6B 0%, #CC0000 100%)';
+                
+                setTimeout(() => {
+                    liquidEl.style.background = 'linear-gradient(180deg, #9D50BB 0%, #6E48AA 100%)';
+                    clearCauldron();
+                }, 1000);
+                
+                alert('❌ Wrong recipe! Try again!');
             }
         }
-
-        function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
-            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+        
+        function endGame() {
+            document.getElementById('claimBtn').disabled = false;
+            alert(`🎉 All potions brewed! You earned ${bullets} bullets!`);
+        }
+        
+        function resetGame() {
+            potionsMade = 0;
+            bullets = 0;
             
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
-            document.getElementById('progress').style.width = progress + '%';
-        }
-
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
-        }
-
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        async function completeChallenge() {
-            clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+            document.getElementById('potions').textContent = '0';
+            document.getElementById('bullets').textContent = '0';
+            document.getElementById('claimBtn').disabled = true;
             
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
-            
-            try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        square: 1,
-                        bullets: gameState.bulletsEarned,
-                        timeSpent: timeSpent
-                    })
-                });
-            } catch (error) {
-                console.error('Save error:', error);
+            clearCauldron();
+            generateRecipe();
+        }
+        
+        function claimBullets() {
+            if (bullets === 0) {
+                alert('Brew more potions to earn bullets!');
+                return;
             }
-            
-            setTimeout(() => {
-                window.location.href = '../game-board.html';
-            }, 2000);
+            alert(`You earned ${bullets} bullets! Returning to game...`);
+            window.location.href = '/';
         }
-
-        function returnToBoard() {
-            if (confirm('Leave challenge? Progress will not be saved.')) {
-                window.location.href = '../game-board.html';
-            }
-        }
-
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
-        });
-
-        window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
-            startTimer();
-        };
+        
+        generateRecipe();
+        createIngredientsList();
     </script>
 </body>
 </html>

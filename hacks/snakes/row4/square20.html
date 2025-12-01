@@ -3,355 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square 1 - Math Challenge</title>
+    <title>Square 20 - Dino Jump</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            color: white;
+            min-height: 100vh;
         }
-
-        .container {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
+        .game-container {
+            background: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
         h1 {
+            color: #ee0979;
             text-align: center;
             margin-bottom: 10px;
-            font-size: 2.5em;
         }
-
-        .subtitle {
+        .instructions {
             text-align: center;
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .challenge-box {
-            background: rgba(255,255,255,0.2);
-            padding: 30px;
-            border-radius: 15px;
+            color: #666;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 14px;
         }
-
-        .question {
-            font-size: 2em;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            color: #333;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
         .stats {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 2em;
             font-weight: bold;
-            margin-top: 5px;
         }
-
-        .message {
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        #gameCanvas {
+            border: 3px solid #ee0979;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            background: #f7f7f7;
+        }
+        .controls {
             text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        #backButton {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: #ee0979;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #backButton:hover {
+            background: #ff6a00;
+            transform: scale(1.05);
+        }
+        .bullet-reward {
+            background: #4CAF50;
+            color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            display: none;
-        }
-
-        .message.success {
-            background: rgba(67, 233, 123, 0.3);
-        }
-
-        .message.error {
-            background: rgba(245, 87, 108, 0.3);
-        }
-
-        .timer {
             text-align: center;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            width: 0%;
-            transition: width 0.3s ease;
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Square 1</h1>
-        <div class="subtitle">Math Challenge - Solve 5 problems!</div>
-
+    <div class="game-container">
+        <h1>🦖 Dino Jump</h1>
+        <p class="instructions">Press SPACE or UP ARROW to jump! Avoid the cacti and flying birds!</p>
+        
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Problems Solved</div>
-                <div class="stat-value" id="solved">0/5</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">💰 Bullets Earned</div>
-                <div class="stat-value" id="bullets">0</div>
-            </div>
+            <div class="stat">Score: <span id="score">0</span></div>
+            <div class="stat">High Score: <span id="highscore">0</span></div>
+            <div class="stat">Bullets: <span id="bullets">0</span></div>
         </div>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
-        </div>
-
-        <div class="timer" id="timer">Time: 0:00</div>
-
-        <div class="message" id="message"></div>
-
-        <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
-            <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
-            </div>
-            <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
-        </div>
-
-        <button class="btn btn-secondary" onclick="returnToBoard()">← Back to Board</button>
+        <canvas id="gameCanvas" width="500" height="200"></canvas>
+        
+        <div class="controls">Press SPACE or UP ARROW to jump</div>
+        
+        <div id="reward" class="bullet-reward" style="display: none;"></div>
+        
+        <button id="backButton" onclick="goBack()">Back to Board</button>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8587';  // For local development
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
-        let gameState = {
-            currentProblem: 0,
-            totalProblems: 5,
-            bulletsEarned: 0,
-            startTime: Date.now(),
-            problems: []
+        let score = 0;
+        let highScore = 0;
+        let bullets = 0;
+        let gameActive = true;
+        let gameSpeed = 5;
+        let frameCount = 0;
+        
+        const dino = {
+            x: 50,
+            y: canvas.height - 80,
+            width: 40,
+            height: 50,
+            dy: 0,
+            jumpPower: -12,
+            gravity: 0.6,
+            isJumping: false,
+            legPos: 0
         };
 
-        let timerInterval;
+        const ground = canvas.height - 30;
+        const obstacles = [];
+        const clouds = [];
+        const particles = [];
 
-        function generateProblems() {
-            const problems = [];
-            for (let i = 0; i < 5; i++) {
-                const a = Math.floor(Math.random() * 50) + 1;
-                const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
-                const op = operations[Math.floor(Math.random() * operations.length)];
+        function drawDino() {
+            ctx.fillStyle = '#4CAF50';
+            
+            ctx.fillRect(dino.x + 10, dino.y, 20, 30);
+            ctx.fillRect(dino.x + 20, dino.y - 10, 20, 15);
+            ctx.fillRect(dino.x + 10, dino.y + 30, 8, 20);
+            ctx.fillRect(dino.x + 22, dino.y + 30, 8, 20);
+            
+            if (!dino.isJumping) {
+                if (dino.legPos < 5) {
+                    ctx.fillRect(dino.x + 10, dino.y + 30, 8, 20);
+                    ctx.fillRect(dino.x + 22, dino.y + 35, 8, 15);
+                } else {
+                    ctx.fillRect(dino.x + 10, dino.y + 35, 8, 15);
+                    ctx.fillRect(dino.x + 22, dino.y + 30, 8, 20);
+                }
+            }
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(dino.x + 25, dino.y - 5, 5, 5);
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(dino.x + 27, dino.y - 3, 2, 2);
+        }
+
+        function drawGround() {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, ground);
+            ctx.lineTo(canvas.width, ground);
+            ctx.stroke();
+            
+            for (let i = 0; i < canvas.width; i += 40) {
+                const offset = (frameCount * gameSpeed) % 40;
+                ctx.fillStyle = '#bbb';
+                ctx.fillRect(i - offset, ground + 2, 20, 3);
+            }
+        }
+
+        function createObstacle() {
+            const types = ['cactus', 'bird'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            obstacles.push({
+                x: canvas.width,
+                y: type === 'cactus' ? ground - 40 : ground - 80,
+                width: type === 'cactus' ? 20 : 35,
+                height: type === 'cactus' ? 40 : 25,
+                type: type,
+                wingPos: 0
+            });
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                if (obs.type === 'cactus') {
+                    ctx.fillStyle = '#2d5016';
+                    ctx.fillRect(obs.x, obs.y, 15, obs.height);
+                    ctx.fillRect(obs.x - 5, obs.y + 10, 10, 15);
+                    ctx.fillRect(obs.x + 15, obs.y + 15, 10, 10);
+                } else {
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(obs.x + 5, obs.y + 10, 25, 10);
+                    
+                    ctx.fillStyle = '#a0522d';
+                    if (obs.wingPos < 5) {
+                        ctx.fillRect(obs.x, obs.y + 5, 15, 8);
+                        ctx.fillRect(obs.x + 20, obs.y + 5, 15, 8);
+                    } else {
+                        ctx.fillRect(obs.x, obs.y + 15, 15, 8);
+                        ctx.fillRect(obs.x + 20, obs.y + 15, 15, 8);
+                    }
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(obs.x + 10, obs.y + 12, 3, 3);
+                }
+            });
+        }
+
+        function createCloud() {
+            clouds.push({
+                x: canvas.width,
+                y: Math.random() * 80 + 20,
+                speed: 1 + Math.random()
+            });
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, 15, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 15, cloud.y, 20, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 30, cloud.y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function updateClouds() {
+            for (let i = clouds.length - 1; i >= 0; i--) {
+                clouds[i].x -= clouds[i].speed;
+                if (clouds[i].x < -50) {
+                    clouds.splice(i, 1);
+                }
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 1) * 8,
+                    life: 30,
+                    color: `hsl(${Math.random() * 60}, 80%, 60%)`
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.4;
+                p.life--;
                 
-                let answer;
-                let question;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life / 30;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        function jump() {
+            if (!dino.isJumping) {
+                dino.dy = dino.jumpPower;
+                dino.isJumping = true;
+            }
+        }
+
+        function updateDino() {
+            dino.dy += dino.gravity;
+            dino.y += dino.dy;
+            
+            if (dino.y >= canvas.height - 80) {
+                dino.y = canvas.height - 80;
+                dino.dy = 0;
+                dino.isJumping = false;
+            }
+            
+            if (!dino.isJumping && frameCount % 5 === 0) {
+                dino.legPos = (dino.legPos + 1) % 10;
+            }
+        }
+
+        function updateObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= gameSpeed;
                 
-                switch(op) {
-                    case '+':
-                        answer = a + b;
-                        question = `${a} + ${b} = ?`;
-                        break;
-                    case '-':
-                        answer = a - b;
-                        question = `${a} - ${b} = ?`;
-                        break;
-                    case '*':
-                        answer = a * b;
-                        question = `${a} × ${b} = ?`;
-                        break;
+                if (obs.type === 'bird') {
+                    obs.wingPos = (obs.wingPos + 1) % 10;
                 }
                 
-                problems.push({question, answer});
-            }
-            return problems;
-        }
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    continue;
+                }
 
-        function displayProblem() {
-            if (gameState.currentProblem < gameState.totalProblems) {
-                const problem = gameState.problems[gameState.currentProblem];
-                document.getElementById('question').textContent = problem.question;
-                document.getElementById('answer').value = '';
-                document.getElementById('answer').focus();
-            } else {
-                completeChallenge();
-            }
-        }
-
-        function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            const correctAnswer = gameState.problems[gameState.currentProblem].answer;
-            
-            if (userAnswer === correctAnswer) {
-                gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
-                updateStats();
-                
-                setTimeout(() => {
-                    hideMessage();
-                    displayProblem();
-                }, 1000);
-            } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
-                setTimeout(hideMessage, 2000);
+                if (dino.x < obs.x + obs.width &&
+                    dino.x + dino.width > obs.x &&
+                    dino.y < obs.y + obs.height &&
+                    dino.y + dino.height > obs.y) {
+                    endGame();
+                }
             }
         }
 
-        function updateStats() {
-            document.getElementById('solved').textContent = 
-                `${gameState.currentProblem}/${gameState.totalProblems}`;
-            document.getElementById('bullets').textContent = gameState.bulletsEarned;
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const progress = (gameState.currentProblem / gameState.totalProblems) * 100;
-            document.getElementById('progress').style.width = progress + '%';
+            drawClouds();
+            drawGround();
+            drawDino();
+            drawObstacles();
+            updateParticles();
         }
 
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
-        }
-
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        async function completeChallenge() {
-            clearInterval(timerInterval);
-            const timeSpent = Math.floor((Date.now() - gameState.startTime) / 1000);
+        function update() {
+            if (!gameActive) return;
             
-            showMessage('🎉 Challenge Complete! Returning to board...', 'success');
+            frameCount++;
+            updateDino();
+            updateObstacles();
+            updateClouds();
+            draw();
             
-            try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        square: 1,
-                        bullets: gameState.bulletsEarned,
-                        timeSpent: timeSpent
-                    })
-                });
-            } catch (error) {
-                console.error('Save error:', error);
+            if (frameCount % 100 === 0) {
+                createObstacle();
             }
             
-            setTimeout(() => {
-                window.location.href = '../game-board.html';
-            }, 2000);
-        }
-
-        function returnToBoard() {
-            if (confirm('Leave challenge? Progress will not be saved.')) {
-                window.location.href = '../game-board.html';
+            if (frameCount % 150 === 0) {
+                createCloud();
             }
+            
+            if (frameCount % 500 === 0) {
+                gameSpeed = Math.min(gameSpeed + 0.5, 10);
+            }
+            
+            document.getElementById('score').textContent = score;
+            bullets = Math.floor(score / 50);
+            document.getElementById('bullets').textContent = bullets;
+            
+            requestAnimationFrame(update);
         }
 
-        document.getElementById('answer').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkAnswer();
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                jump();
             }
         });
 
-        window.onload = () => {
-            gameState.problems = generateProblems();
-            displayProblem();
-            updateStats();
-            startTimer();
-        };
+        canvas.addEventListener('click', jump);
+
+        function endGame() {
+            gameActive = false;
+            
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById('highscore').textContent = highScore;
+            }
+            
+            const reward = document.getElementById('reward');
+            reward.style.display = 'block';
+            reward.textContent = `Game Over! You earned ${bullets} bullets for the boss battle!`;
+            
+            localStorage.setItem('gameBullets', bullets);
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        createCloud();
+        createCloud();
+        update();
     </script>
 </body>
 </html>
