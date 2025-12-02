@@ -1,0 +1,243 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lights Out</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+
+    .grid {
+      display: inline-grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .cell.off {
+      background: #2c3e50;
+      box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .cell.on {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      transform: scale(1.05);
+    }
+
+    .cell:hover {
+      transform: scale(1.1);
+      filter: brightness(1.1);
+    }
+
+    .cell.on:hover {
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+    }
+
+    button {
+      padding: 12px 30px;
+      font-size: 1.1em;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .win-message {
+      margin-top: 20px;
+      font-size: 1.5em;
+      color: #27ae60;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .win-message.show {
+      opacity: 1;
+    }
+
+    .moves {
+      margin-top: 15px;
+      font-size: 1.1em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔆 Lights Out 🔆</h1>
+    <p class="subtitle">Turn off all the lights to win!</p>
+    
+    <div class="grid" id="grid"></div>
+    
+    <button onclick="resetGame()">Reset Game</button>
+    
+    <div class="moves" id="moves">Moves: 0</div>
+    <div class="win-message" id="winMessage">🎉 You Win! 🎉</div>
+  </div>
+
+  <script>
+    const GRID_SIZE = 3;
+    let grid = [];
+    let moveCount = 0;
+
+    // Initialize the grid
+    function initGrid() {
+      grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
+      moveCount = 0;
+      updateMoveCount();
+      hideWinMessage();
+      renderGrid();
+      randomizeGrid();
+    }
+
+    // Render the grid in the DOM
+    function renderGrid() {
+      const gridElement = document.getElementById('grid');
+      gridElement.innerHTML = '';
+      
+      for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+          const cell = document.createElement('div');
+          cell.className = `cell ${grid[row][col] ? 'on' : 'off'}`;
+          cell.onclick = () => handleCellClick(row, col);
+          gridElement.appendChild(cell);
+        }
+      }
+    }
+
+    // Handle cell click
+    function handleCellClick(row, col) {
+      if (isWinCondition()) return; // Prevent clicks after winning
+      
+      // Toggle the clicked cell
+      toggleCell(row, col);
+      
+      // Toggle neighbors (up, down, left, right)
+      if (row > 0) toggleCell(row - 1, col); // Up
+      if (row < GRID_SIZE - 1) toggleCell(row + 1, col); // Down
+      if (col > 0) toggleCell(row, col - 1); // Left
+      if (col < GRID_SIZE - 1) toggleCell(row, col + 1); // Right
+      
+      moveCount++;
+      updateMoveCount();
+      renderGrid();
+      checkWin();
+    }
+
+    // Toggle a single cell
+    function toggleCell(row, col) {
+      grid[row][col] = !grid[row][col];
+    }
+
+    // Randomize the starting pattern
+    function randomizeGrid() {
+      // Perform random clicks to create a solvable puzzle
+      const numClicks = Math.floor(Math.random() * 10) + 5;
+      for (let i = 0; i < numClicks; i++) {
+        const row = Math.floor(Math.random() * GRID_SIZE);
+        const col = Math.floor(Math.random() * GRID_SIZE);
+        
+        toggleCell(row, col);
+        if (row > 0) toggleCell(row - 1, col);
+        if (row < GRID_SIZE - 1) toggleCell(row + 1, col);
+        if (col > 0) toggleCell(row, col - 1);
+        if (col < GRID_SIZE - 1) toggleCell(row, col + 1);
+      }
+      
+      renderGrid();
+    }
+
+    // Check if all lights are off
+    function isWinCondition() {
+      return grid.every(row => row.every(cell => !cell));
+    }
+
+    // Check for win and display message
+    function checkWin() {
+      if (isWinCondition()) {
+        showWinMessage();
+      }
+    }
+
+    // Show win message
+    function showWinMessage() {
+      document.getElementById('winMessage').classList.add('show');
+    }
+
+    // Hide win message
+    function hideWinMessage() {
+      document.getElementById('winMessage').classList.remove('show');
+    }
+
+    // Update move counter
+    function updateMoveCount() {
+      document.getElementById('moves').textContent = `Moves: ${moveCount}`;
+    }
+
+    // Reset the game
+    function resetGame() {
+      initGrid();
+    }
+
+    // Initialize game on load
+    initGrid();
+  </script>
+</body>
+</html>
