@@ -288,7 +288,7 @@ async function rollDice() {
     diceAnim.classList.remove('hidden');
 
     // Simulate rolling
-    const roll = Math.floor(Math.random() * 6) + 1;
+    const roll = Math.floor(Math.random() * 5) + 1;
 
     setTimeout(async () => {
         document.querySelector('.dice-result').textContent = `You rolled a ${roll}!`;
