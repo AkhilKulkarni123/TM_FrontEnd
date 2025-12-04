@@ -23,19 +23,32 @@
         }
 
         .container {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
             max-width: 600px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
             text-align: center;
             margin-bottom: 10px;
             font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .subtitle {
@@ -46,24 +59,34 @@
         }
 
         .challenge-box {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 30px;
             border-radius: 15px;
             margin-bottom: 20px;
             text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .challenge-box:hover {
+            transform: translateY(-2px);
         }
 
         .question {
             font-size: 2em;
             margin-bottom: 20px;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .input-group {
             margin-bottom: 20px;
         }
 
-        input[type="number"], input[type="text"] {
+        input[type="number"] {
             width: 100%;
             padding: 15px;
             font-size: 1.5em;
@@ -72,6 +95,20 @@
             text-align: center;
             background: white;
             color: #333;
+            transition: all 0.3s ease;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+            transform: scale(1.02);
         }
 
         .btn {
@@ -92,13 +129,23 @@
         }
 
         .btn-secondary {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
             color: white;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .stats {
@@ -111,10 +158,15 @@
 
         .stat-item {
             text-align: center;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 15px 20px;
             border-radius: 10px;
             min-width: 120px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.05);
         }
 
         .stat-label {
@@ -126,6 +178,7 @@
             font-size: 2em;
             font-weight: bold;
             margin-top: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .message {
@@ -135,36 +188,144 @@
             margin-bottom: 15px;
             font-size: 1.1em;
             display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message.success {
             background: rgba(67, 233, 123, 0.3);
+            border: 2px solid rgba(67, 233, 123, 0.5);
         }
 
         .message.error {
             background: rgba(245, 87, 108, 0.3);
+            border: 2px solid rgba(245, 87, 108, 0.5);
         }
 
         .timer {
             text-align: center;
             font-size: 1.5em;
             margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .progress-bar {
             width: 100%;
             height: 10px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 5px;
             overflow: hidden;
             margin-bottom: 20px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(67, 233, 123, 0.5);
+        }
+
+        .combo-tracker {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: none;
+            animation: pulse 0.5s ease;
+        }
+
+        .combo-tracker.active {
+            display: block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .combo-fire {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ff6b00;
+        }
+
+        .particles {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .particle {
+            position: absolute;
+            font-size: 24px;
+            animation: float-up 1s ease-out forwards;
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        .streak-indicator {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        .streak-indicator.active {
+            display: block;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+            to { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+
+        .bonus-text {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .question {
+                font-size: 1.5em;
+            }
+
+            input[type="number"] {
+                font-size: 1.2em;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
@@ -190,12 +351,21 @@
 
         <div class="timer" id="timer">Time: 0:00</div>
 
+        <div class="combo-tracker" id="comboTracker">
+            <span class="combo-fire">🔥 Streak: <span id="comboCount">0</span> 🔥</span>
+        </div>
+
+        <div class="streak-indicator" id="streakBonus">
+            <span class="bonus-text">⚡ STREAK BONUS ACTIVE! ⚡</span><br>
+            <span style="font-size: 0.9em;">Earn +2 bullets per correct answer!</span>
+        </div>
+
         <div class="message" id="message"></div>
 
         <div class="challenge-box">
-            <div class="question" id="question">10 + 15 = ?</div>
+            <div class="question" id="question">Loading...</div>
             <div class="input-group">
-                <input type="number" id="answer" placeholder="Enter your answer">
+                <input type="number" id="answer" placeholder="Enter your answer" aria-label="Answer input">
             </div>
             <button class="btn btn-primary" onclick="checkAnswer()">✓ Submit Answer</button>
         </div>
@@ -204,28 +374,32 @@
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';  // For local development
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8587' 
+            : 'https://tm-flask-backend.onrender.com';
 
         let gameState = {
             currentProblem: 0,
             totalProblems: 5,
             bulletsEarned: 0,
             startTime: Date.now(),
-            problems: []
+            problems: [],
+            streak: 0,
+            streakBonus: false
         };
 
         let timerInterval;
 
         function generateProblems() {
             const problems = [];
+            const operations = ['+', '-', '*'];
+            
             for (let i = 0; i < 5; i++) {
                 const a = Math.floor(Math.random() * 50) + 1;
                 const b = Math.floor(Math.random() * 50) + 1;
-                const operations = ['+', '-', '*'];
                 const op = operations[Math.floor(Math.random() * operations.length)];
                 
-                let answer;
-                let question;
+                let answer, question;
                 
                 switch(op) {
                     case '+':
@@ -242,8 +416,9 @@
                         break;
                 }
                 
-                problems.push({question, answer});
+                problems.push({ question, answer });
             }
+            
             return problems;
         }
 
@@ -259,21 +434,53 @@
         }
 
         function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
+            const answerInput = document.getElementById('answer');
+            const userAnswer = parseInt(answerInput.value);
+            
+            if (isNaN(userAnswer)) {
+                showMessage('⚠️ Please enter a valid number', 'error');
+                setTimeout(hideMessage, 2000);
+                return;
+            }
+            
             const correctAnswer = gameState.problems[gameState.currentProblem].answer;
             
             if (userAnswer === correctAnswer) {
                 gameState.currentProblem++;
-                gameState.bulletsEarned += 5;
-                showMessage('✓ Correct! +5 bullets', 'success');
+                gameState.streak++;
+                
+                // Calculate bullets with streak bonus
+                let bulletsEarned = 5;
+                if (gameState.streak >= 3) {
+                    gameState.streakBonus = true;
+                    bulletsEarned = 7; // 5 base + 2 bonus
+                }
+                
+                gameState.bulletsEarned += bulletsEarned;
+                
+                // Show appropriate message
+                let message = `✓ Correct! +${bulletsEarned} bullets`;
+                if (gameState.streakBonus) {
+                    message += ' 🔥';
+                }
+                
+                showMessage(message, 'success');
                 updateStats();
+                updateStreak();
+                createParticles(bulletsEarned);
                 
                 setTimeout(() => {
                     hideMessage();
                     displayProblem();
                 }, 1000);
             } else {
-                showMessage('✗ Wrong answer! Try again', 'error');
+                // Reset streak on wrong answer
+                gameState.streak = 0;
+                gameState.streakBonus = false;
+                updateStreak();
+                
+                showMessage('✗ Wrong answer! Streak reset!', 'error');
+                answerInput.value = '';
                 setTimeout(hideMessage, 2000);
             }
         }
@@ -287,6 +494,45 @@
             document.getElementById('progress').style.width = progress + '%';
         }
 
+        function updateStreak() {
+            const comboTracker = document.getElementById('comboTracker');
+            const comboCount = document.getElementById('comboCount');
+            const streakBonus = document.getElementById('streakBonus');
+            
+            if (gameState.streak > 0) {
+                comboTracker.classList.add('active');
+                comboCount.textContent = gameState.streak;
+                
+                // Show streak bonus indicator when streak >= 3
+                if (gameState.streakBonus) {
+                    streakBonus.classList.add('active');
+                } else {
+                    streakBonus.classList.remove('active');
+                }
+            } else {
+                comboTracker.classList.remove('active');
+                streakBonus.classList.remove('active');
+            }
+        }
+
+        function createParticles(bullets) {
+            const container = document.querySelector('.container');
+            const rect = container.getBoundingClientRect();
+            const particleCount = gameState.streakBonus ? 8 : 5;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = gameState.streakBonus ? '🔥' : '💰';
+                particle.style.left = (rect.left + rect.width / 2 + (Math.random() - 0.5) * 100) + 'px';
+                particle.style.top = (rect.top + rect.height / 2) + 'px';
+                
+                document.body.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
         function showMessage(text, type) {
             const messageEl = document.getElementById('message');
             messageEl.textContent = text;
@@ -295,7 +541,8 @@
         }
 
         function hideMessage() {
-            document.getElementById('message').style.display = 'none';
+            const messageEl = document.getElementById('message');
+            messageEl.style.display = 'none';
         }
 
         function startTimer() {
@@ -315,9 +562,9 @@
             showMessage('🎉 Challenge Complete! Returning to board...', 'success');
             
             try {
-                await fetch(`${API_BASE}/api/game/complete-square`, {
+                const response = await fetch(`${API_BASE}/api/game/complete-square`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
                         square: 1,
@@ -325,6 +572,10 @@
                         timeSpent: timeSpent
                     })
                 });
+                
+                if (!response.ok) {
+                    console.error('Failed to save progress:', response.status);
+                }
             } catch (error) {
                 console.error('Save error:', error);
             }
@@ -336,6 +587,7 @@
 
         function returnToBoard() {
             if (confirm('Leave challenge? Progress will not be saved.')) {
+                clearInterval(timerInterval);
                 window.location.href = '../game-board.html';
             }
         }
@@ -355,4 +607,3 @@
     </script>
 </body>
 </html>
-
