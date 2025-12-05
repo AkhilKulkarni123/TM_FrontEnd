@@ -30,8 +30,6 @@
             font-weight: bolder;
         }
 
-
-
         /* Define a mixin for common dropdown styles */
         /* Apply mixin to dropdown menus */
         .dropdown {
@@ -476,6 +474,30 @@
                 margin-left: 20px;
             }
         }
+
+        /* Auth area styles - NEW */
+        #loginArea {
+            display: inline-block;
+        }
+
+        #loginArea .auth-user {
+            color: #4bbaff;
+            margin-right: 10px;
+        }
+
+        #loginArea .auth-logout {
+            color: #ff6b6b;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #loginArea .auth-logout:hover {
+            color: #ff5252;
+        }
+
+        #loginArea .auth-links a {
+            margin-left: 10px;
+        }
     </style>
 </head>
 
@@ -514,12 +536,85 @@
                     </a>
                     {%- endif -%}
                     {%- endfor -%}
-                    <a id="loginArea" href="{{ site.baseurl }}/login">Login</a>
+                    
+                    <!-- Dynamic Login/Logout Area -->
+                    <span id="loginArea">
+                        <span id="authLoggedIn" style="display: none;">
+                            <span class="auth-user" id="userName"></span>
+                            <a href="javascript:void(0)" onclick="handleLogout()" class="auth-logout">Logout</a>
+                        </span>
+                        <span id="authLoggedOut" class="auth-links">
+                            <a href="{{ site.baseurl }}/login">Login</a>
+                            <a href="{{ site.baseurl }}/signup">Sign Up</a>
+                        </span>
+                    </span>
                 </div>
             </nav>
             {%- endif -%}
         </div>
     </header>
 
-    <script type="module" src="{{ site.baseurl }}/assets/js/api/login.js"></script>
+    <script type="module">
+        import { pythonURI } from '{{ site.baseurl }}/assets/js/api/config.js';
+
+        // Check authentication status and update UI
+        function updateAuthUI() {
+            const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+            const userStr = localStorage.getItem('user');
+            
+            const loggedInSection = document.getElementById('authLoggedIn');
+            const loggedOutSection = document.getElementById('authLoggedOut');
+            const userNameSpan = document.getElementById('userName');
+
+            if (isAuthenticated && userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    userNameSpan.textContent = user.name || user.uid || 'User';
+                    loggedInSection.style.display = 'inline';
+                    loggedOutSection.style.display = 'none';
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                    showLoggedOut();
+                }
+            } else {
+                showLoggedOut();
+            }
+        }
+
+        function showLoggedOut() {
+            document.getElementById('authLoggedIn').style.display = 'none';
+            document.getElementById('authLoggedOut').style.display = 'inline';
+        }
+
+        // Logout function
+        window.handleLogout = async function() {
+            if (!confirm('Are you sure you want to logout?')) {
+                return;
+            }
+
+            try {
+                // Call logout API
+                await fetch(`${pythonURI}/api/authenticate`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout API error:', error);
+            }
+
+            // Clear local storage
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('isAuthenticated');
+
+            // Redirect to home
+            window.location.href = '{{ site.baseurl }}/';
+        };
+
+        // Update UI on page load
+        document.addEventListener('DOMContentLoaded', updateAuthUI);
+
+        // Also update UI when localStorage changes (for multi-tab support)
+        window.addEventListener('storage', updateAuthUI);
+    </script>
 </body>
