@@ -1,8 +1,10 @@
 // Authentication helper functions
 // File: assets/js/auth.js
 
+import { javaURI } from './api/config.js'; // <-- use the same server constant used elsewhere
+
 const AUTH_CONFIG = {
-    API_URL: 'http://localhost:8001/api',  // Change to your deployed backend URL
+    API_URL: javaURI || `${window.location.origin}/api`,  // prefer shared javaURI, fallback to same-origin /api
     TOKEN_KEY: 'token',
     USER_KEY: 'user',
     AUTH_KEY: 'isAuthenticated'

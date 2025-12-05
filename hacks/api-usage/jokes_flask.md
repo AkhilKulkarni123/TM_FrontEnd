@@ -1,20 +1,25 @@
 ---
-title: Fetch of Flask Backend Jokes
+title: AP CSP Topic Review Survey
 layout: post
-description: An introductory example of Frontend talking to Backend Python Flask application serving jokes.  
+description: Survey to determine which AP CSP topics need the most review for our study guide
 permalink: /python/flask/api/jokes
 image: /images/jokes.png
 breadcrumb: true
 show_reading_time: false
 ---
 
-<!-- HTML table fragment for page -->
+## 📊 Vote on Topics You Need Help With
+
+Help us prioritize our AP CSP study guide! Vote on topics:
+- **Need Review 📚**: Click if you need more practice on this topic
+- **Understand Well ✅**: Click if you already understand this topic well
+
 <table>
   <thead>
   <tr>
-    <th>Joke</th>
-    <th>HaHa</th>
-    <th>Boohoo</th>
+    <th>AP CSP Topic</th>
+    <th>Need Review 📚</th>
+    <th>Understand Well ✅</th>
   </tr>
   </thead>
   <tbody id="result">
@@ -25,27 +30,25 @@ show_reading_time: false
 <script type="module">
   import { javaURI, pythonURI, fetchOptions } from '{{ site.baseurl }}/assets/js/api/config.js';
 
-  // prepare HTML defined "result" container for new output
+  // Prepare HTML defined "result" container for new output
   const resultContainer = document.getElementById("result");
 
-  // keys for joke reactions
-  const HAHA = "haha";
-  const BOOHOO = "boohoo";
+  // Keys for topic reactions
+  const NEED_REVIEW = "need_review";
+  const UNDERSTAND_WELL = "understand_well";
 
-  // prepare fetch urls
+  // Prepare fetch urls (keeping same /api/jokes endpoint)
   const url = `${pythonURI}/api/jokes`;
-  //const url = `${javaURI}/api/jokes`;
-  const getURL = url +"/";
-  const likeURL = url + "/like/";  // haha reaction
-  const jeerURL = url + "/jeer/";  // boohoo reaction
+  const getURL = url + "/";
+  const likeURL = url + "/like/";      // now means "need review"
+  const jeerURL = url + "/jeer/";      // now means "understand well"
 
-  // prepare fetch PUT options, clones with JS Spread Operator (...)
+  // Prepare fetch PUT options
   const reactOptions = {...fetchOptions,
     method: 'PUT',
-  }; // clones and replaces method
+  };
 
-
-  // fetch the API to obtain jokes data
+  // Fetch the API to obtain topics data
   fetch(getURL, fetchOptions)
     .then(response => {
       if (response.status !== 200) {
@@ -54,39 +57,44 @@ show_reading_time: false
       }
       response.json().then(data => {
         console.log(data);
-        // format response data into a table
+        // Format response data into a table
         for (const row of data) {
-          // make "tr element" for each "row of data"
+          // Make "tr element" for each "row of data"
           const tr = document.createElement("tr");
 
-          // td for joke cell
-          const joke = document.createElement("td");
-          joke.innerHTML = row.id + ". " + row.joke;
+          // td for topic cell
+          const topic = document.createElement("td");
+          topic.innerHTML = row.id + ". " + row.topic;
+          topic.style.fontSize = "14px";
 
-          // td for haha cell with onclick actions
-          const haha = document.createElement("td");
-          const hahaBtn = document.createElement('button');
-          hahaBtn.id = HAHA + row.id;
-          hahaBtn.innerHTML = row.haha;
-          hahaBtn.onclick = function () {
-            reaction(HAHA, likeURL + row.id, hahaBtn.id);
+          // td for need_review cell with onclick actions
+          const needReview = document.createElement("td");
+          const needReviewBtn = document.createElement('button');
+          needReviewBtn.id = NEED_REVIEW + row.id;
+          needReviewBtn.innerHTML = "📚 " + row.need_review;
+          needReviewBtn.style.padding = "8px 15px";
+          needReviewBtn.style.cursor = "pointer";
+          needReviewBtn.onclick = function () {
+            reaction(NEED_REVIEW, likeURL + row.id, needReviewBtn.id);
           };
-          haha.appendChild(hahaBtn);
+          needReview.appendChild(needReviewBtn);
 
-          // td for boohoo cell with onclick actions
-          const boohoo = document.createElement("td");
-          const boohooBtn = document.createElement('button');
-          boohooBtn.id = BOOHOO + row.id;
-          boohooBtn.innerHTML = row.boohoo;
-          boohooBtn.onclick = function () {
-            reaction(BOOHOO, jeerURL + row.id, boohooBtn.id);
+          // td for understand_well cell with onclick actions
+          const understandWell = document.createElement("td");
+          const understandWellBtn = document.createElement('button');
+          understandWellBtn.id = UNDERSTAND_WELL + row.id;
+          understandWellBtn.innerHTML = "✅ " + row.understand_well;
+          understandWellBtn.style.padding = "8px 15px";
+          understandWellBtn.style.cursor = "pointer";
+          understandWellBtn.onclick = function () {
+            reaction(UNDERSTAND_WELL, jeerURL + row.id, understandWellBtn.id);
           };
-          boohoo.appendChild(boohooBtn);
+          understandWell.appendChild(understandWellBtn);
 
-          // finish row and append to DOM container
-          tr.appendChild(joke);
-          tr.appendChild(haha);
-          tr.appendChild(boohoo);
+          // Finish row and append to DOM container
+          tr.appendChild(topic);
+          tr.appendChild(needReview);
+          tr.appendChild(understandWell);
           resultContainer.appendChild(tr);
         }
       })
@@ -95,52 +103,51 @@ show_reading_time: false
       error(err + ": " + getURL);
     });
 
-  // Function and interval to refresh the haha and boohoo counts every 5 seconds
+  // Function and interval to refresh the vote counts every 5 seconds
   function refreshReactions() {
     fetch(getURL, fetchOptions)
       .then(response => response.json())
       .then(data => {
-        // update all reaction data
+        // Update all reaction data
         for (const row of data) {
-          const hahaBtn = document.getElementById(HAHA + row.id);
-          if (hahaBtn) hahaBtn.innerHTML = row.haha;
-          const boohooBtn = document.getElementById(BOOHOO + row.id);
-          if (boohooBtn) boohooBtn.innerHTML = row.boohoo;
+          const needReviewBtn = document.getElementById(NEED_REVIEW + row.id);
+          if (needReviewBtn) needReviewBtn.innerHTML = "📚 " + row.need_review;
+          const understandWellBtn = document.getElementById(UNDERSTAND_WELL + row.id);
+          if (understandWellBtn) understandWellBtn.innerHTML = "✅ " + row.understand_well;
         }
       })
       .catch(err => {
-        // Optionally handle refresh errors
+        
         console.error('Refresh error:', err);
       });
   }
   // Call refreshReactions every 5 seconds
   setInterval(refreshReactions, 5000);
 
-  // Reaction function to likes or jeers user actions
+  // Reaction function to handle user vote actions
   function reaction(type, postURL, elemID) {
-
-    // fetch the API
+    // Fetch the API
     fetch(postURL, reactOptions)
-    // response is a RESTful "promise" on any successful fetch
+    
     .then(response => {
-      // check for response errors
+      // Check for response errors
       if (response.status !== 200) {
           error("Post API response failure: " + response.status)
-          return;  // api failure
+          return;
       }
-      // valid response will have JSON data
+      // Valid response will have JSON data
       response.json().then(data => {
           console.log(data);
-          // Likes or Jeers updated/incremented
-          if (type === HAHA) // like data element
-            document.getElementById(elemID).innerHTML = data.haha;  // fetched haha data assigned to haha Document Object Model (DOM)
-          else if (type === BOOHOO) // jeer data element
-            document.getElementById(elemID).innerHTML = data.boohoo;  // fetched boohoo data assigned to boohoo Document Object Model (DOM)
+          // Votes updated/incremented
+          if (type === NEED_REVIEW)
+            document.getElementById(elemID).innerHTML = "📚 " + data.need_review;
+          else if (type === UNDERSTAND_WELL)
+            document.getElementById(elemID).innerHTML = "✅ " + data.understand_well;
           else
-            error("unknown type: " + type);  // should never occur
+            error("unknown type: " + type);
       })
     })
-    // catch fetch errors (ie Nginx ACCESS to server blocked)
+    
     .catch(err => {
       error(err + " " + postURL);
     });
@@ -149,12 +156,13 @@ show_reading_time: false
 
   // Something went wrong with actions or responses
   function error(err) {
-    // log as Error in console
+    
     console.error(err);
-    // append error to resultContainer
-    const tr = document.createElement("tr");
+   
+   const tr = document.createElement("tr");
     const td = document.createElement("td");
     td.innerHTML = err;
+    td.colSpan = 3;
     tr.appendChild(td);
     resultContainer.appendChild(tr);
   }
