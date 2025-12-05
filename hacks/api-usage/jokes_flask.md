@@ -8,18 +8,20 @@ breadcrumb: true
 show_reading_time: false
 ---
 
-## 📊 Vote on Topics You Need Help With
+## Vote on Topics You Need Help With
 
 Help us prioritize our AP CSP study guide! Vote on topics:
-- **Need Review 📚**: Click if you need more practice on this topic
-- **Understand Well ✅**: Click if you already understand this topic well
+- **Need Review**: Click if you need more practice on this topic
+- **Understand Well**: Click if you already understand this topic well
+
+**Thank you!**
 
 <table>
   <thead>
   <tr>
     <th>AP CSP Topic</th>
-    <th>Need Review 📚</th>
-    <th>Understand Well ✅</th>
+    <th>Need Review</th>
+    <th>Understand Well</th>
   </tr>
   </thead>
   <tbody id="result">
