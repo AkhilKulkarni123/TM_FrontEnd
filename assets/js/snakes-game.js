@@ -408,7 +408,7 @@ async function movePlayer(steps) {
   let newSquare = gameState.currentSquare + steps;
 
   if (newSquare > BOARD_SIZE) {
-    newSquare = BOARD_SIZE - (newSquare - BOARD_SIZE);
+    newSquare = BOARD_SIZE;
   }
 
   await animateMovement(gameState.currentSquare, newSquare);
