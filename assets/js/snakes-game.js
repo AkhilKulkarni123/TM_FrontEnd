@@ -391,7 +391,7 @@ async function rollDice() {
   const diceAnim = document.getElementById('dice-animation');
   diceAnim.classList.remove('hidden');
 
-  const roll = Math.floor(Math.random() * 5) + 1;
+  const roll = Math.floor(Math.random() * 10) + 1;
 
   setTimeout(async () => {
     document.querySelector('.dice-result').textContent = `You rolled a ${roll}!`;
