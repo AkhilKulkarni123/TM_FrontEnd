@@ -599,29 +599,76 @@ function viewLeaderboard() {
     var modal = document.getElementById('leaderboard-modal');
     var tbody = document.querySelector('#leaderboard-table tbody');
     if (!tbody) return;
-    tbody.innerHTML = '';
+    
+    // Show loading state
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-spinner">Loading leaderboard...</td></tr>';
+    if (modal) modal.classList.remove('hidden');
 
-    fetch(API_URL + '/snakes/leaderboard', { credentials: 'include' })
+    fetch(API_URL + '/snakes/leaderboard?limit=10', { credentials: 'include' })
         .then(function (res) {
             if (!res.ok) throw new Error('Failed to fetch leaderboard');
             return res.json();
         })
         .then(function (data) {
-            for (var i = 0; i < data.length; i++) {
-                var entry = data[i];
+            tbody.innerHTML = ''; // Clear loading
+            
+            var leaderboardData = data.leaderboard || [];
+            
+            // Empty state
+            if (leaderboardData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-leaderboard">
+                            <div class="empty-leaderboard-icon">🏆</div>
+                            <p>No players yet! Be the first to earn bullets!</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Populate leaderboard
+            for (var i = 0; i < leaderboardData.length; i++) {
+                var entry = leaderboardData[i];
                 var tr = document.createElement('tr');
+                
+                // Highlight current user
+                if (entry.user_id === gameState.userId) {
+                    tr.className = 'current-user-row';
+                }
+                
+                // Rank with medal
+                var rankClass = '';
+                if (i === 0) rankClass = 'gold';
+                else if (i === 1) rankClass = 'silver';
+                else if (i === 2) rankClass = 'bronze';
+                else rankClass = 'regular';
+                
+                var rankBadge = '<span class="rank-badge ' + rankClass + '">' + (i + 1) + '</span>';
+                
+                // Character icon
+                var characterIcon = getCharacterIcon(entry.selected_character || 'knight');
+                
                 tr.innerHTML =
-                    '<td>' + (i + 1) + '</td>' +
-                    '<td>' + entry.username + '</td>' +
-                    '<td>' + entry.total_bullets + '</td>' +
-                    '<td>' + formatTime(entry.time_played) + '</td>';
+                    '<td class="rank-col">' + rankBadge + '</td>' +
+                    '<td class="player-col">' + characterIcon + ' ' + (entry.username || 'Unknown') + '</td>' +
+                    '<td class="bullets-col">' + (entry.total_bullets || 0) + '</td>' +
+                    '<td class="time-col">' + formatTime(entry.time_played || 0) + '</td>';
+                
                 tbody.appendChild(tr);
             }
-            if (modal) modal.classList.remove('hidden');
+        
         })
         .catch(function (err) {
-            console.error(err);
-            alert('Error loading leaderboard.');
+            console.error('Leaderboard error:', err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="empty-leaderboard">
+                        <div class="empty-leaderboard-icon">⚠️</div>
+                        <p>Error loading leaderboard. Please try again.</p>
+                    </td>
+                </tr>
+            `;
         });
 }
 

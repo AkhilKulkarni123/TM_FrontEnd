@@ -645,3 +645,386 @@ body {
     gap: 2px;
   }
 }
+/* ============================================
+   ENHANCED LEADERBOARD STYLES
+============================================ */
+
+/* Modal overlay for blur effect */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+/* Enhanced leaderboard content */
+.leaderboard-content {
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 0;
+    border-radius: 20px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+    z-index: 1001;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Enhanced close button */
+.leaderboard-content .close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 35px;
+    color: white;
+    cursor: pointer;
+    z-index: 1002;
+    transition: transform 0.2s, color 0.2s;
+    line-height: 1;
+}
+
+.leaderboard-content .close-modal:hover {
+    transform: rotate(90deg) scale(1.1);
+    color: #ffd700;
+}
+
+/* Leaderboard header */
+.leaderboard-header {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px 20px 20px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaderboard-header h2 {
+    margin: 0;
+    font-size: 2em;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
+
+.leaderboard-subtitle {
+    margin: 8px 0 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95em;
+    font-weight: 300;
+}
+
+/* Table container with scroll */
+.leaderboard-table-container {
+    max-height: 50vh;
+    overflow-y: auto;
+    background: white;
+    margin: 0;
+    padding: 0;
+}
+
+/* Custom scrollbar */
+.leaderboard-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.leaderboard-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.leaderboard-table-container::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+.leaderboard-table-container::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}
+
+/* Enhanced table styles */
+#leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+/* Sticky header */
+#leaderboard-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#leaderboard-table th {
+    padding: 15px 10px;
+    text-align: left;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Column widths */
+.rank-col {
+    width: 15%;
+    text-align: center !important;
+}
+
+.player-col {
+    width: 40%;
+}
+
+.bullets-col {
+    width: 25%;
+    text-align: center !important;
+}
+
+.time-col {
+    width: 20%;
+    text-align: center !important;
+}
+
+/* Table rows */
+#leaderboard-table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#leaderboard-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8f9ff 0%, #e8ebff 100%);
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+#leaderboard-table td {
+    padding: 15px 10px;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.rank-col, .bullets-col, .time-col {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* 1st Place - Gold */
+#leaderboard-table tbody tr:nth-child(1) {
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+    font-weight: bold;
+}
+
+#leaderboard-table tbody tr:nth-child(1):hover {
+    background: linear-gradient(90deg, #ffed4e 0%, #ffd700 100%);
+}
+
+#leaderboard-table tbody tr:nth-child(1) td {
+    color: #333;
+}
+
+/* 2nd Place - Silver */
+#leaderboard-table tbody tr:nth-child(2) {
+    background: linear-gradient(90deg, #c0c0c0 0%, #e8e8e8 100%);
+    font-weight: bold;
+}
+
+#leaderboard-table tbody tr:nth-child(2):hover {
+    background: linear-gradient(90deg, #e8e8e8 0%, #c0c0c0 100%);
+}
+
+/* 3rd Place - Bronze */
+#leaderboard-table tbody tr:nth-child(3) {
+    background: linear-gradient(90deg, #cd7f32 0%, #e09856 100%);
+    font-weight: bold;
+    color: white;
+}
+
+#leaderboard-table tbody tr:nth-child(3):hover {
+    background: linear-gradient(90deg, #e09856 0%, #cd7f32 100%);
+}
+
+#leaderboard-table tbody tr:nth-child(3) td {
+    color: white;
+}
+
+/* Current user highlight */
+.current-user-row {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-weight: bold;
+    border: 2px solid #ffd700 !important;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+}
+
+.current-user-row td {
+    color: white !important;
+}
+
+.current-user-row:hover {
+    background: linear-gradient(90deg, #764ba2 0%, #667eea 100%) !important;
+    transform: scale(1.03);
+}
+
+/* Rank badges */
+.rank-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 1.1em;
+    min-width: 35px;
+    text-align: center;
+}
+
+/* Gold Medal */
+.rank-badge.gold {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.rank-badge.gold::after {
+    content: " 👑";
+}
+
+/* Silver Medal */
+.rank-badge.silver {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    color: #333;
+    box-shadow: 0 2px 8px rgba(192, 192, 192, 0.4);
+}
+
+.rank-badge.silver::after {
+    content: " 🥈";
+}
+
+/* Bronze Medal */
+.rank-badge.bronze {
+    background: linear-gradient(135deg, #cd7f32, #e09856);
+    color: white;
+    box-shadow: 0 2px 8px rgba(205, 127, 50, 0.4);
+}
+
+.rank-badge.bronze::after {
+    content: " 🥉";
+}
+
+/* Regular ranks */
+.rank-badge.regular {
+    background: #f0f0f0;
+    color: #666;
+}
+
+/* Leaderboard footer */
+.leaderboard-footer {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px 20px;
+    text-align: center;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaderboard-footer p {
+    margin: 0;
+    color: white;
+    font-size: 0.9em;
+    font-weight: 300;
+}
+
+/* Empty state */
+.empty-leaderboard {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.empty-leaderboard-icon {
+    font-size: 4em;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+
+.empty-leaderboard p {
+    font-size: 1.1em;
+    color: #999;
+}
+
+/* Loading state */
+.loading-spinner {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.2em;
+    color: #667eea;
+}
+
+.loading-spinner::after {
+    content: "⏳";
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive design for leaderboard */
+@media (max-width: 768px) {
+    .leaderboard-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    .leaderboard-header h2 {
+        font-size: 1.5em;
+    }
+
+    #leaderboard-table th,
+    #leaderboard-table td {
+        padding: 10px 5px;
+        font-size: 0.85em;
+    }
+
+    .rank-badge {
+        font-size: 0.9em;
+        min-width: 30px;
+        padding: 4px 8px;
+    }
+
+    .time-col {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .leaderboard-header h2 {
+        font-size: 1.3em;
+    }
+
+    .bullets-col {
+        width: 30%;
+    }
+
+    .player-col {
+        width: 55%;
+    }
+}

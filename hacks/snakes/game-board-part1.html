@@ -112,16 +112,35 @@
     </div>
 
     <!-- Leaderboard modal (reused from original game) -->
+    <!-- Enhanced Leaderboard Modal -->
     <div id="leaderboard-modal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-modal">×</span>
-            <h2>Leaderboard</h2>
-            <table id="leaderboard-table">
-                <thead>
-                    <tr><th>Rank</th><th>Player</th><th>Bullets</th><th>Time Played</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div class="modal-overlay"></div>
+        <div class="modal-content leaderboard-content">
+            <span class="close-modal">&times;</span>
+            <div class="leaderboard-header">
+                <h2>Top Players Leaderboard</h2>
+                <p class="leaderboard-subtitle">Ranked by Bullets Earned</p>
+            </div>
+            
+            <div class="leaderboard-table-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="rank-col">Rank</th>
+                            <th class="player-col">Player</th>
+                            <th class="bullets-col">Bullets</th>
+                            <th class="time-col">Time ⏱️</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JavaScript populates this -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="leaderboard-footer">
+                <p>Keep playing to climb the ranks!</p>
+            </div>
         </div>
     </div>
 
