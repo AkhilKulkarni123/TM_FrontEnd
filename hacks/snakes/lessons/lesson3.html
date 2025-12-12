@@ -1,0 +1,89 @@
+<!--
+  Lesson 3 – Internet & Networking
+
+  Covers the basics of how the internet works, including IP addresses,
+  domain names and the DNS system.  Includes an interactive quiz at
+  the end.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 3 – Internet & Networking</title>
+    <!-- Use a relative path to load the shared game styles -->
+    <!-- Load the shared game styles from the assets directory.  Because this
+         lesson file lives in hacks/snakes/lessons, we must go up three
+         directories (lessons → snakes → hacks → frontend) to reach
+         frontend/assets/css/snakes-game.css. -->
+    <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .question { margin-top: 1.5rem; padding: 1rem; background: #f4f4f4; border-radius: 4px; }
+        .options label { display: block; margin-bottom: 0.5rem; }
+        #complete-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Lesson 3: Internet & Networking</h1>
+    <p>The internet is a global network of networks.  Computers communicate
+       over the internet using unique numerical addresses called
+       Internet Protocol (IP) addresses.  To make it easier for humans,
+       domain names map to IP addresses via the Domain Name System (DNS).</p>
+    <h2>IP Addresses</h2>
+    <p>An IPv4 address consists of four numbers between 0 and 255 separated
+       by periods (e.g. <code>192.168.1.1</code>).  Each device on a
+       network has a unique IP address so that data can be routed to
+       the correct destination.</p>
+    <h2>DNS</h2>
+    <p>DNS translates human‑readable domain names (like
+       <code>www.example.com</code>) into IP addresses.  DNS servers
+       respond to queries and help your browser locate websites.</p>
+
+    <div class="question">
+        <h3>Interactive Quiz</h3>
+        <p>Which of the following best describes the role of DNS on the internet?</p>
+        <div class="options">
+            <label><input type="radio" name="q1" value="0"> It encrypts all communications.</label>
+            <label><input type="radio" name="q1" value="1"> It provides physical cables for the network.</label>
+            <label><input type="radio" name="q1" value="2"> It translates domain names into IP addresses.</label>
+            <label><input type="radio" name="q1" value="3"> It stores webpages on servers.</label>
+        </div>
+    </div>
+    <button id="complete-btn">Complete Lesson</button>
+
+    <script>
+    const API_URL = 'http://localhost:8001/api';
+    document.getElementById('complete-btn').addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="q1"]:checked');
+        if (!selected) {
+            alert('Please select an answer.');
+            return;
+        }
+        const correct = (selected.value === '2');
+        if (!correct) {
+            alert('Incorrect. DNS translates domain names into IP addresses.');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ lesson_number: 3, bullets_earned: 5 })
+            });
+            if (res.ok) {
+                alert('Lesson completed! You earned 5 bullets.');
+                window.location.href = '../game-board-part1.html';
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error completing lesson.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+        }
+    });
+    </script>
+</body>
+</html>

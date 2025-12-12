@@ -1,279 +1,355 @@
+/*
+ * Snakes and Ladders – Custom Game Logic for AP CS Principles
+ *
+ * Split board:
+ *  - First half (1–25): 5 lesson rows (AP CSP topics)
+ *  - Second half (26–50): questions based on those lessons
+ *  - After 50: boss battle
+ *
+ * This script:
+ *  - Uses website login via JWT cookie (/api/id)
+ *  - Loads/saves progress via /api/snakes and /api/snakes/progress
+ *  - Handles lessons (/snakes/complete-lesson) and questions
+ *    (/snakes/answer-question)
+ */
+
 // ============================================================
 // Configuration
 // ============================================================
 
-// For localhost development, talk to Flask on port 8001.
-// For production, you can swap the else-branch to your deployed URL.
-const API_URL =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8001/api'
-    : 'http://localhost:8001/api'; // change this when you deploy
+// IMPORTANT: Always use localhost (not 127.0.0.1) so cookies match domain.
+var API_URL = 'http://localhost:8001/api';
 
-// For NOW (localhost), we disable sockets by setting SOCKET_URL to null.
-// That stops socket.io from trying to hit :3000 and spamming errors.
-const SOCKET_URL =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1'
-    ? null // no socket server in local dev
-    : 'http://localhost:3000'; // adjust if/when you have a real socket server
+// Board constants
+var BOARD_TOTAL_SQUARES = 50;
+var HALF_SIZE = 25;
 
-const BOARD_SIZE = 100;
+// Bullets
+var LESSON_BULLETS = 5;
+var QUESTION_BULLETS = 2;
+
+// Autosave cadence (seconds)
+var AUTOSAVE_EVERY_SECONDS = 10;
 
 // ============================================================
-// Game state
+// Game State
 // ============================================================
-let gameState = {
-  isGuest: false,
-  userId: null,
-  username: '',
-  character: '',
-  bullets: 0,
-  lives: 3,
-  currentSquare: 1,
-  visitedSquares: [1],
-  timeStarted: null,
-  timeElapsed: 0,
-  bossAttempts: 0,
-  socket: null
+
+var gameState = {
+    isGuest: false,
+    userId: null,
+    username: '',
+    character: '',
+    bullets: 0,
+    lives: 3,
+    currentSquare: 1,
+    visitedSquares: [1],
+    completedLessons: [],
+    unlockedSections: ['half1'], // 'half1', 'half2', 'boss'
+    timeStarted: null,
+    timeElapsed: 0,
+    bossAttempts: 0,
+    socket: null
 };
 
-// Snakes and Ladders positions
-const snakes = {
-  16: 6,
-  47: 26,
-  49: 11,
-  56: 53,
-  62: 19,
-  64: 60,
-  87: 24,
-  93: 73,
-  95: 75,
-  98: 78
-};
-
-const ladders = {
-  1: 38,
-  4: 14,
-  9: 31,
-  21: 42,
-  28: 84,
-  36: 44,
-  51: 67,
-  71: 91,
-  80: 100
-};
-
-const bossBattleSquare = 100;
+// Helper: safe querySelector
+function $(selector) {
+    return document.querySelector(selector);
+}
+function $all(selector) {
+    return document.querySelectorAll(selector);
+}
 
 // ============================================================
-// Initialize game
+// Initialization
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  initializeEventListeners();
-  checkExistingLogin();
+
+document.addEventListener('DOMContentLoaded', function () {
+    initializeEventListeners();
+    checkExistingLogin();
 });
 
 function initializeEventListeners() {
-  // Login buttons
-  document
-    .getElementById('use-existing-login')
-    ?.addEventListener('click', useExistingLogin);
-  document
-    .getElementById('play-as-guest')
-    ?.addEventListener('click', playAsGuest);
+    var btnUseLogin = document.getElementById('use-existing-login');
+    if (btnUseLogin) {
+        btnUseLogin.addEventListener('click', useExistingLogin);
+    }
 
-  // Character selection
-  document.querySelectorAll('.character-card').forEach(card => {
-    card.addEventListener('click', () => selectCharacter(card));
-  });
+    var btnGuest = document.getElementById('play-as-guest');
+    if (btnGuest) {
+        btnGuest.addEventListener('click', playAsGuest);
+    }
 
-  document
-    .getElementById('start-game-btn')
-    ?.addEventListener('click', startGame);
+    var characterCards = $all('.character-card');
+    for (var i = 0; i < characterCards.length; i++) {
+        (function (card) {
+            card.addEventListener('click', function () {
+                selectCharacter(card);
+            });
+        })(characterCards[i]);
+    }
 
-  // Game controls
-  document
-    .getElementById('roll-dice-btn')
-    ?.addEventListener('click', rollDice);
-  document
-    .getElementById('view-leaderboard-btn')
-    ?.addEventListener('click', viewLeaderboard);
+    var startBtn = document.getElementById('start-game-btn');
+    if (startBtn) {
+        startBtn.addEventListener('click', startGame);
+    }
 
-  // Modal close buttons
-  document.querySelectorAll('.close-modal').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document
-        .querySelectorAll('.modal')
-        .forEach(modal => modal.classList.add('hidden'));
-    });
-  });
+    var rollBtn = document.getElementById('roll-dice-btn');
+    if (rollBtn) {
+        rollBtn.addEventListener('click', rollDice);
+    }
+
+    var leaderboardBtn = document.getElementById('view-leaderboard-btn');
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', viewLeaderboard);
+    }
+
+    var prevBtn = document.getElementById('prev-section-btn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', navigatePrev);
+    }
+
+    var nextBtn = document.getElementById('next-section-btn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', navigateNext);
+    }
+
+    var closeButtons = $all('.close-modal');
+    for (var j = 0; j < closeButtons.length; j++) {
+        closeButtons[j].addEventListener('click', function () {
+            var modals = $all('.modal');
+            for (var k = 0; k < modals.length; k++) {
+                modals[k].classList.add('hidden');
+            }
+        });
+    }
 }
 
 // ============================================================
-// Login / User handling using existing website login (JWT cookie)
+// Login / User handling
 // ============================================================
 
-async function checkExistingLogin() {
-  try {
-    // Uses the /api/id endpoint that returns the current JWT-authenticated user
-    const response = await fetch(`${API_URL}/id`, {
-      credentials: 'include'
-    });
-
-    if (response.ok) {
-      const userData = await response.json();
-      gameState.userId = userData.id;
-      gameState.username = userData.name;
-      // user is already logged in
-    }
-  } catch (error) {
-    console.log('No existing login found');
-  }
+function checkExistingLogin() {
+    fetch(API_URL + '/id', { credentials: 'include' })
+        .then(function (response) {
+            if (!response.ok) return null;
+            return response.json();
+        })
+        .then(function (userData) {
+            if (!userData) return;
+            gameState.userId = userData.id;
+            gameState.username = userData.name;
+        })
+        .catch(function () {
+            // ignore
+        });
 }
 
-async function useExistingLogin() {
-  try {
-    const response = await fetch(`${API_URL}/id`, {
-      credentials: 'include'
-    });
+function useExistingLogin() {
+    fetch(API_URL + '/id', { credentials: 'include' })
+        .then(function (response) {
+            if (!response.ok) {
+                alert('Please log in to the website first, then return to the game.');
+                window.location.href = '/login';
+                return null;
+            }
+            return response.json();
+        })
+        .then(function (userData) {
+            if (!userData) return;
+            gameState.isGuest = false;
+            gameState.userId = userData.id;
+            gameState.username = userData.name;
 
-    if (!response.ok) {
-      alert('Please log in to the website first, then return to the game.');
-      // Adjust this to your actual front-end login route if needed
-      window.location.href = '/login';
-      return;
-    }
-
-    const userData = await response.json();
-    gameState.isGuest = false;
-    gameState.userId = userData.id;
-    gameState.username = userData.name;
-
-    // Check if game data exists / create it
-    await loadOrCreateGameData();
-
-    // Show character selection
-    document.getElementById('login-container').classList.add('hidden');
-    document
-      .getElementById('character-selection')
-      .classList.remove('hidden');
-  } catch (error) {
-    console.error('Login error:', error);
-    alert('Error connecting to server. Please try again.');
-  }
+            return loadOrCreateGameData();
+        })
+        .then(function () {
+            return loadProgress();
+        })
+        .then(function () {
+            var loginContainer = document.getElementById('login-container');
+            var characterSelection = document.getElementById('character-selection');
+            if (loginContainer) loginContainer.classList.add('hidden');
+            if (characterSelection) characterSelection.classList.remove('hidden');
+        })
+        .catch(function (error) {
+            console.error('Login error:', error);
+            alert('Error connecting to server. Please try again.');
+        });
 }
 
 function playAsGuest() {
-  gameState.isGuest = true;
-  gameState.userId = 'guest_' + Date.now();
-  gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
+    gameState.isGuest = true;
+    gameState.userId = 'guest_' + Date.now();
+    gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
 
-  // Show character selection
-  document.getElementById('login-container').classList.add('hidden');
-  document
-    .getElementById('character-selection')
-    .classList.remove('hidden');
+    var loginContainer = document.getElementById('login-container');
+    var characterSelection = document.getElementById('character-selection');
+    if (loginContainer) loginContainer.classList.add('hidden');
+    if (characterSelection) characterSelection.classList.remove('hidden');
 }
 
 // ============================================================
-// Game data load/save (Flask /api/snakes endpoints)
+// Game data load/save
 // ============================================================
 
-async function loadOrCreateGameData() {
-  if (gameState.isGuest) return;
+function loadOrCreateGameData() {
+    if (gameState.isGuest) return Promise.resolve();
 
-  try {
-    let response = await fetch(`${API_URL}/snakes/`, {
-      credentials: 'include'
-    });
+    return fetch(API_URL + '/snakes/', { credentials: 'include' })
+        .then(function (response) {
+            if (response.status === 404) {
+                return fetch(API_URL + '/snakes/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ selected_character: gameState.character })
+                });
+            }
+            return response;
+        })
+        .then(function (response) {
+            if (!response || !response.ok) return null;
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) return;
 
-    // If backend uses login protection and you’re not authenticated,
-    // it might return 401 or redirect to HTML. Handle that cleanly.
-    if (response.status === 401) {
-      console.warn('Unauthorized to load snakes data (401).');
-      // At this point you *are* logged in via /api/id, so if you
-      // still see this, backend snakes endpoints need to accept JWT.
-      return;
+            gameState.bullets = Number(data.total_bullets || 0);
+            gameState.currentSquare = Number(data.current_square || 1);
+            gameState.visitedSquares = data.visited_squares || [1];
+            gameState.lives = Number(data.lives || 3);
+            gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
+            gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
+            gameState.character = data.selected_character || gameState.character;
+
+            // Ensure timeStarted syncs to stored elapsed
+            if (gameState.timeStarted === null) {
+                gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+            }
+        })
+        .catch(function (error) {
+            console.error('Error loading game data:', error);
+        });
+}
+
+function loadProgress() {
+    if (gameState.isGuest) return Promise.resolve();
+
+    return fetch(API_URL + '/snakes/progress', { credentials: 'include' })
+        .then(function (response) {
+            if (!response.ok) return null;
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) return;
+
+            gameState.currentSquare = Number(data.current_square || gameState.currentSquare);
+            gameState.visitedSquares = data.visited_squares || gameState.visitedSquares;
+            gameState.bullets = Number(data.total_bullets || gameState.bullets);
+            gameState.lives = Number(data.lives || gameState.lives);
+            gameState.completedLessons = data.completed_lessons || [];
+            gameState.unlockedSections = data.unlocked_sections || gameState.unlockedSections;
+
+            // some APIs also return time_played; if present, keep it synced
+            if (typeof data.time_played !== 'undefined' && data.time_played !== null) {
+                gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
+                if (gameState.timeStarted !== null) {
+                    gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                }
+            }
+        })
+        .catch(function (error) {
+            console.error('Error loading progress:', error);
+        });
+}
+
+// IMPORTANT: Your old saveProgress() did NOT send time_played,
+// and would often “look like it saved” but time/bullets were never committed.
+// This function fixes that.
+function saveProgress() {
+    if (gameState.isGuest) return Promise.resolve();
+
+    // Always keep timeElapsed in sync before saving
+    if (gameState.timeStarted !== null) {
+        gameState.timeElapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
     }
 
-    // If there is no record yet, create one
-    if (response.status === 404) {
-      response = await fetch(`${API_URL}/snakes/`, {
-        method: 'POST',
+    return fetch(API_URL + '/snakes/', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ selected_character: gameState.character })
-      });
-    }
-
-    if (!response.ok) {
-      console.error('Snakes API error:', response.status);
-      return;
-    }
-
-    // 🔒 IMPORTANT FIX: Make sure we only parse JSON
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error(
-        'Non-JSON response from /api/snakes/:',
-        text.slice(0, 200)
-      );
-      // Don’t throw, just continue with default gameState
-      return;
-    }
-
-    const data = await response.json();
-
-    gameState.bullets = data.total_bullets || 0;
-    gameState.currentSquare = data.current_square || 1;
-    gameState.visitedSquares = data.visited_squares || [1];
-    gameState.lives = data.lives || 3;
-    gameState.bossAttempts = data.boss_battle_attempts || 0;
-    gameState.timeElapsed = data.time_played || 0;
-    gameState.character = data.selected_character || gameState.character;
-  } catch (error) {
-    console.error('Error loading game data:', error);
-  }
+        body: JSON.stringify({
+            current_square: gameState.currentSquare,
+            visited_squares: gameState.visitedSquares,
+            total_bullets: gameState.bullets,
+            time_played: gameState.timeElapsed, // ✅ FIX: actually persist time
+            lives: gameState.lives,
+            boss_battle_attempts: gameState.bossAttempts,
+            selected_character: gameState.character
+        })
+    })
+        .then(function (res) {
+            if (!res.ok) {
+                return res.json().then(function (j) {
+                    console.error('Save progress failed:', j);
+                }).catch(function () {
+                    console.error('Save progress failed:', res.status);
+                });
+            }
+        })
+        .catch(function (error) {
+            console.error('Error saving progress:', error);
+        });
 }
+
+// Small helper: save and ignore errors
+function saveProgressSilently() {
+    try { saveProgress(); } catch (e) { /* ignore */ }
+}
+
+// ============================================================
+// Character selection and game start
+// ============================================================
 
 function selectCharacter(card) {
-  document
-    .querySelectorAll('.character-card')
-    .forEach(c => c.classList.remove('selected'));
-  card.classList.add('selected');
-  gameState.character = card.dataset.character;
-  document.getElementById('start-game-btn').disabled = false;
+    var cards = $all('.character-card');
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove('selected');
+    }
+    card.classList.add('selected');
+    gameState.character = card.getAttribute('data-character');
+
+    var startBtn = document.getElementById('start-game-btn');
+    if (startBtn) startBtn.disabled = false;
 }
 
-async function startGame() {
-  if (!gameState.character) {
-    alert('Please select a character!');
-    return;
-  }
+function startGame() {
+    if (!gameState.character) {
+        alert('Please select a character!');
+        return;
+    }
 
-  // Load or create game data
-  await loadOrCreateGameData();
+    loadOrCreateGameData()
+        .then(function () {
+            return loadProgress();
+        })
+        .then(function () {
+            var characterSelection = document.getElementById('character-selection');
+            var gameContainer = document.getElementById('game-container');
+            if (characterSelection) characterSelection.classList.add('hidden');
+            if (gameContainer) gameContainer.classList.remove('hidden');
 
-  // Hide character selection and show game
-  document.getElementById('character-selection').classList.add('hidden');
-  document.getElementById('game-container').classList.remove('hidden');
+            if (gameState.timeStarted === null) {
+                gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+            }
 
-  // Initialize game board
-  createGameBoard();
-  updatePlayerInfo();
-
-  // Start timer
-  gameState.timeStarted = Date.now() - gameState.timeElapsed * 1000;
-  startTimer();
-
-  // Initialize socket for boss battle
-  // 🔒 For localhost, SOCKET_URL is null, so this will NOT run,
-  // and you will NOT see socket.io connection-refused spam.
-  if (!gameState.isGuest && SOCKET_URL && typeof io !== 'undefined') {
-    initializeSocket();
-  }
+            startTimer();
+            startAutosave();
+            createGameBoard();
+            updatePlayerInfo();
+            checkSectionLock();
+        });
 }
 
 // ============================================================
@@ -281,134 +357,139 @@ async function startGame() {
 // ============================================================
 
 function createGameBoard() {
-  const board = document.getElementById('game-board');
-  board.innerHTML = '';
+    var board = document.getElementById('game-board');
+    if (!board) return;
 
-  // Create squares (100 to 1, going right-to-left, bottom-to-top)
-  for (let row = 9; row >= 0; row--) {
-    for (let col = 0; col < 10; col++) {
-      let squareNum;
-      if (row % 2 === 1) {
-        // Odd rows go right to left
-        squareNum = row * 10 + (10 - col);
-      } else {
-        // Even rows go left to right
-        squareNum = row * 10 + (col + 1);
-      }
+    board.innerHTML = '';
 
-      const square = document.createElement('div');
-      square.className = 'square';
-      square.dataset.square = squareNum;
+    var section = window.snakesGameSection || 1;
+    var start = (section === 1) ? 1 : 26;
 
-      // Visited
-      if (gameState.visitedSquares.includes(squareNum)) {
-        square.classList.add('visited');
-      }
+    // 5x5 grid
+    for (var row = 4; row >= 0; row--) {
+        for (var col = 0; col < 5; col++) {
+            var squareNum;
+            var globalRow = (section === 1) ? row : row + 5;
 
-      // Current
-      if (squareNum === gameState.currentSquare) {
-        square.classList.add('current');
-      }
+            if (globalRow % 2 === 1) {
+                squareNum = start + (row * 5) + (4 - col);
+            } else {
+                squareNum = start + (row * 5) + col;
+            }
 
-      // Number label
-      const numberSpan = document.createElement('span');
-      numberSpan.className = 'square-number';
-      numberSpan.textContent = squareNum;
-      square.appendChild(numberSpan);
+            var square = document.createElement('div');
+            square.className = 'square';
+            square.setAttribute('data-square', squareNum);
 
-      // Icon
-      const icon = document.createElement('div');
-      icon.className = 'square-icon';
+            if (gameState.visitedSquares.indexOf(squareNum) !== -1) {
+                square.classList.add('visited');
+            }
+            if (squareNum === gameState.currentSquare) {
+                square.classList.add('current');
+            }
 
-      if (squareNum === bossBattleSquare) {
-        icon.textContent = '🐉';
-        square.classList.add('boss');
-      } else if (snakes[squareNum]) {
-        icon.textContent = '🐍';
-        square.classList.add('snake');
-      } else if (ladders[squareNum]) {
-        icon.textContent = '🪜';
-        square.classList.add('ladder');
-      } else {
-        icon.textContent = '⭐';
-      }
+            var numSpan = document.createElement('span');
+            numSpan.className = 'square-number';
+            numSpan.textContent = squareNum;
+            square.appendChild(numSpan);
 
-      square.appendChild(icon);
+            var icon = document.createElement('div');
+            icon.className = 'square-icon';
+            icon.textContent = (squareNum === 50) ? '👹' : '⭐';
+            square.appendChild(icon);
 
-      // Player marker
-      if (squareNum === gameState.currentSquare) {
-        const marker = document.createElement('div');
-        marker.className = 'player-marker';
-        marker.textContent = getCharacterIcon(gameState.character);
-        square.appendChild(marker);
-      }
+            if (squareNum === gameState.currentSquare) {
+                var marker = document.createElement('div');
+                marker.className = 'player-marker';
+                marker.textContent = getCharacterIcon(gameState.character);
+                square.appendChild(marker);
+            }
 
-      board.appendChild(square);
+            board.appendChild(square);
+        }
     }
-  }
 }
 
 function getCharacterIcon(character) {
-  const icons = {
-    knight: '🛡️',
-    wizard: '🧙',
-    archer: '🏹',
-    warrior: '⚔️'
-  };
-  return icons[character] || '🛡️';
+    var icons = {
+        knight: '🛡️',
+        wizard: '🧙',
+        archer: '🏹',
+        warrior: '⚔️'
+    };
+    return icons[character] || '🙂';
 }
 
 function updatePlayerInfo() {
-  document.getElementById('player-name').textContent = gameState.username;
-  document.getElementById('player-character').textContent =
-    getCharacterIcon(gameState.character);
-  document.getElementById('player-bullets').textContent = gameState.bullets;
-  document.getElementById('player-lives').textContent = gameState.lives;
-  document.getElementById('current-square').textContent =
-    gameState.currentSquare;
+    var charSpan = document.getElementById('player-character');
+    var bulletsSpan = document.getElementById('player-bullets');
+    var livesSpan = document.getElementById('player-lives');
+    var squareSpan = document.getElementById('player-square');
+    var timeSpan = document.getElementById('player-time');
+
+    if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character);
+    if (bulletsSpan) bulletsSpan.textContent = gameState.bullets;
+    if (livesSpan) livesSpan.textContent = gameState.lives;
+    if (squareSpan) squareSpan.textContent = gameState.currentSquare;
+    if (timeSpan) timeSpan.textContent = formatTime(gameState.timeElapsed);
+}
+
+function formatTime(totalSeconds) {
+    totalSeconds = Number(totalSeconds || 0);
+    var minutes = Math.floor(totalSeconds / 60);
+    var seconds = totalSeconds % 60;
+    return minutes + ':' + (seconds < 10 ? '0' + seconds : seconds);
 }
 
 function startTimer() {
-  setInterval(() => {
-    const elapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    document.getElementById(
-      'time-played'
-    ).textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    gameState.timeElapsed = elapsed;
-  }, 1000);
+    setInterval(function () {
+        if (!gameState.timeStarted) return;
+        var elapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
+        gameState.timeElapsed = elapsed;
+
+        var timeSpan = document.getElementById('player-time');
+        if (timeSpan) timeSpan.textContent = formatTime(elapsed);
+    }, 1000);
+}
+
+// Save time/bullets periodically so it never “looks like it saved but didn’t”
+function startAutosave() {
+    setInterval(function () {
+        if (gameState.isGuest) return;
+        saveProgressSilently();
+    }, AUTOSAVE_EVERY_SECONDS * 1000);
 }
 
 // ============================================================
-// Core gameplay
+// Game logic: dice rolling and movement
 // ============================================================
 
-async function rollDice() {
-  const diceBtn = document.getElementById('roll-dice-btn');
-  diceBtn.disabled = true;
+function rollDice() {
+    var diceBtn = document.getElementById('roll-dice-btn');
+    if (diceBtn) diceBtn.disabled = true;
 
   const diceAnim = document.getElementById('dice-animation');
   diceAnim.classList.remove('hidden');
 
-  const roll = Math.floor(Math.random() * 10) + 1;
+  const roll = Math.floor(Math.random() * 5) + 1;
 
-  setTimeout(async () => {
-    document.querySelector('.dice-result').textContent = `You rolled a ${roll}!`;
-
-    setTimeout(async () => {
-      diceAnim.classList.add('hidden');
-      await movePlayer(roll);
-      diceBtn.disabled = false;
-    }, 1500);
-  }, 1000);
+    setTimeout(function () {
+        alert('You rolled a ' + roll + '!');
+        movePlayer(roll).then(function () {
+            if (diceBtn) diceBtn.disabled = false;
+        });
+    }, 300);
 }
 
-async function movePlayer(steps) {
-  let newSquare = gameState.currentSquare + steps;
+function movePlayer(steps) {
+    return new Promise(function (resolve) {
+        var section = window.snakesGameSection || 1;
+        var maxSquare = (section === 1) ? 25 : 50;
+
+        var newSquare = gameState.currentSquare + steps;
 
   if (newSquare > BOARD_SIZE) {
-    newSquare = BOARD_SIZE;
+    newSquare = BOARD_SIZE - (newSquare - BOARD_SIZE);
   }
 
   await animateMovement(gameState.currentSquare, newSquare);
@@ -438,560 +519,142 @@ async function movePlayer(steps) {
     gameState.visitedSquares.push(gameState.currentSquare);
   }
 
-  createGameBoard();
-  updatePlayerInfo();
-
-  await saveGameProgress();
-
-  if (gameState.currentSquare === bossBattleSquare) {
-    startBossBattle();
-  } else {
-    showSquareActivity();
-  }
-}
-
-async function animateMovement(from, to) {
-  return new Promise(resolve => {
-    setTimeout(resolve, 500);
-  });
-}
-
-// ============================================================
-// Activities (quiz / memory / math)
-// ============================================================
-
-function showSquareActivity() {
-  const activities = ['quiz', 'memory', 'math'];
-  const activity = activities[Math.floor(Math.random() * activities.length)];
-  const modal = document.getElementById('activity-modal');
-  const content = document.getElementById('activity-content');
-
-  if (activity === 'quiz') {
-    showQuizActivity(content);
-  } else if (activity === 'memory') {
-    showMemoryActivity(content);
-  } else if (activity === 'math') {
-    showMathActivity(content);
-  }
-
-  modal.classList.remove('hidden');
-}
-
-function showQuizActivity(container) {
-  const quizzes = [
-    {
-      question: 'What is the capital of France?',
-      options: ['London', 'Paris', 'Berlin', 'Madrid'],
-      correct: 1,
-      bullets: 10
-    },
-    {
-      question: 'What is 7 x 8?',
-      options: ['54', '56', '58', '60'],
-      correct: 1,
-      bullets: 15
-    },
-    {
-      question: 'Which planet is known as the Red Planet?',
-      options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
-      correct: 1,
-      bullets: 12
-    }
-  ];
-
-  const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
-
-  container.innerHTML = `
-    <div class="activity-game">
-      <h3>Quiz Challenge</h3>
-      <p><strong>${quiz.question}</strong></p>
-      <div class="quiz-options">
-        ${quiz.options
-          .map(
-            (opt, idx) => `
-          <div class="quiz-option" data-index="${idx}">${opt}</div>
-        `
-          )
-          .join('')}
-      </div>
-      <div id="quiz-result" class="activity-result hidden"></div>
-    </div>
-  `;
-
-  document.querySelectorAll('.quiz-option').forEach(option => {
-    option.addEventListener('click', function () {
-      const selected = parseInt(this.dataset.index);
-      const result = document.getElementById('quiz-result');
-
-      if (selected === quiz.correct) {
-        this.classList.add('correct');
-        result.className = 'activity-result success';
-        result.textContent = `Correct! You earned ${quiz.bullets} bullets!`;
-        gameState.bullets += quiz.bullets;
+        createGameBoard();
         updatePlayerInfo();
-        saveGameProgress();
-      } else {
-        this.classList.add('incorrect');
-        document
-          .querySelectorAll('.quiz-option')
-          [quiz.correct].classList.add('correct');
-        result.className = 'activity-result failure';
-        result.textContent = 'Incorrect! No bullets earned.';
-      }
 
-      result.classList.remove('hidden');
+        // ✅ Save progress with time_played, bullets, etc.
+        saveProgress();
 
-      setTimeout(() => {
-        document.getElementById('activity-modal').classList.add('hidden');
-      }, 2000);
+        handleSquareEvent();
+        resolve();
     });
-  });
 }
 
-function showMemoryActivity(container) {
-  const emojis = ['🎮', '🎯', '🎪', '🎨', '🎭', '🎬', '🎤', '🎧'];
-  const selected = [];
+function handleSquareEvent() {
+    var section = window.snakesGameSection || 1;
+    var square = gameState.currentSquare;
 
-  for (let i = 0; i < 4; i++) {
-    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    selected.push(emoji, emoji);
-  }
-
-  selected.sort(() => Math.random() - 0.5);
-
-  let flipped = [];
-  let matched = [];
-  let bullets = 20;
-
-  container.innerHTML = `
-    <div class="activity-game">
-      <h3>Memory Match</h3>
-      <p>Find all matching pairs! Reward: ${bullets} bullets</p>
-      <div class="memory-game-grid">
-        ${selected
-          .map(
-            (emoji, idx) => `
-          <div class="memory-card" data-emoji="${emoji}" data-index="${idx}"></div>
-        `
-          )
-          .join('')}
-      </div>
-      <div id="memory-result" class="activity-result hidden"></div>
-    </div>
-  `;
-
-  document.querySelectorAll('.memory-card').forEach(card => {
-    card.addEventListener('click', function () {
-      if (
-        flipped.length >= 2 ||
-        this.classList.contains('flipped') ||
-        this.classList.contains('matched')
-      )
-        return;
-
-      this.classList.add('flipped');
-      this.textContent = this.dataset.emoji;
-      flipped.push(this);
-
-      if (flipped.length === 2) {
-        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
-          flipped.forEach(c => c.classList.add('matched'));
-          matched.push(...flipped);
-          flipped = [];
-
-          if (matched.length === selected.length) {
-            const result = document.getElementById('memory-result');
-            result.className = 'activity-result success';
-            result.textContent = `Perfect! You earned ${bullets} bullets!`;
-            result.classList.remove('hidden');
-            gameState.bullets += bullets;
-            updatePlayerInfo();
-            saveGameProgress();
-
-            setTimeout(() => {
-              document
-                .getElementById('activity-modal')
-                .classList.add('hidden');
-            }, 2000);
-          }
+    if (section === 1) {
+        var row = Math.ceil(square / 5); // 1–5
+        if (gameState.completedLessons.indexOf(row) === -1) {
+            window.location.href = 'lessons/lesson' + row + '.html';
         } else {
-          setTimeout(() => {
-            flipped.forEach(c => {
-              c.classList.remove('flipped');
-              c.textContent = '';
-            });
-            flipped = [];
-          }, 1000);
+            if (row < 5) {
+                var nextRowSquare = (row * 5) + 1;
+                gameState.currentSquare = nextRowSquare;
+                if (gameState.visitedSquares.indexOf(nextRowSquare) === -1) {
+                    gameState.visitedSquares.push(nextRowSquare);
+                }
+                createGameBoard();
+                updatePlayerInfo();
+                saveProgress();
+                alert('Lesson already complete. Moving you to the next row.');
+            } else {
+                if (gameState.unlockedSections.indexOf('half2') === -1) {
+                    gameState.unlockedSections.push('half2');
+                }
+                // persist unlock + time/bullets
+                saveProgress();
+                alert('All lessons completed! You can now go to the next section.');
+            }
         }
-      }
-    });
-  });
-}
-
-function showMathActivity(container) {
-  const num1 = Math.floor(Math.random() * 20) + 1;
-  const num2 = Math.floor(Math.random() * 20) + 1;
-  const operations = ['+', '-', '*'];
-  const op = operations[Math.floor(Math.random() * operations.length)];
-  let answer;
-
-  if (op === '+') answer = num1 + num2;
-  else if (op === '-') answer = num1 - num2;
-  else answer = num1 * num2;
-
-  const bullets = 15;
-
-  container.innerHTML = `
-    <div class="activity-game math-challenge">
-      <h3>Math Challenge</h3>
-      <p>Solve the problem to earn ${bullets} bullets!</p>
-      <div class="math-problem">${num1} ${op} ${num2} = ?</div>
-      <input type="number" class="math-input" id="math-answer" placeholder="Your answer">
-      <br><br>
-      <button class="btn btn-primary" id="submit-math">Submit</button>
-      <div id="math-result" class="activity-result hidden"></div>
-    </div>
-  `;
-
-  document
-    .getElementById('submit-math')
-    .addEventListener('click', () => {
-      const userAnswer = parseInt(
-        document.getElementById('math-answer').value
-      );
-      const result = document.getElementById('math-result');
-
-      if (userAnswer === answer) {
-        result.className = 'activity-result success';
-        result.textContent = `Correct! You earned ${bullets} bullets!`;
-        gameState.bullets += bullets;
-        updatePlayerInfo();
-        saveGameProgress();
-      } else {
-        result.className = 'activity-result failure';
-        result.textContent = `Incorrect! The answer was ${answer}. No bullets earned.`;
-      }
-
-      result.classList.remove('hidden');
-
-      setTimeout(() => {
-        document.getElementById('activity-modal').classList.add('hidden');
-      }, 2000);
-    });
-}
-
-// ============================================================
-// Save progress
-// ============================================================
-
-async function saveGameProgress() {
-  if (gameState.isGuest) return;
-
-  try {
-    await fetch(`${API_URL}/snakes/`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        total_bullets: gameState.bullets,
-        time_played: gameState.timeElapsed,
-        current_square: gameState.currentSquare,
-        visited_squares: gameState.visitedSquares,
-        lives: gameState.lives,
-        boss_battle_attempts: gameState.bossAttempts,
-        selected_character: gameState.character
-      })
-    });
-
-    await fetch(`${API_URL}/snakes/update-square`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        square: gameState.currentSquare
-      })
-    });
-  } catch (error) {
-    console.error('Error saving progress:', error);
-  }
-}
-
-// ============================================================
-// Boss battle + Socket (guest mode vs multiplayer)
-// ============================================================
-
-function initializeSocket() {
-  if (!SOCKET_URL) {
-    console.warn(
-      'SOCKET_URL is not set for this environment. Boss battle will run in local/simulated mode.'
-    );
-    return;
-  }
-
-  try {
-    gameState.socket = io(SOCKET_URL);
-
-    gameState.socket.on('connect', () => {
-      console.log('Connected to socket server');
-    });
-
-    gameState.socket.on('player_joined', data => {
-      console.log('Player joined:', data);
-      updateBossBattle(data);
-    });
-
-    gameState.socket.on('boss_state_update', data => {
-      updateBossBattle(data);
-    });
-
-    gameState.socket.on('player_died', data => {
-      addBattleLog(`💀 ${data.username} has been defeated!`, 'death');
-    });
-
-    gameState.socket.on('boss_defeated', data => {
-      alert('🎉 Congratulations! The boss has been defeated!');
-      document
-        .getElementById('boss-battle-modal')
-        .classList.add('hidden');
-      gameState.currentSquare = 100;
-      updatePlayerInfo();
-    });
-
-    gameState.socket.on('player_left', data => {
-      console.log('Player left:', data);
-    });
-  } catch (err) {
-    console.error('Error initializing socket:', err);
-    gameState.socket = null;
-  }
-}
-
-function startBossBattle() {
-  gameState.bossAttempts++;
-  const modal = document.getElementById('boss-battle-modal');
-  modal.classList.remove('hidden');
-
-  document.getElementById('battle-bullets').textContent = gameState.bullets;
-  document.getElementById('battle-lives').textContent = gameState.lives;
-
-  if (gameState.socket && !gameState.isGuest) {
-    gameState.socket.emit('join_boss_battle', {
-      username: gameState.username,
-      user_id: gameState.userId,
-      bullets: gameState.bullets,
-      character: gameState.character
-    });
-  } else {
-    // Guest mode / no socket: fully simulated boss
-    updateBossBattle({
-      boss_health: 1000,
-      max_health: 1000,
-      active_players: 1,
-      players: [
-        {
-          username: gameState.username,
-          bullets: gameState.bullets,
-          lives: gameState.lives,
-          character: gameState.character,
-          status: 'alive'
-        }
-      ]
-    });
-  }
-
-  document
-    .getElementById('attack-boss-btn')
-    .addEventListener('click', attackBoss);
-}
-
-function attackBoss() {
-  if (gameState.bullets < 10) {
-    alert('You need at least 10 bullets to attack!');
-    return;
-  }
-
-  gameState.bullets -= 10;
-  document.getElementById('battle-bullets').textContent = gameState.bullets;
-  document.getElementById('player-bullets').textContent = gameState.bullets;
-
-  const damage = Math.floor(Math.random() * 20) + 10;
-
-  if (gameState.socket && !gameState.isGuest) {
-    gameState.socket.emit('attack_boss', {
-      user_id: gameState.userId,
-      username: gameState.username,
-      damage: damage
-    });
-  } else {
-    // Simulated boss logic
-    const currentHealth = parseInt(
-      document.getElementById('boss-health').textContent
-    );
-    const newHealth = Math.max(0, currentHealth - damage);
-    document.getElementById('boss-health').textContent = newHealth;
-
-    const healthPercent = (newHealth / 1000) * 100;
-    document.getElementById('boss-health-fill').style.width =
-      healthPercent + '%';
-
-    addBattleLog(
-      `⚔️ ${gameState.username} attacked for ${damage} damage!`,
-      'attack'
-    );
-
-    if (newHealth <= 0) {
-      alert('🎉 You defeated the boss!');
-      document
-        .getElementById('boss-battle-modal')
-        .classList.add('hidden');
     } else {
-      setTimeout(() => {
-        const bossDamage = 1;
-        gameState.lives -= bossDamage;
-        document.getElementById('battle-lives').textContent =
-          gameState.lives;
-        document.getElementById('player-lives').textContent =
-          gameState.lives;
+        var idx = square - 26;
+        var row2 = Math.floor(idx / 5) + 1;
+        var index = idx % 5;
+        window.location.href =
+            'questions/question_template.html?row=' +
+            row2 +
+            '&index=' +
+            index +
+            '&square=' +
+            square;
+    }
+}
 
-        if (gameState.lives <= 0) {
-          alert('💀 You have been defeated! Returning to square 1...');
-          resetAfterBossDefeat();
+// ============================================================
+// Navigation between sections
+// ============================================================
+
+function navigatePrev() {
+    var section = window.snakesGameSection || 1;
+    if (section === 2) {
+        window.location.href = 'game-board-part1.html';
+    }
+}
+
+function navigateNext() {
+    var section = window.snakesGameSection || 1;
+    var overlay = document.getElementById('locked-overlay');
+
+    if (section === 1) {
+        if (gameState.unlockedSections.indexOf('half2') === -1) {
+            if (overlay) overlay.style.display = 'flex';
+            return;
         }
-      }, 1000);
+        window.location.href = 'game-board-part2.html';
+    } else if (section === 2) {
+        if (gameState.unlockedSections.indexOf('boss') === -1) {
+            if (overlay) overlay.style.display = 'flex';
+            return;
+        }
+        window.location.href = '../boss-battle.html';
     }
-  }
-
-  saveGameProgress();
 }
 
-function updateBossBattle(data) {
-  document.getElementById('boss-health').textContent = data.boss_health;
-  document.getElementById('boss-max-health').textContent = data.max_health;
-  document.getElementById('active-players-count').textContent =
-    data.active_players;
+function checkSectionLock() {
+    var section = window.snakesGameSection || 1;
+    var overlay = document.getElementById('locked-overlay');
+    if (!overlay) return;
 
-  const healthPercent = (data.boss_health / data.max_health) * 100;
-  document.getElementById('boss-health-fill').style.width =
-    healthPercent + '%';
-
-  const playersList = document.getElementById('players-list');
-  playersList.innerHTML = '';
-
-  if (data.players) {
-    data.players.forEach(player => {
-      const playerCard = document.createElement('div');
-      playerCard.className = 'player-card';
-      if (player.status === 'dead') {
-        playerCard.classList.add('dead');
-      }
-      playerCard.innerHTML = `
-        <strong>${player.username}</strong><br>
-        ${getCharacterIcon(player.character)}<br>
-        Lives: ${player.lives}
-      `;
-      playersList.appendChild(playerCard);
-    });
-  }
-
-  if (data.last_attacker && data.damage) {
-    addBattleLog(
-      `⚔️ ${data.last_attacker} attacked for ${data.damage} damage!`,
-      'attack'
-    );
-  }
-}
-
-function addBattleLog(message, type = '') {
-  const log = document.getElementById('battle-log');
-  const entry = document.createElement('div');
-  entry.className = `log-entry ${type}`;
-  entry.textContent = message;
-  log.insertBefore(entry, log.firstChild);
-
-  while (log.children.length > 10) {
-    log.removeChild(log.lastChild);
-  }
-}
-
-async function resetAfterBossDefeat() {
-  document.getElementById('boss-battle-modal').classList.add('hidden');
-
-  let unvisitedSquares = [];
-  if (!gameState.isGuest) {
-    try {
-      const response = await fetch(`${API_URL}/snakes/unvisited-squares`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
-      unvisitedSquares = data.unvisited_squares || [];
-    } catch (error) {
-      console.error('Error getting unvisited squares:', error);
+    if (section === 2 && gameState.unlockedSections.indexOf('half2') === -1) {
+        overlay.style.display = 'flex';
+    } else if (section === 3 && gameState.unlockedSections.indexOf('boss') === -1) {
+        overlay.style.display = 'flex';
+    } else {
+        overlay.style.display = 'none';
     }
-  } else {
-    const allSquares = Array.from({ length: 100 }, (_, i) => i + 1);
-    unvisitedSquares = allSquares.filter(
-      sq => !gameState.visitedSquares.includes(sq)
-    );
-  }
-
-  gameState.currentSquare = 1;
-  gameState.lives = 3;
-  gameState.visitedSquares = [1];
-
-  createGameBoard();
-  updatePlayerInfo();
-
-  if (!gameState.isGuest) {
-    await fetch(`${API_URL}/snakes/reset-position`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-  }
-
-  saveGameProgress();
 }
 
 // ============================================================
 // Leaderboard
 // ============================================================
 
-async function viewLeaderboard() {
-  try {
-    const response = await fetch(
-      `${API_URL}/snakes/leaderboard?limit=10`,
-      { credentials: 'include' }
-    );
-    const data = await response.json();
+function viewLeaderboard() {
+    var modal = document.getElementById('leaderboard-modal');
+    var tbody = document.querySelector('#leaderboard-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
 
-    const modal = document.getElementById('leaderboard-modal');
-    const content = document.getElementById('leaderboard-content');
+    fetch(API_URL + '/snakes/leaderboard', { credentials: 'include' })
+        .then(function (res) {
+            if (!res.ok) throw new Error('Failed to fetch leaderboard');
+            return res.json();
+        })
+        .then(function (data) {
+            for (var i = 0; i < data.length; i++) {
+                var entry = data[i];
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td>' + entry.username + '</td>' +
+                    '<td>' + entry.total_bullets + '</td>' +
+                    '<td>' + formatTime(entry.time_played) + '</td>';
+                tbody.appendChild(tr);
+            }
+            if (modal) modal.classList.remove('hidden');
+        })
+        .catch(function (err) {
+            console.error(err);
+            alert('Error loading leaderboard.');
+        });
+}
 
-    content.innerHTML = data.leaderboard
-      .map(
-        (player, index) => `
-        <div class="leaderboard-entry ${
-          index < 3 ? 'top-' + (index + 1) : ''
-        }">
-          <div class="rank">${index + 1}</div>
-          <div class="player-details">
-            <h4>${getCharacterIcon(player.selected_character)} ${
-          player.username
-        }</h4>
-            <div class="player-stats">
-              Square: ${player.current_square} |
-              Time: ${Math.floor(player.time_played / 60)}m |
-              Boss Attempts: ${player.boss_battle_attempts}
-            </div>
-          </div>
-          <div class="bullets-count">🔫 ${player.total_bullets}</div>
-        </div>
-      `
-      )
-      .join('');
+// ============================================================
+// Boss battle (stub)
+// ============================================================
 
-    modal.classList.remove('hidden');
-  } catch (error) {
-    console.error('Error loading leaderboard:', error);
-    alert('Error loading leaderboard');
-  }
+function startBossBattle() {
+    var modal = document.getElementById('boss-modal');
+    if (modal) modal.classList.remove('hidden');
 }

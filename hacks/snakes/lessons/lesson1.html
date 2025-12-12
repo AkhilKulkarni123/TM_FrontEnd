@@ -1,0 +1,134 @@
+<!--
+  Lesson 1 – Algorithms & Programming Basics
+
+  This lesson introduces fundamental programming concepts such as variables,
+  conditionals and loops.  The page contains a short description followed by
+  a simple interactive multiple‑choice question.  When the user completes the
+  lesson, they may click the "Complete Lesson" button to record their
+  progress and earn bullets.  The page calls the backend endpoint
+  /api/snakes/complete‑lesson to update the user's game state.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 1 – Algorithms & Programming Basics</title>
+    <!-- Use a relative path to load the shared game styles -->
+    <!-- Load the shared game styles from the assets directory.  Because this
+         lesson file lives in hacks/snakes/lessons, we must go up three
+         directories (lessons → snakes → hacks → frontend) to reach
+         frontend/assets/css/snakes-game.css. -->
+    <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+        .question {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f4f4f4;
+            border-radius: 4px;
+        }
+        .options {
+            margin-top: 0.5rem;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        #complete-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lesson 1: Algorithms & Programming Basics</h1>
+    <p>In this lesson you will learn about the building blocks of programming.
+       Computers use variables to store values, conditionals to make
+       decisions, and loops to repeat instructions.  Understanding these
+       concepts is key to writing algorithms that solve problems.</p>
+    <h2>Variables</h2>
+    <p>A variable is a named location in memory used to store a value.  In
+       JavaScript you can declare a variable using <code>let</code> or
+       <code>const</code>:</p>
+    <pre><code>let score = 0;
+const name = 'Ada';</code></pre>
+    <h2>Conditionals</h2>
+    <p>Conditionals allow your program to choose different paths of
+       execution.  The simplest conditional is the <code>if</code> statement:</p>
+    <pre><code>if (score > 10) {
+    console.log('You win!');
+} else {
+    console.log('Keep trying!');
+}</code></pre>
+    <h2>Loops</h2>
+    <p>Loops repeat instructions multiple times.  A <code>for</code> loop
+       repeats a block of code a specified number of times:</p>
+    <pre><code>for (let i = 0; i &lt; 5; i++) {
+    console.log('Iteration ' + i);
+}</code></pre>
+
+    <div class="question">
+        <h3>Interactive Quiz</h3>
+        <p>What does the following JavaScript code output?</p>
+        <pre><code>let total = 0;
+for (let i = 1; i &lt;= 3; i++) {
+    total += i;
+}
+console.log(total);
+</code></pre>
+        <div class="options">
+            <label><input type="radio" name="q1" value="3"> 3</label>
+            <label><input type="radio" name="q1" value="6"> 6</label>
+            <label><input type="radio" name="q1" value="7"> 7</label>
+            <label><input type="radio" name="q1" value="1"> 1</label>
+        </div>
+    </div>
+    <button id="complete-btn">Complete Lesson</button>
+
+    <script>
+    const API_URL = 'http://localhost:8001/api';
+    // Check answer and complete the lesson
+    document.getElementById('complete-btn').addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="q1"]:checked');
+        if (!selected) {
+            alert('Please select an answer before completing the lesson.');
+            return;
+        }
+        const correct = (selected.value === '6');
+        if (!correct) {
+            alert('Incorrect answer. Review the lesson and try again!');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ lesson_number: 1, bullets_earned: 5 })
+            });
+            if (res.ok) {
+                alert('Lesson completed! You earned 5 bullets.');
+                // Navigate back to the game board.  If all lessons are
+                // completed, the backend will unlock the second half.
+                window.location.href = '../game-board-part1.html';
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error completing lesson.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error. Please try again later.');
+        }
+    });
+    </script>
+</body>
+</html>

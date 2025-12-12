@@ -1,0 +1,89 @@
+<!--
+  Lesson 5 – Computing Impacts & Data Analysis
+
+  Introduces topics related to the societal impacts of computing and
+  analysing data.  Concludes with a short quiz.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 5 – Computing Impacts & Data Analysis</title>
+    <!-- Use a relative path to load the shared game styles -->
+    <!-- Load the shared game styles from the assets directory.  Because this
+         lesson file lives in hacks/snakes/lessons, we must go up three
+         directories (lessons → snakes → hacks → frontend) to reach
+         frontend/assets/css/snakes-game.css. -->
+    <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .question { margin-top: 1.5rem; padding: 1rem; background: #f4f4f4; border-radius: 4px; }
+        .options label { display: block; margin-bottom: 0.5rem; }
+        #complete-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Lesson 5: Computing Impacts & Data Analysis</h1>
+    <p>Computers have transformed society in many ways.  Big data and
+       analytics allow us to discover patterns and make predictions, but
+       they also raise important questions about privacy, bias and
+       ethical use of information.</p>
+    <h2>Big Data</h2>
+    <p>Big data refers to datasets that are too large or complex to be
+       processed by traditional tools.  Specialised technologies like
+       Hadoop and cloud computing enable analysis of these massive
+       datasets.</p>
+    <h2>Privacy & Ethics</h2>
+    <p>Collecting and analysing personal data can lead to discoveries
+       that benefit society, but mishandling data can harm individuals.
+       Ethical computing emphasises transparency, fairness and respect
+       for user privacy.</p>
+
+    <div class="question">
+        <h3>Interactive Quiz</h3>
+        <p>Why is ethical consideration important when analysing personal data?</p>
+        <div class="options">
+            <label><input type="radio" name="q1" value="0"> Ethics slow down analysis and should be avoided.</label>
+            <label><input type="radio" name="q1" value="1"> To ensure fairness and protect privacy rights.</label>
+            <label><input type="radio" name="q1" value="2"> Because algorithms always produce unbiased results.</label>
+            <label><input type="radio" name="q1" value="3"> There is no need for ethics in data science.</label>
+        </div>
+    </div>
+    <button id="complete-btn">Complete Lesson</button>
+
+    <script>
+    const API_URL = 'http://localhost:8001/api';
+    document.getElementById('complete-btn').addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="q1"]:checked');
+        if (!selected) {
+            alert('Please select an answer.');
+            return;
+        }
+        const correct = (selected.value === '1');
+        if (!correct) {
+            alert('Incorrect. Ethical practices ensure fairness and privacy.');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ lesson_number: 5, bullets_earned: 5 })
+            });
+            if (res.ok) {
+                alert('Lesson completed! You earned 5 bullets.');
+                window.location.href = '../game-board-part1.html';
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error completing lesson.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!--
+  Lesson 2 – Data Structures
+
+  Introduces arrays (lists) and objects (dictionaries) in computer science.
+  Includes an interactive quiz at the bottom.  Completing the lesson
+  awards bullets through the backend API.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 2 – Data Structures</title>
+    <!-- Use a relative path to load the shared game styles -->
+    <!-- Load the shared game styles from the assets directory.  Because this
+         lesson file lives in hacks/snakes/lessons, we must go up three
+         directories (lessons → snakes → hacks → frontend) to reach
+         frontend/assets/css/snakes-game.css. -->
+    <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .question { margin-top: 1.5rem; padding: 1rem; background: #f4f4f4; border-radius: 4px; }
+        .options label { display: block; margin-bottom: 0.5rem; }
+        #complete-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Lesson 2: Data Structures</h1>
+    <p>Data structures are ways of organising and storing data in a
+       computer so that it can be accessed and modified efficiently.  Two
+       common data structures are arrays (also called lists) and objects
+       (also called dictionaries or maps).</p>
+    <h2>Arrays</h2>
+    <p>An array stores an ordered collection of values.  In JavaScript you
+       declare an array with square brackets:</p>
+    <pre><code>const fruits = ['apple', 'banana', 'cherry'];
+console.log(fruits[1]); // 'banana'
+</code></pre>
+    <h2>Objects</h2>
+    <p>An object stores data as key‑value pairs.  Keys are strings and
+       values can be any type:</p>
+    <pre><code>const student = { name: 'Ada', age: 17 };
+console.log(student.name); // 'Ada'
+</code></pre>
+
+    <div class="question">
+        <h3>Interactive Quiz</h3>
+        <p>Which code correctly accesses the value <code>42</code> in the array below?</p>
+        <pre><code>const nums = [7, 42, 99];
+</code></pre>
+        <div class="options">
+            <label><input type="radio" name="q1" value="wrong1"> nums['1']</label>
+            <label><input type="radio" name="q1" value="correct"> nums[1]</label>
+            <label><input type="radio" name="q1" value="wrong2"> nums(2)</label>
+            <label><input type="radio" name="q1" value="wrong3"> nums.1</label>
+        </div>
+    </div>
+    <button id="complete-btn">Complete Lesson</button>
+
+    <script>
+    const API_URL = 'http://localhost:8001/api';
+    document.getElementById('complete-btn').addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="q1"]:checked');
+        if (!selected) {
+            alert('Please select an answer.');
+            return;
+        }
+        const correct = (selected.value === 'correct');
+        if (!correct) {
+            alert('Incorrect! Arrays are zero‑indexed: nums[1] is 42.');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ lesson_number: 2, bullets_earned: 5 })
+            });
+            if (res.ok) {
+                alert('Lesson completed! You earned 5 bullets.');
+                window.location.href = '../game-board-part1.html';
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error completing lesson.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error.');
+        }
+    });
+    </script>
+</body>
+</html>
