@@ -468,10 +468,7 @@ function rollDice() {
     var diceBtn = document.getElementById('roll-dice-btn');
     if (diceBtn) diceBtn.disabled = true;
 
-  const diceAnim = document.getElementById('dice-animation');
-  diceAnim.classList.remove('hidden');
-
-  const roll = Math.floor(Math.random() * 5) + 1;
+    var roll = Math.floor(Math.random() * 6) + 1;
 
     setTimeout(function () {
         alert('You rolled a ' + roll + '!');
@@ -488,36 +485,14 @@ function movePlayer(steps) {
 
         var newSquare = gameState.currentSquare + steps;
 
-  if (newSquare > BOARD_SIZE) {
-    newSquare = BOARD_SIZE - (newSquare - BOARD_SIZE);
-  }
+        if (newSquare > maxSquare) {
+            newSquare = maxSquare - (newSquare - maxSquare);
+        }
 
-  await animateMovement(gameState.currentSquare, newSquare);
-  gameState.currentSquare = newSquare;
-
-  // Snake
-  if (snakes[newSquare]) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    alert(
-      `Oh no! You hit a snake! Sliding down to square ${snakes[newSquare]}`
-    );
-    await animateMovement(newSquare, snakes[newSquare]);
-    gameState.currentSquare = snakes[newSquare];
-  }
-
-  // Ladder
-  if (ladders[newSquare]) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    alert(
-      `Great! You found a ladder! Climbing up to square ${ladders[newSquare]}`
-    );
-    await animateMovement(newSquare, ladders[newSquare]);
-    gameState.currentSquare = ladders[newSquare];
-  }
-
-  if (!gameState.visitedSquares.includes(gameState.currentSquare)) {
-    gameState.visitedSquares.push(gameState.currentSquare);
-  }
+        gameState.currentSquare = newSquare;
+        if (gameState.visitedSquares.indexOf(newSquare) === -1) {
+            gameState.visitedSquares.push(newSquare);
+        }
 
         createGameBoard();
         updatePlayerInfo();
