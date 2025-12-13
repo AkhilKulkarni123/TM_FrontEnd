@@ -5,35 +5,16 @@
  *  - First half (1–25): 5 lesson rows (AP CSP topics)
  *  - Second half (26–50): questions based on those lessons
  *  - After 50: boss battle
- *
- * This script:
- *  - Uses website login via JWT cookie (/api/id)
- *  - Loads/saves progress via /api/snakes and /api/snakes/progress
- *  - Handles lessons (/snakes/complete-lesson) and questions
- *    (/snakes/answer-question)
  */
 
-// ============================================================
-// Configuration
-// ============================================================
-
-// IMPORTANT: Always use localhost (not 127.0.0.1) so cookies match domain.
 var API_URL = 'http://localhost:8001/api';
-
-// Board constants
 var BOARD_TOTAL_SQUARES = 50;
 var HALF_SIZE = 25;
 
-// Bullets
 var LESSON_BULLETS = 5;
 var QUESTION_BULLETS = 2;
 
-// Autosave cadence (seconds)
 var AUTOSAVE_EVERY_SECONDS = 10;
-
-// ============================================================
-// Game State
-// ============================================================
 
 var gameState = {
     isGuest: false,
@@ -45,24 +26,15 @@ var gameState = {
     currentSquare: 1,
     visitedSquares: [1],
     completedLessons: [],
-    unlockedSections: ['half1'], // 'half1', 'half2', 'boss'
+    unlockedSections: ['half1'],
     timeStarted: null,
     timeElapsed: 0,
     bossAttempts: 0,
     socket: null
 };
 
-// Helper: safe querySelector
-function $(selector) {
-    return document.querySelector(selector);
-}
-function $all(selector) {
-    return document.querySelectorAll(selector);
-}
-
-// ============================================================
-// Initialization
-// ============================================================
+function $(selector) { return document.querySelector(selector); }
+function $all(selector) { return document.querySelectorAll(selector); }
 
 document.addEventListener('DOMContentLoaded', function () {
     initializeEventListeners();
@@ -71,78 +43,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function initializeEventListeners() {
     var btnUseLogin = document.getElementById('use-existing-login');
-    if (btnUseLogin) {
-        btnUseLogin.addEventListener('click', useExistingLogin);
-    }
+    if (btnUseLogin) btnUseLogin.addEventListener('click', useExistingLogin);
 
     var btnGuest = document.getElementById('play-as-guest');
-    if (btnGuest) {
-        btnGuest.addEventListener('click', playAsGuest);
-    }
+    if (btnGuest) btnGuest.addEventListener('click', playAsGuest);
 
     var characterCards = $all('.character-card');
     for (var i = 0; i < characterCards.length; i++) {
         (function (card) {
-            card.addEventListener('click', function () {
-                selectCharacter(card);
-            });
+            card.addEventListener('click', function () { selectCharacter(card); });
         })(characterCards[i]);
     }
 
     var startBtn = document.getElementById('start-game-btn');
-    if (startBtn) {
-        startBtn.addEventListener('click', startGame);
-    }
+    if (startBtn) startBtn.addEventListener('click', startGame);
 
     var rollBtn = document.getElementById('roll-dice-btn');
-    if (rollBtn) {
-        rollBtn.addEventListener('click', rollDice);
-    }
+    if (rollBtn) rollBtn.addEventListener('click', rollDice);
 
     var leaderboardBtn = document.getElementById('view-leaderboard-btn');
-    if (leaderboardBtn) {
-        leaderboardBtn.addEventListener('click', viewLeaderboard);
-    }
+    if (leaderboardBtn) leaderboardBtn.addEventListener('click', viewLeaderboard);
 
     var prevBtn = document.getElementById('prev-section-btn');
-    if (prevBtn) {
-        prevBtn.addEventListener('click', navigatePrev);
-    }
+    if (prevBtn) prevBtn.addEventListener('click', navigatePrev);
 
     var nextBtn = document.getElementById('next-section-btn');
-    if (nextBtn) {
-        nextBtn.addEventListener('click', navigateNext);
-    }
+    if (nextBtn) nextBtn.addEventListener('click', navigateNext);
 
     var closeButtons = $all('.close-modal');
     for (var j = 0; j < closeButtons.length; j++) {
         closeButtons[j].addEventListener('click', function () {
             var modals = $all('.modal');
-            for (var k = 0; k < modals.length; k++) {
-                modals[k].classList.add('hidden');
-            }
+            for (var k = 0; k < modals.length; k++) modals[k].classList.add('hidden');
         });
     }
 }
 
-// ============================================================
-// Login / User handling
-// ============================================================
-
 function checkExistingLogin() {
     fetch(API_URL + '/id', { credentials: 'include' })
-        .then(function (response) {
-            if (!response.ok) return null;
-            return response.json();
-        })
+        .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (userData) {
             if (!userData) return;
             gameState.userId = userData.id;
             gameState.username = userData.name;
         })
-        .catch(function () {
-            // ignore
-        });
+        .catch(function () {});
 }
 
 function useExistingLogin() {
@@ -160,12 +105,9 @@ function useExistingLogin() {
             gameState.isGuest = false;
             gameState.userId = userData.id;
             gameState.username = userData.name;
-
             return loadOrCreateGameData();
         })
-        .then(function () {
-            return loadProgress();
-        })
+        .then(function () { return loadProgress(); })
         .then(function () {
             var loginContainer = document.getElementById('login-container');
             var characterSelection = document.getElementById('character-selection');
@@ -189,10 +131,6 @@ function playAsGuest() {
     if (characterSelection) characterSelection.classList.remove('hidden');
 }
 
-// ============================================================
-// Game data load/save
-// ============================================================
-
 function loadOrCreateGameData() {
     if (gameState.isGuest) return Promise.resolve();
 
@@ -208,13 +146,9 @@ function loadOrCreateGameData() {
             }
             return response;
         })
-        .then(function (response) {
-            if (!response || !response.ok) return null;
-            return response.json();
-        })
+        .then(function (response) { if (!response || !response.ok) return null; return response.json(); })
         .then(function (data) {
             if (!data) return;
-
             gameState.bullets = Number(data.total_bullets || 0);
             gameState.currentSquare = Number(data.current_square || 1);
             gameState.visitedSquares = data.visited_squares || [1];
@@ -223,27 +157,20 @@ function loadOrCreateGameData() {
             gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
             gameState.character = data.selected_character || gameState.character;
 
-            // Ensure timeStarted syncs to stored elapsed
             if (gameState.timeStarted === null) {
                 gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
             }
         })
-        .catch(function (error) {
-            console.error('Error loading game data:', error);
-        });
+        .catch(function (error) { console.error('Error loading game data:', error); });
 }
 
 function loadProgress() {
     if (gameState.isGuest) return Promise.resolve();
 
     return fetch(API_URL + '/snakes/progress', { credentials: 'include' })
-        .then(function (response) {
-            if (!response.ok) return null;
-            return response.json();
-        })
+        .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (data) {
             if (!data) return;
-
             gameState.currentSquare = Number(data.current_square || gameState.currentSquare);
             gameState.visitedSquares = data.visited_squares || gameState.visitedSquares;
             gameState.bullets = Number(data.total_bullets || gameState.bullets);
@@ -251,29 +178,18 @@ function loadProgress() {
             gameState.completedLessons = data.completed_lessons || [];
             gameState.unlockedSections = data.unlocked_sections || gameState.unlockedSections;
 
-            // some APIs also return time_played; if present, keep it synced
             if (typeof data.time_played !== 'undefined' && data.time_played !== null) {
                 gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
-                if (gameState.timeStarted !== null) {
-                    gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                }
+                if (gameState.timeStarted !== null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
             }
         })
-        .catch(function (error) {
-            console.error('Error loading progress:', error);
-        });
+        .catch(function (error) { console.error('Error loading progress:', error); });
 }
 
-// IMPORTANT: Your old saveProgress() did NOT send time_played,
-// and would often “look like it saved” but time/bullets were never committed.
-// This function fixes that.
 function saveProgress() {
     if (gameState.isGuest) return Promise.resolve();
 
-    // Always keep timeElapsed in sync before saving
-    if (gameState.timeStarted !== null) {
-        gameState.timeElapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
-    }
+    if (gameState.timeStarted !== null) gameState.timeElapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
 
     return fetch(API_URL + '/snakes/', {
         method: 'PUT',
@@ -283,40 +199,19 @@ function saveProgress() {
             current_square: gameState.currentSquare,
             visited_squares: gameState.visitedSquares,
             total_bullets: gameState.bullets,
-            time_played: gameState.timeElapsed, // ✅ FIX: actually persist time
+            time_played: gameState.timeElapsed,
             lives: gameState.lives,
             boss_battle_attempts: gameState.bossAttempts,
             selected_character: gameState.character
         })
-    })
-        .then(function (res) {
-            if (!res.ok) {
-                return res.json().then(function (j) {
-                    console.error('Save progress failed:', j);
-                }).catch(function () {
-                    console.error('Save progress failed:', res.status);
-                });
-            }
-        })
-        .catch(function (error) {
-            console.error('Error saving progress:', error);
-        });
+    }).catch(function (error) { console.error('Error saving progress:', error); });
 }
 
-// Small helper: save and ignore errors
-function saveProgressSilently() {
-    try { saveProgress(); } catch (e) { /* ignore */ }
-}
-
-// ============================================================
-// Character selection and game start
-// ============================================================
+function saveProgressSilently() { try { saveProgress(); } catch (e) {} }
 
 function selectCharacter(card) {
     var cards = $all('.character-card');
-    for (var i = 0; i < cards.length; i++) {
-        cards[i].classList.remove('selected');
-    }
+    for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
 
@@ -331,18 +226,14 @@ function startGame() {
     }
 
     loadOrCreateGameData()
-        .then(function () {
-            return loadProgress();
-        })
+        .then(function () { return loadProgress(); })
         .then(function () {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
             if (characterSelection) characterSelection.classList.add('hidden');
             if (gameContainer) gameContainer.classList.remove('hidden');
 
-            if (gameState.timeStarted === null) {
-                gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-            }
+            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
 
             startTimer();
             startAutosave();
@@ -351,10 +242,6 @@ function startGame() {
             checkSectionLock();
         });
 }
-
-// ============================================================
-// Rendering & UI updates
-// ============================================================
 
 function createGameBoard() {
     var board = document.getElementById('game-board');
@@ -365,28 +252,20 @@ function createGameBoard() {
     var section = window.snakesGameSection || 1;
     var start = (section === 1) ? 1 : 26;
 
-    // 5x5 grid
     for (var row = 4; row >= 0; row--) {
         for (var col = 0; col < 5; col++) {
             var squareNum;
             var globalRow = (section === 1) ? row : row + 5;
 
-            if (globalRow % 2 === 1) {
-                squareNum = start + (row * 5) + (4 - col);
-            } else {
-                squareNum = start + (row * 5) + col;
-            }
+            if (globalRow % 2 === 1) squareNum = start + (row * 5) + (4 - col);
+            else squareNum = start + (row * 5) + col;
 
             var square = document.createElement('div');
             square.className = 'square';
             square.setAttribute('data-square', squareNum);
 
-            if (gameState.visitedSquares.indexOf(squareNum) !== -1) {
-                square.classList.add('visited');
-            }
-            if (squareNum === gameState.currentSquare) {
-                square.classList.add('current');
-            }
+            if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');
+            if (squareNum === gameState.currentSquare) square.classList.add('current');
 
             var numSpan = document.createElement('span');
             numSpan.className = 'square-number';
@@ -411,12 +290,7 @@ function createGameBoard() {
 }
 
 function getCharacterIcon(character) {
-    var icons = {
-        knight: '🛡️',
-        wizard: '🧙',
-        archer: '🏹',
-        warrior: '⚔️'
-    };
+    var icons = { knight: '🛡️', wizard: '🧙', archer: '🏹', warrior: '⚔️' };
     return icons[character] || '🙂';
 }
 
@@ -446,23 +320,17 @@ function startTimer() {
         if (!gameState.timeStarted) return;
         var elapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
         gameState.timeElapsed = elapsed;
-
         var timeSpan = document.getElementById('player-time');
         if (timeSpan) timeSpan.textContent = formatTime(elapsed);
     }, 1000);
 }
 
-// Save time/bullets periodically so it never “looks like it saved but didn’t”
 function startAutosave() {
     setInterval(function () {
         if (gameState.isGuest) return;
         saveProgressSilently();
     }, AUTOSAVE_EVERY_SECONDS * 1000);
 }
-
-// ============================================================
-// Game logic: dice rolling and movement
-// ============================================================
 
 function rollDice() {
     var diceBtn = document.getElementById('roll-dice-btn');
@@ -484,20 +352,13 @@ function movePlayer(steps) {
         var maxSquare = (section === 1) ? 25 : 50;
 
         var newSquare = gameState.currentSquare + steps;
-
-        if (newSquare > maxSquare) {
-            newSquare = maxSquare - (newSquare - maxSquare);
-        }
+        if (newSquare > maxSquare) newSquare = maxSquare - (newSquare - maxSquare);
 
         gameState.currentSquare = newSquare;
-        if (gameState.visitedSquares.indexOf(newSquare) === -1) {
-            gameState.visitedSquares.push(newSquare);
-        }
+        if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
 
         createGameBoard();
         updatePlayerInfo();
-
-        // ✅ Save progress with time_played, bullets, etc.
         saveProgress();
 
         handleSquareEvent();
@@ -510,25 +371,20 @@ function handleSquareEvent() {
     var square = gameState.currentSquare;
 
     if (section === 1) {
-        var row = Math.ceil(square / 5); // 1–5
+        var row = Math.ceil(square / 5);
         if (gameState.completedLessons.indexOf(row) === -1) {
             window.location.href = 'lessons/lesson' + row + '.html';
         } else {
             if (row < 5) {
                 var nextRowSquare = (row * 5) + 1;
                 gameState.currentSquare = nextRowSquare;
-                if (gameState.visitedSquares.indexOf(nextRowSquare) === -1) {
-                    gameState.visitedSquares.push(nextRowSquare);
-                }
+                if (gameState.visitedSquares.indexOf(nextRowSquare) === -1) gameState.visitedSquares.push(nextRowSquare);
                 createGameBoard();
                 updatePlayerInfo();
                 saveProgress();
                 alert('Lesson already complete. Moving you to the next row.');
             } else {
-                if (gameState.unlockedSections.indexOf('half2') === -1) {
-                    gameState.unlockedSections.push('half2');
-                }
-                // persist unlock + time/bullets
+                if (gameState.unlockedSections.indexOf('half2') === -1) gameState.unlockedSections.push('half2');
                 saveProgress();
                 alert('All lessons completed! You can now go to the next section.');
             }
@@ -537,25 +393,20 @@ function handleSquareEvent() {
         var idx = square - 26;
         var row2 = Math.floor(idx / 5) + 1;
         var index = idx % 5;
-        window.location.href =
-            'questions/question_template.html?row=' +
-            row2 +
-            '&index=' +
-            index +
-            '&square=' +
-            square;
+
+        // ✅ Robust redirect: resolves relative URL correctly no matter the base path
+        var target = new URL('questions/question_template.html', window.location.href);
+        target.searchParams.set('row', row2);
+        target.searchParams.set('index', index);
+        target.searchParams.set('square', square);
+
+        window.location.href = target.toString();
     }
 }
 
-// ============================================================
-// Navigation between sections
-// ============================================================
-
 function navigatePrev() {
     var section = window.snakesGameSection || 1;
-    if (section === 2) {
-        window.location.href = 'game-board-part1.html';
-    }
+    if (section === 2) window.location.href = 'game-board-part1.html';
 }
 
 function navigateNext() {
@@ -582,39 +433,24 @@ function checkSectionLock() {
     var overlay = document.getElementById('locked-overlay');
     if (!overlay) return;
 
-    if (section === 2 && gameState.unlockedSections.indexOf('half2') === -1) {
-        overlay.style.display = 'flex';
-    } else if (section === 3 && gameState.unlockedSections.indexOf('boss') === -1) {
-        overlay.style.display = 'flex';
-    } else {
-        overlay.style.display = 'none';
-    }
+    if (section === 2 && gameState.unlockedSections.indexOf('half2') === -1) overlay.style.display = 'flex';
+    else if (section === 3 && gameState.unlockedSections.indexOf('boss') === -1) overlay.style.display = 'flex';
+    else overlay.style.display = 'none';
 }
-
-// ============================================================
-// Leaderboard
-// ============================================================
 
 function viewLeaderboard() {
     var modal = document.getElementById('leaderboard-modal');
     var tbody = document.querySelector('#leaderboard-table tbody');
     if (!tbody) return;
-    
-    // Show loading state
+
     tbody.innerHTML = '<tr><td colspan="4" class="loading-spinner">Loading leaderboard...</td></tr>';
     if (modal) modal.classList.remove('hidden');
 
     fetch(API_URL + '/snakes/leaderboard?limit=10', { credentials: 'include' })
-        .then(function (res) {
-            if (!res.ok) throw new Error('Failed to fetch leaderboard');
-            return res.json();
-        })
+        .then(function (res) { if (!res.ok) throw new Error('Failed to fetch leaderboard'); return res.json(); })
         .then(function (data) {
-            tbody.innerHTML = ''; // Clear loading
-            
+            tbody.innerHTML = '';
             var leaderboardData = data.leaderboard || [];
-            
-            // Empty state
             if (leaderboardData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -626,38 +462,28 @@ function viewLeaderboard() {
                 `;
                 return;
             }
-            
-            // Populate leaderboard
             for (var i = 0; i < leaderboardData.length; i++) {
                 var entry = leaderboardData[i];
                 var tr = document.createElement('tr');
-                
-                // Highlight current user
-                if (entry.user_id === gameState.userId) {
-                    tr.className = 'current-user-row';
-                }
-                
-                // Rank with medal
+                if (entry.user_id === gameState.userId) tr.className = 'current-user-row';
+
                 var rankClass = '';
                 if (i === 0) rankClass = 'gold';
                 else if (i === 1) rankClass = 'silver';
                 else if (i === 2) rankClass = 'bronze';
                 else rankClass = 'regular';
-                
+
                 var rankBadge = '<span class="rank-badge ' + rankClass + '">' + (i + 1) + '</span>';
-                
-                // Character icon
                 var characterIcon = getCharacterIcon(entry.selected_character || 'knight');
-                
+
                 tr.innerHTML =
                     '<td class="rank-col">' + rankBadge + '</td>' +
                     '<td class="player-col">' + characterIcon + ' ' + (entry.username || 'Unknown') + '</td>' +
                     '<td class="bullets-col">' + (entry.total_bullets || 0) + '</td>' +
                     '<td class="time-col">' + formatTime(entry.time_played || 0) + '</td>';
-                
+
                 tbody.appendChild(tr);
             }
-        
         })
         .catch(function (err) {
             console.error('Leaderboard error:', err);
@@ -671,10 +497,6 @@ function viewLeaderboard() {
             `;
         });
 }
-
-// ============================================================
-// Boss battle (stub)
-// ============================================================
 
 function startBossBattle() {
     var modal = document.getElementById('boss-modal');

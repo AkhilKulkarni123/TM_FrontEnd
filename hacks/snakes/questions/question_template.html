@@ -1,0 +1,141 @@
+<!--
+  Question Template for Snakes and Ladders
+
+  This generic template displays a question based on query parameters in the URL.
+  Expected parameters:
+    - row (1–5)
+    - index (0–4)
+    - square (26–50) [optional; auto-derived if missing]
+
+  It loads question data from:
+    hacks/snakes/questions/questions_bank.js
+
+  On submit, it calls:
+    POST /api/snakes/answer-question
+  and then returns the player to:
+    ../game-board-part2.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snakes and Ladders Question</title>
+
+  <!-- Shared game styles -->
+  <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .question-card { background: #f4f4f4; padding: 1rem; border-radius: 8px; max-width: 720px; }
+    .options label { display: block; margin-bottom: 0.5rem; cursor: pointer; }
+    #submit-btn { margin-top: 1rem; padding: 0.6rem 1rem; background: #2980b9; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    #submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .meta { margin-top: 0.75rem; font-size: 0.9rem; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <div id="question-container" class="question-card">
+    <h2 id="question-title">Question</h2>
+    <p id="question-text"></p>
+    <div id="options" class="options"></div>
+    <button id="submit-btn">Submit Answer</button>
+    <div class="meta" id="question-meta"></div>
+  </div>
+
+  <!-- Load the external question bank -->
+  <script src="questions_bank.js"></script>
+
+  <script>
+    // IMPORTANT: use localhost (not 127.0.0.1) so JWT cookie matches domain
+    const API_URL = 'http://localhost:8001/api';
+
+    // Parse query parameters
+    const params = new URLSearchParams(window.location.search);
+    const row = parseInt(params.get('row'), 10) || 1;       // 1..5
+    const index = parseInt(params.get('index'), 10) || 0;   // 0..4
+
+    // If square isn't passed, derive it from row/index: 26..50
+    const derivedSquare = 25 + ((row - 1) * 5) + index + 1;
+    const square = parseInt(params.get('square'), 10) || derivedSquare;
+
+    // Load question from bank
+    const BANK = window.QUESTIONS_BANK;
+
+    if (!BANK || !BANK[row] || !BANK[row][index]) {
+      console.error("Missing question data for row/index:", row, index, BANK);
+      alert("Question data missing. Please check questions_bank.js.");
+      window.location.href = '../game-board-part2.html';
+    }
+
+    const question = BANK[row][index];
+
+    // Render UI
+    document.getElementById('question-title').innerText = `Lesson ${row} • Question ${index + 1}`;
+    document.getElementById('question-text').innerText = question.prompt;
+
+    const meta = document.getElementById('question-meta');
+    meta.innerText = `Square: ${square} (Row ${row}, Index ${index})`;
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+
+    question.options.forEach((opt, i) => {
+      const label = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'answer';
+      radio.value = i;
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(' ' + opt));
+      optionsDiv.appendChild(label);
+    });
+
+    // Submit handler
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.addEventListener('click', async () => {
+      const selected = document.querySelector('input[name="answer"]:checked');
+      if (!selected) {
+        alert('Please select an answer.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      const chosen = parseInt(selected.value, 10);
+      const correct = (chosen === question.answer);
+      const bullets = correct ? 2 : 0;
+
+      try {
+        const res = await fetch(`${API_URL}/snakes/answer-question`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            square: square,
+            row: row,
+            question_index: index,
+            correct: correct,
+            bullets_earned: bullets
+          })
+        });
+
+        if (res.ok) {
+          alert(correct ? 'Correct! You earned 2 bullets.' : 'Incorrect. No bullets awarded.');
+          window.location.href = '../game-board-part2.html';
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || data.message || 'Error submitting answer.');
+
+      } catch (err) {
+        console.error(err);
+        alert('Network error.');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

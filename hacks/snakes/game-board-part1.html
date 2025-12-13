@@ -4,9 +4,9 @@
   This file renders the first half of the Snakes and Ladders board (squares 1‑25).
   Users must complete one lesson per row before advancing beyond the fifth row.
   The page includes login/character selection panels, player stats, dice roll
-  controls and navigation buttons.  Once the player reaches square 26
+  controls and navigation buttons.  Once the player reaches square 26
   (after completing all five lessons) they are automatically redirected to
-  the second half at game‑board‑part2.html.
+  the second half at game‑board‑part2.html.
 
   NOTE: This file replaces the previous game‑board.html for the first half of
   the game.  It keeps all existing features such as login, character
@@ -55,6 +55,403 @@
             z-index: 100;
             font-size: 1.5rem;
         }
+        
+        /* CHARACTER CAROUSEL STYLES */
+        #character-selection {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        #character-selection h2 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .character-carousel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .carousel-btn {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 10;
+        }
+
+        .carousel-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .carousel-btn:active {
+            transform: scale(0.95);
+        }
+
+        .carousel-container {
+            flex: 1;
+            max-width: 800px;
+            overflow: visible;
+            position: relative;
+        }
+
+        .carousel-track {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+        }
+
+        .character-card {
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            border: 4px solid #7f8c8d;
+            border-radius: 20px;
+            padding: 30px 20px;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            min-width: 180px;
+            opacity: 0.4;
+            transform: scale(0.7);
+            filter: grayscale(50%);
+        }
+
+        .character-card.center {
+            opacity: 1;
+            transform: scale(1.2);
+            border-color: #3498db;
+            box-shadow: 0 10px 40px rgba(52, 152, 219, 0.6);
+            z-index: 5;
+            filter: grayscale(0%);
+        }
+
+        .character-card.selected {
+            border-color: #2ecc71 !important;
+            box-shadow: 0 0 40px rgba(46, 204, 113, 0.8) !important;
+            background: linear-gradient(145deg, #27ae60, #2ecc71) !important;
+        }
+
+        .character-card.left,
+        .character-card.right {
+            opacity: 0.6;
+            transform: scale(0.85);
+        }
+
+        .character-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .character-description {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            font-style: italic;
+        }
+
+        .pixel-character {
+            width: 120px;
+            height: 120px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            animation: idle 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .character-card.center .pixel-character {
+            animation: centerIdle 1.5s ease-in-out infinite;
+        }
+
+        @keyframes idle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes centerIdle {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
+        }
+
+        .game-start-btn {
+            padding: 18px 60px;
+            font-size: 1.3em;
+            font-weight: bold;
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .game-start-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.6);
+        }
+
+        .game-start-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* PLAYER INFO SIDEBAR */
+        #player-info {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            padding: 25px 20px;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.3);
+            min-width: 220px;
+            z-index: 50;
+            animation: slideInLeft 0.5s ease;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                left: -250px;
+                opacity: 0;
+            }
+            to {
+                left: 0;
+                opacity: 1;
+            }
+        }
+
+        #player-info h3 {
+            color: #3498db;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        #player-info p {
+            color: #ecf0f1;
+            font-size: 1em;
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: rgba(52, 73, 94, 0.5);
+            border-radius: 8px;
+            border-left: 3px solid #3498db;
+        }
+
+        #player-info p span {
+            font-weight: bold;
+            color: #f39c12;
+            font-size: 1.1em;
+        }
+
+        /* Special styling for specific stats */
+        #player-info p:has(#player-lives) {
+            border-left-color: #e74c3c;
+        }
+
+        #player-info p:has(#player-lives) span {
+            color: #e74c3c;
+        }
+
+        #player-info p:has(#player-bullets) {
+            border-left-color: #f39c12;
+        }
+
+        #player-info p:has(#player-bullets) span {
+            color: #f39c12;
+        }
+
+        #player-info p:has(#player-square) {
+            border-left-color: #2ecc71;
+        }
+
+        #player-info p:has(#player-square) span {
+            color: #2ecc71;
+        }
+
+        /* DETAILED PIXEL ART CHARACTERS */
+        
+        /* Knight - Detailed blue armor with shield and sword */
+        .knight-pixel {
+            background: 
+                /* Plume */
+                linear-gradient(to right, transparent 48px, #e74c3c 48px, #e74c3c 52px, transparent 52px, 
+                                transparent 56px, #c0392b 56px, #c0392b 60px, transparent 60px, 
+                                transparent 64px, #e74c3c 64px, #e74c3c 68px, transparent 68px) 12px 6px / 120px 8px,
+                /* Helmet top - silver */
+                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 14px / 120px 10px,
+                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 24px / 120px 12px,
+                /* Helmet detail */
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 36px / 120px 8px,
+                /* Visor opening */
+                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 76px, transparent 76px) 12px 44px / 120px 12px,
+                /* Neck guard */
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 56px / 120px 6px,
+                /* Shoulders - blue armor */
+                linear-gradient(to right, transparent 28px, #3498db 28px, #3498db 48px, transparent 48px,
+                                transparent 72px, #3498db 72px, #3498db 92px, transparent 92px) 12px 62px / 120px 14px,
+                /* Chest plate - bright blue */
+                linear-gradient(to right, transparent 36px, #5dade2 36px, #5dade2 84px, transparent 84px) 12px 76px / 120px 18px,
+                /* Chest detail */
+                linear-gradient(to right, transparent 40px, #2980b9 40px, #2980b9 80px, transparent 80px) 12px 82px / 120px 6px,
+                /* Belt - gold */
+                linear-gradient(to right, transparent 36px, #f39c12 36px, #f39c12 84px, transparent 84px) 12px 94px / 120px 8px,
+                /* Legs - dark blue */
+                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 76px, transparent 76px) 12px 102px / 120px 18px;
+            background-repeat: no-repeat;
+        }
+
+        /* Wizard - Detailed purple robes with glowing staff */
+        .wizard-pixel {
+            background: 
+                /* Magic sparkle on hat */
+                linear-gradient(to right, transparent 56px, #f1c40f 56px, #f1c40f 64px, transparent 64px) 12px 4px / 120px 6px,
+                linear-gradient(to right, transparent 52px, #f39c12 52px, #f39c12 68px, transparent 68px) 12px 10px / 120px 4px,
+                /* Hat tip - pointed */
+                linear-gradient(to right, transparent 56px, #8e44ad 56px, #8e44ad 64px, transparent 64px) 12px 14px / 120px 8px,
+                linear-gradient(to right, transparent 52px, #9b59b6 52px, #9b59b6 68px, transparent 68px) 12px 22px / 120px 10px,
+                /* Hat body */
+                linear-gradient(to right, transparent 44px, #8e44ad 44px, #8e44ad 76px, transparent 76px) 12px 32px / 120px 14px,
+                /* Hat brim */
+                linear-gradient(to right, transparent 36px, #6c3483 36px, #6c3483 84px, transparent 84px) 12px 46px / 120px 8px,
+                /* Face */
+                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 54px / 120px 14px,
+                /* Eyes */
+                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 60px / 120px 4px,
+                /* Long beard */
+                linear-gradient(to right, transparent 48px, #ecf0f1 48px, #ecf0f1 72px, transparent 72px) 12px 68px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 76px / 120px 6px,
+                /* Robe body - purple */
+                linear-gradient(to right, transparent 36px, #9b59b6 36px, #9b59b6 84px, transparent 84px) 12px 82px / 120px 28px,
+                /* Robe details - stars */
+                linear-gradient(to right, transparent 48px, #f1c40f 48px, #f1c40f 52px, transparent 52px,
+                                transparent 68px, #f1c40f 68px, #f1c40f 72px, transparent 72px) 12px 92px / 120px 4px,
+                /* Robe bottom */
+                linear-gradient(to right, transparent 32px, #6c3483 32px, #6c3483 88px, transparent 88px) 12px 110px / 120px 10px,
+                /* Glowing staff on left */
+                linear-gradient(to right, transparent 16px, #8b4513 16px, #8b4513 20px, transparent 20px) 12px 68px / 120px 40px,
+                linear-gradient(to right, transparent 12px, #f1c40f 12px, #f1c40f 24px, transparent 24px) 12px 64px / 120px 12px;
+            background-repeat: no-repeat;
+            animation: idle 2s ease-in-out infinite, wizardGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes wizardGlow {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 5px rgba(241, 196, 15, 0.3)); }
+            50% { filter: brightness(1.2) drop-shadow(0 0 15px rgba(241, 196, 15, 0.8)); }
+        }
+
+        /* Archer - Detailed green outfit with bow */
+        .archer-pixel {
+            background: 
+                /* Hood point */
+                linear-gradient(to right, transparent 56px, #1e8449 56px, #1e8449 64px, transparent 64px) 12px 10px / 120px 8px,
+                /* Hood top */
+                linear-gradient(to right, transparent 48px, #27ae60 48px, #27ae60 72px, transparent 72px) 12px 18px / 120px 12px,
+                /* Hood body */
+                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 30px / 120px 16px,
+                /* Hood shadow */
+                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 76px, transparent 76px) 12px 42px / 120px 4px,
+                /* Face visible */
+                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 46px / 120px 12px,
+                /* Eyes */
+                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 52px / 120px 3px,
+                /* Tunic top - green */
+                linear-gradient(to right, transparent 36px, #2ecc71 36px, #2ecc71 84px, transparent 84px) 12px 58px / 120px 26px,
+                /* Tunic details */
+                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 70px / 120px 8px,
+                /* Brown belt */
+                linear-gradient(to right, transparent 36px, #8b4513 36px, #8b4513 84px, transparent 84px) 12px 84px / 120px 8px,
+                /* Belt buckle */
+                linear-gradient(to right, transparent 56px, #f39c12 56px, #f39c12 64px, transparent 64px) 12px 86px / 120px 4px,
+                /* Legs */
+                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 56px, transparent 56px,
+                                transparent 64px, #1e8449 64px, #1e8449 76px, transparent 76px) 12px 92px / 120px 28px,
+                /* Bow on right - wooden */
+                linear-gradient(to right, transparent 88px, #8b4513 88px, #8b4513 92px, transparent 92px) 12px 50px / 120px 44px,
+                /* Bow curved top */
+                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 46px / 120px 8px,
+                /* Bow curved bottom */
+                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 90px / 120px 8px,
+                /* Bowstring */
+                linear-gradient(to right, transparent 90px, #ecf0f1 90px, #ecf0f1 91px, transparent 91px) 12px 54px / 120px 32px,
+                /* Arrow nocked */
+                linear-gradient(to right, transparent 76px, #d35400 76px, #d35400 90px, transparent 90px) 12px 68px / 120px 3px;
+            background-repeat: no-repeat;
+        }
+
+        /* Warrior - Detailed red armor with axe */
+        .warrior-pixel {
+            background: 
+                /* Helmet horns - silver */
+                linear-gradient(to right, transparent 32px, #95a5a6 32px, #95a5a6 40px, transparent 40px,
+                                transparent 80px, #95a5a6 80px, #95a5a6 88px, transparent 88px) 12px 10px / 120px 12px,
+                linear-gradient(to right, transparent 28px, #7f8c8d 28px, #7f8c8d 36px, transparent 36px,
+                                transparent 84px, #7f8c8d 84px, #7f8c8d 92px, transparent 92px) 12px 18px / 120px 8px,
+                /* Helmet body */
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 26px / 120px 16px,
+                /* Helmet details */
+                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 42px / 120px 8px,
+                /* Visor slit */
+                linear-gradient(to right, transparent 44px, #34495e 44px, #34495e 76px, transparent 76px) 12px 46px / 120px 6px,
+                /* Face/beard visible */
+                linear-gradient(to right, transparent 48px, #e67e22 48px, #e67e22 72px, transparent 72px) 12px 52px / 120px 12px,
+                /* Shoulder guards - red */
+                linear-gradient(to right, transparent 28px, #e74c3c 28px, #e74c3c 48px, transparent 48px,
+                                transparent 72px, #e74c3c 72px, #e74c3c 92px, transparent 92px) 12px 64px / 120px 16px,
+                /* Chest armor - bright red */
+                linear-gradient(to right, transparent 36px, #ec7063 36px, #ec7063 84px, transparent 84px) 12px 80px / 120px 20px,
+                /* Armor plates detail */
+                linear-gradient(to right, transparent 40px, #c0392b 40px, #c0392b 80px, transparent 80px) 12px 88px / 120px 6px,
+                /* Dark belt */
+                linear-gradient(to right, transparent 36px, #34495e 36px, #34495e 84px, transparent 84px) 12px 100px / 120px 8px,
+                /* Legs - armored */
+                linear-gradient(to right, transparent 44px, #c0392b 44px, #c0392b 56px, transparent 56px,
+                                transparent 64px, #c0392b 64px, #c0392b 76px, transparent 76px) 12px 108px / 120px 12px,
+                /* Axe head on right - large */
+                linear-gradient(to right, transparent 88px, #95a5a6 88px, #95a5a6 104px, transparent 104px) 12px 58px / 120px 14px,
+                linear-gradient(to right, transparent 92px, #7f8c8d 92px, #7f8c8d 100px, transparent 100px) 12px 72px / 120px 8px,
+                /* Axe handle */
+                linear-gradient(to right, transparent 94px, #8b4513 94px, #8b4513 98px, transparent 98px) 12px 50px / 120px 48px;
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 <body>
@@ -67,14 +464,38 @@
     </div>
 
     <div id="character-selection" class="hidden">
-        <h2>Select Your Character</h2>
-        <div class="character-list">
-            <div class="character-card" data-character="knight">🛡️<br>Knight</div>
-            <div class="character-card" data-character="wizard">🧙‍♂️<br>Wizard</div>
-            <div class.character-card" data-character="archer">🏹<br>Archer</div>
-            <div class="character-card" data-character="warrior">⚔️<br>Warrior</div>
+        <h2>Choose Your Hero</h2>
+        <div class="character-carousel">
+            <button class="carousel-btn prev-btn" id="prev-character">◄</button>
+            
+            <div class="carousel-container">
+                <div class="carousel-track">
+                    <div class="character-card" data-character="knight" data-index="0">
+                        <div class="pixel-character knight-pixel"></div>
+                        <span class="character-name">Knight</span>
+                        <p class="character-description">Master of Defense</p>
+                    </div>
+                    <div class="character-card" data-character="wizard" data-index="1">
+                        <div class="pixel-character wizard-pixel"></div>
+                        <span class="character-name">Wizard</span>
+                        <p class="character-description">Arcane Specialist</p>
+                    </div>
+                    <div class="character-card" data-character="archer" data-index="2">
+                        <div class="pixel-character archer-pixel"></div>
+                        <span class="character-name">Archer</span>
+                        <p class="character-description">Precision Hunter</p>
+                    </div>
+                    <div class="character-card" data-character="warrior" data-index="3">
+                        <div class="pixel-character warrior-pixel"></div>
+                        <span class="character-name">Warrior</span>
+                        <p class="character-description">Fierce Berserker</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="carousel-btn next-btn" id="next-character">►</button>
         </div>
-        <button id="start-game-btn" disabled>Start Game</button>
+        <button id="start-game-btn" class="game-start-btn" disabled>START ADVENTURE</button>
     </div>
 
     <div id="game-container" class="hidden">
@@ -149,6 +570,84 @@
     <script>
         // Set global flag for first half
         window.snakesGameSection = 1;
+        
+        // CHARACTER CAROUSEL FUNCTIONALITY
+        // NOTE: This only handles visual cycling. Character selection is handled by snakes-game.js
+        (function() {
+            // Wait for snakes-game.js to initialize first
+            var initCarousel = function() {
+                var currentIndex = 0;
+                var cards = document.querySelectorAll('.character-card');
+                var prevBtn = document.getElementById('prev-character');
+                var nextBtn = document.getElementById('next-character');
+                
+                if (!cards.length || !prevBtn || !nextBtn) return;
+                
+                function updateCarousel() {
+                    cards.forEach(function(card, index) {
+                        card.classList.remove('center', 'left', 'right');
+                        
+                        if (index === currentIndex) {
+                            card.classList.add('center');
+                        } else if (index === currentIndex - 1 || (currentIndex === 0 && index === cards.length - 1)) {
+                            card.classList.add('left');
+                        } else if (index === currentIndex + 1 || (currentIndex === cards.length - 1 && index === 0)) {
+                            card.classList.add('right');
+                        }
+                    });
+                }
+                
+                // Arrow button navigation
+                prevBtn.addEventListener('click', function() {
+                    currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+                    updateCarousel();
+                });
+                
+                nextBtn.addEventListener('click', function() {
+                    currentIndex = (currentIndex + 1) % cards.length;
+                    updateCarousel();
+                });
+                
+                // When a card is clicked (handled by snakes-game.js selectCharacter()),
+                // also update carousel position to center that card
+                cards.forEach(function(card, index) {
+                    card.addEventListener('click', function() {
+                        // Move clicked card to center
+                        if (index !== currentIndex) {
+                            currentIndex = index;
+                            updateCarousel();
+                        }
+                    });
+                });
+                
+                // Keyboard navigation
+                document.addEventListener('keydown', function(e) {
+                    var characterSelection = document.getElementById('character-selection');
+                    if (!characterSelection || characterSelection.classList.contains('hidden')) return;
+                    
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        nextBtn.click();
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        prevBtn.click();
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        cards[currentIndex].click();
+                    }
+                });
+                
+                // Initialize carousel
+                updateCarousel();
+            };
+            
+            // Initialize after DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initCarousel);
+            } else {
+                initCarousel();
+            }
+        })();
     </script>
 </body>
 </html>
