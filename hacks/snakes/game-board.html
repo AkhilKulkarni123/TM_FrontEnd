@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snakes and Ladders - Game Board</title>
+    <link rel="stylesheet" href="../../assets/css/snakes-game.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        .animated-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            background: #1a1a2e;
+        }
+
+        .moving-snake {
+            position: absolute;
+            font-size: 40px;
+            animation: slither 15s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes slither {
+            0% {
+                transform: translateX(-100px) translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateX(25vw) translateY(-30px) rotate(5deg);
+            }
+            50% {
+                transform: translateX(50vw) translateY(0) rotate(-5deg);
+            }
+            75% {
+                transform: translateX(75vw) translateY(-30px) rotate(5deg);
+            }
+            100% {
+                transform: translateX(calc(100vw + 100px)) translateY(0) rotate(0deg);
+            }
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 30px;
+            animation: float 8s ease-in-out infinite;
+            opacity: 0.2;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-40px) rotate(10deg);
+            }
+        }
+
+        .ladder-element {
+            position: absolute;
+            font-size: 35px;
+            animation: climb 10s linear infinite;
+            opacity: 0.25;
+        }
+
+        @keyframes climb {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.25;
+            }
+            90% {
+                opacity: 0.25;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-background" id="animatedBg"></div>
+    
+    <div id="login-container" class="container">
+        <div class="login-box">
+            <h2>Snakes and Ladders</h2>
+            <p>Please log in to play and save your progress</p>
+            <button id="use-existing-login" class="btn btn-primary">Use Website Login</button>
+            <button id="play-as-guest" class="btn btn-secondary">Play as Guest</button>
+            <p class="guest-note">*Guest mode is for testing only. Progress will not be saved.</p>
+        </div>
+    </div>
+
+    <div id="character-selection" class="container hidden">
+        <div class="character-box">
+            <h2>Select Your Character</h2>
+            <div class="character-grid">
+                <div class="character-card" data-character="knight">
+                    <div class="character-icon">🛡️</div>
+                    <p>Knight</p>
+                </div>
+                <div class="character-card" data-character="wizard">
+                    <div class="character-icon">🧙</div>
+                    <p>Wizard</p>
+                </div>
+                <div class="character-card" data-character="archer">
+                    <div class="character-icon">🏹</div>
+                    <p>Archer</p>
+                </div>
+                <div class="character-card" data-character="warrior">
+                    <div class="character-icon">⚔️</div>
+                    <p>Warrior</p>
+                </div>
+            </div>
+            <button id="start-game-btn" class="btn btn-primary" disabled>Start Game</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="container hidden">
+        <div class="game-header">
+            <div class="player-info">
+                <h3 id="player-name">Player</h3>
+                <p>Character: <span id="player-character">🛡️</span></p>
+                <p>Bullets: <span id="player-bullets">0</span></p>
+                <p>Lives: <span id="player-lives">3</span></p>
+                <p>Current Square: <span id="current-square">1</span></p>
+            </div>
+            <div class="game-controls">
+                <button id="roll-dice-btn" class="btn btn-large">🎲 Roll Dice</button>
+                <button id="view-leaderboard-btn" class="btn btn-secondary">🏆 Leaderboard</button>
+            </div>
+            <div class="time-info">
+                <p>Time Played: <span id="time-played">0:00</span></p>
+            </div>
+        </div>
+
+        <div id="dice-animation" class="hidden">
+            <div class="dice-roll">🎲</div>
+            <p class="dice-result">Rolling...</p>
+        </div>
+
+        <div class="game-board" id="game-board">
+            <!-- Board will be generated dynamically -->
+        </div>
+    </div>
+
+    <div id="activity-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Square Activity</h2>
+            <div id="activity-content"></div>
+        </div>
+    </div>
+
+    <div id="boss-battle-modal" class="modal hidden">
+        <div class="modal-content large">
+            <h2>🐉 Boss Battle!</h2>
+            <div id="boss-battle-content">
+                <div class="boss-info">
+                    <h3>Dragon Boss</h3>
+                    <div class="health-bar">
+                        <div id="boss-health-fill" class="health-fill"></div>
+                    </div>
+                    <p>Health: <span id="boss-health">1000</span> / <span id="boss-max-health">1000</span></p>
+                </div>
+                <div class="active-players">
+                    <h4>Active Players: <span id="active-players-count">0</span></h4>
+                    <div id="players-list"></div>
+                </div>
+                <div class="battle-controls">
+                    <button id="attack-boss-btn" class="btn btn-danger">⚔️ Attack (10 bullets)</button>
+                    <p>Your Bullets: <span id="battle-bullets">0</span></p>
+                    <p>Your Lives: <span id="battle-lives">3</span></p>
+                </div>
+                <div id="battle-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="leaderboard-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>🏆 Leaderboard</h2>
+            <div id="leaderboard-content"></div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/snakes-game.js"></script>
+    
+    <script>
+        // Create animated background elements
+        function createAnimatedBackground() {
+            const bg = document.getElementById('animatedBg');
+            
+            // Create moving snakes
+            for (let i = 0; i < 5; i++) {
+                const snake = document.createElement('div');
+                snake.className = 'moving-snake';
+                snake.textContent = '🐍';
+                snake.style.top = `${Math.random() * 80 + 10}%`;
+                snake.style.animationDelay = `${i * 3}s`;
+                snake.style.animationDuration = `${12 + Math.random() * 8}s`;
+                bg.appendChild(snake);
+            }
+            
+            // Create floating dice
+            for (let i = 0; i < 8; i++) {
+                const dice = document.createElement('div');
+                dice.className = 'floating-element';
+                dice.textContent = '🎲';
+                dice.style.left = `${Math.random() * 90}%`;
+                dice.style.top = `${Math.random() * 80}%`;
+                dice.style.animationDelay = `${Math.random() * 4}s`;
+                dice.style.animationDuration = `${6 + Math.random() * 4}s`;
+                bg.appendChild(dice);
+            }
+            
+            // Create climbing ladders
+            for (let i = 0; i < 4; i++) {
+                const ladder = document.createElement('div');
+                ladder.className = 'ladder-element';
+                ladder.textContent = '🪜';
+                ladder.style.left = `${Math.random() * 90}%`;
+                ladder.style.animationDelay = `${i * 2.5}s`;
+                ladder.style.animationDuration = `${8 + Math.random() * 4}s`;
+                bg.appendChild(ladder);
+            }
+            
+            // Create floating stars
+            for (let i = 0; i < 10; i++) {
+                const star = document.createElement('div');
+                star.className = 'floating-element';
+                star.textContent = '⭐';
+                star.style.left = `${Math.random() * 90}%`;
+                star.style.top = `${Math.random() * 80}%`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                star.style.animationDuration = `${7 + Math.random() * 3}s`;
+                star.style.fontSize = '20px';
+                bg.appendChild(star);
+            }
+        }
+        
+        // Initialize background when page loads
+        createAnimatedBackground();
+    </script>
+</body>
+</html>
