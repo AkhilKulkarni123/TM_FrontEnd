@@ -1,10 +1,11 @@
 <!--
   Snakes and Ladders – Second Half
 
-  This page renders the second half of the Snakes and Ladders board (squares 26–50).
-  Users must answer five questions per lesson topic (rows 6–10).  Once all
-  questions have been answered and the player reaches square 50, the game
-  automatically advances to the boss battle.
+    This page renders the questions section of the Snakes and Ladders board
+    (squares 6–55). It is organised into 5 rows × 10 columns; each row is
+    a lesson topic and each row contains 10 questions. When a player reaches
+    the final square (55) they may proceed to the boss battle provided they
+    are one of the top 5 players on the leaderboard.
 
   Navigation buttons allow travelling back to the first half or forward to
   the boss battle.  If the second half has not yet been unlocked (i.e. the
@@ -62,16 +63,7 @@
         <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
     </div>
 
-    <div id="character-selection" class="hidden">
-        <h2>Select Your Character</h2>
-        <div class="character-list">
-            <div class="character-card" data-character="knight">🛡️<br>Knight</div>
-            <div class="character-card" data-character="wizard">🧙‍♂️<br>Wizard</div>
-            <div class="character-card" data-character="archer">🏹<br>Archer</div>
-            <div class="character-card" data-character="warrior">⚔️<br>Warrior</div>
-        </div>
-        <button id="start-game-btn" disabled>Start Game</button>
-    </div>
+    <!-- Character selection intentionally removed from section 2 to preserve initial selection only -->
 
     <div id="game-container" class="hidden">
         <div id="player-info">
@@ -79,7 +71,7 @@
             <p>Character: <span id="player-character"></span></p>
             <p>Bullets: <span id="player-bullets">0</span></p>
             <p>Lives: <span id="player-lives">3</span></p>
-            <p>Current Square: <span id="player-square">26</span></p>
+            <p>Current Square: <span id="player-square">—</span></p>
             <p>Time Played: <span id="player-time">0:00</span></p>
         </div>
         <div id="controls">

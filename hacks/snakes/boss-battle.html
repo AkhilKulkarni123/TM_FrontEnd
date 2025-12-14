@@ -237,6 +237,28 @@
             players: []
         };
 
+        // Populate initial player bullets / lives from saved progress if available
+        fetch('/api/snakes/progress', { credentials: 'include' })
+            .then(function (res) { if (!res.ok) return null; return res.json(); })
+            .then(function (data) {
+                if (!data) return;
+                if (typeof data.total_bullets !== 'undefined') {
+                    gameState.player.bullets = Number(data.total_bullets || gameState.player.bullets);
+                    updateBulletsDisplay();
+                }
+                if (typeof data.lives !== 'undefined') {
+                    gameState.player.lives = Number(data.lives || gameState.player.lives);
+                    updateLives();
+                }
+                if (data.selected_character) {
+                    // Optionally style player color based on character
+                    if (data.selected_character === 'wizard') gameState.player.color = '#8e44ad';
+                    else if (data.selected_character === 'knight') gameState.player.color = '#4facfe';
+                    else if (data.selected_character === 'archer') gameState.player.color = '#2ecc71';
+                    else if (data.selected_character === 'warrior') gameState.player.color = '#f39c12';
+                }
+            }).catch(function (err) { console.error('Could not load boss participant progress', err); });
+
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
 
@@ -291,6 +313,46 @@
                 else if (data.type === 'player_died') {
                     showMessage(`☠️ ${data.player} has fallen!`);
                     updatePlayersList();
+                    // If this client died, respawn them back to start of section 2
+                        if (data.player === 'you') {
+                        const SECTION2_START = 6; // square where section 2 begins (0-based scheme) (START at 0, lessons 1-5)
+                        // Fetch current progress to determine first unvisited square in section 2
+                        fetch('/api/snakes/progress', { credentials: 'include' })
+                            .then(function (res) { if (!res.ok) return null; return res.json(); })
+                            .then(function (data) {
+                                var visitedRaw = (data && data.visited_squares) ? data.visited_squares : [];
+                                // convert server 1-based visited_squares to 0-based
+                                var visited = visitedRaw.map(function (s) { return Number(s) - 1; });
+                                var firstUnvisited = SECTION2_START;
+                                // Find the first unvisited square in section 2
+                                for (var s = SECTION2_START; s < SECTION2_START + 50; s++) {
+                                    if (visited.indexOf(s) === -1) { firstUnvisited = s; break; }
+                                }
+                                // Update server with new current square (convert to 1-based)
+                                fetch('/api/snakes/', {
+                                    method: 'PUT',
+                                    credentials: 'include',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ current_square: Number(firstUnvisited) + 1 })
+                                }).catch(function (err) { console.error('Respawn update failed', err); });
+
+                                // Redirect back to section 2 board and show a respawn message
+                                setTimeout(function () {
+                                    alert('You have fallen in the boss fight. You have been returned to Section 2.');
+                                    window.location.href = 'game-board-part2.html';
+                                }, 800);
+                            }).catch(function (err) {
+                                console.error('Error fetching progress for respawn', err);
+                                // Fallback: set to SECTION2_START (convert to 1-based)
+                                fetch('/api/snakes/', {
+                                    method: 'PUT',
+                                    credentials: 'include',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ current_square: Number(SECTION2_START) + 1 })
+                                }).catch(function () {});
+                                setTimeout(function () { window.location.href = 'game-board-part2.html'; }, 800);
+                            });
+                    }
                 }
                 else if (data.type === 'boss_defeated') {
                     endGame(true);
@@ -496,6 +558,8 @@
             if (victory) {
                 title.textContent = '🎉 VICTORY! 🎉';
                 text.textContent = 'You and your team defeated the boss!';
+                // show victory animation and message
+                showVictoryAnimation();
             } else {
                 title.textContent = '💀 GAME OVER 💀';
                 text.textContent = 'The boss was too powerful...';
@@ -506,6 +570,35 @@
             if (ws) {
                 ws.close();
             }
+
+            function showVictoryAnimation() {
+                // simple celebratory message + confetti dots
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.top = 0;
+                confetti.style.left = 0;
+                confetti.style.width = '100%';
+                confetti.style.height = '100%';
+                confetti.style.pointerEvents = 'none';
+                confetti.style.zIndex = 2000;
+                document.body.appendChild(confetti);
+
+                for (let i = 0; i < 120; i++) {
+                    const d = document.createElement('div');
+                    d.style.position = 'absolute';
+                    d.style.width = d.style.height = Math.random() * 10 + 6 + 'px';
+                    d.style.left = Math.random() * 100 + '%';
+                    d.style.top = -10 + 'px';
+                    d.style.background = ['#ffd93d','#f39c12','#4facfe','#2ecc71','#e74c3c'][Math.floor(Math.random()*5)];
+                    d.style.opacity = 0.95;
+                    d.style.transform = 'translateY(0) rotate(' + (Math.random()*360) + 'deg)';
+                    d.style.transition = 'transform 2.5s linear, top 2.5s linear, opacity 2.5s linear';
+                    confetti.appendChild(d);
+                    setTimeout(function () { d.style.top = (window.innerHeight + 50) + 'px'; d.style.transform = 'translateY(0) rotate(' + (Math.random()*720) + 'deg)'; d.style.opacity = 0.9; }, 10 + i*10);
+                }
+
+                setTimeout(function () { confetti.style.opacity = 0; setTimeout(function () { document.body.removeChild(confetti); }, 1000); }, 3000);
+            }
         }
 
         function leaveBattle() {
@@ -515,7 +608,8 @@
         }
 
         function returnToBoard() {
-            window.location.href = 'game-board.html';
+                // Return users to section 2 board (boss battle follows section 2)
+                window.location.href = 'game-board-part2.html';
         }
 
         window.addEventListener('resize', () => {

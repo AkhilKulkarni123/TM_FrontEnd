@@ -1,15 +1,18 @@
 /*
  * Snakes and Ladders – Custom Game Logic for AP CS Principles
  *
- * Split board:
- *  - First half (1–25): 5 lesson rows (AP CSP topics)
- *  - Second half (26–50): questions based on those lessons
- *  - After 50: boss battle
+ * Split board (updated):
+ *  - First section: square 0 = START, squares 1–5 = 5 lesson squares (one per lesson)
+ *  - Second section (6–55): 5 rows × 10 columns = 50 question squares
+ *  - After section 2: boss battle (unlocked for top 5 leaderboard players)
  */
 
 var API_URL = 'http://localhost:8001/api';
-var BOARD_TOTAL_SQUARES = 50;
-var HALF_SIZE = 25;
+// New explicit sizes
+var FIRST_LESSON_COUNT = 5; // number of lesson squares (1..5)
+var FIRST_SECTION_SIZE = FIRST_LESSON_COUNT + 1;   // includes START at square 0, so section size = 6
+var SECOND_SECTION_SIZE = 50; // questions: squares 6..55 (5 rows x 10 cols)
+var BOARD_TOTAL_SQUARES = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE + 1; // +1 reserved for boss end
 
 var LESSON_BULLETS = 5;
 var QUESTION_BULLETS = 2;
@@ -23,8 +26,8 @@ var gameState = {
     character: '',
     bullets: 0,
     lives: 3,
-    currentSquare: 1,
-    visitedSquares: [1],
+    currentSquare: 0,
+    visitedSquares: [0],
     completedLessons: [],
     unlockedSections: ['half1'],
     timeStarted: null,
@@ -38,7 +41,10 @@ function $all(selector) { return document.querySelectorAll(selector); }
 
 document.addEventListener('DOMContentLoaded', function () {
     initializeEventListeners();
-    checkExistingLogin();
+    // Check login then attempt to auto-resume if the player has already selected a character
+    checkExistingLogin().then(function () {
+        autoResumeIfReady();
+    });
 });
 
 function initializeEventListeners() {
@@ -77,17 +83,34 @@ function initializeEventListeners() {
             for (var k = 0; k < modals.length; k++) modals[k].classList.add('hidden');
         });
     }
+
+    // Boss attack handler (in modal on section 2)
+    var bossAttackBtn = document.getElementById('boss-attack-btn');
+    if (bossAttackBtn) bossAttackBtn.addEventListener('click', function () {
+        if (gameState.bullets < 10) { alert('You need at least 10 bullets to attack the boss.'); return; }
+        // spend bullets locally and update server
+        gameState.bullets -= 10;
+        document.getElementById('boss-player-bullets').textContent = gameState.bullets;
+        updatePlayerInfo();
+        saveProgress();
+
+        fetch(API_URL + '/boss/attack', {
+            method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ damage: 50 })
+        }).catch(function () {});
+    });
 }
 
 function checkExistingLogin() {
-    fetch(API_URL + '/id', { credentials: 'include' })
+    return fetch(API_URL + '/id', { credentials: 'include' })
         .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (userData) {
-            if (!userData) return;
+            if (!userData) return null;
             gameState.userId = userData.id;
             gameState.username = userData.name;
+            return userData;
         })
-        .catch(function () {});
+        .catch(function () { return null; });
 }
 
 function useExistingLogin() {
@@ -124,6 +147,8 @@ function playAsGuest() {
     gameState.isGuest = true;
     gameState.userId = 'guest_' + Date.now();
     gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
+    // persist guest choice across pages
+    try { localStorage.setItem('snakes_isGuest', '1'); } catch (e) {}
 
     var loginContainer = document.getElementById('login-container');
     var characterSelection = document.getElementById('character-selection');
@@ -150,8 +175,15 @@ function loadOrCreateGameData() {
         .then(function (data) {
             if (!data) return;
             gameState.bullets = Number(data.total_bullets || 0);
-            gameState.currentSquare = Number(data.current_square || 1);
-            gameState.visitedSquares = data.visited_squares || [1];
+            // convert server 1-based square values to internal 0-based
+            if (typeof data.current_square !== 'undefined' && data.current_square !== null) {
+                gameState.currentSquare = Number(data.current_square) - 1;
+            }
+            if (Array.isArray(data.visited_squares)) {
+                gameState.visitedSquares = data.visited_squares.map(function (s) { return Number(s) - 1; });
+            } else {
+                gameState.visitedSquares = [gameState.currentSquare];
+            }
             gameState.lives = Number(data.lives || 3);
             gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
             gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
@@ -171,12 +203,22 @@ function loadProgress() {
         .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (data) {
             if (!data) return;
-            gameState.currentSquare = Number(data.current_square || gameState.currentSquare);
-            gameState.visitedSquares = data.visited_squares || gameState.visitedSquares;
+            // Server stores squares 1-based. Convert to 0-based internally.
+            if (typeof data.current_square !== 'undefined' && data.current_square !== null) {
+                gameState.currentSquare = Number(data.current_square) - 1;
+            }
+            // Convert server 1-based visited_squares to internal 0-based indices
+            if (Array.isArray(data.visited_squares)) {
+                gameState.visitedSquares = data.visited_squares.map(function (s) { return Number(s) - 1; });
+            } else {
+                gameState.visitedSquares = gameState.visitedSquares;
+            }
             gameState.bullets = Number(data.total_bullets || gameState.bullets);
             gameState.lives = Number(data.lives || gameState.lives);
             gameState.completedLessons = data.completed_lessons || [];
             gameState.unlockedSections = data.unlocked_sections || gameState.unlockedSections;
+            // Ensure selected character from server is adopted
+            if (data.selected_character) gameState.character = data.selected_character;
 
             if (typeof data.time_played !== 'undefined' && data.time_played !== null) {
                 gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
@@ -196,8 +238,10 @@ function saveProgress() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-            current_square: gameState.currentSquare,
-            visited_squares: gameState.visitedSquares,
+            // Convert internal 0-based square to server 1-based before saving
+            current_square: Number(gameState.currentSquare) + 1,
+            // send visited squares as 1-based values to server
+            visited_squares: (gameState.visitedSquares || []).map(function (s) { return Number(s) + 1; }),
             total_bullets: gameState.bullets,
             time_played: gameState.timeElapsed,
             lives: gameState.lives,
@@ -214,6 +258,19 @@ function selectCharacter(card) {
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
+    try { localStorage.setItem('snakes_selected_character', gameState.character); } catch (e) {}
+    // Immediately update UI and try to persist selection to the server if logged in
+    updatePlayerInfo();
+    if (!gameState.isGuest) {
+        // Attempt to create record or update server with selected character
+        loadOrCreateGameData().then(function () {
+            // saveProgress will PUT selected_character
+            saveProgress().catch(function () {});
+        }).catch(function () {
+            // Fallback: still try to save progress
+            saveProgress().catch(function () {});
+        });
+    }
 
     var startBtn = document.getElementById('start-game-btn');
     if (startBtn) startBtn.disabled = false;
@@ -230,8 +287,13 @@ function startGame() {
         .then(function () {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
+            var loginContainer = document.getElementById('login-container');
             if (characterSelection) characterSelection.classList.add('hidden');
             if (gameContainer) gameContainer.classList.remove('hidden');
+            if (loginContainer) loginContainer.classList.add('hidden');
+
+            // remember that the user started the game (so returning pages auto-resume)
+            try { localStorage.setItem('snakes_started', '1'); } catch (e) {}
 
             if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
 
@@ -243,6 +305,46 @@ function startGame() {
         });
 }
 
+function autoResumeIfReady() {
+    // If the player previously selected a character (localStorage) or server has saved a selected character, resume game UI
+    var storedChar = null;
+    try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) { storedChar = null; }
+
+    if (storedChar) {
+        gameState.character = storedChar;
+        gameState.isGuest = (localStorage.getItem('snakes_isGuest') === '1');
+
+        return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
+            var characterSelection = document.getElementById('character-selection');
+            var gameContainer = document.getElementById('game-container');
+            if (characterSelection) characterSelection.classList.add('hidden');
+            if (gameContainer) gameContainer.classList.remove('hidden');
+
+            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
+        }).catch(function () { /* ignore errors while auto-resuming */ });
+    }
+
+    // If logged in and server has a selected character, resume
+    if (gameState.userId) {
+        return loadProgress().then(function () {
+            if (gameState.character) {
+                var characterSelection = document.getElementById('character-selection');
+                var gameContainer = document.getElementById('game-container');
+                var loginContainer = document.getElementById('login-container');
+                if (characterSelection) characterSelection.classList.add('hidden');
+                if (gameContainer) gameContainer.classList.remove('hidden');
+                if (loginContainer) loginContainer.classList.add('hidden');
+
+                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
+            }
+        }).catch(function () {});
+    }
+
+    return Promise.resolve();
+}
+
 function createGameBoard() {
     var board = document.getElementById('game-board');
     if (!board) return;
@@ -250,15 +352,63 @@ function createGameBoard() {
     board.innerHTML = '';
 
     var section = window.snakesGameSection || 1;
-    var start = (section === 1) ? 1 : 26;
+    // Section 1: compact 1 x FIRST_SECTION_SIZE layout (display horizontally)
+        if (section === 1) {
+            var row = document.createElement('div');
+            row.className = 'board-row single-row';
+            // ensure the single-row grid uses the correct column count (START + lessons)
+            row.style.setProperty('--first-size', FIRST_SECTION_SIZE);
+            for (var i = 0; i < FIRST_SECTION_SIZE; i++) {
+                var squareNum = i;
+                var square = document.createElement('div');
+                square.className = 'square small-lesson';
+                square.setAttribute('data-square', squareNum);
 
-    for (var row = 4; row >= 0; row--) {
-        for (var col = 0; col < 5; col++) {
+                if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');
+                if (squareNum === gameState.currentSquare) square.classList.add('current');
+
+                var numSpan = document.createElement('span');
+                numSpan.className = 'square-number';
+                // Label start square as START instead of numeric 0
+                numSpan.textContent = (squareNum === 0) ? 'START' : squareNum;
+                if (squareNum === 0) square.classList.add('start');
+                square.appendChild(numSpan);
+
+                var icon = document.createElement('div');
+                icon.className = 'square-icon';
+                icon.textContent = '📘';
+                square.appendChild(icon);
+
+                if (squareNum === gameState.currentSquare) {
+                    var marker = document.createElement('div');
+                    marker.className = 'player-marker';
+                    marker.textContent = getCharacterIcon(gameState.character);
+                    square.appendChild(marker);
+                }
+
+                row.appendChild(square);
+            }
+            board.appendChild(row);
+            return;
+    }
+
+    // Section 2: 5 rows x 10 columns (50 squares)
+    var start = FIRST_SECTION_SIZE; // e.g., 6 (section 2 begins at FIRST_SECTION_SIZE)
+    var cols = 10;
+    var rows = 5;
+
+    for (var r = rows - 1; r >= 0; r--) {
+        var rowDiv = document.createElement('div');
+        rowDiv.className = 'board-row';
+        for (var c = 0; c < cols; c++) {
             var squareNum;
-            var globalRow = (section === 1) ? row : row + 5;
-
-            if (globalRow % 2 === 1) squareNum = start + (row * 5) + (4 - col);
-            else squareNum = start + (row * 5) + col;
+            var globalIdx = (r * cols) + c; // 0 based within section
+            // zig-zag numbering per row parity (snake-like)
+            if (r % 2 === 1) {
+                squareNum = start + (r * cols) + (cols - 1 - c);
+            } else {
+                squareNum = start + (r * cols) + c;
+            }
 
             var square = document.createElement('div');
             square.className = 'square';
@@ -269,12 +419,21 @@ function createGameBoard() {
 
             var numSpan = document.createElement('span');
             numSpan.className = 'square-number';
-            numSpan.textContent = squareNum;
+            numSpan.textContent = (squareNum === 0) ? 'START' : squareNum;
             square.appendChild(numSpan);
 
             var icon = document.createElement('div');
             icon.className = 'square-icon';
-            icon.textContent = (squareNum === 50) ? '👹' : '⭐';
+            // decorate snakes, ladders, and final boss marker
+            if (snakesAndLaddersMap[squareNum]) {
+                if (snakesAndLaddersMap[squareNum] > squareNum) icon.textContent = '🪜'; // ladder
+                else icon.textContent = '🐍'; // snake
+                if (snakesAndLaddersMap[squareNum] > squareNum) square.classList.add('ladder'); else square.classList.add('snake');
+            } else if (squareNum === (FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1)) {
+                // mark the last question square with a finish flag
+                icon.textContent = '🏁';
+                square.classList.add('boss');
+            }
             square.appendChild(icon);
 
             if (squareNum === gameState.currentSquare) {
@@ -284,8 +443,9 @@ function createGameBoard() {
                 square.appendChild(marker);
             }
 
-            board.appendChild(square);
+            rowDiv.appendChild(square);
         }
+        board.appendChild(rowDiv);
     }
 }
 
@@ -304,7 +464,7 @@ function updatePlayerInfo() {
     if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character);
     if (bulletsSpan) bulletsSpan.textContent = gameState.bullets;
     if (livesSpan) livesSpan.textContent = gameState.lives;
-    if (squareSpan) squareSpan.textContent = gameState.currentSquare;
+    if (squareSpan) squareSpan.textContent = (gameState.currentSquare === 0) ? 'START' : gameState.currentSquare;
     if (timeSpan) timeSpan.textContent = formatTime(gameState.timeElapsed);
 }
 
@@ -336,7 +496,14 @@ function rollDice() {
     var diceBtn = document.getElementById('roll-dice-btn');
     if (diceBtn) diceBtn.disabled = true;
 
-    var roll = Math.floor(Math.random() * 6) + 1;
+    var section = window.snakesGameSection || 1;
+    var roll;
+    if (section === 1) {
+        // Guarantee a 1 in the first section so players progress lesson-by-lesson
+        roll = 1;
+    } else {
+        roll = Math.floor(Math.random() * 6) + 1;
+    }
 
     setTimeout(function () {
         alert('You rolled a ' + roll + '!');
@@ -349,13 +516,41 @@ function rollDice() {
 function movePlayer(steps) {
     return new Promise(function (resolve) {
         var section = window.snakesGameSection || 1;
-        var maxSquare = (section === 1) ? 25 : 50;
+        var sectionStart = (section === 1) ? 0 : FIRST_SECTION_SIZE;
+        var sectionEnd = (section === 1) ? (FIRST_SECTION_SIZE - 1) : (FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1);
 
-        var newSquare = gameState.currentSquare + steps;
-        if (newSquare > maxSquare) newSquare = maxSquare - (newSquare - maxSquare);
+        var tentative = gameState.currentSquare + steps;
+        if (section === 1) {
+            // In the first section we clamp to the final square so players don't bounce back
+            if (tentative > sectionEnd) tentative = sectionEnd;
+        } else {
+            // basic move calculation with bounce at end for section 2
+            if (tentative > sectionEnd) tentative = sectionEnd - (tentative - sectionEnd);
+        }
 
-        gameState.currentSquare = newSquare;
-        if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
+        // If in section 2, attempt to land on an unvisited square if possible
+        if (section === 2) {
+            var maxAttempts = SECOND_SECTION_SIZE; // avoid infinite loops
+            var attempts = 0;
+            var newSquare = tentative;
+            // If we already visited this square and there exists unvisited squares, advance forward until unvisited
+            while (gameState.visitedSquares.indexOf(newSquare) !== -1 && attempts < maxAttempts) {
+                // move forward by 1, wrap within section
+                newSquare++;
+                if (newSquare > sectionEnd) newSquare = sectionStart;
+                attempts++;
+            }
+            // If all squares visited, allow normal tentative
+            if (attempts >= maxAttempts) newSquare = tentative;
+
+            gameState.currentSquare = newSquare;
+            if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
+        } else {
+            // section 1 behavior
+            var newSquare = tentative;
+            gameState.currentSquare = newSquare;
+            if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
+        }
 
         createGameBoard();
         updatePlayerInfo();
@@ -371,30 +566,64 @@ function handleSquareEvent() {
     var square = gameState.currentSquare;
 
     if (section === 1) {
-        var row = Math.ceil(square / 5);
-        if (gameState.completedLessons.indexOf(row) === -1) {
-            window.location.href = 'lessons/lesson' + row + '.html';
-        } else {
-            if (row < 5) {
-                var nextRowSquare = (row * 5) + 1;
-                gameState.currentSquare = nextRowSquare;
-                if (gameState.visitedSquares.indexOf(nextRowSquare) === -1) gameState.visitedSquares.push(nextRowSquare);
-                createGameBoard();
-                updatePlayerInfo();
-                saveProgress();
-                alert('Lesson already complete. Moving you to the next row.');
-            } else {
+        // Section 1: square 0 = START, squares 1..FIRST_LESSON_COUNT map to lessons
+        if (square === 0) {
+            // START square – nothing to open; instruct the player to roll
+            alert('This is START. Roll the dice to move to the first lesson.');
+            return;
+        }
+
+        // For lesson squares (1..FIRST_LESSON_COUNT)
+        if (square >= 1 && square <= FIRST_LESSON_COUNT) {
+            var lessonNum = square; // 1 maps to lesson1, etc.
+            if (gameState.completedLessons.indexOf(lessonNum) === -1) {
+                window.location.href = 'lessons/lesson' + lessonNum + '.html';
+                return;
+            }
+
+            // already completed; check if all lessons completed
+            var allDone = true;
+            for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
+                if (gameState.completedLessons.indexOf(i) === -1) { allDone = false; break; }
+            }
+            if (allDone) {
                 if (gameState.unlockedSections.indexOf('half2') === -1) gameState.unlockedSections.push('half2');
                 saveProgress();
                 alert('All lessons completed! You can now go to the next section.');
+            } else {
+                alert('Lesson already complete. Finish all lessons to proceed.');
             }
+            return;
         }
     } else {
-        var idx = square - 26;
-        var row2 = Math.floor(idx / 5) + 1;
-        var index = idx % 5;
+        var sectionStart = FIRST_SECTION_SIZE; // e.g., 6
+        var idx = square - sectionStart;
+        var row2 = Math.floor(idx / 10) + 1; // 1..5
+        var index = idx % 10; // 0..9
 
-        // ✅ Robust redirect: resolves relative URL correctly no matter the base path
+        // If we land on a snake or ladder, animate and move to its destination
+        var dest = snakesAndLaddersMap[square];
+        if (dest) {
+            animateMoveToSquare(square, dest);
+            return;
+        }
+
+        var sectionEnd = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1;
+
+        // If this is the final square of section 2, require top-5 leaderboard to unlock boss
+        if (square === sectionEnd) {
+            checkPlayerTopFive().then(function (isTopFive) {
+                if (isTopFive) {
+                    if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
+                    saveProgress();
+                    alert('You reached the end of the section! As a top player, you may now proceed to the boss.');
+                } else {
+                    alert('You reached the end of the questions, but only the top 5 players can proceed to the boss. Check the leaderboard and try to earn more bullets!');
+                }
+            }).catch(function () { alert('Unable to check leaderboard at this time. Try again later.'); });
+            return;
+        }
+
         var target = new URL('questions/question_template.html', window.location.href);
         target.searchParams.set('row', row2);
         target.searchParams.set('index', index);
@@ -402,6 +631,66 @@ function handleSquareEvent() {
 
         window.location.href = target.toString();
     }
+}
+
+// Snakes and ladders configuration for section 2 (squares -> destination)
+var snakesAndLaddersMap = {
+    // ladders (up): adjusted to account for START at 0 (shifted +1)
+    9: 19,
+    13: 31,
+    24: 35,
+    29: 41,
+    // snakes (down)
+    16: 8,
+    38: 21,
+    45: 33,
+    51: 42
+};
+
+function animateMoveToSquare(from, to) {
+    // Create a temporary floating marker that moves from 'from' square to 'to' square
+    var board = document.getElementById('game-board');
+    var fromEl = board.querySelector('[data-square="' + from + '"]');
+    var toEl = board.querySelector('[data-square="' + to + '"]');
+    if (!fromEl || !toEl) {
+        // fallback: instant move
+        gameState.currentSquare = to;
+        if (gameState.visitedSquares.indexOf(to) === -1) gameState.visitedSquares.push(to);
+        createGameBoard(); updatePlayerInfo(); saveProgress();
+        handleSquareEvent();
+        return;
+    }
+
+    var marker = document.createElement('div');
+    marker.className = 'floating-marker';
+    marker.textContent = getCharacterIcon(gameState.character);
+    marker.style.position = 'absolute';
+    marker.style.zIndex = 9999;
+    document.body.appendChild(marker);
+
+    var fromRect = fromEl.getBoundingClientRect();
+    var toRect = toEl.getBoundingClientRect();
+
+    marker.style.left = (fromRect.left + (fromRect.width / 2) - 12) + 'px';
+    marker.style.top = (fromRect.top + (fromRect.height / 2) - 12) + 'px';
+    marker.style.transition = 'all 0.9s cubic-bezier(.2,.8,.2,1)';
+
+    // Add class to indicate snake or ladder
+    if (to > from) marker.classList.add('ladder-anim'); else marker.classList.add('snake-anim');
+
+    setTimeout(function () {
+        marker.style.left = (toRect.left + (toRect.width / 2) - 12) + 'px';
+        marker.style.top = (toRect.top + (toRect.height / 2) - 12) + 'px';
+    }, 20);
+
+    setTimeout(function () {
+        document.body.removeChild(marker);
+        gameState.currentSquare = to;
+        if (gameState.visitedSquares.indexOf(to) === -1) gameState.visitedSquares.push(to);
+        createGameBoard(); updatePlayerInfo(); saveProgress();
+        // After moving due to snake/ladder, handle next square events (questions, boss)
+        handleSquareEvent();
+    }, 1000);
 }
 
 function navigatePrev() {
@@ -421,11 +710,34 @@ function navigateNext() {
         window.location.href = 'game-board-part2.html';
     } else if (section === 2) {
         if (gameState.unlockedSections.indexOf('boss') === -1) {
-            if (overlay) overlay.style.display = 'flex';
+            // check leaderboard for top 5
+            checkPlayerTopFive().then(function (isTopFive) {
+                if (!isTopFive) {
+                    if (overlay) overlay.style.display = 'flex';
+                    alert('Only the top 5 players on the leaderboard can enter the boss battle. Climb the ranks!');
+                    return;
+                }
+                // unlock and go
+                if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
+                saveProgress();
+                window.location.href = 'boss-battle.html';
+            }).catch(function () { if (overlay) overlay.style.display = 'flex'; });
             return;
         }
-        window.location.href = '../boss-battle.html';
+        window.location.href = 'boss-battle.html';
     }
+}
+
+function checkPlayerTopFive() {
+    return fetch(API_URL + '/snakes/leaderboard?limit=10', { credentials: 'include' })
+        .then(function (res) { if (!res.ok) throw new Error('Leaderboard fetch failed'); return res.json(); })
+        .then(function (data) {
+            var lb = data.leaderboard || [];
+            for (var i = 0; i < lb.length && i < 5; i++) {
+                if (lb[i].user_id === gameState.userId) return true;
+            }
+            return false;
+        });
 }
 
 function checkSectionLock() {
@@ -499,6 +811,20 @@ function viewLeaderboard() {
 }
 
 function startBossBattle() {
-    var modal = document.getElementById('boss-modal');
-    if (modal) modal.classList.remove('hidden');
+    checkPlayerTopFive().then(function (isTopFive) {
+        if (!isTopFive) {
+            alert('Only the top 5 players can participate in the boss battle. Check the leaderboard to see where you stand.');
+            return;
+        }
+        // Refresh latest progress from server to get up-to-date bullets/lives/character
+        loadProgress().then(function () {
+            var modal = document.getElementById('boss-modal');
+            if (modal) {
+                var pb = document.getElementById('boss-player-bullets'); if (pb) pb.textContent = gameState.bullets;
+                var pl = document.getElementById('boss-player-lives'); if (pl) pl.textContent = gameState.lives;
+                var ph = document.getElementById('boss-health'); if (ph) ph.textContent = '1000';
+                modal.classList.remove('hidden');
+            }
+        });
+    }).catch(function () { alert('Unable to verify leaderboard status. Try again later.'); });
 }

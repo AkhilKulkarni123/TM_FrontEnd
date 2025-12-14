@@ -4,8 +4,8 @@
   This generic template displays a question based on query parameters in the URL.
   Expected parameters:
     - row (1–5)
-    - index (0–4)
-    - square (26–50) [optional; auto-derived if missing]
+    - index (0–9)
+    - square (6–55) [optional; auto-derived if missing]
 
   It loads question data from:
     hacks/snakes/questions/questions_bank.js
@@ -53,10 +53,11 @@
     // Parse query parameters
     const params = new URLSearchParams(window.location.search);
     const row = parseInt(params.get('row'), 10) || 1;       // 1..5
-    const index = parseInt(params.get('index'), 10) || 0;   // 0..4
+    const index = parseInt(params.get('index'), 10) || 0;   // 0..9 (10 columns)
 
-    // If square isn't passed, derive it from row/index: 26..50
-    const derivedSquare = 25 + ((row - 1) * 5) + index + 1;
+    // If square isn't passed, derive it from row/index: section 2 begins at square 6 (0-based indexing with START at 0)
+      const SECTION2_START = 6; // first question square (section 2 start)
+    const derivedSquare = SECTION2_START + ((row - 1) * 10) + index;
     const square = parseInt(params.get('square'), 10) || derivedSquare;
 
     // Load question from bank
@@ -112,7 +113,8 @@
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            square: square,
+            // convert internal 0-based square to server 1-based
+            square: Number(square) + 1,
             row: row,
             question_index: index,
             correct: correct,

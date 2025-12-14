@@ -1,12 +1,12 @@
 <!--
   Snakes and Ladders – First Half
 
-  This file renders the first half of the Snakes and Ladders board (squares 1‑25).
-  Users must complete one lesson per row before advancing beyond the fifth row.
-  The page includes login/character selection panels, player stats, dice roll
-  controls and navigation buttons.  Once the player reaches square 26
-  (after completing all five lessons) they are automatically redirected to
-  the second half at game‑board‑part2.html.
+    This file renders the lessons section (squares 1–5).
+    Users must complete all five lessons (visit each of the five lesson squares)
+    before the second section (questions) is unlocked. The page includes
+    login/character selection panels, player stats, dice roll controls and
+    navigation buttons. After finishing all lessons you may proceed to
+    the questions board (game-board-part2.html).
 
   NOTE: This file replaces the previous game‑board.html for the first half of
   the game.  It keeps all existing features such as login, character
@@ -463,7 +463,7 @@
         <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
     </div>
 
-    <div id="character-selection" class="hidden">
+    <div id="character-selection">
         <h2>Choose Your Hero</h2>
         <div class="character-carousel">
             <button class="carousel-btn prev-btn" id="prev-character">◄</button>
@@ -504,7 +504,7 @@
             <p>Character: <span id="player-character"></span></p>
             <p>Bullets: <span id="player-bullets">0</span></p>
             <p>Lives: <span id="player-lives">3</span></p>
-            <p>Current Square: <span id="player-square">1</span></p>
+            <p>Current Square: <span id="player-square">START</span></p>
             <p>Time Played: <span id="player-time">0:00</span></p>
         </div>
         <div id="controls">
