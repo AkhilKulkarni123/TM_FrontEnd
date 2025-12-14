@@ -22,6 +22,11 @@
     <!-- Use a relative path to load the shared game styles -->
     <link rel="stylesheet" href="../../assets/css/snakes-game.css">
     <style>
+        /* Hidden class to hide sections */
+        .hidden {
+            display: none !important;
+        }
+        
         /* Styles specific to the split game board */
         .navigation-buttons {
             display: flex;
@@ -463,7 +468,7 @@
         <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
     </div>
 
-    <div id="character-selection">
+    <div id="character-selection" class="hidden">
         <h2>Choose Your Hero</h2>
         <div class="character-carousel">
             <button class="carousel-btn prev-btn" id="prev-character">◄</button>
