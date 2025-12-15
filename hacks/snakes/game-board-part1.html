@@ -1,17 +1,9 @@
 <!--
-  Snakes and Ladders – First Half
+  Snakes and Ladders – First Half (Traditional Board Style)
 
-    This file renders the lessons section (squares 1–5).
-    Users must complete all five lessons (visit each of the five lesson squares)
-    before the second section (questions) is unlocked. The page includes
-    login/character selection panels, player stats, dice roll controls and
-    navigation buttons. After finishing all lessons you may proceed to
-    the questions board (game-board-part2.html).
-
-  NOTE: This file replaces the previous game‑board.html for the first half of
-  the game.  It keeps all existing features such as login, character
-  selection, player stats, boss battle modal and leaderboard.  You may
-  customise styles in your existing CSS files.
+    This file renders the lessons section (squares 1–5) with a traditional
+    snakes and ladders board appearance featuring yellow squares and visual
+    snakes/ladders while maintaining all original game functionality.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -60,8 +52,119 @@
             z-index: 100;
             font-size: 1.5rem;
         }
+
+        /* ============================================ */
+        /* TRADITIONAL BOARD APPEARANCE MODIFICATIONS */
+        /* ============================================ */
         
-        /* CHARACTER CAROUSEL STYLES */
+        /* Game board container - traditional orange/brown border */
+        #game-board {
+            background: linear-gradient(145deg, #e67e22, #f39c12) !important;
+            padding: 15px !important;
+            border-radius: 15px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4) !important;
+            border: 8px solid #d35400 !important;
+            position: relative;
+        }
+
+        /* Traditional yellow/golden squares */
+        .game-board .square {
+            background: linear-gradient(135deg, #f9e79f 0%, #f7dc6f 50%, #f9e79f 100%) !important;
+            border: 2px solid #d4af37 !important;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .game-board .square:hover {
+            background: linear-gradient(135deg, #fef9e7 0%, #fcf3cf 50%, #fef9e7 100%) !important;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        /* Square numbers styled like traditional board */
+        .game-board .square .square-number {
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #7d6608;
+            z-index: 2;
+        }
+
+        /* Special lesson/question squares - keep them visually distinct but traditional */
+        .game-board .square.lesson {
+            background: linear-gradient(135deg, #d5f4e6 0%, #a9dfbf 50%, #d5f4e6 100%) !important;
+            border: 3px solid #27ae60 !important;
+            box-shadow: 0 0 15px rgba(39, 174, 96, 0.5);
+        }
+
+        .game-board .square.question {
+            background: linear-gradient(135deg, #fdebd0 0%, #f8c471 50%, #fdebd0 100%) !important;
+            border: 3px solid #e67e22 !important;
+            box-shadow: 0 0 15px rgba(230, 126, 34, 0.5);
+        }
+
+        .game-board .square.boss {
+            background: linear-gradient(135deg, #fadbd8 0%, #ec7063 50%, #fadbd8 100%) !important;
+            border: 3px solid #e74c3c !important;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.6);
+        }
+
+        /* Snake head squares (if any) */
+        .game-board .square.snake-head {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 50%, #a3e4d7 100%) !important;
+        }
+
+        /* Ladder bottom squares (if any) */
+        .game-board .square.ladder-bottom {
+            background: linear-gradient(135deg, #fef5e7 0%, #fdebd0 50%, #fad7a0 100%) !important;
+        }
+
+        /* SVG overlay container for visual snakes and ladders */
+        #board-decorations {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: calc(100% - 30px);
+            height: calc(100% - 30px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Ensure player tokens and other elements stay visible */
+        .game-board .player-piece {
+            z-index: 20 !important;
+        }
+
+        /* Traditional board styling for controls section */
+        #controls {
+            background: linear-gradient(145deg, #f9e79f, #f7dc6f);
+            padding: 20px;
+            border-radius: 12px;
+            border: 4px solid #d4af37;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        #controls button {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+            border: 3px solid #a04000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        #controls button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        /* ============================================ */
+        /* END OF TRADITIONAL BOARD MODIFICATIONS      */
+        /* ============================================ */
+        
+        /* CHARACTER CAROUSEL STYLES (unchanged) */
         #character-selection {
             text-align: center;
             padding: 40px 20px;
@@ -228,7 +331,7 @@
             box-shadow: none;
         }
 
-        /* PLAYER INFO SIDEBAR */
+        /* PLAYER INFO SIDEBAR (unchanged) */
         #player-info {
             position: fixed;
             left: 0;
@@ -309,7 +412,7 @@
             color: #2ecc71;
         }
 
-        /* DETAILED PIXEL ART CHARACTERS */
+        /* DETAILED PIXEL ART CHARACTERS (unchanged) */
         
         /* Knight - Detailed blue armor with shield and sword */
         .knight-pixel {
@@ -516,7 +619,34 @@
             <button id="roll-dice-btn">Roll Dice</button>
             <button id="view-leaderboard-btn">Leaderboard</button>
         </div>
-        <div id="game-board" class="game-board"></div>
+        <div id="game-board" class="game-board">
+            <!-- SVG overlay for decorative snakes and ladders -->
+            <svg id="board-decorations" width="100%" height="100%" style="position: absolute; pointer-events: none;">
+                <!-- Example decorative elements - customize as needed -->
+                <!-- Snake from square 16 to 6 -->
+                <path d="M 50 450 Q 150 350 250 470" 
+                      stroke="#27ae60" 
+                      stroke-width="6" 
+                      fill="none" 
+                      stroke-linecap="round" 
+                      opacity="0.4"/>
+                <circle cx="50" cy="450" r="6" fill="#e74c3c" opacity="0.6"/>
+                
+                <!-- Ladder from square 4 to 14 -->
+                <line x1="230" y1="500" x2="230" y2="400" 
+                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                <line x1="250" y1="500" x2="250" y2="400" 
+                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                <line x1="230" y1="480" x2="250" y2="480" 
+                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                <line x1="230" y1="460" x2="250" y2="460" 
+                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                <line x1="230" y1="440" x2="250" y2="440" 
+                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                <line x1="230" y1="420" x2="250" y2="420" 
+                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+        </div>
         <div class="navigation-buttons">
             <button id="prev-section-btn" class="nav-btn" disabled>Previous Section</button>
             <button id="next-section-btn" class="nav-btn">Next Section</button>
