@@ -1,94 +1,334 @@
-<!--
-  Lesson 2 – Data Structures
-
-  Introduces arrays (lists) and objects (dictionaries) in computer science.
-  Includes an interactive quiz at the bottom.  Completing the lesson
-  awards bullets through the backend API.
--->
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 2 – Data Structures</title>
-    <!-- Use a relative path to load the shared game styles -->
-    <!-- Load the shared game styles from the assets directory.  Because this
-         lesson file lives in hacks/snakes/lessons, we must go up three
-         directories (lessons → snakes → hacks → frontend) to reach
-         frontend/assets/css/snakes-game.css. -->
+    <title>Lesson 2 – Data Structures</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        .question { margin-top: 1.5rem; padding: 1rem; background: #f4f4f4; border-radius: 4px; }
-        .options label { display: block; margin-bottom: 0.5rem; }
-        #complete-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 1rem;
+            color: #333;
+            overflow-y: auto;
+        }
+
+        html {
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 900px;
+            max-height: 90vh;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.4rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+
+        .content {
+            padding: 1.2rem;
+        }
+
+        .section {
+            margin-bottom: 1.2rem;
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section h2::before {
+            content: '▸';
+            color: #764ba2;
+        }
+
+        .section p {
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-size: 0.85em;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 0.8rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .question {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin-top: 1.2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+
+        .question h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.6rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .question p {
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .question pre {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .options {
+            margin-top: 0.8rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .options label {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .options label:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        .options input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: white;
+        }
+
+        .options label:has(input:checked) {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+            font-weight: bold;
+        }
+
+        #complete-btn {
+            width: 100%;
+            margin-top: 1.2rem;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.5);
+        }
+
+        #complete-btn:active {
+            transform: translateY(0);
+        }
+
+        .icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .section h2 {
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Lesson 2: Data Structures</h1>
-    <p>Data structures are ways of organising and storing data in a
-       computer so that it can be accessed and modified efficiently.  Two
-       common data structures are arrays (also called lists) and objects
-       (also called dictionaries or maps).</p>
-    <h2>Arrays</h2>
-    <p>An array stores an ordered collection of values.  In JavaScript you
-       declare an array with square brackets:</p>
-    <pre><code>const fruits = ['apple', 'banana', 'cherry'];
-console.log(fruits[1]); // 'banana'
-</code></pre>
-    <h2>Objects</h2>
-    <p>An object stores data as key‑value pairs.  Keys are strings and
-       values can be any type:</p>
-    <pre><code>const student = { name: 'Ada', age: 17 };
-console.log(student.name); // 'Ada'
-</code></pre>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Lesson 2: Data Structures</h1>
+            <p>Learn how to organize and store data efficiently using arrays and objects—two fundamental data structures in programming!</p>
+        </div>
 
-    <div class="question">
-        <h3>Interactive Quiz</h3>
-        <p>Which code correctly accesses the value <code>42</code> in the array below?</p>
-        <pre><code>const nums = [7, 42, 99];
-</code></pre>
-        <div class="options">
-            <label><input type="radio" name="q1" value="wrong1"> nums['1']</label>
-            <label><input type="radio" name="q1" value="correct"> nums[1]</label>
-            <label><input type="radio" name="q1" value="wrong2"> nums(2)</label>
-            <label><input type="radio" name="q1" value="wrong3"> nums.1</label>
+        <div class="content">
+            <div class="section">
+                <h2>Arrays</h2>
+                <p>An array stores an ordered collection of values. Think of it as a numbered list where each item has a position (index). In JavaScript, you declare an array with square brackets:</p>
+                <pre><code>const fruits = ['apple', 'banana', 'cherry'];
+console.log(fruits[1]); // 'banana'</code></pre>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Arrays are zero-indexed, meaning the first item is at position 0!</p>
+            </div>
+
+            <div class="section">
+                <h2>Objects</h2>
+                <p>An object stores data as key-value pairs. Keys are strings that act like labels, and values can be any type. This structure is perfect for representing real-world entities:</p>
+                <pre><code>const student = { name: 'Ada', age: 17 };
+console.log(student.name); // 'Ada'</code></pre>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Access object values using dot notation (student.name) or brackets (student['name'])!</p>
+            </div>
+
+            <div class="question">
+                <h3>💡 Interactive Quiz</h3>
+                <p>Test your knowledge! Which code correctly accesses the value <code style="background: rgba(0,0,0,0.3); color: white;">42</code> in the array below?</p>
+                <pre><code>const nums = [7, 42, 99];</code></pre>
+                <div class="options">
+                    <label>
+                        <input type="radio" name="q1" value="wrong1">
+                        <span>nums['1']</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="correct">
+                        <span>nums[1]</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="wrong2">
+                        <span>nums(2)</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="wrong3">
+                        <span>nums.1</span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="complete-btn">
+                <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
+            </button>
         </div>
     </div>
-    <button id="complete-btn">Complete Lesson</button>
 
     <script>
-    const API_URL = 'http://localhost:8001/api';
-    document.getElementById('complete-btn').addEventListener('click', async () => {
-        const selected = document.querySelector('input[name="q1"]:checked');
-        if (!selected) {
-            alert('Please select an answer.');
-            return;
-        }
-        const correct = (selected.value === 'correct');
-        if (!correct) {
-            alert('Incorrect! Arrays are zero‑indexed: nums[1] is 42.');
-            return;
-        }
-        try {
-            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ lesson_number: 2, bullets_earned: 5 })
-            });
-            if (res.ok) {
-                alert('Lesson completed! You earned 5 bullets.');
-                window.location.href = '../game-board-part1.html';
-            } else {
-                const data = await res.json();
-                alert(data.error || 'Error completing lesson.');
+        const API_URL = 'http://localhost:8001/api';
+
+        document.getElementById('complete-btn').addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="q1"]:checked');
+            
+            if (!selected) {
+                alert('Please select an answer before completing the lesson.');
+                return;
             }
-        } catch (err) {
-            console.error(err);
-            alert('Network error.');
-        }
-    });
+
+            const correct = (selected.value === 'correct');
+            
+            if (!correct) {
+                alert('Incorrect! Arrays are zero-indexed: nums[1] is 42.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ lesson_number: 2, bullets_earned: 5 })
+                });
+
+                if (res.ok) {
+                    alert('Lesson completed! You earned 5 bullets.');
+                    window.location.href = '../game-board-part1.html';
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Error completing lesson.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error.');
+            }
+        });
     </script>
 </body>
 </html>

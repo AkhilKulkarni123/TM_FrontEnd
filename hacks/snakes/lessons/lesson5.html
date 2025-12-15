@@ -1,89 +1,384 @@
-<!--
-  Lesson 5 – Computing Impacts & Data Analysis
-
-  Introduces topics related to the societal impacts of computing and
-  analysing data.  Concludes with a short quiz.
--->
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 5 – Computing Impacts & Data Analysis</title>
-    <!-- Use a relative path to load the shared game styles -->
-    <!-- Load the shared game styles from the assets directory.  Because this
-         lesson file lives in hacks/snakes/lessons, we must go up three
-         directories (lessons → snakes → hacks → frontend) to reach
-         frontend/assets/css/snakes-game.css. -->
+    <title>Lesson 5 – Computing Impacts & Data Analysis</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        .question { margin-top: 1.5rem; padding: 1rem; background: #f4f4f4; border-radius: 4px; }
-        .options label { display: block; margin-bottom: 0.5rem; }
-        #complete-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 1rem;
+            color: #333;
+            overflow-y: auto;
+        }
+
+        html {
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 900px;
+            max-height: 90vh;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.4rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+
+        .content {
+            padding: 1.2rem;
+        }
+
+        .section {
+            margin-bottom: 1.2rem;
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section h2::before {
+            content: '▸';
+            color: #764ba2;
+        }
+
+        .section p {
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-size: 0.85em;
+        }
+
+        .highlight-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+        }
+
+        .highlight-box p {
+            margin: 0;
+            color: #444;
+            font-size: 0.88rem;
+        }
+
+        .highlight-box ul {
+            margin: 0.4rem 0 0 1.2rem;
+            padding: 0;
+        }
+
+        .highlight-box li {
+            margin-bottom: 0.3rem;
+            color: #444;
+            font-size: 0.88rem;
+        }
+
+        .ethics-box {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+        }
+
+        .ethics-box p {
+            margin: 0;
+            color: #444;
+            font-size: 0.88rem;
+        }
+
+        .ethics-box ul {
+            margin: 0.4rem 0 0 1.2rem;
+            padding: 0;
+        }
+
+        .ethics-box li {
+            margin-bottom: 0.3rem;
+            color: #444;
+            font-size: 0.88rem;
+        }
+
+        .question {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin-top: 1.2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+
+        .question h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.6rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .question p {
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .options {
+            margin-top: 0.8rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .options label {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .options label:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        .options input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: white;
+            flex-shrink: 0;
+        }
+
+        .options label:has(input:checked) {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+            font-weight: bold;
+        }
+
+        #complete-btn {
+            width: 100%;
+            margin-top: 1.2rem;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.5);
+        }
+
+        #complete-btn:active {
+            transform: translateY(0);
+        }
+
+        .icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .section h2 {
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Lesson 5: Computing Impacts & Data Analysis</h1>
-    <p>Computers have transformed society in many ways.  Big data and
-       analytics allow us to discover patterns and make predictions, but
-       they also raise important questions about privacy, bias and
-       ethical use of information.</p>
-    <h2>Big Data</h2>
-    <p>Big data refers to datasets that are too large or complex to be
-       processed by traditional tools.  Specialised technologies like
-       Hadoop and cloud computing enable analysis of these massive
-       datasets.</p>
-    <h2>Privacy & Ethics</h2>
-    <p>Collecting and analysing personal data can lead to discoveries
-       that benefit society, but mishandling data can harm individuals.
-       Ethical computing emphasises transparency, fairness and respect
-       for user privacy.</p>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Lesson 5: Computing Impacts & Data Analysis</h1>
+            <p>Explore how computing transforms society and learn why ethical considerations matter in our data-driven world!</p>
+        </div>
 
-    <div class="question">
-        <h3>Interactive Quiz</h3>
-        <p>Why is ethical consideration important when analysing personal data?</p>
-        <div class="options">
-            <label><input type="radio" name="q1" value="0"> Ethics slow down analysis and should be avoided.</label>
-            <label><input type="radio" name="q1" value="1"> To ensure fairness and protect privacy rights.</label>
-            <label><input type="radio" name="q1" value="2"> Because algorithms always produce unbiased results.</label>
-            <label><input type="radio" name="q1" value="3"> There is no need for ethics in data science.</label>
+        <div class="content">
+            <div class="section">
+                <p>Computers have transformed society in countless ways. Big data and analytics allow us to discover patterns and make predictions, but they also raise important questions about privacy, bias, and the ethical use of information.</p>
+            </div>
+
+            <div class="section">
+                <h2>Big Data</h2>
+                <p>Big data refers to datasets that are too large or complex to be processed by traditional tools. These massive collections of information can reveal insights that were previously impossible to discover.</p>
+                <div class="highlight-box">
+                    <p><strong>🔍 Technologies & Applications:</strong></p>
+                    <ul>
+                        <li><strong>Hadoop:</strong> Processes huge datasets across multiple computers</li>
+                        <li><strong>Cloud Computing:</strong> Provides scalable storage and processing power</li>
+                        <li><strong>Machine Learning:</strong> Finds patterns in complex data automatically</li>
+                    </ul>
+                </div>
+                <div class="highlight-box">
+                    <p><strong>Real-world examples:</strong> Streaming services analyze billions of viewing patterns to recommend shows. Healthcare systems analyze patient data to predict disease outbreaks. Social media platforms process millions of posts per second to detect trends.</p>
+                </div>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Big data helps us make better decisions, but requires powerful tools and careful analysis!</p>
+            </div>
+
+            <div class="section">
+                <h2>Privacy & Ethics</h2>
+                <p>Collecting and analyzing personal data can lead to discoveries that benefit society, but mishandling data can harm individuals. Ethical computing emphasizes transparency, fairness, and respect for user privacy.</p>
+                <div class="ethics-box">
+                    <p><strong>⚖️ Key Ethical Principles:</strong></p>
+                    <ul>
+                        <li><strong>Transparency:</strong> Users should know what data is collected and how it's used</li>
+                        <li><strong>Consent:</strong> People should control their own information</li>
+                        <li><strong>Fairness:</strong> Algorithms should not discriminate or create bias</li>
+                        <li><strong>Privacy:</strong> Personal information must be protected from misuse</li>
+                    </ul>
+                </div>
+                <div class="ethics-box">
+                    <p><strong>⚠️ Ethical challenges:</strong> Facial recognition can identify criminals but also enable surveillance. AI hiring tools can speed up recruitment but may inherit human biases. Health data analysis can improve care but risks exposing sensitive information.</p>
+                </div>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 With great data comes great responsibility—ethical computing protects both individuals and society!</p>
+            </div>
+
+            <div class="question">
+                <h3>💡 Interactive Quiz</h3>
+                <p>Test your understanding! Why is ethical consideration important when analyzing personal data?</p>
+                <div class="options">
+                    <label>
+                        <input type="radio" name="q1" value="0">
+                        <span>Ethics slow down analysis and should be avoided.</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="1">
+                        <span>To ensure fairness and protect privacy rights.</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="2">
+                        <span>Because algorithms always produce unbiased results.</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="q1" value="3">
+                        <span>There is no need for ethics in data science.</span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="complete-btn">
+                <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
+            </button>
         </div>
     </div>
-    <button id="complete-btn">Complete Lesson</button>
 
     <script>
-    const API_URL = 'http://localhost:8001/api';
-    document.getElementById('complete-btn').addEventListener('click', async () => {
-        const selected = document.querySelector('input[name="q1"]:checked');
-        if (!selected) {
-            alert('Please select an answer.');
-            return;
-        }
-        const correct = (selected.value === '1');
-        if (!correct) {
-            alert('Incorrect. Ethical practices ensure fairness and privacy.');
-            return;
-        }
-        try {
-            const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ lesson_number: 5, bullets_earned: 5 })
-            });
-            if (res.ok) {
-                alert('Lesson completed! You earned 5 bullets.');
-                window.location.href = '../game-board-part1.html';
-            } else {
-                const data = await res.json();
-                alert(data.error || 'Error completing lesson.');
+        const API_URL = 'http://localhost:8001/api';
+
+        document.getElementById('complete-btn').addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="q1"]:checked');
+            
+            if (!selected) {
+                alert('Please select an answer before completing the lesson.');
+                return;
             }
-        } catch (err) {
-            console.error(err);
-            alert('Network error.');
-        }
-    });
+
+            const correct = (selected.value === '1');
+            
+            if (!correct) {
+                alert('Incorrect. Ethical practices ensure fairness and privacy.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/snakes/complete-lesson`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ lesson_number: 5, bullets_earned: 5 })
+                });
+
+                if (res.ok) {
+                    alert('Lesson completed! You earned 5 bullets.');
+                    window.location.href = '../game-board-part1.html';
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Error completing lesson.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error.');
+            }
+        });
     </script>
 </body>
 </html>
