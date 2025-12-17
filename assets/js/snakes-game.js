@@ -306,6 +306,15 @@ function startGame() {
 }
 
 function autoResumeIfReady() {
+    // Check if the player has previously started the game (localStorage flag)
+    var hasStarted = false;
+    try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) { hasStarted = false; }
+    
+    // Only auto-resume if the player has started playing before
+    if (!hasStarted) {
+        return Promise.resolve();
+    }
+    
     // If the player previously selected a character (localStorage) or server has saved a selected character, resume game UI
     var storedChar = null;
     try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) { storedChar = null; }
