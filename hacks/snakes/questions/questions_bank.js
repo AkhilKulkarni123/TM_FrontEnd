@@ -1,190 +1,348 @@
-/*
-  questions_bank.js
-  25 question sets for the second half of the board (squares 26–50)
 
-  Mapping (5 rows × 5 questions per row):
-    Row 6 (Squares 26–30) → Lesson 1 topic (Programming Basics)
-    Row 7 (Squares 31–35) → Lesson 2 topic (Data Structures)
-    Row 8 (Squares 36–40) → Lesson 3 topic (The Internet)
-    Row 9 (Squares 41–45) → Lesson 4 topic (Cybersecurity)
-    Row 10 (Squares 46–50) → Lesson 5 topic (Data & Ethics)
-
-  Access:
-    window.QUESTIONS_BANK[row][index]
-      row: 1..5 (maps to lesson topics 1-5)
-      index: 0..4 (5 questions per row)
-
-  Question object:
-    { prompt: string, options: string[], answer: number }
-*/
 
 (function () {
   const QUESTIONS = {
-    // =========================================================
-    // ROW 1 (Squares 26–30) – Programming Basics
-    // Topic: Variables, Conditionals, Loops, Algorithms
-    // =========================================================
+    // =====================================================
+    // ROW 1 (Squares 6-15) – Programming Basics
+    // =====================================================
     1: [
-      {
-        prompt: "Which keyword declares a constant in JavaScript?",
-        options: ["var", "const", "let", "static"],
-        answer: 1
+      { 
+        prompt: "Which keyword declares a constant in JavaScript?", 
+        options: ["var", "const", "let", "static"], 
+        answer: 1 
       },
-      {
-        prompt: "What does an if statement do in a program?",
-        options: ["Repeats code forever", "Makes a decision based on a condition", "Stores data in a list", "Runs only at the end"],
-        answer: 1
+      { 
+        prompt: "What does an if statement do?", 
+        options: ["Repeats code", "Makes a decision", "Stores data", "Runs at end"], 
+        answer: 1 
       },
-      {
-        prompt: "Which loop is best when you don't know how many times you need to repeat?",
-        options: ["for loop", "while loop", "print loop", "end loop"],
-        answer: 1
+      { 
+        prompt: "Which loop is best when count is unknown?", 
+        options: ["for", "while", "print", "end"], 
+        answer: 1 
       },
-      {
-        prompt: "What is the output type of the expression: 3 < 5?",
-        options: ["Number", "String", "Boolean", "List"],
-        answer: 2
+      { 
+        prompt: "What type is: 3 < 5?", 
+        options: ["Number", "String", "Boolean", "List"], 
+        answer: 2 
       },
-      {
-        prompt: "In AP CSP, an algorithm is best described as:",
-        options: ["A random guess", "A step-by-step process to solve a problem", "A type of computer", "A data file"],
-        answer: 1
+      { 
+        prompt: "An algorithm is:", 
+        options: ["Random guess", "Step-by-step process", "Computer type", "Data file"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Which type stores true/false?", 
+        options: ["String", "Boolean", "Number", "Array"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Exit a loop early with:", 
+        options: ["break", "stop", "exit", "end"], 
+        answer: 0 
+      },
+      { 
+        prompt: "Comments are for:", 
+        options: ["Speed", "Documentation", "Hiding errors", "Storage"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Equality (value only):", 
+        options: ["=", "===", "==", "!=="], 
+        answer: 2 
+      },
+      { 
+        prompt: "console.log() does what?", 
+        options: ["Stores vars", "Prints to console", "Creates loops", "Deletes"], 
+        answer: 1 
       }
     
     ],
 
-    // =========================================================
-    // ROW 2 (Squares 31–35) – Data Structures
-    // Topic: Lists/Arrays, Objects, Indexing, JSON
-    // =========================================================
+    // =====================================================
+    // ROW 2 (Squares 16-25) – Data Structures
+    // =====================================================
     2: [
-      {
-        prompt: "In most programming languages, the first element of a list/array is at index:",
-        options: ["0", "1", "-1", "10"],
-        answer: 0
+      { 
+        prompt: "First array element index:", 
+        options: ["0", "1", "-1", "10"], 
+        answer: 0 
       },
-      {
-        prompt: "Which method adds an element to the end of a JavaScript array?",
-        options: ["push()", "pop()", "shift()", "splice()"],
-        answer: 0
+      { 
+        prompt: "Add to array end:", 
+        options: ["push()", "pop()", "shift()", "splice()"], 
+        answer: 0 
       },
-      {
-        prompt: "What does array.length return?",
-        options: ["The last value", "The first index", "The number of elements", "The sum of elements"],
-        answer: 2
+      { 
+        prompt: "array.length returns:", 
+        options: ["Last value", "First index", "Element count", "Sum"], 
+        answer: 2 
       },
-      {
-        prompt: "Objects (like JSON) store information as:",
-        options: ["Key-value pairs", "Only numbers", "Only strings", "Index-only values"],
-        answer: 0
+      { 
+        prompt: "Objects store as:", 
+        options: ["Key-value pairs", "Numbers only", "Strings only", "Indexes only"], 
+        answer: 0 
       },
-      {
-        prompt: "Which is the best reason to use a list in a program?",
-        options: ["To store many related items in one variable", "To avoid using variables", "To run code faster always", "To stop loops"],
-        answer: 0
+      { 
+        prompt: "Why use lists?", 
+        options: ["Store many items", "Avoid variables", "Run faster", "Stop loops"], 
+        answer: 0 
+      },
+      { 
+        prompt: "Remove first element:", 
+        options: ["push()", "shift()", "unshift()", "pop()"], 
+        answer: 1 
+      },
+      { 
+        prompt: "JSON is for:", 
+        options: ["Styling", "Data interchange", "Compiling", "Servers"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Associative structure:", 
+        options: ["Array", "Object", "String", "Number"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Out-of-bounds returns:", 
+        options: ["undefined", "0", "NaN", "Error"], 
+        answer: 0 
+      },
+      { 
+        prompt: "Get array portion:", 
+        options: ["slice()", "splice()", "shift()", "pop()"], 
+        answer: 0 
       }
     
     ],
 
-    // =========================================================
-    // ROW 3 (Squares 36–40) – The Internet
-    // Topic: HTTP, DNS, IP Addresses, Routing, Protocols
-    // =========================================================
+    // =====================================================
+    // ROW 3 (Squares 26-35) – Internet
+    // =====================================================
     3: [
-      {
-        prompt: "Which protocol is used to request and deliver web pages?",
-        options: ["HTTP", "SMTP", "FTP", "Bluetooth"],
-        answer: 0
+      { 
+        prompt: "Web page protocol:", 
+        options: ["HTTP", "SMTP", "FTP", "Bluetooth"], 
+        answer: 0 
       },
-      {
-        prompt: "DNS is used to:",
-        options: ["Encrypt data", "Translate domain names into IP addresses", "Store passwords", "Speed up RAM"],
-        answer: 1
+      { 
+        prompt: "DNS does what:", 
+        options: ["Encrypt", "Translate domains to IP", "Store passwords", "Speed RAM"], 
+        answer: 1 
       },
-      {
-        prompt: "What does an IP address identify on a network?",
-        options: ["A programming language", "A specific device/interface", "A search engine", "A password"],
-        answer: 1
+      { 
+        prompt: "IP address identifies:", 
+        options: ["Language", "Device", "Search engine", "Password"], 
+        answer: 1 
       },
-      {
-        prompt: "Which device forwards packets between networks (home → internet)?",
-        options: ["Monitor", "Router", "Speaker", "Keyboard"],
-        answer: 1
+      { 
+        prompt: "Forwards packets:", 
+        options: ["Monitor", "Router", "Speaker", "Keyboard"], 
+        answer: 1 
       },
-      {
-        prompt: "Which HTTP method is most commonly used to retrieve data from a server?",
-        options: ["POST", "PUT", "GET", "PATCH"],
-        answer: 2
+      { 
+        prompt: "Retrieve data method:", 
+        options: ["POST", "PUT", "GET", "PATCH"], 
+        answer: 2 
+      },
+      { 
+        prompt: "HTTP port:", 
+        options: ["21", "80", "443", "25"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Latency is:", 
+        options: ["Data amount", "Delay", "Encryption", "Disk speed"], 
+        answer: 1 
+      },
+      { 
+        prompt: "CDN helps by:", 
+        options: ["Global hosting", "Storing passwords", "Encrypting", "Blocking"], 
+        answer: 0 
+      },
+      { 
+        prompt: "HTTPS provides:", 
+        options: ["No caching", "Encrypted transport", "Faster DB", "File storage"], 
+        answer: 1 
+      },
+      { 
+        prompt: "URL resource part:", 
+        options: ["Protocol", "Domain", "Path", "Port"], 
+        answer: 2 
       }
-   
     ],
 
-    // =========================================================
-    // ROW 4 (Squares 41–45) – Cybersecurity
-    // Topic: Encryption, Hashing, Passwords, Malware, CIA Triad
-    // =========================================================
+    // =====================================================
+    // ROW 4 (Squares 36-45) – Cybersecurity
+    // =====================================================
     4: [
-      {
-        prompt: "Which is a best practice for storing passwords?",
-        options: ["Store in plain text", "Hash the password", "Email the password to yourself", "Use the same password everywhere"],
-        answer: 1
+      { 
+        prompt: "Store passwords as:", 
+        options: ["Plain text", "Hash", "Email", "Same everywhere"], 
+        answer: 1 
       },
-      {
-        prompt: "HTTPS is primarily used to:",
-        options: ["Make websites load slower", "Secure web traffic using encryption", "Disable cookies", "Replace IP addresses"],
-        answer: 1
+      { 
+        prompt: "HTTPS does:", 
+        options: ["Slows sites", "Secures traffic", "Disables cookies", "Speeds DNS"], 
+        answer: 1 
       },
-      {
-        prompt: "Which is a good defense against phishing?",
-        options: ["Click all links", "Verify sender and avoid suspicious links", "Share passwords freely", "Respond immediately to demands"],
-        answer: 1
+      { 
+        prompt: "Phishing defense:", 
+        options: ["Click all", "Verify sender", "Share passwords", "Respond fast"], 
+        answer: 1 
       },
-      {
-        prompt: "Two-factor authentication improves security by:",
-        options: ["Requiring two separate proofs of identity", "Using the same password twice", "Removing passwords", "Making devices faster"],
-        answer: 0
+      { 
+        prompt: "2FA improves security by:", 
+        options: ["Two proofs", "Same password twice", "No passwords", "Faster"], 
+        answer: 0 
       },
-      {
-        prompt: "Which one is an example of malware?",
-        options: ["Antivirus", "Ransomware", "Firewall", "VPN"],
-        answer: 1
+      { 
+        prompt: "Malware example:", 
+        options: ["Antivirus", "Ransomware", "Firewall", "VPN"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Strong password has:", 
+        options: ["Letters only", "Short words", "Letters+numbers+symbols", "Guessable"], 
+        answer: 2 
+      },
+      { 
+        prompt: "Ransomware does:", 
+        options: ["Speeds PC", "Encrypts for payment", "Cleans viruses", "Updates"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Confidentiality means:", 
+        options: ["Always available", "Authorized access only", "Never changed", "Public"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Hashing is:", 
+        options: ["Reversible", "One-way", "For images", "Compression"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Secure login:", 
+        options: ["Reuse passwords", "Short passwords", "2FA", "Share accounts"], 
+        answer: 2 
       }
-    
     ],
 
-    // =========================================================
-    // ROW 5 (Squares 46–50) – Data & Ethics
-    // Topic: Big Data, Bias, Privacy, Ethics, Anonymization
-    // =========================================================
+    // =====================================================
+    // ROW 5 (Squares 46-55) – Data & Ethics
+    // =====================================================
     5: [
-      {
-        prompt: "A common benefit of big data is:",
-        options: ["Less information", "Better pattern detection and predictions", "No privacy risks", "No need for computing power"],
-        answer: 1
+      { 
+        prompt: "Big data benefit:", 
+        options: ["Less info", "Pattern detection", "No privacy risk", "No power"], 
+        answer: 1 
       },
-      {
-        prompt: "Algorithmic bias can happen when:",
-        options: ["Training data reflects unfair patterns", "Computers run too fast", "You use a loop", "You encrypt data"],
-        answer: 0
+      { 
+        prompt: "Bias happens when:", 
+        options: ["Unfair training data", "Fast computers", "Loops used", "Encryption"], 
+        answer: 0 
       },
-      {
-        prompt: "Which is a major risk of collecting personal data?",
-        options: ["Stronger privacy automatically", "Data breaches and misuse", "Unlimited storage for free", "Always accurate decisions"],
-        answer: 1
+      { 
+        prompt: "Data risk:", 
+        options: ["Strong privacy", "Breaches", "Unlimited storage", "Accuracy"], 
+        answer: 1 
       },
-      {
-        prompt: "Ethical computing emphasizes:",
-        options: ["Transparency, consent, and fairness", "Hiding how data is used", "Removing security controls", "Collecting data without limits"],
-        answer: 0
+      { 
+        prompt: "Ethics emphasizes:", 
+        options: ["Transparency", "Hiding use", "No security", "Unlimited collection"], 
+        answer: 0 
       },
-      {
-        prompt: "Anonymization means:",
-        options: ["Adding more personal details", "Removing personal identifiers from data", "Posting data publicly", "Deleting the internet"],
-        answer: 1
+      { 
+        prompt: "Anonymization means:", 
+        options: ["Add details", "Remove identifiers", "Post publicly", "Delete internet"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Reduce bias:", 
+        options: ["Diverse data", "Single source", "Ignore outliers", "Old data"], 
+        answer: 0 
+      },
+      { 
+        prompt: "Transparency for:", 
+        options: ["Understanding decisions", "Hiding", "Speed", "Less memory"], 
+        answer: 0 
+      },
+      { 
+        prompt: "Privacy practice:", 
+        options: ["Collect all", "Minimize collection", "Sell data", "Store forever"], 
+        answer: 1 
+      },
+      { 
+        prompt: "Misused data causes:", 
+        options: ["Better UX", "Wrongful profiling", "Faster CPU", "More disk"], 
+        answer: 1 
+      },
+      { 
+        prompt: "AI ethics involves:", 
+        options: ["Fairness", "Performance only", "Ignoring users", "More collection"], 
+        answer: 0 
       }
     ]
   };
 
-  // Expose globally for question_template.html to consume
+  // =====================================================
+  // VALIDATION & LOGGING
+  // =====================================================
+  
+  console.log('%c=== Questions Bank Loaded ===', 'color: green; font-weight: bold; font-size: 14px');
+  
+  let totalQuestions = 0;
+  let isValid = true;
+  
+  Object.keys(QUESTIONS).forEach(row => {
+    const rowNum = parseInt(row);
+    const questions = QUESTIONS[row];
+    const count = questions.length;
+    totalQuestions += count;
+    
+    if (count !== 10) {
+      console.error(`❌ Row ${row} has ${count} questions (expected 10)`);
+      isValid = false;
+    } else {
+      console.log(`✅ Row ${row}: ${count} questions`);
+    }
+    
+    // Validate each question structure
+    questions.forEach((q, idx) => {
+      if (!q.prompt || !q.options || q.answer === undefined) {
+        console.error(`❌ Row ${row}, Index ${idx}: Invalid question structure`, q);
+        isValid = false;
+      }
+      if (q.options.length !== 4) {
+        console.error(`❌ Row ${row}, Index ${idx}: Expected 4 options, got ${q.options.length}`);
+        isValid = false;
+      }
+      if (q.answer < 0 || q.answer > 3) {
+        console.error(`❌ Row ${row}, Index ${idx}: Invalid answer index ${q.answer}`);
+        isValid = false;
+      }
+    });
+  });
+  
+  if (isValid) {
+    console.log(`%c✅ All questions valid!`, 'color: green; font-weight: bold');
+    console.log(`📊 Total: ${totalQuestions} questions`);
+    console.log(`📐 Coverage: Squares 6-55 (${totalQuestions} squares)`);
+  } else {
+    console.error('❌ Questions bank has validation errors!');
+  }
+  
+  // Test the mapping formula
+  console.log('%c=== Testing Square Mapping ===', 'color: blue; font-weight: bold');
+  const testSquares = [6, 15, 16, 25, 26, 35, 36, 45, 46, 55];
+  testSquares.forEach(square => {
+    const row = Math.floor((square - 6) / 10) + 1;
+    const index = (square - 6) % 10;
+    console.log(`Square ${square} → Row ${row}, Index ${index}`);
+  });
+  
+  // Make available globally
   window.QUESTIONS_BANK = QUESTIONS;
+  
+  console.log('%c=== Ready to use! ===', 'color: green; font-weight: bold; font-size: 14px');
 })();

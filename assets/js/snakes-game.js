@@ -15,7 +15,7 @@ var SECOND_SECTION_SIZE = 50; // questions: squares 6..55 (5 rows x 10 cols)
 var BOARD_TOTAL_SQUARES = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE + 1; // +1 reserved for boss end
 
 var LESSON_BULLETS = 5;
-var QUESTION_BULLETS = 2;
+var QUESTION_BULLETS = 5; // CHANGED FROM 2 TO 5
 
 var AUTOSAVE_EVERY_SECONDS = 10;
 
@@ -564,24 +564,26 @@ function movePlayer(steps) {
 function handleSquareEvent() {
     var section = window.snakesGameSection || 1;
     var square = gameState.currentSquare;
-
+    console.log('Section:', section, 'Square:', square);
+    
+    // SECTION 1: LESSONS (squares 1-5)
     if (section === 1) {
-        // Section 1: square 0 = START, squares 1..FIRST_LESSON_COUNT map to lessons
+        
         if (square === 0) {
-            // START square – nothing to open; instruct the player to roll
+
             alert('This is START. Roll the dice to move to the first lesson.');
             return;
         }
-
-        // For lesson squares (1..FIRST_LESSON_COUNT)
+        
         if (square >= 1 && square <= FIRST_LESSON_COUNT) {
-            var lessonNum = square; // 1 maps to lesson1, etc.
+            var lessonNum = square;
             if (gameState.completedLessons.indexOf(lessonNum) === -1) {
-                window.location.href = 'lessons/lesson' + lessonNum + '.html';
+                var row = 1;
+                var index = square - 1;
+                window.location.href = '/game/questions/questions.html?square=' + square + '&row=' + row + '&index=' + index;
                 return;
             }
-
-            // already completed; check if all lessons completed
+            
             var allDone = true;
             for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
                 if (gameState.completedLessons.indexOf(i) === -1) { allDone = false; break; }
@@ -595,22 +597,17 @@ function handleSquareEvent() {
             }
             return;
         }
-    } else {
-        var sectionStart = FIRST_SECTION_SIZE; // e.g., 6
-        var idx = square - sectionStart;
-        var row2 = Math.floor(idx / 10) + 1; // 1..5
-        var index = idx % 10; // 0..9
-
-        // If we land on a snake or ladder, animate and move to its destination
+    }
+    
+    // SECTION 2: QUESTIONS (squares 6-55)
+    if (section === 2) {
+        var sectionStart = FIRST_SECTION_SIZE;
+        var sectionEnd = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1;
         var dest = snakesAndLaddersMap[square];
         if (dest) {
             animateMoveToSquare(square, dest);
             return;
         }
-
-        var sectionEnd = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1;
-
-        // If this is the final square of section 2, require top-5 leaderboard to unlock boss
         if (square === sectionEnd) {
             checkPlayerTopFive().then(function (isTopFive) {
                 if (isTopFive) {
@@ -623,15 +620,19 @@ function handleSquareEvent() {
             }).catch(function () { alert('Unable to check leaderboard at this time. Try again later.'); });
             return;
         }
-
-        var target = new URL('questions/question_template.html', window.location.href);
-        target.searchParams.set('row', row2);
-        target.searchParams.set('index', index);
-        target.searchParams.set('square', square);
-
-        window.location.href = target.toString();
+        if (square >= sectionStart && square < sectionEnd) {
+            var idx = square - sectionStart;
+            var row2 = Math.floor(idx / 10) + 1;
+            var index2 = idx % 10;
+            window.location.href = '/game/questions/questions.html?square=' + square + '&row=' + row2 + '&index=' + index2;
+            return;
+        }
     }
+    
+    // Fallback
+    console.warn('Unhandled square event:', square, 'in section', section);
 }
+
 
 // Snakes and ladders configuration for section 2 (squares -> destination)
 var snakesAndLaddersMap = {
