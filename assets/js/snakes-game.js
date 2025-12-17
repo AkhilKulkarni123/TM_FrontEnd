@@ -361,12 +361,23 @@ function createGameBoard() {
     board.innerHTML = '';
 
     var section = window.snakesGameSection || 1;
+    board.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+    if (board.parentElement) {
+        board.parentElement.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+        if (board.parentElement.parentElement) {
+            var stage = board.parentElement.parentElement;
+            if (stage.classList.contains('board-stage')) {
+                stage.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+            }
+        }
+    }
     // Section 1: compact 1 x FIRST_SECTION_SIZE layout (display horizontally)
         if (section === 1) {
             var row = document.createElement('div');
             row.className = 'board-row single-row';
             // ensure the single-row grid uses the correct column count (START + lessons)
             row.style.setProperty('--first-size', FIRST_SECTION_SIZE);
+            row.style.setProperty('--board-scale', 'lesson');
             for (var i = 0; i < FIRST_SECTION_SIZE; i++) {
                 var squareNum = i;
                 var square = document.createElement('div');
@@ -420,7 +431,7 @@ function createGameBoard() {
             }
 
             var square = document.createElement('div');
-            square.className = 'square';
+            square.className = 'square medium';
             square.setAttribute('data-square', squareNum);
 
             if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');

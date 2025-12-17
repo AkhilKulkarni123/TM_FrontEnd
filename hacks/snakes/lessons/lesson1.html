@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 1 – Algorithms & Programming Basics</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
     <style>
         * {
             margin: 0;
@@ -11,7 +12,7 @@
             box-sizing: border-box;
         }
 
-        body {
+        .lesson-body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             background-attachment: fixed;
@@ -219,7 +220,7 @@
         }
 
         @media (max-width: 768px) {
-            body {
+            .lesson-body {
                 padding: 1rem;
             }
 
@@ -237,11 +238,21 @@
         }
     </style>
 </head>
-<body>
+<body class="lesson-body">
+    <div class="lesson-wrapper">
     <div class="container">
         <div class="header">
             <h1>🎯 Lesson 1: Algorithms & Programming Basics</h1>
             <p>Master the fundamental building blocks of programming: variables, conditionals, and loops. These concepts are the foundation of every algorithm!</p>
+        </div>
+
+        <div class="arcade-zone lesson-arcade" data-arcade-target="3" data-arcade-message="Use WASD or arrow keys to collect all three idea orbs." data-arcade-complete="Arcade complete! You're ready for the reading.">
+            <div class="arcade-header">
+                <h2>Mini-Quest</h2>
+                <p>Guide your hero to collect glowing ideas before reading the lesson below.</p>
+            </div>
+            <div class="arcade-grid"></div>
+            <div class="arcade-status">Use WASD or arrow keys to move.</div>
         </div>
 
         <div class="content">
@@ -303,7 +314,8 @@ console.log(total);</code></pre>
             </button>
         </div>
     </div>
-
+    </div>
+    <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8001/api';
 

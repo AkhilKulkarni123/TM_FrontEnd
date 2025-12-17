@@ -66,22 +66,41 @@
     <!-- Character selection intentionally removed from section 2 to preserve initial selection only -->
 
     <div id="game-container" class="hidden">
-        <div id="player-info">
-            <h3>Player</h3>
-            <p>Character: <span id="player-character"></span></p>
-            <p>Bullets: <span id="player-bullets">0</span></p>
-            <p>Lives: <span id="player-lives">3</span></p>
-            <p>Current Square: <span id="player-square">—</span></p>
-            <p>Time Played: <span id="player-time">0:00</span></p>
-        </div>
-        <div id="controls">
-            <button id="roll-dice-btn">Roll Dice</button>
-            <button id="view-leaderboard-btn">Leaderboard</button>
-        </div>
-        <div id="game-board" class="game-board"></div>
-        <div class="navigation-buttons">
-            <button id="prev-section-btn" class="nav-btn">Previous Section</button>
-            <button id="next-section-btn" class="nav-btn">Next Section</button>
+        <div class="board-shell">
+            <aside class="board-sidebar">
+                <div id="player-info" class="info-card">
+                    <h3>Player</h3>
+                    <p>Character: <span id="player-character"></span></p>
+                    <p>Bullets: <span id="player-bullets">0</span></p>
+                    <p>Lives: <span id="player-lives">3</span></p>
+                    <p>Current Square: <span id="player-square">—</span></p>
+                    <p>Time Played: <span id="player-time">0:00</span></p>
+                </div>
+                <div id="controls" class="info-card control-panel">
+                    <h3>Actions</h3>
+                    <p class="control-hint">Clear every 🔥 challenge square to unlock the boss arena.</p>
+                    <button id="roll-dice-btn">Roll Dice</button>
+                    <button id="view-leaderboard-btn">Leaderboard</button>
+                </div>
+            </aside>
+            <section class="board-main">
+                <div class="board-status">
+                    <div>
+                        <h3>Question Gauntlet</h3>
+                        <p>Row by row, earn bullets and stay ahead of the snakes!</p>
+                    </div>
+                    <div class="status-pill">Section 2</div>
+                </div>
+                <div class="board-stage">
+                    <div class="board-grid-frame">
+                        <div id="game-board" class="game-board"></div>
+                    </div>
+                </div>
+                <div class="navigation-buttons board-nav">
+                    <button id="prev-section-btn" class="nav-btn">Previous Section</button>
+                    <button id="next-section-btn" class="nav-btn">Next Section</button>
+                </div>
+            </section>
         </div>
     </div>
 

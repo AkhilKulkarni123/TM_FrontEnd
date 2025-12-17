@@ -24,27 +24,68 @@
 
   <!-- Shared game styles -->
   <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    .question-card { background: #f4f4f4; padding: 1rem; border-radius: 8px; max-width: 720px; }
-    .options label { display: block; margin-bottom: 0.5rem; cursor: pointer; }
-    #submit-btn { margin-top: 1rem; padding: 0.6rem 1rem; background: #2980b9; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    #submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .question-page {
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+    }
+    .question-shell .question-card {
+      color: #2b2c4a;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      background: rgba(44, 63, 105, 0.08);
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .options label:hover {
+      transform: translateX(4px);
+      background: rgba(90, 107, 176, 0.2);
+    }
+    #submit-btn {
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      background: linear-gradient(135deg, #ff9966, #ff5e62);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 15px 35px rgba(255, 94, 98, 0.4);
+    }
+    #submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
     .meta { margin-top: 0.75rem; font-size: 0.9rem; opacity: 0.8; }
   </style>
 </head>
-<body>
-  <div id="question-container" class="question-card">
+<body class="question-page">
+  <div class="question-shell">
+    <div class="arcade-zone question-arcade" data-arcade-target="3" data-arcade-message="Collect energy cores to unlock the question!" data-arcade-complete="Energy charged! Answer the question below.">
+      <div class="arcade-header">
+        <h2>Mini Challenge</h2>
+        <p>Use WASD or arrow keys to move your selected character through the grid.</p>
+      </div>
+      <div class="arcade-grid"></div>
+      <div class="arcade-status">Collect every core.</div>
+    </div>
+    <div id="question-container" class="question-card">
     <h2 id="question-title">Question</h2>
     <p id="question-text"></p>
     <div id="options" class="options"></div>
     <button id="submit-btn">Submit Answer</button>
     <div class="meta" id="question-meta"></div>
   </div>
+  </div>
 
   <!-- Load the external question bank -->
   <script src="questions_bank.js"></script>
+  <script src="../../../assets/js/lesson-arcade.js"></script>
 
   <script>
     // IMPORTANT: use localhost (not 127.0.0.1) so JWT cookie matches domain
@@ -70,6 +111,14 @@
     }
 
     const question = BANK[row][index];
+
+    // Update arcade mini-game messaging before SnakesArcade initializes
+    var arcadeZone = document.querySelector('.question-arcade');
+    if (arcadeZone) {
+      arcadeZone.querySelector('.arcade-header h2').textContent = 'Square ' + square + ' Mini Challenge';
+      arcadeZone.dataset.arcadeMessage = 'Move your hero with WASD or arrow keys while you prep for row ' + row + '.';
+      arcadeZone.dataset.arcadeComplete = 'Nice run! Now answer the question to earn bullets.';
+    }
 
     // Render UI
     document.getElementById('question-title').innerText = `Lesson ${row} • Question ${index + 1}`;

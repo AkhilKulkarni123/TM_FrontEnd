@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 3 – Internet & Networking</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
     <style>
         * {
             margin: 0;
@@ -11,7 +12,7 @@
             box-sizing: border-box;
         }
 
-        body {
+        .lesson-body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             background-attachment: fixed;
@@ -211,7 +212,7 @@
         }
 
         @media (max-width: 768px) {
-            body {
+            .lesson-body {
                 padding: 0.5rem;
             }
 
@@ -229,11 +230,21 @@
         }
     </style>
 </head>
-<body>
+<body class="lesson-body">
+    <div class="lesson-wrapper">
     <div class="container">
         <div class="header">
             <h1>🌐 Lesson 3: Internet & Networking</h1>
             <p>Discover how computers communicate across the globe through IP addresses, domain names, and the DNS system!</p>
+        </div>
+
+        <div class="arcade-zone lesson-arcade" data-arcade-target="3" data-arcade-message="Route your hero through the network grid to power up." data-arcade-complete="Network stable! Continue below.">
+            <div class="arcade-header">
+                <h2>Network Hop Mini-Quest</h2>
+                <p>Collect all routing tokens with WASD or arrow keys to stabilize your connection.</p>
+            </div>
+            <div class="arcade-grid"></div>
+            <div class="arcade-status">Collect routing tokens.</div>
         </div>
 
         <div class="content">
@@ -287,7 +298,8 @@
             </button>
         </div>
     </div>
-
+    </div>
+    <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8001/api';
 

@@ -412,6 +412,20 @@
             color: #2ecc71;
         }
 
+        .board-shell #player-info,
+        .board-shell #controls {
+            position: static;
+            left: auto;
+            top: auto;
+            transform: none;
+            min-width: auto;
+            width: 100%;
+            border-radius: 18px;
+            background: linear-gradient(155deg, #f8f9ff 0%, #edf1ff 100%);
+            box-shadow: 0 15px 35px rgba(15, 20, 65, 0.15);
+            padding: 20px;
+        }
+
         /* DETAILED PIXEL ART CHARACTERS (unchanged) */
         
         /* Knight - Detailed blue armor with shield and sword */
@@ -607,49 +621,68 @@
     </div>
 
     <div id="game-container" class="hidden">
-        <div id="player-info">
-            <h3>Player</h3>
-            <p>Character: <span id="player-character"></span></p>
-            <p>Bullets: <span id="player-bullets">0</span></p>
-            <p>Lives: <span id="player-lives">3</span></p>
-            <p>Current Square: <span id="player-square">START</span></p>
-            <p>Time Played: <span id="player-time">0:00</span></p>
-        </div>
-        <div id="controls">
-            <button id="roll-dice-btn">Roll Dice</button>
-            <button id="view-leaderboard-btn">Leaderboard</button>
-        </div>
-        <div id="game-board" class="game-board">
-            <!-- SVG overlay for decorative snakes and ladders -->
-            <svg id="board-decorations" width="100%" height="100%" style="position: absolute; pointer-events: none;">
-                <!-- Example decorative elements - customize as needed -->
-                <!-- Snake from square 16 to 6 -->
-                <path d="M 50 450 Q 150 350 250 470" 
-                      stroke="#27ae60" 
-                      stroke-width="6" 
-                      fill="none" 
-                      stroke-linecap="round" 
-                      opacity="0.4"/>
-                <circle cx="50" cy="450" r="6" fill="#e74c3c" opacity="0.6"/>
-                
-                <!-- Ladder from square 4 to 14 -->
-                <line x1="230" y1="500" x2="230" y2="400" 
-                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-                <line x1="250" y1="500" x2="250" y2="400" 
-                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-                <line x1="230" y1="480" x2="250" y2="480" 
-                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
-                <line x1="230" y1="460" x2="250" y2="460" 
-                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
-                <line x1="230" y1="440" x2="250" y2="440" 
-                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
-                <line x1="230" y1="420" x2="250" y2="420" 
-                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
-            </svg>
-        </div>
-        <div class="navigation-buttons">
-            <button id="prev-section-btn" class="nav-btn" disabled>Previous Section</button>
-            <button id="next-section-btn" class="nav-btn">Next Section</button>
+        <div class="board-shell">
+            <aside class="board-sidebar">
+                <div id="player-info" class="info-card">
+                    <h3>Player</h3>
+                    <p>Character: <span id="player-character"></span></p>
+                    <p>Bullets: <span id="player-bullets">0</span></p>
+                    <p>Lives: <span id="player-lives">3</span></p>
+                    <p>Current Square: <span id="player-square">START</span></p>
+                    <p>Time Played: <span id="player-time">0:00</span></p>
+                </div>
+                <div id="controls" class="info-card control-panel">
+                    <h3>Actions</h3>
+                    <p class="control-hint">Roll the dice then tackle the highlighted lesson portal.</p>
+                    <button id="roll-dice-btn">Roll Dice</button>
+                    <button id="view-leaderboard-btn">Leaderboard</button>
+                </div>
+            </aside>
+            <section class="board-main">
+                <div class="board-status">
+                    <div>
+                        <h3>Lesson Trail</h3>
+                        <p>Complete all five 📘 mission squares to unlock the question grid.</p>
+                    </div>
+                    <div class="status-pill">Section 1</div>
+                </div>
+                <div class="board-stage">
+                    <div class="board-grid-frame">
+                        <div id="game-board" class="game-board">
+                            <!-- SVG overlay for decorative snakes and ladders -->
+                            <svg id="board-decorations" width="100%" height="100%" style="position: absolute; pointer-events: none;">
+                                <!-- Example decorative elements - customize as needed -->
+                                <!-- Snake from square 16 to 6 -->
+                                <path d="M 50 450 Q 150 350 250 470" 
+                                      stroke="#27ae60" 
+                                      stroke-width="6" 
+                                      fill="none" 
+                                      stroke-linecap="round" 
+                                      opacity="0.4"/>
+                                <circle cx="50" cy="450" r="6" fill="#e74c3c" opacity="0.6"/>
+                                
+                                <!-- Ladder from square 4 to 14 -->
+                                <line x1="230" y1="500" x2="230" y2="400" 
+                                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="250" y1="500" x2="250" y2="400" 
+                                      stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="230" y1="480" x2="250" y2="480" 
+                                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="230" y1="460" x2="250" y2="460" 
+                                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="230" y1="440" x2="250" y2="440" 
+                                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                                <line x1="230" y1="420" x2="250" y2="420" 
+                                      stroke="#a0522d" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="navigation-buttons board-nav">
+                    <button id="prev-section-btn" class="nav-btn" disabled>Previous Section</button>
+                    <button id="next-section-btn" class="nav-btn">Next Section</button>
+                </div>
+            </section>
         </div>
     </div>
 

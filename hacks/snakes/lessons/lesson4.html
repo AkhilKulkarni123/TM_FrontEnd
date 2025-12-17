@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 4 – Cybersecurity & Encryption</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
+    <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
     <style>
         * {
             margin: 0;
@@ -11,7 +12,7 @@
             box-sizing: border-box;
         }
 
-        body {
+        .lesson-body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             background-attachment: fixed;
@@ -224,8 +225,8 @@
             margin-right: 0.5rem;
         }
 
-        @media (max-width: 768px) {
-            body {
+@media (max-width: 768px) {
+            .lesson-body {
                 padding: 0.5rem;
             }
 
@@ -243,11 +244,21 @@
         }
     </style>
 </head>
-<body>
+<body class="lesson-body">
+    <div class="lesson-wrapper">
     <div class="container">
         <div class="header">
             <h1>🔒 Lesson 4: Cybersecurity & Encryption</h1>
             <p>Learn how to protect digital systems from attacks and understand the power of encryption to keep data secure!</p>
+        </div>
+
+        <div class="arcade-zone lesson-arcade" data-arcade-target="4" data-arcade-message="Sneak through the security grid using WASD or arrows." data-arcade-complete="Firewall fortified! Jump into the reading.">
+            <div class="arcade-header">
+                <h2>Firewall Sprint Mini-Quest</h2>
+                <p>Collect encryption keys hidden in the grid before tackling the lesson text.</p>
+            </div>
+            <div class="arcade-grid"></div>
+            <div class="arcade-status">Collect all keys to charge your shield.</div>
         </div>
 
         <div class="content">
@@ -309,7 +320,8 @@
             </button>
         </div>
     </div>
-
+    </div>
+    <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8001/api';
 
