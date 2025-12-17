@@ -545,7 +545,9 @@ function movePlayer(steps) {
             if (tentative > sectionEnd) tentative = sectionEnd;
         } else {
             // basic move calculation with bounce at end for section 2
-            if (tentative > sectionEnd) tentative = sectionEnd - (tentative - sectionEnd);
+            if (tentative > sectionEnd) {
+                tentative = sectionEnd;
+            }
         }
 
         // If in section 2, attempt to land on an unvisited square if possible
