@@ -40,6 +40,16 @@ function $(selector) { return document.querySelector(selector); }
 function $all(selector) { return document.querySelectorAll(selector); }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Immediately hide login if user has already started the game (prevents flash)
+    var hasStarted = false;
+    try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
+    if (hasStarted) {
+        var loginContainer = document.getElementById('login-container');
+        var characterSelection = document.getElementById('character-selection');
+        if (loginContainer) loginContainer.classList.add('hidden');
+        if (characterSelection) characterSelection.classList.add('hidden');
+    }
+    
     initializeEventListeners();
     // Check login then attempt to auto-resume if the player has already selected a character
     checkExistingLogin().then(function () {
@@ -326,8 +336,10 @@ function autoResumeIfReady() {
         return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
+            var loginContainer = document.getElementById('login-container');
             if (characterSelection) characterSelection.classList.add('hidden');
             if (gameContainer) gameContainer.classList.remove('hidden');
+            if (loginContainer) loginContainer.classList.add('hidden');
 
             if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
             startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
