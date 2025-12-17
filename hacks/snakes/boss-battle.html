@@ -204,15 +204,19 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8587'
-    : 'https://tm-flask-backend.onrender.com';  // Your Render URL
+        const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8001' : 'https://tm-flask-backend.onrender.com';
+        const BOSS_API_BASE = IS_LOCAL ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';
+        const GAME_API_ROOT = GAME_API_BASE + '/api';
+        const BOSS_API_ROOT = BOSS_API_BASE + '/api';
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight - 200;
 
         let gameActive = false;
         let roomId = null;
         let ws = null;
+        let roomPollInterval = null;
+        const DEFAULT_LIVES = 3;
 
         const gameState = {
             player: {
@@ -237,8 +241,24 @@
             players: []
         };
 
+        function savePlayerState(overrides) {
+            const payload = Object.assign({
+                total_bullets: Math.max(0, Math.floor(gameState.player.bullets)),
+                lives: Math.max(0, Math.floor(gameState.player.lives))
+            }, overrides || {});
+
+            return fetch(`${GAME_API_ROOT}/snakes/`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(function (err) {
+                console.error('Failed to save player state', err);
+            });
+        }
+
         // Populate initial player bullets / lives from saved progress if available
-        fetch('/api/snakes/progress', { credentials: 'include' })
+        fetch(GAME_API_ROOT + '/snakes/progress', { credentials: 'include' })
             .then(function (res) { if (!res.ok) return null; return res.json(); })
             .then(function (data) {
                 if (!data) return;
@@ -271,7 +291,7 @@
 
         async function startBattle() {
             try {
-                const response = await fetch(`${API_BASE}/api/boss/join`, {
+                const response = await fetch(`${BOSS_API_ROOT}/boss/join`, {
                     method: 'POST',
                     credentials: 'include'
                 });
@@ -279,6 +299,9 @@
                 if (response.ok) {
                     const data = await response.json();
                     roomId = data.room_id;
+                    syncBossState(data.room, data.players);
+                    pollRoomState();
+                    startRoomPolling();
                     connectWebSocket();
                     gameActive = true;
                     document.getElementById('startBtn').disabled = true;
@@ -292,7 +315,9 @@
         }
 
         function connectWebSocket() {
-            ws = new WebSocket('wss://your-flask-api.com/ws/boss');
+            var wsProtocol = BOSS_API_BASE.startsWith('https') ? 'wss' : 'ws';
+            var wsUrl = BOSS_API_BASE.replace(/^https?/, wsProtocol) + '/ws/boss';
+            ws = new WebSocket(wsUrl);
             
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
@@ -305,6 +330,7 @@
                     if (data.player === 'you') {
                         gameState.player.lives--;
                         updateLives();
+                        savePlayerState();
                         showMessage('💥 You were hit!');
                     } else {
                         showMessage(`💀 ${data.player} was hit!`);
@@ -317,7 +343,7 @@
                         if (data.player === 'you') {
                         const SECTION2_START = 6; // square where section 2 begins (0-based scheme) (START at 0, lessons 1-5)
                         // Fetch current progress to determine first unvisited square in section 2
-                        fetch('/api/snakes/progress', { credentials: 'include' })
+                        fetch(GAME_API_ROOT + '/snakes/progress', { credentials: 'include' })
                             .then(function (res) { if (!res.ok) return null; return res.json(); })
                             .then(function (data) {
                                 var visitedRaw = (data && data.visited_squares) ? data.visited_squares : [];
@@ -329,11 +355,13 @@
                                     if (visited.indexOf(s) === -1) { firstUnvisited = s; break; }
                                 }
                                 // Update server with new current square (convert to 1-based)
-                                fetch('/api/snakes/', {
+                                gameState.player.lives = DEFAULT_LIVES;
+                                updateLives();
+                                fetch(GAME_API_ROOT + '/snakes/', {
                                     method: 'PUT',
                                     credentials: 'include',
                                     headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ current_square: Number(firstUnvisited) + 1 })
+                                    body: JSON.stringify({ current_square: Number(firstUnvisited) + 1, lives: DEFAULT_LIVES })
                                 }).catch(function (err) { console.error('Respawn update failed', err); });
 
                                 // Redirect back to section 2 board and show a respawn message
@@ -344,11 +372,13 @@
                             }).catch(function (err) {
                                 console.error('Error fetching progress for respawn', err);
                                 // Fallback: set to SECTION2_START (convert to 1-based)
-                                fetch('/api/snakes/', {
+                                gameState.player.lives = DEFAULT_LIVES;
+                                updateLives();
+                                fetch(GAME_API_ROOT + '/snakes/', {
                                     method: 'PUT',
                                     credentials: 'include',
                                     headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ current_square: Number(SECTION2_START) + 1 })
+                                    body: JSON.stringify({ current_square: Number(SECTION2_START) + 1, lives: DEFAULT_LIVES })
                                 }).catch(function () {});
                                 setTimeout(function () { window.location.href = 'game-board-part2.html'; }, 800);
                             });
@@ -358,10 +388,46 @@
                     endGame(true);
                 }
                 else if (data.type === 'players_update') {
-                    gameState.players = data.players;
-                    updatePlayersList();
+                    syncBossState(null, data.players);
                 }
             };
+        }
+
+        function syncBossState(room, players) {
+            if (room) {
+                if (typeof room.boss_health === 'number') gameState.boss.health = room.boss_health;
+                if (typeof room.max_boss_health === 'number') gameState.boss.maxHealth = room.max_boss_health;
+                updateBossHealthBar();
+                if (typeof room.player_count !== 'undefined') {
+                    document.getElementById('playersAlive').textContent = room.player_count;
+                }
+            }
+            if (Array.isArray(players)) {
+                gameState.players = players;
+                updatePlayersList();
+            }
+        }
+
+        function pollRoomState() {
+            if (!roomId) return;
+            fetch(`${BOSS_API_ROOT}/boss/room/${roomId}`, { credentials: 'include' })
+                .then(function (res) { if (!res.ok) throw new Error('room poll failed'); return res.json(); })
+                .then(function (data) {
+                    syncBossState(data.room, data.players);
+                })
+                .catch(function (err) { console.warn('Boss room poll error:', err); });
+        }
+
+        function startRoomPolling() {
+            if (roomPollInterval) clearInterval(roomPollInterval);
+            roomPollInterval = setInterval(pollRoomState, 5000);
+        }
+
+        function stopRoomPolling() {
+            if (roomPollInterval) {
+                clearInterval(roomPollInterval);
+                roomPollInterval = null;
+            }
         }
 
         function gameLoop() {
@@ -404,6 +470,7 @@
                 });
                 gameState.player.bullets--;
                 updateBulletsDisplay();
+                savePlayerState();
                 
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({type: 'shoot', bullets: gameState.player.bullets}));
@@ -463,6 +530,7 @@
                 if (distance < gameState.player.size + proj.size) {
                     gameState.player.lives--;
                     updateLives();
+                    savePlayerState();
                     proj.y = canvas.height + 100;
                     
                     if (gameState.player.lives <= 0) {
@@ -532,7 +600,7 @@
                 const item = document.createElement('div');
                 item.className = 'player-item' + (player.lives <= 0 ? ' dead' : '');
                 item.innerHTML = `
-                    <span>${player.name}</span>
+                    <span>${player.username || player.name || 'Player'}</span>
                     <span>❤️ ${player.lives}</span>
                 `;
                 list.appendChild(item);
@@ -551,6 +619,7 @@
 
         function endGame(victory) {
             gameActive = false;
+            stopRoomPolling();
             const gameOver = document.getElementById('gameOver');
             const title = document.getElementById('gameOverTitle');
             const text = document.getElementById('gameOverText');
@@ -558,6 +627,9 @@
             if (victory) {
                 title.textContent = '🎉 VICTORY! 🎉';
                 text.textContent = 'You and your team defeated the boss!';
+                gameState.player.lives = DEFAULT_LIVES;
+                updateLives();
+                savePlayerState({ lives: DEFAULT_LIVES });
                 // show victory animation and message
                 showVictoryAnimation();
             } else {
@@ -603,11 +675,22 @@
 
         function leaveBattle() {
             if (confirm('Are you sure you want to leave the battle?')) {
+                stopRoomPolling();
+                if (roomId) {
+                    fetch(`${BOSS_API_ROOT}/boss/leave`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ room_id: roomId })
+                    }).catch(function () {});
+                }
                 returnToBoard();
             }
         }
 
         function returnToBoard() {
+                stopRoomPolling();
+                roomId = null;
                 // Return users to section 2 board (boss battle follows section 2)
                 window.location.href = 'game-board-part2.html';
         }

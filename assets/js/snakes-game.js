@@ -587,9 +587,8 @@ function handleSquareEvent() {
         if (square >= 1 && square <= FIRST_LESSON_COUNT) {
             var lessonNum = square;
             if (gameState.completedLessons.indexOf(lessonNum) === -1) {
-                var row = 1;
-                var index = square - 1;
-                window.location.href = '/game/questions/questions.html?square=' + square + '&row=' + row + '&index=' + index;
+                // Navigate to the standalone lesson page for the selected square
+                window.location.href = 'lessons/lesson' + lessonNum + '.html';
                 return;
             }
             
@@ -633,7 +632,7 @@ function handleSquareEvent() {
             var idx = square - sectionStart;
             var row2 = Math.floor(idx / 10) + 1;
             var index2 = idx % 10;
-            window.location.href = '/game/questions/questions.html?square=' + square + '&row=' + row2 + '&index=' + index2;
+            window.location.href = 'questions/question_template.html?square=' + square + '&row=' + row2 + '&index=' + index2;
             return;
         }
     }

@@ -113,7 +113,7 @@
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            // convert internal 0-based square to server 1-based
+            // convert to server's 1-based numbering
             square: Number(square) + 1,
             row: row,
             question_index: index,
