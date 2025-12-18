@@ -21,6 +21,7 @@
     <!-- Use a relative path to load the shared game styles -->
     <link rel="stylesheet" href="../../assets/css/snakes-game.css">
     <style>
+        /* Custom styles for part 2 - question grid */
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
@@ -51,6 +52,72 @@
             justify-content: center;
             z-index: 100;
             font-size: 1.5rem;
+        }
+        
+        /* ======================================== */
+        /* COMPRESSED QUESTION GRID STYLING */
+        /* ======================================== */
+        
+        /* Board frame - constrain width */
+        .board-grid-frame {
+            max-width: 650px !important;
+            width: 100% !important;
+            margin: 0 auto;
+        }
+        
+        /* Game board container */
+        #game-board.game-board {
+            padding: 8px !important;
+            gap: 2px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Rows - 10 columns compressed */
+        #game-board .board-row {
+            display: grid !important;
+            grid-template-columns: repeat(10, 1fr) !important;
+            gap: 2px !important;
+            width: 100% !important;
+        }
+        
+        /* Compressed squares */
+        #game-board .square {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            aspect-ratio: 1 !important;
+            padding: 2px !important;
+            border-radius: 4px !important;
+            border-width: 1px !important;
+            font-size: 0.5em !important;
+        }
+        
+        /* Square numbers - smaller */
+        #game-board .square .square-number {
+            font-size: 8px !important;
+            top: 1px !important;
+            left: 2px !important;
+        }
+        
+        /* Square icons - normal size */
+        #game-board .square .square-icon {
+            font-size: 14px !important;
+        }
+        
+        /* BIGGER snake and ladder emojis */
+        #game-board .square.snake .square-icon,
+        #game-board .square.ladder .square-icon {
+            font-size: 22px !important;
+        }
+        
+        /* Player marker smaller to fit */
+        #game-board .square .player-marker,
+        #game-board .floating-marker {
+            font-size: 12px !important;
+            width: 18px !important;
+            height: 18px !important;
         }
     </style>
 </head>
