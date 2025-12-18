@@ -258,12 +258,13 @@
         }
 
         // Populate initial player bullets / lives from saved progress if available
-        fetch(GAME_API_ROOT + '/snakes/progress', { credentials: 'include' })
+        fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
             .then(function (res) { if (!res.ok) return null; return res.json(); })
             .then(function (data) {
                 if (!data) return;
+                console.log('Loaded player data:', data);
                 if (typeof data.total_bullets !== 'undefined') {
-                    gameState.player.bullets = Number(data.total_bullets || gameState.player.bullets);
+                    gameState.player.bullets = Number(data.total_bullets || 0);
                     updateBulletsDisplay();
                 }
                 if (typeof data.lives !== 'undefined') {
@@ -343,7 +344,7 @@
                         if (data.player === 'you') {
                         const SECTION2_START = 6; // square where section 2 begins (0-based scheme) (START at 0, lessons 1-5)
                         // Fetch current progress to determine first unvisited square in section 2
-                        fetch(GAME_API_ROOT + '/snakes/progress', { credentials: 'include' })
+                        fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
                             .then(function (res) { if (!res.ok) return null; return res.json(); })
                             .then(function (data) {
                                 var visitedRaw = (data && data.visited_squares) ? data.visited_squares : [];
