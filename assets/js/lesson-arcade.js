@@ -6,142 +6,460 @@
         warrior: '⚔️'
     };
 
+    var DIR_MAP = {
+        arrowleft: { dx: -1, dy: 0, name: 'left' },
+        a: { dx: -1, dy: 0, name: 'left' },
+        arrowright: { dx: 1, dy: 0, name: 'right' },
+        d: { dx: 1, dy: 0, name: 'right' },
+        arrowup: { dx: 0, dy: -1, name: 'up' },
+        w: { dx: 0, dy: -1, name: 'up' },
+        arrowdown: { dx: 0, dy: 1, name: 'down' },
+        s: { dx: 0, dy: 1, name: 'down' }
+    };
+
+    var TIC_QUIZ_BANK = [
+        { prompt: 'Which data type stores true or false?', options: ['Boolean', 'String', 'List'], answer: 0 },
+        { prompt: 'What does CSS stand for?', options: ['Cascading Style Sheets', 'Central Styling System', 'Creative Style Syntax'], answer: 0 },
+        { prompt: 'Which base is binary?', options: ['Base 2', 'Base 8', 'Base 10'], answer: 0 },
+        { prompt: 'HTML is used to...', options: ['Structure webpages', 'Style data', 'Compile programs'], answer: 0 },
+        { prompt: 'A loop that never stops is called...', options: ['Infinite loop', 'For loop', 'While loop'], answer: 0 },
+        { prompt: 'API stands for...', options: ['Application Programming Interface', 'Advanced Program Interaction', 'Applied Protocol Input'], answer: 0 }
+    ];
+
     function getCharacterIcon(fallback) {
         try {
             var saved = localStorage.getItem('snakes_selected_character');
             if (saved && ICONS[saved]) return ICONS[saved];
-        } catch (e) {}
-        return ICONS[fallback] || '🙂';
+        } catch (e) { /* ignore */ }
+        return ICONS[fallback] || '😺';
     }
 
-    function randomPosition(size, forbidden) {
-        var pos;
-        var keyMap = {};
-        (forbidden || []).forEach(function (f) { keyMap[f.x + '-' + f.y] = true; });
-        do {
-            pos = { x: Math.floor(Math.random() * size), y: Math.floor(Math.random() * size) };
-        } while (keyMap[pos.x + '-' + pos.y]);
-        return pos;
+    function updateZoneStatus(zone, message, complete) {
+        var status = zone.querySelector('.arcade-status');
+        if (!status) return;
+        status.textContent = message;
+        if (complete) status.classList.add('complete');
+        else status.classList.remove('complete');
     }
 
-    function createState(zone, opts) {
-        var gridEl = zone.querySelector('.arcade-grid');
-        var statusEl = zone.querySelector('.arcade-status');
-        if (!gridEl) return null;
-        var size = Number(opts.size || zone.dataset.arcadeSize || 5);
-        var target = Number(opts.target || zone.dataset.arcadeTarget || 3);
+    function directionFromKey(key) {
+        if (!key) return null;
+        return DIR_MAP[key.toLowerCase()] || null;
+    }
+
+    function iconForDirection(name) {
+        return {
+            up: '↑',
+            down: '↓',
+            left: '←',
+            right: '→'
+        }[name] || '?';
+    }
+
+    var Arcade = {
+        keyState: null,
+        claimKeyboard: function (state) {
+            if (state && typeof state.handleKey === 'function') {
+                Arcade.keyState = state;
+            }
+        }
+    };
+
+    /* === MODE: Grid Collect (legacy orb chase) === */
+    function initOrbMode(zone) {
+        var grid = zone.querySelector('.arcade-grid');
+        if (!grid) return null;
+        zone.classList.add('mode-orb');
+        var size = Number(zone.dataset.arcadeSize || 5);
+        var target = Number(zone.dataset.arcadeTarget || 3);
         var icon = getCharacterIcon(zone.dataset.arcadeIcon);
         zone.style.setProperty('--arcade-grid-size', size);
 
-        var player = {
-            x: Math.floor(size / 2),
-            y: size - 1
-        };
+        var player = { x: Math.floor(size / 2), y: size - 1 };
         var orbs = [];
+
+        function randomPosition() {
+            var pos;
+            var taken = {};
+            taken[player.x + '-' + player.y] = true;
+            orbs.forEach(function (orb) { taken[orb.x + '-' + orb.y] = true; });
+            do {
+                pos = { x: Math.floor(Math.random() * size), y: Math.floor(Math.random() * size) };
+            } while (taken[pos.x + '-' + pos.y]);
+            return pos;
+        }
+
         for (var i = 0; i < target; i++) {
-            var orb = randomPosition(size, [player].concat(orbs));
-            orbs.push(orb);
+            orbs.push(randomPosition());
+        }
+
+        function render() {
+            grid.innerHTML = '';
+            for (var y = 0; y < size; y++) {
+                for (var x = 0; x < size; x++) {
+                    var cell = document.createElement('div');
+                    cell.className = 'arcade-cell';
+                    if (player.x === x && player.y === y) {
+                        cell.classList.add('player');
+                        cell.textContent = icon;
+                    } else if (orbs.some(function (orb) { return orb.x === x && orb.y === y; })) {
+                        cell.classList.add('orb');
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function move(dx, dy, state) {
+            var nx = player.x + dx;
+            var ny = player.y + dy;
+            if (nx < 0 || nx >= size || ny < 0 || ny >= size) return;
+            player.x = nx;
+            player.y = ny;
+            var hitIndex = orbs.findIndex(function (orb) { return orb.x === nx && orb.y === ny; });
+            if (hitIndex !== -1) {
+                orbs.splice(hitIndex, 1);
+                state.collected++;
+                if (state.collected >= state.target) {
+                    updateZoneStatus(zone, state.completeMessage, true);
+                } else {
+                    updateZoneStatus(zone, 'Orb secured! ' + (state.target - state.collected) + ' left.');
+                }
+            }
+            render();
         }
 
         var state = {
             zone: zone,
-            grid: gridEl,
-            status: statusEl,
-            size: size,
-            targetCount: target,
+            type: 'orb',
+            grid: grid,
             collected: 0,
-            orbs: orbs,
-            player: player,
-            icon: icon,
-            completeMessage: opts.completeMessage || zone.dataset.arcadeComplete || 'All knowledge orbs secured!',
-            activeMessage: opts.activeMessage || zone.dataset.arcadeMessage || 'Use WASD or arrow keys to collect the glowing orbs.',
-            onComplete: typeof opts.onComplete === 'function' ? opts.onComplete : null
+            target: target,
+            completeMessage: zone.dataset.arcadeComplete || 'All knowledge orbs secured! Continue below.',
+            handleKey: function (event) {
+                var dir = directionFromKey(event.key);
+                if (!dir) return false;
+                move(dir.dx, dir.dy, state);
+                return true;
+            }
         };
 
+        render();
+        updateZoneStatus(zone, zone.dataset.arcadeMessage || 'Use WASD or arrow keys to collect the glowing orbs.');
+        zone.addEventListener('mouseenter', function () { Arcade.claimKeyboard(state); });
+        zone.addEventListener('click', function () { Arcade.claimKeyboard(state); });
+        Arcade.claimKeyboard(state);
         zone.__arcadeState = state;
-        renderState(state);
-
-        zone.addEventListener('mouseenter', function () { Arcade.activeState = state; });
-        zone.addEventListener('click', function () { Arcade.activeState = state; });
-        if (!Arcade.activeState) Arcade.activeState = state;
-        updateStatus(state, state.activeMessage);
-
         return state;
     }
 
-    function renderState(state) {
-        state.grid.innerHTML = '';
-        for (var y = 0; y < state.size; y++) {
-            for (var x = 0; x < state.size; x++) {
-                var cell = document.createElement('div');
-                cell.className = 'arcade-cell';
-                if (state.player.x === x && state.player.y === y) {
-                    cell.classList.add('player');
-                    cell.textContent = state.icon;
-                } else if (state.orbs.some(function (orb) { return orb.x === x && orb.y === y; })) {
-                    cell.classList.add('orb');
+    /* === MODE: Memory Sequence === */
+    function initSequenceMode(zone) {
+        var grid = zone.querySelector('.arcade-grid');
+        if (!grid) return null;
+        zone.classList.add('mode-sequence');
+        grid.innerHTML = '';
+        grid.classList.add('sequence-grid');
+
+        var display = document.createElement('div');
+        display.className = 'sequence-display';
+        display.textContent = 'Ready?';
+        var entered = document.createElement('div');
+        entered.className = 'sequence-input';
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'sequence-btn';
+        button.textContent = 'Play Sequence';
+
+        grid.appendChild(display);
+        grid.appendChild(entered);
+        grid.appendChild(button);
+
+        var state = {
+            zone: zone,
+            type: 'sequence',
+            sequence: [],
+            currentIndex: 0,
+            accepting: false,
+            level: 0,
+            target: Number(zone.dataset.arcadeTarget || 3),
+            display: display,
+            entered: entered,
+            button: button,
+            completeMessage: zone.dataset.arcadeComplete || 'Sequence mastered! Great focus.'
+        };
+
+        function nextDirection() {
+            var dirs = ['up', 'down', 'left', 'right'];
+            return dirs[Math.floor(Math.random() * dirs.length)];
+        }
+
+        function playback() {
+            state.accepting = false;
+            state.entered.textContent = '';
+            state.currentIndex = 0;
+            state.sequence.push(nextDirection());
+            var seq = state.sequence.slice();
+            var idx = 0;
+            state.button.disabled = true;
+            updateZoneStatus(zone, 'Watch carefully...');
+
+            function showStep() {
+                if (idx >= seq.length) {
+                    state.display.textContent = seq.map(iconForDirection).join(' ');
+                    state.accepting = true;
+                    state.button.disabled = false;
+                    updateZoneStatus(zone, 'Now repeat the sequence using WASD or arrow keys.');
+                    return;
                 }
-                state.grid.appendChild(cell);
+                state.display.textContent = iconForDirection(seq[idx]);
+                setTimeout(function () {
+                    state.display.textContent = '';
+                    idx++;
+                    setTimeout(showStep, 120);
+                }, 450);
             }
+
+            showStep();
         }
-    }
 
-    function updateStatus(state, message, complete) {
-        if (!state.status) return;
-        state.status.textContent = message;
-        if (complete) state.status.classList.add('complete');
-    }
+        state.handleKey = function (event) {
+            var dir = directionFromKey(event.key);
+            if (!dir) return false;
+            if (!state.accepting) return true;
+            var expected = state.sequence[state.currentIndex];
+            state.entered.textContent += iconForDirection(dir.name) + ' ';
 
-    function movePlayer(state, dx, dy) {
-        if (!state) return;
-        var nx = state.player.x + dx;
-        var ny = state.player.y + dy;
-        if (nx < 0 || nx >= state.size || ny < 0 || ny >= state.size) return;
-        state.player.x = nx;
-        state.player.y = ny;
-        var hitIndex = state.orbs.findIndex(function (orb) { return orb.x === nx && orb.y === ny; });
-        if (hitIndex !== -1) {
-            state.orbs.splice(hitIndex, 1);
-            state.collected++;
-            if (state.collected >= state.targetCount) {
-                updateStatus(state, state.completeMessage, true);
-                if (state.onComplete) state.onComplete();
+            if (dir.name === expected) {
+                state.currentIndex++;
+                if (state.currentIndex >= state.sequence.length) {
+                    state.level++;
+                    state.accepting = false;
+                    if (state.level >= state.target) {
+                        updateZoneStatus(zone, state.completeMessage, true);
+                        state.button.disabled = true;
+                    } else {
+                        updateZoneStatus(zone, 'Great memory! Click play for level ' + (state.level + 1) + '.');
+                    }
+                }
             } else {
-                updateStatus(state, 'Orb secured! ' + (state.targetCount - state.collected) + ' left.');
+                state.accepting = false;
+                updateZoneStatus(zone, 'Oops! Sequence reset. Try again.');
+                state.sequence = [];
+                state.level = 0;
+                state.button.disabled = false;
             }
-        }
-        renderState(state);
+            return true;
+        };
+
+        button.addEventListener('click', function () {
+            if (state.level >= state.target) return;
+            state.sequence = state.sequence.slice(0, state.level);
+            playback();
+        });
+
+        zone.addEventListener('mouseenter', function () { Arcade.claimKeyboard(state); });
+        zone.addEventListener('click', function () { Arcade.claimKeyboard(state); });
+        updateZoneStatus(zone, zone.dataset.arcadeMessage || 'Press play to begin a memory pattern challenge.');
+        zone.__arcadeState = state;
+        return state;
     }
 
-    var Arcade = {
-        activeState: null,
-        initZones: function () {
-            document.querySelectorAll('.arcade-zone').forEach(function (zone) {
-                createState(zone, {});
-            });
-        },
-        createMiniGame: function (zone, options) {
-            return createState(zone, options || {});
+    /* === MODE: Quiz Tic-Tac-Toe === */
+    function initTicMode(zone) {
+        var grid = zone.querySelector('.arcade-grid');
+        if (!grid) return null;
+        zone.classList.add('mode-tic');
+        grid.innerHTML = '';
+        grid.classList.add('tic-grid');
+
+        var cells = [];
+        for (var i = 0; i < 9; i++) {
+            var cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'tic-cell';
+            cell.dataset.index = i;
+            grid.appendChild(cell);
+            cells.push(cell);
         }
+
+        var state = {
+            zone: zone,
+            type: 'tic',
+            board: Array(9).fill(null),
+            cells: cells,
+            playerSymbol: 'X',
+            cpuSymbol: 'O',
+            active: 'player',
+            waiting: false,
+            complete: false,
+            completeMessage: zone.dataset.arcadeComplete || 'Victory! CPU defeated.'
+        };
+
+        function setCell(index, symbol) {
+            state.board[index] = symbol;
+            state.cells[index].textContent = symbol;
+            state.cells[index].classList.add('taken');
+            state.cells[index].disabled = true;
+        }
+
+        function evaluate(board, symbol) {
+            var wins = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            return wins.some(function (combo) {
+                return combo.every(function (idx) { return board[idx] === symbol; });
+            });
+        }
+
+        function openSpots(board) {
+            var spots = [];
+            board.forEach(function (val, idx) {
+                if (!val) spots.push(idx);
+            });
+            return spots;
+        }
+
+        function findWinningMove(board, symbol) {
+            var empty = openSpots(board);
+            for (var i = 0; i < empty.length; i++) {
+                var idx = empty[i];
+                board[idx] = symbol;
+                var win = evaluate(board, symbol);
+                board[idx] = null;
+                if (win) return idx;
+            }
+            return null;
+        }
+
+        function finish(result) {
+            state.complete = true;
+            state.cells.forEach(function (cell) { cell.disabled = true; });
+            if (result === 'player') {
+                updateZoneStatus(zone, state.completeMessage, true);
+            } else if (result === 'cpu') {
+                updateZoneStatus(zone, 'CPU wins! Study the board and try again next square.', true);
+            } else {
+                updateZoneStatus(zone, 'Draw game! Nice defense.', true);
+            }
+        }
+
+        function checkOutcome() {
+            if (evaluate(state.board, state.playerSymbol)) {
+                finish('player');
+                return true;
+            }
+            if (evaluate(state.board, state.cpuSymbol)) {
+                finish('cpu');
+                return true;
+            }
+            if (openSpots(state.board).length === 0) {
+                finish('draw');
+                return true;
+            }
+            return false;
+        }
+
+        function cpuMove() {
+            if (state.complete) return;
+            var move = findWinningMove(state.board, state.cpuSymbol) ||
+                findWinningMove(state.board, state.playerSymbol) ||
+                (state.board[4] ? null : 4);
+            if (move === null || typeof move === 'undefined') {
+                var options = openSpots(state.board);
+                move = options[Math.floor(Math.random() * options.length)];
+            }
+            setCell(move, state.cpuSymbol);
+            checkOutcome();
+        }
+
+        function promptQuiz(callback) {
+            var quiz = TIC_QUIZ_BANK[Math.floor(Math.random() * TIC_QUIZ_BANK.length)];
+            var overlay = document.createElement('div');
+            overlay.className = 'arcade-quiz';
+            overlay.innerHTML = '';
+
+            var card = document.createElement('div');
+            card.className = 'quiz-card';
+            var title = document.createElement('h3');
+            title.textContent = quiz.prompt;
+            card.appendChild(title);
+
+            quiz.options.forEach(function (opt, idx) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = opt;
+                btn.addEventListener('click', function () {
+                    overlay.remove();
+                    callback(idx === quiz.answer);
+                });
+                card.appendChild(btn);
+            });
+
+            overlay.appendChild(card);
+            zone.appendChild(overlay);
+        }
+
+        function handleCellClick(index) {
+            if (state.complete || state.waiting || state.board[index]) return;
+            state.waiting = true;
+            promptQuiz(function (correct) {
+                state.waiting = false;
+                if (correct) {
+                    setCell(index, state.playerSymbol);
+                    if (!checkOutcome()) {
+                        updateZoneStatus(zone, 'Great move! CPU thinking...');
+                        setTimeout(cpuMove, 400);
+                    }
+                } else {
+                    updateZoneStatus(zone, 'Missed it! CPU gets an extra move.');
+                    setTimeout(cpuMove, 400);
+                }
+            });
+        }
+
+        cells.forEach(function (cell, idx) {
+            cell.addEventListener('click', function () { handleCellClick(idx); });
+        });
+
+        updateZoneStatus(zone, zone.dataset.arcadeMessage || 'Beat the CPU in tic-tac-toe by answering each quiz!');
+        zone.__arcadeState = state;
+        return state;
+    }
+
+    var MODES = {
+        orb: initOrbMode,
+        sequence: initSequenceMode,
+        tic: initTicMode
     };
 
-    function handleKey(event) {
-        var key = event.key.toLowerCase();
-        var state = Arcade.activeState;
-        if (!state) return;
-        var dx = 0, dy = 0;
-        if (key === 'arrowleft' || key === 'a') dx = -1;
-        else if (key === 'arrowright' || key === 'd') dx = 1;
-        else if (key === 'arrowup' || key === 'w') dy = -1;
-        else if (key === 'arrowdown' || key === 's') dy = 1;
-        else return;
-        event.preventDefault();
-        movePlayer(state, dx, dy);
+    function chooseMode(zone) {
+        var pool = (zone.dataset.arcadePool || '')
+            .split(',')
+            .map(function (m) { return m.trim().toLowerCase(); })
+            .filter(Boolean);
+        var list = pool.length ? pool : Object.keys(MODES);
+        return list[Math.floor(Math.random() * list.length)];
     }
 
-    document.addEventListener('keydown', handleKey);
+    function initZone(zone) {
+        var mode = (zone.dataset.arcadeMode || zone.dataset.arcadeStyle || '').toLowerCase();
+        if (!mode || mode === 'random') mode = chooseMode(zone);
+        zone.dataset.arcadeMode = mode;
+        var builder = MODES[mode] || MODES.orb;
+        builder(zone);
+    }
+
+    document.addEventListener('keydown', function (event) {
+        var state = Arcade.keyState;
+        if (!state || typeof state.handleKey !== 'function') return;
+        if (state.handleKey(event)) event.preventDefault();
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
-        Arcade.initZones();
+        document.querySelectorAll('.arcade-zone').forEach(initZone);
     });
 
     window.SnakesArcade = Arcade;

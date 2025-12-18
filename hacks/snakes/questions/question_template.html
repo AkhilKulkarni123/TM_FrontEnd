@@ -115,9 +115,22 @@
     // Update arcade mini-game messaging before SnakesArcade initializes
     var arcadeZone = document.querySelector('.question-arcade');
     if (arcadeZone) {
+      var arcadeModes = ['orb', 'sequence', 'tic'];
+      var chosenMode = arcadeModes[Math.abs(square + row + index) % arcadeModes.length];
+      arcadeZone.dataset.arcadeMode = chosenMode;
       arcadeZone.querySelector('.arcade-header h2').textContent = 'Square ' + square + ' Mini Challenge';
-      arcadeZone.dataset.arcadeMessage = 'Move your hero with WASD or arrow keys while you prep for row ' + row + '.';
-      arcadeZone.dataset.arcadeComplete = 'Nice run! Now answer the question to earn bullets.';
+
+      if (chosenMode === 'sequence') {
+        arcadeZone.dataset.arcadeTarget = 4;
+        arcadeZone.dataset.arcadeMessage = 'Memorize the flashing arrow pattern to prime your brain.';
+        arcadeZone.dataset.arcadeComplete = 'Pattern locked! Time to answer.';
+      } else if (chosenMode === 'tic') {
+        arcadeZone.dataset.arcadeMessage = 'Win a quiz-powered tic-tac-toe match to earn your attempt.';
+        arcadeZone.dataset.arcadeComplete = 'Nice victory! Answer to collect bullets.';
+      } else {
+        arcadeZone.dataset.arcadeMessage = 'Move your hero with WASD or arrows while you prep for row ' + row + '.';
+        arcadeZone.dataset.arcadeComplete = 'Nice run! Now answer the question to earn bullets.';
+      }
     }
 
     // Render UI
