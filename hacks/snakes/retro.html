@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snakes & Ladders Full-Stack Project</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .hero {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .hero p {
+            font-size: 1.2em;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .section h2 {
+            color: #764ba2;
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #667eea;
+            font-size: 1.6em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: stretch;
+            margin: 40px 0;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .flow-box {
+            flex: 1;
+            min-width: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        
+        .flow-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .flow-box h4 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .flow-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .flow-box li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .flow-box li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .arrow-down {
+            text-align: center;
+            font-size: 3em;
+            color: #667eea;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .team-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            border-left: 5px solid #667eea;
+        }
+        
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            border-left-width: 8px;
+        }
+        
+        .team-card h3 {
+            color: #764ba2;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .team-card .role {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .team-card h4 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .team-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .team-card li {
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.6;
+        }
+        
+        .team-card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .files-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .files-list code {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 3px;
+            font-size: 0.9em;
+            color: #764ba2;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1em;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #e17055;
+        }
+        
+        .highlight-box h4 {
+            color: #d63031;
+            margin-bottom: 10px;
+        }
+        
+        .control-structures {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .selection {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+        }
+        
+        .iteration {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: white;
+        }
+        
+        .sequencing {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+        }
+        
+        .control-box h4 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: #667eea;
+            color: white;
+            font-size: 0.85em;
+            margin: 5px;
+        }
+        
+        .sprint-date {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>🎲 Snakes & Ladders Full-Stack Project 🐍</h1>
+            <p>A comprehensive gamified learning platform with authentication, persistent storage, and multiplayer features</p>
+            <div class="sprint-date">⏰ Final Sprint Due: December 12, 2025</div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Big Ideas & Purpose</h2>
+            <p>The Snakes & Ladders quest gamifies the learning experience on your existing website. Players log in with the same credentials used by other site modules and start in Section 1, which has the Start square and five lessons (learning tasks). Completing these lessons unlocks Section 2, a 5×10 board representing ~50 question squares. As players answer questions correctly they move toward the end; the top five players on the leaderboard can unlock a boss battle room.</p>
+            
+            <h3>📊 What the Game Tracks</h3>
+            <div class="highlight-box">
+                <h4>Persistent State (Stored in Database)</h4>
+                <ul>
+                    <li><strong>Bullets (Points):</strong> Player scoring system</li>
+                    <li><strong>Lives:</strong> Player health tracking</li>
+                    <li><strong>Current Square:</strong> Player position on board</li>
+                    <li><strong>Completed Lessons:</strong> Progress through Section 1</li>
+                    <li><strong>Visited Squares:</strong> JSON list of squares visited</li>
+                    <li><strong>Unlocked Sections:</strong> Access to new game areas</li>
+                </ul>
+            </div>
+            <p>All of this state is persistent – it is stored in a database via Flask back‑end models and returned through REST API calls (GET/POST/PUT/DELETE) to the front‑end.</p>
+        </div>
+
+        <div class="section">
+            <h2>🔄 System Architecture Flow</h2>
+            
+            <div class="flow-diagram">
+                <div class="flow-box">
+                    <h4>🎨 Front-End Layer</h4>
+                    <ul>
+                        <li>JavaScript/HTML interface</li>
+                        <li>Game state management</li>
+                        <li>Event listeners (dice, cards)</li>
+                        <li>Dynamic board rendering</li>
+                        <li>Modal displays</li>
+                        <li>User interactions</li>
+                    </ul>
+                </div>
+                
+                <div class="flow-box">
+                    <h4>🔌 API Layer (Flask)</h4>
+                    <ul>
+                        <li>REST endpoints</li>
+                        <li>Authentication checks</li>
+                        <li>Data validation</li>
+                        <li>CRUD operations</li>
+                        <li>Business logic</li>
+                        <li>JSON responses</li>
+                    </ul>
+                </div>
+                
+                <div class="flow-box">
+                    <h4>💾 Database Layer</h4>
+                    <ul>
+                        <li>SQLAlchemy models</li>
+                        <li>Persistent storage</li>
+                        <li>User progress tracking</li>
+                        <li>Leaderboard data</li>
+                        <li>Analytics support</li>
+                        <li>Data integrity</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="arrow-down">↓</div>
+            
+            <h3>🎯 Control Structures in Action</h3>
+            <div class="control-structures">
+                <div class="control-box selection">
+                    <h4>Selection (If/Else)</h4>
+                    <p>Decides which modal to display, applies snake/ladder logic, checks prerequisites for boss battle</p>
+                </div>
+                <div class="control-box iteration">
+                    <h4>Iteration (Loops)</h4>
+                    <p>Builds 5×10 game board, attaches event listeners, traverses visited squares list</p>
+                </div>
+                <div class="control-box sequencing">
+                    <h4>Sequencing (Order)</h4>
+                    <p>Authentication → Data retrieval → State update → Render → Database save</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📂 How the Code Connects Everything</h2>
+            
+            <h3>🎨 Front-End (JavaScript/HTML)</h3>
+            <p>The <code>snakes-game.js</code> script loads when the user navigates to the game pages. It defines the game state with fields such as bullets, lives, currentSquare and visitedSquares and hooks up event listeners for login buttons, character selection cards and dice rolls.</p>
+            
+            <p><strong>Selection and iteration are used extensively:</strong> A loop attaches click listeners to each <code>.character-card</code> to allow players to pick a character, and conditional statements decide whether the player can roll the dice or needs to complete a lesson.</p>
+            
+            <p><strong>The createGameBoard function</strong> iteratively builds the grid of squares and uses selection to label squares as snakes, ladders or boss squares.</p>
+            
+            <p><strong>The movePlayer function</strong> updates the current square, ensures the player bounces back if they overshoot the end, calls createGameBoard and handleSquareEvent in sequence, and uses control flow (selection) to apply snakes or ladders.</p>
+
+            <div class="arrow-down">↓</div>
+
+            <h3>🔌 API Layer (Flask)</h3>
+            <p>The back‑end provides REST endpoints for creating, reading, updating and deleting the game record.</p>
+            
+            <ul>
+                <li><strong>api/snakes_game.py</strong> exposes endpoints like <code>/api/snakes/</code> (POST – create game record; GET – get current player record), <code>/api/snakes/leaderboard</code> (GET), and add-bullets or update-square for partial updates.</li>
+                
+                <li><strong>api/snakes_extended.py</strong> handles higher‑level operations such as marking lessons complete, awarding bullets for questions and unlocking subsequent sections.</li>
+                
+                <li><strong>api/boss_battle.py</strong> coordinates the boss battle, which allows players to join a boss room, attack the boss, take damage and leave.</li>
+            </ul>
+            
+            <p>All of these endpoints use <strong>sequencing</strong>: they perform authentication, validate request data, update the database, and then return updated JSON.</p>
+
+            <div class="arrow-down">↓</div>
+
+            <h3>💾 Database & Models</h3>
+            <p><code>model/snakes_game.py</code> defines the <strong>SnakesGameData</strong> SQLAlchemy model. Each record stores:</p>
+            <ul>
+                <li>userId</li>
+                <li>username</li>
+                <li>total bullets</li>
+                <li>time played</li>
+                <li>current square</li>
+                <li>lives</li>
+                <li>visited squares (JSON list)</li>
+                <li>completed lessons</li>
+                <li>unlocked sections</li>
+                <li>other fields</li>
+            </ul>
+            <p>This persistent storage ensures that progress survives page reloads and supports analytics (leaderboards, quest predictions). The mutable_list type allows the model to track changes to the visited squares list without manual serialization.</p>
+        </div>
+
+        <div class="section">
+            <h2>✅ Meeting the Sprint Requirements</h2>
+            
+            <h3>🔐 Flask Login & Personalized Data</h3>
+            <p>The game uses the existing login system; the front‑end calls jwt_authorize endpoints to obtain a token and stores it in localStorage. The back‑end uses this token to identify users and returns personalized Snakes & Ladders data (bullets, current square, lives, etc.). Authenticated sessions allow each player to track progress independently, fulfilling the user interaction and authentication requirements.</p>
+            
+            <h3>🎮 Quest Simplification & Experience Design</h3>
+            <p>Section 1 has five lessons; Section 2 condenses ~50 questions into a single game board. Users see interactive challenges, timers and the boss battle. Leaderboards track performance; correct answers award bullets and unlock later sections. This demonstrates good UI/UX design and the ability to simplify long quests into meaningful stages.</p>
+            
+            <h3>⚙️ API/Database Design & Admin Interface</h3>
+            <p>The API endpoints support CRUD operations on SnakesGameData. An admin dashboard (not detailed in the code we inspected but planned in the sprint) would allow instructors to view users, quests and progress. Data integrity is enforced by SQLAlchemy models and authentication decorators. The modular blueprint structure (api/snakes_game.py, api/snakes_extended.py, api/boss_battle.py) keeps the back‑end maintainable.</p>
+        </div>
+
+        <div class="section">
+            <h2>📁 Files and Their Purposes</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>assets/js/snakes-game.js</code></td>
+                            <td>Front‑end logic for the Snakes & Ladders game – defines game state, draws board, handles dice rolls, moves player, fetches/saves progress, displays lessons/questions/boss battle and leaderboard. Uses selection/iteration/sequencing for control flow.</td>
+                        </tr>
+                        <tr>
+                            <td><code>assets/css/snakes.css</code></td>
+                            <td>Styles the board, characters and UI elements.</td>
+                        </tr>
+                        <tr>
+                            <td><code>templates/snakes/game-board-part1.html</code><br><code>templates/snakes/game-board-part2.html</code></td>
+                            <td>HTML pages for Section 1 (lessons) and Section 2 (questions). They include placeholders for the dynamic board rendered by snakes-game.js and modals for lessons, questions and leaderboard.</td>
+                        </tr>
+                        <tr>
+                            <td><code>templates/snakes/boss-battle.html</code></td>
+                            <td>Template for the boss battle interface with timers and attack buttons; uses websockets or periodic API calls to update the boss's health and player status.</td>
+                        </tr>
+                        <tr>
+                            <td><code>api/snakes_game.py</code></td>
+                            <td>Flask blueprint for CRUD operations on game records – create, read, update, delete, add bullets, update square, reset position, get unvisited squares and fetch leaderboard.</td>
+                        </tr>
+                        <tr>
+                            <td><code>api/snakes_extended.py</code></td>
+                            <td>Higher‑level endpoints: get progress, mark lessons complete, answer questions, unlock sections.</td>
+                        </tr>
+                        <tr>
+                            <td><code>api/boss_battle.py</code></td>
+                            <td>Handles boss battle rooms – join room, attack, receive damage and exit.</td>
+                        </tr>
+                        <tr>
+                            <td><code>model/snakes_game.py</code></td>
+                            <td>SQLAlchemy model SnakesGameData, representing persisted game data with fields for bullets, lives, current square, visited squares and other attributes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <p style="margin-top: 20px;"><strong>Key Insight:</strong> The selection, iteration and sequencing control structures are fundamental to this project. Selection is used in movePlayer and handleSquareEvent to decide whether to show a lesson, question or boss battle. Iteration constructs the board and attaches event listeners; loops also traverse the visitedSquares list to determine unvisited question squares. Sequencing ensures that operations occur in order—authentication before data retrieval, updating the game state before rendering, and saving progress to the database after each move.</p>
+        </div>
+
+        <div class="section">
+            <h2>👥 Six-Way Work Distribution</h2>
+            <p>Below is a proposed distribution of tasks among Akhil, Aneesh, Ethan, Moiz, Arnav, and Samarth. Each entry describes responsibilities and how they contribute to the full‑stack project. The tasks are designed so that every member has an individual feature to demonstrate for the APCSP Create Performance Task.</p>
+            
+            <div class="team-grid">
+                <div class="team-card">
+                    <h3>Akhil</h3>
+                    <div class="role">Project Integrator & UI/UX Lead</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Coordinate front‑end development and ensure that the Snakes & Ladders pages follow a consistent theme with the rest of the website.</li>
+                        <li>Develop responsive HTML/CSS for the game board, character selection and boss battle pages. Use Bootstrap or Tailwind to speed styling.</li>
+                        <li>Implement the leaderboard modal and badges, pulling data via a GET call to <code>/api/snakes/leaderboard</code>. Use selection to assign gold/silver/bronze badges based on rank.</li>
+                        <li>Ensure that modals for lessons, questions and boss battle display correctly on both desktop and mobile devices.</li>
+                        <li>Document CSS classes and component structure so others can reuse them in their features.</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>assets/css/snakes.css</code>
+                        <code>templates/snakes/game-board-part1.html</code>
+                        <code>templates/snakes/game-board-part2.html</code>
+                        <code>templates/snakes/boss-battle.html</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>High‑quality, accessible UI for the entire Snakes & Ladders quest.</li>
+                        <li>A design guide explaining component reuse and styling choices.</li>
+                    </ul>
+                </div>
+
+                <div class="team-card">
+                    <h3>Aneesh</h3>
+                    <div class="role">Authentication & API Integration</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Implement user registration, login and logout on the Flask back‑end using sessions. Use the existing JWT authorization system to generate tokens and store them in cookies/localStorage.</li>
+                        <li>Create endpoints in <code>api/snakes_game.py</code> for creating and retrieving game records (POST and GET). Ensure that these endpoints check authentication before returning data.</li>
+                        <li>Write front‑end JavaScript in <code>snakes-game.js</code> to send authenticated fetch requests when players start a game or retrieve progress.</li>
+                        <li>Add middleware to refresh tokens and handle expired sessions gracefully.</li>
+                        <li>Document the API contract (request/response structure) so that the rest of the team knows how to call the endpoints.</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>api/snakes_game.py</code>
+                        <code>assets/js/snakes-game.js</code>
+                        <code>api/jwt_authorize.py</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>Secure login flow integrated with the Snakes & Ladders game.</li>
+                        <li>API documentation for the team (methods, URLs, sample payloads).</li>
+                    </ul>
+                </div>
+
+                <div class="team-card">
+                    <h3>Ethan</h3>
+                    <div class="role">Game Logic & Client-Side Algorithms</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Own the implementation of the Snakes & Ladders game logic in <code>assets/js/snakes-game.js</code>. This includes creating the board, handling dice rolls, moving players and updating the UI.</li>
+                        <li>Use iteration to generate the 5×10 board with zig‑zag numbering and to attach click listeners to character cards.</li>
+                        <li>Use selection to determine whether a square contains a snake or ladder and to decide which modal to display when a player lands on a lesson square, question square or boss square.</li>
+                        <li>Implement sequencing by ensuring operations occur in order: update the game state, redraw the board, update the player info panel, then save progress via a PUT call to <code>/api/snakes/update-square</code>. Optimise with asynchronous functions and error handling.</li>
+                        <li>Coordinate with the back‑end to ensure that visited squares and unlocked sections are correctly stored and retrieved.</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>assets/js/snakes-game.js</code>
+                        <code>assets/js/boss-battle.js</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>A fully functional Snakes & Ladders game on the client side, integrated with the back‑end.</li>
+                        <li>Unit tests or console logs demonstrating correct handling of edge cases (snakes/ladders, bounce‑back, multiple players).</li>
+                    </ul>
+                </div>
+
+                <div class="team-card">
+                    <h3>Moiz</h3>
+                    <div class="role">Database & Model Design</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Design and implement the SQLAlchemy model for the game (<code>model/snakes_game.py</code>). Ensure fields exist for user ID, username, bullets, lives, current square, visited squares (a mutable list), completed lessons and unlocked sections.</li>
+                        <li>Create migrations if necessary and integrate with the existing database schema.</li>
+                        <li>Expose CRUD operations in <code>api/snakes_game.py</code>: POST (create), GET (read), PUT (update game state) and DELETE (reset or remove). Provide functions for adding bullets, updating squares and resetting position.</li>
+                        <li>Work with Aneesh to secure each endpoint with authentication and to return appropriate HTTP status codes.</li>
+                        <li>Implement helper functions to calculate the leaderboard (sorting by bullets and time).</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>model/snakes_game.py</code>
+                        <code>api/snakes_game.py</code>
+                        <code>api/snakes_extended.py</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>A robust database schema supporting persistent user progress.</li>
+                        <li>Well‑documented CRUD endpoints for interacting with the game data.</li>
+                    </ul>
+                </div>
+
+                <div class="team-card">
+                    <h3>Arnav</h3>
+                    <div class="role">Boss Battle & Multiplayer Interactions</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Implement the boss battle feature using <code>api/boss_battle.py</code>. Write endpoints for players to join a room, attack the boss, take damage and leave the battle.</li>
+                        <li>Design the server‑side logic for boss HP, damage calculation and multi‑player coordination. Use selection and iteration to process simultaneous attacks and update each player's lives and bullets.</li>
+                        <li>Develop a front‑end script (<code>assets/js/boss-battle.js</code>) that communicates with the back‑end at a fixed interval (e.g., using <code>setInterval</code>) to fetch updated battle status and display it on the boss battle page.</li>
+                        <li>Enforce prerequisites: only players who have completed all lessons and are top five on the leaderboard can join the boss battle. Check these conditions in the API and front‑end UI.</li>
+                        <li>Ensure real‑time feedback and a dramatic experience for the players (animations, countdown timers).</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>api/boss_battle.py</code>
+                        <code>assets/js/boss-battle.js</code>
+                        <code>templates/snakes/boss-battle.html</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>Operational boss battle feature integrated into the game.</li>
+                        <li>Documentation describing how multi‑player battles are coordinated.</li>
+                    </ul>
+                </div>
+
+                <div class="team-card">
+                    <h3>Samarth</h3>
+                    <div class="role">Admin Dashboard & Analytics</div>
+                    
+                    <h4>Responsibilities:</h4>
+                    <ul>
+                        <li>Develop an admin interface using Flask (Jinja templates) where teachers can view users, their progress, bullets and leaderboard rankings.</li>
+                        <li>Add CRUD controls to allow instructors to reset a user's game or adjust bullets/lives if necessary.</li>
+                        <li>Integrate analytics: summarise how many players have completed each lesson, average bullets per player, and distribution of times played. Use selection and iteration to compute these statistics from SnakesGameData records.</li>
+                        <li>Implement a GET API endpoint for retrieving aggregated statistics. Front‑end fetches this data and displays charts (e.g., bar charts or pie charts).</li>
+                        <li>Collaborate with Moiz and Aneesh to ensure that admin endpoints are secured and return only the necessary data.</li>
+                    </ul>
+                    
+                    <h4>Files to Touch:</h4>
+                    <div class="files-list">
+                        <code>api/admin.py</code>
+                        <code>templates/admin/dashboard.html</code>
+                        <code>assets/js/admin-dashboard.js</code>
+                    </div>
+                    
+                    <h4>Deliverables:</h4>
+                    <ul>
+                        <li>An interactive admin dashboard with performance metrics and management tools.</li>
+                        <li>Charts or tables summarising quest progress for all users.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💾 Persistence & API Integration</h2>
+            <p>The above team distribution can be stored in your database as part of the sprint deliverables. Each object represents a model instance describing a team member's tasks.</p>
+            
+            <h3>Implementation Strategy:</h3>
+            <ul>
+                <li>Create a table <strong>WorkDistribution</strong> with columns for name, role, responsibilities, files_to_touch and deliverables.</li>
+                <li>The front‑end can POST this data to a Flask API (e.g., <code>/api/workdistribution</code>) and retrieve it via a GET call to populate a summary page.</li>
+                <li>This satisfies the requirement to store and retrieve list data through model procedures (Create, Read, Update, Delete).</li>
+                <li>Ensures that the sequencing of tasks is clearly documented for your team.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Conclusion</h2>
+            <p>By dividing responsibilities across UI/UX, authentication, game logic, database design, boss battles and analytics, your team addresses every requirement of the "Full Stack Development – Phase 1 of 2" sprint.</p>
+            
+            <div class="highlight-box">
+                <h4>Project Success Criteria Met:</h4>
+                <ul>
+                    <li><strong>Control Structures:</strong> Selection, iteration and sequencing demonstrated throughout</li>
+                    <li><strong>Persistent Data Management:</strong> SQLAlchemy models with full CRUD operations</li>
+                    <li><strong>User Authentication:</strong> JWT-based secure login system</li>
+                    <li><strong>Dynamic Content:</strong> Real-time game updates and leaderboards</li>
+                    <li><strong>APCSP Compliance:</strong> Each member has individual feature for Create Performance Task</li>
+                </ul>
+            </div>
+            
+            <p>Each team member will be able to record a one‑minute silent video demonstrating their individual feature and its impact on the full system, ready for the final presentation on <strong>December 12, 2025</strong>.</p>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <span class="badge">Full-Stack Development</span>
+                <span class="badge">REST APIs</span>
+                <span class="badge">Persistent Storage</span>
+                <span class="badge">Authentication</span>
+                <span class="badge">Analytics</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
