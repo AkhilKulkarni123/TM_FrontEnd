@@ -330,16 +330,35 @@ function autoResumeIfReady() {
     var hasStarted = false;
     try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) { hasStarted = false; }
     
-    // Only auto-resume if the player has started playing before
+    // If logged in, check server for saved character first
+    if (gameState.userId) {
+        return loadProgress().then(function () {
+            // If server has a character saved, skip character selection entirely
+            if (gameState.character) {
+                var characterSelection = document.getElementById('character-selection');
+                var gameContainer = document.getElementById('game-container');
+                var loginContainer = document.getElementById('login-container');
+                if (characterSelection) characterSelection.classList.add('hidden');
+                if (gameContainer) gameContainer.classList.remove('hidden');
+                if (loginContainer) loginContainer.classList.add('hidden');
+
+                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
+                return;
+            }
+        }).catch(function () {});
+    }
+    
+    // Only auto-resume from localStorage if no server data exists
     if (!hasStarted) {
         return Promise.resolve();
     }
     
-    // If the player previously selected a character (localStorage) or server has saved a selected character, resume game UI
+    // Fallback: If the player previously selected a character (localStorage) but no server data
     var storedChar = null;
     try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) { storedChar = null; }
 
-    if (storedChar) {
+    if (storedChar && !gameState.character) {
         gameState.character = storedChar;
         gameState.isGuest = (localStorage.getItem('snakes_isGuest') === '1');
 
@@ -356,23 +375,7 @@ function autoResumeIfReady() {
         }).catch(function () { /* ignore errors while auto-resuming */ });
     }
 
-    // If logged in and server has a selected character, resume
-    if (gameState.userId) {
-        return loadProgress().then(function () {
-            if (gameState.character) {
-                var characterSelection = document.getElementById('character-selection');
-                var gameContainer = document.getElementById('game-container');
-                var loginContainer = document.getElementById('login-container');
-                if (characterSelection) characterSelection.classList.add('hidden');
-                if (gameContainer) gameContainer.classList.remove('hidden');
-                if (loginContainer) loginContainer.classList.add('hidden');
-
-                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
-            }
-        }).catch(function () {});
-    }
-
+    
     return Promise.resolve();
 }
 
