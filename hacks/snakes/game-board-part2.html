@@ -1,16 +1,6 @@
 <!--
-  Snakes and Ladders – Second Half
-
-    This page renders the questions section of the Snakes and Ladders board
-    (squares 6–55). It is organised into 5 rows × 10 columns; each row is
-    a lesson topic and each row contains 10 questions. When a player reaches
-    the final square (55) they may proceed to the boss battle provided they
-    are one of the top 5 players on the leaderboard.
-
-  Navigation buttons allow travelling back to the first half or forward to
-  the boss battle.  If the second half has not yet been unlocked (i.e. the
-  player has not completed all lessons), an overlay appears and prevents
-  interaction.
+  Snakes and Ladders – Second Half with Question Modal
+  Questions now appear as overlays instead of separate pages
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -18,10 +8,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snakes and Ladders – Questions</title>
-    <!-- Use a relative path to load the shared game styles -->
     <link rel="stylesheet" href="../../assets/css/snakes-game.css">
+    <link rel="stylesheet" href="../../assets/css/lesson-arcade.css">
     <style>
-        /* Custom styles for part 2 - question grid */
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
@@ -54,18 +43,13 @@
             font-size: 1.5rem;
         }
         
-        /* ======================================== */
         /* COMPRESSED QUESTION GRID STYLING */
-        /* ======================================== */
-        
-        /* Board frame - constrain width */
         .board-grid-frame {
             max-width: 650px !important;
             width: 100% !important;
             margin: 0 auto;
         }
         
-        /* Game board container */
         #game-board.game-board {
             padding: 8px !important;
             gap: 2px !important;
@@ -74,7 +58,6 @@
             box-sizing: border-box !important;
         }
         
-        /* Rows - 10 columns compressed */
         #game-board .board-row {
             display: grid !important;
             grid-template-columns: repeat(10, 1fr) !important;
@@ -82,7 +65,6 @@
             width: 100% !important;
         }
         
-        /* Compressed squares */
         #game-board .square {
             width: 100% !important;
             min-width: 0 !important;
@@ -94,30 +76,233 @@
             font-size: 0.5em !important;
         }
         
-        /* Square numbers - smaller */
         #game-board .square .square-number {
             font-size: 8px !important;
             top: 1px !important;
             left: 2px !important;
         }
         
-        /* Square icons - normal size */
         #game-board .square .square-icon {
             font-size: 14px !important;
         }
         
-        /* BIGGER snake and ladder emojis */
         #game-board .square.snake .square-icon,
         #game-board .square.ladder .square-icon {
             font-size: 22px !important;
         }
         
-        /* Player marker smaller to fit */
         #game-board .square .player-marker,
         #game-board .floating-marker {
             font-size: 12px !important;
             width: 18px !important;
             height: 18px !important;
+        }
+
+        /* QUESTION MODAL STYLING */
+        #question-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        #question-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .question-modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            z-index: 10;
+            transition: color 0.2s ease;
+        }
+
+        .question-modal-close:hover {
+            color: #333;
+        }
+
+        .question-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .question-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .question-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.95;
+            font-size: 0.9rem;
+        }
+
+        .question-body {
+            padding: 2rem;
+        }
+
+        .arcade-zone {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .arcade-header h3 {
+            color: white;
+            font-size: 1.2rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .arcade-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .arcade-grid {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            min-height: 200px;
+        }
+
+        .arcade-status {
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            font-weight: bold;
+        }
+
+        .question-prompt {
+            font-size: 1.1rem;
+            color: #2b2c4a;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .question-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .question-options label {
+            background: rgba(102, 126, 234, 0.08);
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .question-options label:hover {
+            background: rgba(102, 126, 234, 0.15);
+            transform: translateX(5px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .question-options input[type="radio"] {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .question-options label:has(input:checked) {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
+        .question-submit {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ff9966, #ff5e62);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(255, 94, 98, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 94, 98, 0.5);
+        }
+
+        .question-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .question-meta {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #999;
+            text-align: center;
         }
     </style>
 </head>
@@ -135,8 +320,6 @@
         <button id="play-as-guest">Play as Guest</button>
         <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
     </div>
-
-    <!-- Character selection intentionally removed from section 2 to preserve initial selection only -->
 
     <div id="game-container" class="hidden">
         <div class="board-shell">
@@ -177,6 +360,35 @@
         </div>
     </div>
 
+    <!-- Question Modal -->
+    <div id="question-modal">
+        <div class="question-modal-content">
+            <span class="question-modal-close">&times;</span>
+            <div class="question-header">
+                <h2 id="question-title">Question</h2>
+                <p id="question-subtitle">Answer correctly to earn bullets!</p>
+            </div>
+            <div class="question-body">
+                <div class="arcade-zone question-arcade" data-arcade-target="3" data-arcade-message="Collect energy cores to unlock the question!" data-arcade-complete="Energy charged! Answer the question below.">
+                    <div class="arcade-header">
+                        <h3>Mini Challenge</h3>
+                        <p>Use WASD or arrow keys to move your character through the grid.</p>
+                    </div>
+                    <div class="arcade-grid"></div>
+                    <div class="arcade-status">Collect every core.</div>
+                </div>
+                
+                <div class="question-prompt" id="question-prompt"></div>
+                
+                <div class="question-options" id="question-options"></div>
+                
+                <button class="question-submit" id="question-submit">Submit Answer</button>
+                
+                <div class="question-meta" id="question-meta"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Boss battle modal -->
     <div id="boss-modal" class="modal hidden">
         <div class="modal-content">
@@ -192,42 +404,41 @@
     </div>
 
     <!-- Leaderboard modal -->
-    <!-- Enhanced Leaderboard Modal -->
-<div id="leaderboard-modal" class="modal hidden">
-    <div class="modal-overlay"></div>
-    <div class="modal-content leaderboard-content">
-        <span class="close-modal">&times;</span>
-        <div class="leaderboard-header">
-            <h2>🏆 Top Players Leaderboard</h2>
-            <p class="leaderboard-subtitle">Ranked by Bullets Earned</p>
-        </div>
-        
-        <div class="leaderboard-table-container">
-            <table id="leaderboard-table">
-                <thead>
-                    <tr>
-                        <th class="rank-col">Rank</th>
-                        <th class="player-col">Player</th>
-                        <th class="bullets-col">Bullets 🎯</th>
-                        <th class="time-col">Time ⏱️</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- JavaScript populates this -->
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="leaderboard-footer">
-            <p>Keep playing to climb the ranks! 🚀</p>
+    <div id="leaderboard-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content leaderboard-content">
+            <span class="close-modal">&times;</span>
+            <div class="leaderboard-header">
+                <h2>🏆 Top Players Leaderboard</h2>
+                <p class="leaderboard-subtitle">Ranked by Bullets Earned</p>
+            </div>
+            
+            <div class="leaderboard-table-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="rank-col">Rank</th>
+                            <th class="player-col">Player</th>
+                            <th class="bullets-col">Bullets 🎯</th>
+                            <th class="time-col">Time ⏱️</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="leaderboard-footer">
+                <p>Keep playing to climb the ranks! 🚀</p>
+            </div>
         </div>
     </div>
-</div>
 
-    <!-- Use a relative path to load the shared game logic -->
+    <!-- Load scripts in correct order -->
     <script src="../../assets/js/snakes-game.js"></script>
+    <script src="questions/questions_bank.js"></script>
+    <script src="../../assets/js/lesson-arcade.js"></script>
     <script>
-        // Set global flag for second half
         window.snakesGameSection = 2;
     </script>
 </body>

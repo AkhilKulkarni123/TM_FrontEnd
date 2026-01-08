@@ -1,9 +1,6 @@
 <!--
-  Snakes and Ladders – First Half (Traditional Board Style)
-
-    This file renders the lessons section (squares 1–5) with a traditional
-    snakes and ladders board appearance featuring yellow squares and visual
-    snakes/ladders while maintaining all original game functionality.
+  Snakes and Ladders – Combined Version (Traditional Board Style)
+  This file includes character selection, game board, and inline lesson display
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -11,15 +8,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snakes and Ladders – Lessons</title>
-    <!-- Use a relative path to load the shared game styles -->
     <link rel="stylesheet" href="../../assets/css/snakes-game.css">
+    <link rel="stylesheet" href="../../assets/css/lesson-arcade.css">
     <style>
-        /* Hidden class to hide sections */
         .hidden {
             display: none !important;
         }
         
-        /* Styles specific to the split game board */
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
@@ -37,7 +32,7 @@
             background-color: #7f8c8d;
             cursor: not-allowed;
         }
-        /* Overlay used when a section is locked */
+        
         #locked-overlay {
             position: fixed;
             top: 0;
@@ -53,11 +48,330 @@
             font-size: 1.5rem;
         }
 
-        /* ============================================ */
-        /* TRADITIONAL BOARD APPEARANCE MODIFICATIONS */
-        /* ============================================ */
+        /* Inline lesson display */
+        #inline-lesson-container {
+            margin-top: 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 70vh;
+            overflow-y: auto;
+            display: none;
+            position: relative;
+        }
+
+        #inline-lesson-container.active {
+            display: block;
+            animation: slideInLesson 0.5s ease-out;
+        }
+
+        @keyframes slideInLesson {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #inline-lesson-content {
+            /* Content will be injected here */
+        }
+
+        /* Reset and properly style inline lessons to match original */
+        #inline-lesson-container * {
+            box-sizing: border-box;
+        }
+
+        #inline-lesson-container .container {
+            max-height: none;
+            margin: 0;
+            box-shadow: none;
+            background: white;
+            border-radius: 20px;
+            overflow: visible;
+            max-width: 100%;
+        }
+
+        #inline-lesson-container .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        #inline-lesson-container .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.4rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container .header p {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            line-height: 1.4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container .content {
+            padding: 1.2rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container .section {
+            margin-bottom: 1.2rem;
+        }
+
+        #inline-lesson-container .section h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container .section h2::before {
+            content: '▸';
+            color: #764ba2;
+        }
+
+        #inline-lesson-container .section p {
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-size: 0.85em;
+        }
+
+        #inline-lesson-container pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 0.8rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #inline-lesson-container pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        #inline-lesson-container .highlight-box {
+            background: #e8f4f8;
+            border-left: 4px solid #667eea;
+            padding: 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+        }
+
+        #inline-lesson-container .highlight-box p {
+            margin: 0;
+            color: #444;
+            font-size: 0.88rem;
+        }
+
+        #inline-lesson-container .info-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+        }
+
+        #inline-lesson-container .ethics-box {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+        }
+
+        #inline-lesson-container .question {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin-top: 1.2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+
+        #inline-lesson-container .question h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.6rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container .question p {
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        #inline-lesson-container .options {
+            margin-top: 0.8rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        #inline-lesson-container .options label {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        #inline-lesson-container .options label:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        #inline-lesson-container .options input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: white;
+            flex-shrink: 0;
+        }
+
+        #inline-lesson-container .options label:has(input:checked) {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+            font-weight: bold;
+        }
+
+        #inline-lesson-container #complete-btn {
+            width: 100%;
+            margin-top: 1.2rem;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #inline-lesson-container #complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.5);
+        }
+
+        #inline-lesson-container .icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        /* Arcade zone styling for inline lessons */
+        #inline-lesson-container .arcade-zone {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #inline-lesson-container .arcade-header h2 {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #inline-lesson-container .arcade-header h2::before {
+            content: '🎮';
+            margin-right: 0.5rem;
+        }
+
+        #inline-lesson-container .arcade-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        #inline-lesson-container .arcade-grid {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            min-height: 200px;
+        }
+
+        #inline-lesson-container .arcade-status {
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            font-weight: bold;
+        }
+
+        /* Lists in inline lessons */
+        #inline-lesson-container ul {
+            margin: 0.4rem 0 0 1.2rem;
+            padding: 0;
+        }
+
+        #inline-lesson-container li {
+            margin-bottom: 0.3rem;
+            color: #444;
+            font-size: 0.88rem;
+        }
         
-        /* Game board container - traditional orange/brown border */
+        /* Additional inline lesson positioning */
+        #inline-lesson-container {
+            scroll-margin-top: 2rem;
+        }
+        
+        #inline-lesson-container::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        #inline-lesson-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        #inline-lesson-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        #inline-lesson-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* TRADITIONAL BOARD APPEARANCE */
         #game-board {
             background: linear-gradient(145deg, #e67e22, #f39c12) !important;
             padding: 15px !important;
@@ -67,7 +381,6 @@
             position: relative;
         }
 
-        /* Traditional yellow/golden squares */
         .game-board .square {
             background: linear-gradient(135deg, #f9e79f 0%, #f7dc6f 50%, #f9e79f 100%) !important;
             border: 2px solid #d4af37 !important;
@@ -81,7 +394,6 @@
             z-index: 10;
         }
 
-        /* Square numbers styled like traditional board */
         .game-board .square .square-number {
             position: absolute;
             top: 3px;
@@ -92,7 +404,6 @@
             z-index: 2;
         }
 
-        /* Special lesson/question squares - keep them visually distinct but traditional */
         .game-board .square.lesson {
             background: linear-gradient(135deg, #d5f4e6 0%, #a9dfbf 50%, #d5f4e6 100%) !important;
             border: 3px solid #27ae60 !important;
@@ -111,17 +422,6 @@
             box-shadow: 0 0 20px rgba(231, 76, 60, 0.6);
         }
 
-        /* Snake head squares (if any) */
-        .game-board .square.snake-head {
-            background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 50%, #a3e4d7 100%) !important;
-        }
-
-        /* Ladder bottom squares (if any) */
-        .game-board .square.ladder-bottom {
-            background: linear-gradient(135deg, #fef5e7 0%, #fdebd0 50%, #fad7a0 100%) !important;
-        }
-
-        /* SVG overlay container for visual snakes and ladders */
         #board-decorations {
             position: absolute;
             top: 15px;
@@ -132,12 +432,10 @@
             z-index: 1;
         }
 
-        /* Ensure player tokens and other elements stay visible */
         .game-board .player-piece {
             z-index: 20 !important;
         }
 
-        /* Traditional board styling for controls section */
         #controls {
             background: linear-gradient(145deg, #f9e79f, #f7dc6f);
             padding: 20px;
@@ -159,12 +457,8 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.4);
         }
-
-        /* ============================================ */
-        /* END OF TRADITIONAL BOARD MODIFICATIONS      */
-        /* ============================================ */
         
-        /* CHARACTER CAROUSEL STYLES (unchanged) */
+        /* CHARACTER CAROUSEL STYLES */
         #character-selection {
             text-align: center;
             padding: 40px 20px;
@@ -331,7 +625,101 @@
             box-shadow: none;
         }
 
-        /* PLAYER INFO SIDEBAR (unchanged) */
+        /* DETAILED PIXEL ART CHARACTERS */
+        .knight-pixel {
+            background: 
+                linear-gradient(to right, transparent 48px, #e74c3c 48px, #e74c3c 52px, transparent 52px, 
+                                transparent 56px, #c0392b 56px, #c0392b 60px, transparent 60px, 
+                                transparent 64px, #e74c3c 64px, #e74c3c 68px, transparent 68px) 12px 6px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 14px / 120px 10px,
+                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 24px / 120px 12px,
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 36px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 76px, transparent 76px) 12px 44px / 120px 12px,
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 56px / 120px 6px,
+                linear-gradient(to right, transparent 28px, #3498db 28px, #3498db 48px, transparent 48px,
+                                transparent 72px, #3498db 72px, #3498db 92px, transparent 92px) 12px 62px / 120px 14px,
+                linear-gradient(to right, transparent 36px, #5dade2 36px, #5dade2 84px, transparent 84px) 12px 76px / 120px 18px,
+                linear-gradient(to right, transparent 40px, #2980b9 40px, #2980b9 80px, transparent 80px) 12px 82px / 120px 6px,
+                linear-gradient(to right, transparent 36px, #f39c12 36px, #f39c12 84px, transparent 84px) 12px 94px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 76px, transparent 76px) 12px 102px / 120px 18px;
+            background-repeat: no-repeat;
+        }
+
+        .wizard-pixel {
+            background: 
+                linear-gradient(to right, transparent 56px, #f1c40f 56px, #f1c40f 64px, transparent 64px) 12px 4px / 120px 6px,
+                linear-gradient(to right, transparent 52px, #f39c12 52px, #f39c12 68px, transparent 68px) 12px 10px / 120px 4px,
+                linear-gradient(to right, transparent 56px, #8e44ad 56px, #8e44ad 64px, transparent 64px) 12px 14px / 120px 8px,
+                linear-gradient(to right, transparent 52px, #9b59b6 52px, #9b59b6 68px, transparent 68px) 12px 22px / 120px 10px,
+                linear-gradient(to right, transparent 44px, #8e44ad 44px, #8e44ad 76px, transparent 76px) 12px 32px / 120px 14px,
+                linear-gradient(to right, transparent 36px, #6c3483 36px, #6c3483 84px, transparent 84px) 12px 46px / 120px 8px,
+                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 54px / 120px 14px,
+                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 60px / 120px 4px,
+                linear-gradient(to right, transparent 48px, #ecf0f1 48px, #ecf0f1 72px, transparent 72px) 12px 68px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 76px / 120px 6px,
+                linear-gradient(to right, transparent 36px, #9b59b6 36px, #9b59b6 84px, transparent 84px) 12px 82px / 120px 28px,
+                linear-gradient(to right, transparent 48px, #f1c40f 48px, #f1c40f 52px, transparent 52px,
+                                transparent 68px, #f1c40f 68px, #f1c40f 72px, transparent 72px) 12px 92px / 120px 4px,
+                linear-gradient(to right, transparent 32px, #6c3483 32px, #6c3483 88px, transparent 88px) 12px 110px / 120px 10px,
+                linear-gradient(to right, transparent 16px, #8b4513 16px, #8b4513 20px, transparent 20px) 12px 68px / 120px 40px,
+                linear-gradient(to right, transparent 12px, #f1c40f 12px, #f1c40f 24px, transparent 24px) 12px 64px / 120px 12px;
+            background-repeat: no-repeat;
+            animation: idle 2s ease-in-out infinite, wizardGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes wizardGlow {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 5px rgba(241, 196, 15, 0.3)); }
+            50% { filter: brightness(1.2) drop-shadow(0 0 15px rgba(241, 196, 15, 0.8)); }
+        }
+
+        .archer-pixel {
+            background: 
+                linear-gradient(to right, transparent 56px, #1e8449 56px, #1e8449 64px, transparent 64px) 12px 10px / 120px 8px,
+                linear-gradient(to right, transparent 48px, #27ae60 48px, #27ae60 72px, transparent 72px) 12px 18px / 120px 12px,
+                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 30px / 120px 16px,
+                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 76px, transparent 76px) 12px 42px / 120px 4px,
+                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 46px / 120px 12px,
+                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
+                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 52px / 120px 3px,
+                linear-gradient(to right, transparent 36px, #2ecc71 36px, #2ecc71 84px, transparent 84px) 12px 58px / 120px 26px,
+                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 70px / 120px 8px,
+                linear-gradient(to right, transparent 36px, #8b4513 36px, #8b4513 84px, transparent 84px) 12px 84px / 120px 8px,
+                linear-gradient(to right, transparent 56px, #f39c12 56px, #f39c12 64px, transparent 64px) 12px 86px / 120px 4px,
+                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 56px, transparent 56px,
+                                transparent 64px, #1e8449 64px, #1e8449 76px, transparent 76px) 12px 92px / 120px 28px,
+                linear-gradient(to right, transparent 88px, #8b4513 88px, #8b4513 92px, transparent 92px) 12px 50px / 120px 44px,
+                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 46px / 120px 8px,
+                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 90px / 120px 8px,
+                linear-gradient(to right, transparent 90px, #ecf0f1 90px, #ecf0f1 91px, transparent 91px) 12px 54px / 120px 32px,
+                linear-gradient(to right, transparent 76px, #d35400 76px, #d35400 90px, transparent 90px) 12px 68px / 120px 3px;
+            background-repeat: no-repeat;
+        }
+
+        .warrior-pixel {
+            background: 
+                linear-gradient(to right, transparent 32px, #95a5a6 32px, #95a5a6 40px, transparent 40px,
+                                transparent 80px, #95a5a6 80px, #95a5a6 88px, transparent 88px) 12px 10px / 120px 12px,
+                linear-gradient(to right, transparent 28px, #7f8c8d 28px, #7f8c8d 36px, transparent 36px,
+                                transparent 84px, #7f8c8d 84px, #7f8c8d 92px, transparent 92px) 12px 18px / 120px 8px,
+                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 26px / 120px 16px,
+                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 42px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #34495e 44px, #34495e 76px, transparent 76px) 12px 46px / 120px 6px,
+                linear-gradient(to right, transparent 48px, #e67e22 48px, #e67e22 72px, transparent 72px) 12px 52px / 120px 12px,
+                linear-gradient(to right, transparent 28px, #e74c3c 28px, #e74c3c 48px, transparent 48px,
+                                transparent 72px, #e74c3c 72px, #e74c3c 92px, transparent 92px) 12px 64px / 120px 16px,
+                linear-gradient(to right, transparent 36px, #ec7063 36px, #ec7063 84px, transparent 84px) 12px 80px / 120px 20px,
+                linear-gradient(to right, transparent 40px, #c0392b 40px, #c0392b 80px, transparent 80px) 12px 88px / 120px 6px,
+                linear-gradient(to right, transparent 36px, #34495e 36px, #34495e 84px, transparent 84px) 12px 100px / 120px 8px,
+                linear-gradient(to right, transparent 44px, #c0392b 44px, #c0392b 56px, transparent 56px,
+                                transparent 64px, #c0392b 64px, #c0392b 76px, transparent 76px) 12px 108px / 120px 12px,
+                linear-gradient(to right, transparent 88px, #95a5a6 88px, #95a5a6 104px, transparent 104px) 12px 58px / 120px 14px,
+                linear-gradient(to right, transparent 92px, #7f8c8d 92px, #7f8c8d 100px, transparent 100px) 12px 72px / 120px 8px,
+                linear-gradient(to right, transparent 94px, #8b4513 94px, #8b4513 98px, transparent 98px) 12px 50px / 120px 48px;
+            background-repeat: no-repeat;
+        }
+
         #player-info {
             position: fixed;
             left: 0;
@@ -387,31 +775,6 @@
             font-size: 1.1em;
         }
 
-        /* Special styling for specific stats */
-        #player-info p:has(#player-lives) {
-            border-left-color: #e74c3c;
-        }
-
-        #player-info p:has(#player-lives) span {
-            color: #e74c3c;
-        }
-
-        #player-info p:has(#player-bullets) {
-            border-left-color: #f39c12;
-        }
-
-        #player-info p:has(#player-bullets) span {
-            color: #f39c12;
-        }
-
-        #player-info p:has(#player-square) {
-            border-left-color: #2ecc71;
-        }
-
-        #player-info p:has(#player-square) span {
-            color: #2ecc71;
-        }
-
         .board-shell #player-info,
         .board-shell #controls {
             position: static;
@@ -425,155 +788,6 @@
             box-shadow: 0 15px 35px rgba(15, 20, 65, 0.15);
             padding: 20px;
         }
-
-        /* DETAILED PIXEL ART CHARACTERS (unchanged) */
-        
-        /* Knight - Detailed blue armor with shield and sword */
-        .knight-pixel {
-            background: 
-                /* Plume */
-                linear-gradient(to right, transparent 48px, #e74c3c 48px, #e74c3c 52px, transparent 52px, 
-                                transparent 56px, #c0392b 56px, #c0392b 60px, transparent 60px, 
-                                transparent 64px, #e74c3c 64px, #e74c3c 68px, transparent 68px) 12px 6px / 120px 8px,
-                /* Helmet top - silver */
-                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 14px / 120px 10px,
-                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 24px / 120px 12px,
-                /* Helmet detail */
-                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 36px / 120px 8px,
-                /* Visor opening */
-                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 76px, transparent 76px) 12px 44px / 120px 12px,
-                /* Neck guard */
-                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 56px / 120px 6px,
-                /* Shoulders - blue armor */
-                linear-gradient(to right, transparent 28px, #3498db 28px, #3498db 48px, transparent 48px,
-                                transparent 72px, #3498db 72px, #3498db 92px, transparent 92px) 12px 62px / 120px 14px,
-                /* Chest plate - bright blue */
-                linear-gradient(to right, transparent 36px, #5dade2 36px, #5dade2 84px, transparent 84px) 12px 76px / 120px 18px,
-                /* Chest detail */
-                linear-gradient(to right, transparent 40px, #2980b9 40px, #2980b9 80px, transparent 80px) 12px 82px / 120px 6px,
-                /* Belt - gold */
-                linear-gradient(to right, transparent 36px, #f39c12 36px, #f39c12 84px, transparent 84px) 12px 94px / 120px 8px,
-                /* Legs - dark blue */
-                linear-gradient(to right, transparent 44px, #2c3e50 44px, #2c3e50 56px, transparent 56px,
-                                transparent 64px, #2c3e50 64px, #2c3e50 76px, transparent 76px) 12px 102px / 120px 18px;
-            background-repeat: no-repeat;
-        }
-
-        /* Wizard - Detailed purple robes with glowing staff */
-        .wizard-pixel {
-            background: 
-                /* Magic sparkle on hat */
-                linear-gradient(to right, transparent 56px, #f1c40f 56px, #f1c40f 64px, transparent 64px) 12px 4px / 120px 6px,
-                linear-gradient(to right, transparent 52px, #f39c12 52px, #f39c12 68px, transparent 68px) 12px 10px / 120px 4px,
-                /* Hat tip - pointed */
-                linear-gradient(to right, transparent 56px, #8e44ad 56px, #8e44ad 64px, transparent 64px) 12px 14px / 120px 8px,
-                linear-gradient(to right, transparent 52px, #9b59b6 52px, #9b59b6 68px, transparent 68px) 12px 22px / 120px 10px,
-                /* Hat body */
-                linear-gradient(to right, transparent 44px, #8e44ad 44px, #8e44ad 76px, transparent 76px) 12px 32px / 120px 14px,
-                /* Hat brim */
-                linear-gradient(to right, transparent 36px, #6c3483 36px, #6c3483 84px, transparent 84px) 12px 46px / 120px 8px,
-                /* Face */
-                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 54px / 120px 14px,
-                /* Eyes */
-                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
-                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 60px / 120px 4px,
-                /* Long beard */
-                linear-gradient(to right, transparent 48px, #ecf0f1 48px, #ecf0f1 72px, transparent 72px) 12px 68px / 120px 8px,
-                linear-gradient(to right, transparent 44px, #bdc3c7 44px, #bdc3c7 76px, transparent 76px) 12px 76px / 120px 6px,
-                /* Robe body - purple */
-                linear-gradient(to right, transparent 36px, #9b59b6 36px, #9b59b6 84px, transparent 84px) 12px 82px / 120px 28px,
-                /* Robe details - stars */
-                linear-gradient(to right, transparent 48px, #f1c40f 48px, #f1c40f 52px, transparent 52px,
-                                transparent 68px, #f1c40f 68px, #f1c40f 72px, transparent 72px) 12px 92px / 120px 4px,
-                /* Robe bottom */
-                linear-gradient(to right, transparent 32px, #6c3483 32px, #6c3483 88px, transparent 88px) 12px 110px / 120px 10px,
-                /* Glowing staff on left */
-                linear-gradient(to right, transparent 16px, #8b4513 16px, #8b4513 20px, transparent 20px) 12px 68px / 120px 40px,
-                linear-gradient(to right, transparent 12px, #f1c40f 12px, #f1c40f 24px, transparent 24px) 12px 64px / 120px 12px;
-            background-repeat: no-repeat;
-            animation: idle 2s ease-in-out infinite, wizardGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes wizardGlow {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 5px rgba(241, 196, 15, 0.3)); }
-            50% { filter: brightness(1.2) drop-shadow(0 0 15px rgba(241, 196, 15, 0.8)); }
-        }
-
-        /* Archer - Detailed green outfit with bow */
-        .archer-pixel {
-            background: 
-                /* Hood point */
-                linear-gradient(to right, transparent 56px, #1e8449 56px, #1e8449 64px, transparent 64px) 12px 10px / 120px 8px,
-                /* Hood top */
-                linear-gradient(to right, transparent 48px, #27ae60 48px, #27ae60 72px, transparent 72px) 12px 18px / 120px 12px,
-                /* Hood body */
-                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 30px / 120px 16px,
-                /* Hood shadow */
-                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 76px, transparent 76px) 12px 42px / 120px 4px,
-                /* Face visible */
-                linear-gradient(to right, transparent 48px, #f0c674 48px, #f0c674 72px, transparent 72px) 12px 46px / 120px 12px,
-                /* Eyes */
-                linear-gradient(to right, transparent 52px, #2c3e50 52px, #2c3e50 56px, transparent 56px,
-                                transparent 64px, #2c3e50 64px, #2c3e50 68px, transparent 68px) 12px 52px / 120px 3px,
-                /* Tunic top - green */
-                linear-gradient(to right, transparent 36px, #2ecc71 36px, #2ecc71 84px, transparent 84px) 12px 58px / 120px 26px,
-                /* Tunic details */
-                linear-gradient(to right, transparent 40px, #27ae60 40px, #27ae60 80px, transparent 80px) 12px 70px / 120px 8px,
-                /* Brown belt */
-                linear-gradient(to right, transparent 36px, #8b4513 36px, #8b4513 84px, transparent 84px) 12px 84px / 120px 8px,
-                /* Belt buckle */
-                linear-gradient(to right, transparent 56px, #f39c12 56px, #f39c12 64px, transparent 64px) 12px 86px / 120px 4px,
-                /* Legs */
-                linear-gradient(to right, transparent 44px, #1e8449 44px, #1e8449 56px, transparent 56px,
-                                transparent 64px, #1e8449 64px, #1e8449 76px, transparent 76px) 12px 92px / 120px 28px,
-                /* Bow on right - wooden */
-                linear-gradient(to right, transparent 88px, #8b4513 88px, #8b4513 92px, transparent 92px) 12px 50px / 120px 44px,
-                /* Bow curved top */
-                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 46px / 120px 8px,
-                /* Bow curved bottom */
-                linear-gradient(to right, transparent 84px, #8b4513 84px, #8b4513 88px, transparent 88px) 12px 90px / 120px 8px,
-                /* Bowstring */
-                linear-gradient(to right, transparent 90px, #ecf0f1 90px, #ecf0f1 91px, transparent 91px) 12px 54px / 120px 32px,
-                /* Arrow nocked */
-                linear-gradient(to right, transparent 76px, #d35400 76px, #d35400 90px, transparent 90px) 12px 68px / 120px 3px;
-            background-repeat: no-repeat;
-        }
-
-        /* Warrior - Detailed red armor with axe */
-        .warrior-pixel {
-            background: 
-                /* Helmet horns - silver */
-                linear-gradient(to right, transparent 32px, #95a5a6 32px, #95a5a6 40px, transparent 40px,
-                                transparent 80px, #95a5a6 80px, #95a5a6 88px, transparent 88px) 12px 10px / 120px 12px,
-                linear-gradient(to right, transparent 28px, #7f8c8d 28px, #7f8c8d 36px, transparent 36px,
-                                transparent 84px, #7f8c8d 84px, #7f8c8d 92px, transparent 92px) 12px 18px / 120px 8px,
-                /* Helmet body */
-                linear-gradient(to right, transparent 40px, #7f8c8d 40px, #7f8c8d 80px, transparent 80px) 12px 26px / 120px 16px,
-                /* Helmet details */
-                linear-gradient(to right, transparent 36px, #95a5a6 36px, #95a5a6 84px, transparent 84px) 12px 42px / 120px 8px,
-                /* Visor slit */
-                linear-gradient(to right, transparent 44px, #34495e 44px, #34495e 76px, transparent 76px) 12px 46px / 120px 6px,
-                /* Face/beard visible */
-                linear-gradient(to right, transparent 48px, #e67e22 48px, #e67e22 72px, transparent 72px) 12px 52px / 120px 12px,
-                /* Shoulder guards - red */
-                linear-gradient(to right, transparent 28px, #e74c3c 28px, #e74c3c 48px, transparent 48px,
-                                transparent 72px, #e74c3c 72px, #e74c3c 92px, transparent 92px) 12px 64px / 120px 16px,
-                /* Chest armor - bright red */
-                linear-gradient(to right, transparent 36px, #ec7063 36px, #ec7063 84px, transparent 84px) 12px 80px / 120px 20px,
-                /* Armor plates detail */
-                linear-gradient(to right, transparent 40px, #c0392b 40px, #c0392b 80px, transparent 80px) 12px 88px / 120px 6px,
-                /* Dark belt */
-                linear-gradient(to right, transparent 36px, #34495e 36px, #34495e 84px, transparent 84px) 12px 100px / 120px 8px,
-                /* Legs - armored */
-                linear-gradient(to right, transparent 44px, #c0392b 44px, #c0392b 56px, transparent 56px,
-                                transparent 64px, #c0392b 64px, #c0392b 76px, transparent 76px) 12px 108px / 120px 12px,
-                /* Axe head on right - large */
-                linear-gradient(to right, transparent 88px, #95a5a6 88px, #95a5a6 104px, transparent 104px) 12px 58px / 120px 14px,
-                linear-gradient(to right, transparent 92px, #7f8c8d 92px, #7f8c8d 100px, transparent 100px) 12px 72px / 120px 8px,
-                /* Axe handle */
-                linear-gradient(to right, transparent 94px, #8b4513 94px, #8b4513 98px, transparent 98px) 12px 50px / 120px 48px;
-            background-repeat: no-repeat;
-        }
     </style>
 </head>
 <body>
@@ -584,6 +798,7 @@
             <button id="close-overlay-btn" style="padding: 12px 30px; font-size: 1.1em; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">← Go Back</button>
         </div>
     </div>
+    
     <div id="login-container">
         <h2>Please log in to play and save your progress</h2>
         <button id="use-existing-login">Use Website Login</button>
@@ -655,10 +870,7 @@
                 <div class="board-stage">
                     <div class="board-grid-frame">
                         <div id="game-board" class="game-board">
-                            <!-- SVG overlay for decorative snakes and ladders -->
                             <svg id="board-decorations" width="100%" height="100%" style="position: absolute; pointer-events: none;">
-                                <!-- Example decorative elements - customize as needed -->
-                                <!-- Snake from square 16 to 6 -->
                                 <path d="M 50 450 Q 150 350 250 470" 
                                       stroke="#27ae60" 
                                       stroke-width="6" 
@@ -667,7 +879,6 @@
                                       opacity="0.4"/>
                                 <circle cx="50" cy="450" r="6" fill="#e74c3c" opacity="0.6"/>
                                 
-                                <!-- Ladder from square 4 to 14 -->
                                 <line x1="230" y1="500" x2="230" y2="400" 
                                       stroke="#8b4513" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
                                 <line x1="250" y1="500" x2="250" y2="400" 
@@ -684,6 +895,12 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Inline lesson container -->
+                <div id="inline-lesson-container">
+                    <div id="inline-lesson-content"></div>
+                </div>
+                
                 <div class="navigation-buttons board-nav">
                     <button id="prev-section-btn" class="nav-btn" disabled>Previous Section</button>
                     <button id="next-section-btn" class="nav-btn">Next Section</button>
@@ -692,7 +909,7 @@
         </div>
     </div>
 
-    <!-- Boss battle modal (reused from original game) -->
+    <!-- Boss battle modal -->
     <div id="boss-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal">×</span>
@@ -706,14 +923,13 @@
         </div>
     </div>
 
-    <!-- Leaderboard modal (reused from original game) -->
-    <!-- Enhanced Leaderboard Modal -->
+    <!-- Leaderboard modal -->
     <div id="leaderboard-modal" class="modal hidden">
         <div class="modal-overlay"></div>
         <div class="modal-content leaderboard-content">
             <span class="close-modal">&times;</span>
             <div class="leaderboard-header">
-                <h2>Top Players Leaderboard</h2>
+                <h2>🏆 Top Players Leaderboard</h2>
                 <p class="leaderboard-subtitle">Ranked by Bullets Earned</p>
             </div>
             
@@ -723,32 +939,556 @@
                         <tr>
                             <th class="rank-col">Rank</th>
                             <th class="player-col">Player</th>
-                            <th class="bullets-col">Bullets</th>
+                            <th class="bullets-col">Bullets 🎯</th>
                             <th class="time-col">Time ⏱️</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- JavaScript populates this -->
                     </tbody>
                 </table>
             </div>
             
             <div class="leaderboard-footer">
-                <p>Keep playing to climb the ranks!</p>
+                <p>Keep playing to climb the ranks! 🚀</p>
             </div>
         </div>
     </div>
 
-    <!-- Use a relative path to load the shared game logic -->
     <script src="../../assets/js/snakes-game.js"></script>
+    <script src="../../assets/js/lesson-arcade.js"></script>
     <script>
-        // Set global flag for first half
+        // CRITICAL FIX: The arcade script doesn't expose a constructor!
+        // It only exposes window.SnakesArcade which is NOT a constructor
+        // We need to manually trigger initialization like the script does
+        
+        // Replicate the initZone function from lesson-arcade.js
+        window.initializeArcadeZone = function(zone) {
+            console.log('🎮 Manually initializing arcade zone...');
+            
+            if (!zone) {
+                console.error('No zone provided');
+                return false;
+            }
+            
+            // Make sure it has the right class
+            if (!zone.classList.contains('arcade-zone')) {
+                zone.classList.add('arcade-zone');
+            }
+            
+            // Get the mode from data attributes
+            var mode = (zone.dataset.arcadeMode || zone.dataset.arcadeStyle || '').toLowerCase();
+            
+            // If no mode or random, pick one
+            if (!mode || mode === 'random') {
+                var modes = ['orb', 'sequence', 'tic'];
+                mode = modes[Math.floor(Math.random() * modes.length)];
+                zone.dataset.arcadeMode = mode;
+            }
+            
+            console.log('Initializing arcade mode:', mode);
+            console.log('Target:', zone.dataset.arcadeTarget);
+            console.log('Message:', zone.dataset.arcadeMessage);
+            
+            // The lesson-arcade.js has internal functions for each mode
+            // Since we can't access them directly, we trigger a DOM event
+            // that the script might pick up, or we wait for the zone to be initialized
+            
+            // Dispatch an event in case the script listens for it
+            try {
+                var event = new Event('DOMContentLoaded');
+                document.dispatchEvent(event);
+            } catch(e) {}
+            
+            // Alternative: Manually query and initialize arcade zones
+            // by simulating what DOMContentLoaded does
+            setTimeout(function() {
+                // Check if the zone got initialized (it will have __arcadeState)
+                if (zone.__arcadeState) {
+                    console.log('✓ Arcade zone initialized successfully');
+                    console.log('Zone state:', zone.__arcadeState);
+                } else {
+                    console.warn('⚠️ Zone not initialized by arcade script');
+                    console.warn('The lesson-arcade.js initZone function may need to be called directly');
+                    console.warn('Consider adding: window.initArcadeZone = initZone; to lesson-arcade.js');
+                }
+            }, 200);
+            
+            return true;
+        };
+        
+        // Force re-initialization by simulating DOMContentLoaded
+        window.reinitializeAllArcades = function() {
+            console.log('🔄 Reinitializing all arcade zones...');
+            
+            // Get all arcade zones
+            var zones = document.querySelectorAll('.arcade-zone, .lesson-arcade, .question-arcade');
+            console.log('Found', zones.length, 'arcade zones');
+            
+            zones.forEach(function(zone, index) {
+                console.log('Zone', index + 1, ':', {
+                    hasClass: zone.classList.contains('arcade-zone'),
+                    hasState: !!zone.__arcadeState,
+                    mode: zone.dataset.arcadeMode
+                });
+                
+                // If zone doesn't have state, try to initialize it
+                if (!zone.__arcadeState) {
+                    console.log('Attempting to initialize zone', index + 1);
+                    window.initializeArcadeZone(zone);
+                }
+            });
+        };
+        
         window.snakesGameSection = 1;
         
+        // Debug info
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                console.log('=== ARCADE DEBUG ===');
+                console.log('SnakesArcade:', typeof window.SnakesArcade);
+                console.log('initArcadeZone:', typeof window.initArcadeZone);
+                
+                if (typeof window.initArcadeZone !== 'function') {
+                    console.error('');
+                    console.error('⚠️⚠️⚠️ ARCADE NOT PROPERLY CONFIGURED ⚠️⚠️⚠️');
+                    console.error('');
+                    console.error('The lesson-arcade.js file needs to be modified to expose');
+                    console.error('the initZone function. Here\'s how:');
+                    console.error('');
+                    console.error('1. Open: assets/js/lesson-arcade.js');
+                    console.error('2. Find the line: window.SnakesArcade = Arcade;');
+                    console.error('3. Add below it: window.initArcadeZone = initZone;');
+                    console.error('4. Save and refresh');
+                    console.error('');
+                    console.error('See ARCADE_FIX_INSTRUCTIONS.md for detailed steps');
+                    console.error('');
+                } else {
+                    console.log('✓ Arcade properly configured!');
+                }
+                
+                console.log('==================');
+            }, 500);
+        });
+        
+        // Inline Lesson Content Storage
+        var LESSON_CONTENT = {
+            1: {
+                title: '🎯 Lesson 1: Algorithms & Programming Basics',
+                subtitle: 'Master the fundamental building blocks of programming: variables, conditionals, and loops. These concepts are the foundation of every algorithm!',
+                arcadeMode: 'orb',
+                arcadeTarget: 3,
+                arcadeMessage: 'Use WASD or arrow keys to collect all three idea orbs.',
+                arcadeComplete: 'Arcade complete! You\'re ready for the reading.',
+                content: `
+                    <div class="section">
+                        <h2>Variables</h2>
+                        <p>A variable is a named location in memory used to store a value. Think of it as a labeled box where you can keep information. In JavaScript, you can declare variables using <code>let</code> or <code>const</code>:</p>
+                        <pre><code>let score = 0;
+const name = 'Ada';</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h2>Conditionals</h2>
+                        <p>Conditionals allow your program to make decisions and choose different paths of execution. The simplest conditional is the <code>if</code> statement, which acts like a fork in the road:</p>
+                        <pre><code>if (score > 10) {
+    console.log('You win!');
+} else {
+    console.log('Keep trying!');
+}</code></pre>
+                    </div>
+
+                    <div class="section">
+                        <h2>Loops</h2>
+                        <p>Loops repeat instructions multiple times, saving you from writing repetitive code. A <code>for</code> loop repeats a block of code a specified number of times:</p>
+                        <pre><code>for (let i = 0; i < 5; i++) {
+    console.log('Iteration ' + i);
+}</code></pre>
+                    </div>
+                `,
+                question: {
+                    text: 'What does the following JavaScript code output?',
+                    code: `let total = 0;
+for (let i = 1; i <= 3; i++) {
+    total += i;
+}
+console.log(total);`,
+                    options: ['3', '6', '7', '1'],
+                    correct: 1
+                }
+            },
+            2: {
+                title: '📊 Lesson 2: Data Structures',
+                subtitle: 'Learn how to organize and store data efficiently using arrays and objects—two fundamental data structures in programming!',
+                arcadeMode: 'sequence',
+                arcadeTarget: 4,
+                arcadeMessage: 'Memorize the dataset directions and replay them to unlock the reading.',
+                arcadeComplete: 'Inventory stocked! Time to study.',
+                content: `
+                    <div class="section">
+                        <h2>Arrays</h2>
+                        <p>An array stores an ordered collection of values. Think of it as a numbered list where each item has a position (index). In JavaScript, you declare an array with square brackets:</p>
+                        <pre><code>const fruits = ['apple', 'banana', 'cherry'];
+console.log(fruits[1]); // 'banana'</code></pre>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Arrays are zero-indexed, meaning the first item is at position 0!</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Objects</h2>
+                        <p>An object stores data as key-value pairs. Keys are strings that act like labels, and values can be any type. This structure is perfect for representing real-world entities:</p>
+                        <pre><code>const student = { name: 'Ada', age: 17 };
+console.log(student.name); // 'Ada'</code></pre>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Access object values using dot notation (student.name) or brackets (student['name'])!</p>
+                    </div>
+                `,
+                question: {
+                    text: 'Which code correctly accesses the value <code style="background: rgba(0,0,0,0.3); color: white;">42</code> in the array below?',
+                    code: `const nums = [7, 42, 99];`,
+                    options: ["nums['1']", "nums[1]", "nums(2)", "nums.1"],
+                    correct: 1
+                }
+            },
+            3: {
+                title: '🌐 Lesson 3: Internet & Networking',
+                subtitle: 'Discover how computers communicate across the globe through IP addresses, domain names, and the DNS system!',
+                arcadeMode: 'tic',
+                arcadeTarget: 3,
+                arcadeMessage: 'Face the AI in quiz-powered tic-tac-toe to stabilize the network.',
+                arcadeComplete: 'Network stable! Continue below.',
+                content: `
+                    <div class="section">
+                        <p>The internet is a global network of networks. Computers communicate over the internet using unique numerical addresses called Internet Protocol (IP) addresses. To make it easier for humans, domain names map to IP addresses via the Domain Name System (DNS).</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>IP Addresses</h2>
+                        <p>An IPv4 address consists of four numbers between 0 and 255 separated by periods. Each device on a network has a unique IP address so that data can be routed to the correct destination.</p>
+                        <div class="highlight-box">
+                            <p><strong>Example:</strong> <code>192.168.1.1</code> is a common IP address for home routers. The numbers identify the specific device on the network.</p>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Think of an IP address like a mailing address—it tells the network exactly where to deliver data!</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>DNS (Domain Name System)</h2>
+                        <p>DNS translates human-readable domain names (like <code>www.example.com</code>) into IP addresses. DNS servers respond to queries and help your browser locate websites.</p>
+                        <div class="highlight-box">
+                            <p><strong>How it works:</strong> When you type a website address, your computer asks a DNS server "What's the IP address for this domain?" The DNS server responds with the numeric address, and your browser connects to that IP.</p>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 DNS is like a phone book for the internet—it helps you find the right "number" (IP address) for any website!</p>
+                    </div>
+                `,
+                question: {
+                    text: 'Which of the following best describes the role of DNS on the internet?',
+                    options: [
+                        'It encrypts all communications.',
+                        'It provides physical cables for the network.',
+                        'It translates domain names into IP addresses.',
+                        'It stores webpages on servers.'
+                    ],
+                    correct: 2
+                }
+            },
+            4: {
+                title: '🔒 Lesson 4: Cybersecurity & Encryption',
+                subtitle: 'Learn how to protect digital systems from attacks and understand the power of encryption to keep data secure!',
+                arcadeMode: 'sequence',
+                arcadeTarget: 4,
+                arcadeMessage: 'Copy each flashing security pattern to sneak through the grid.',
+                arcadeComplete: 'Firewall fortified! Jump into the reading.',
+                content: `
+                    <div class="section">
+                        <p>Cybersecurity involves protecting systems, networks, and programs from digital attacks. Encryption is one powerful technique used to scramble data so that only authorized parties can read it.</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Malware</h2>
+                        <p>Malware is malicious software designed to damage or gain unauthorized access to a system. Understanding malware types helps you recognize and defend against threats.</p>
+                        <div class="highlight-box">
+                            <p><strong>⚠️ Common Types:</strong></p>
+                            <ul style="margin: 0.4rem 0 0 1.2rem; padding: 0;">
+                                <li><strong>Viruses:</strong> Attach to files and spread when shared</li>
+                                <li><strong>Worms:</strong> Self-replicate across networks</li>
+                                <li><strong>Ransomware:</strong> Encrypts files and demands payment</li>
+                            </ul>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Always keep your antivirus software updated and avoid downloading files from untrusted sources!</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Encryption</h2>
+                        <p>Encryption converts plaintext into ciphertext using an algorithm and a key. Only someone with the corresponding key can decrypt the message, ensuring privacy and security.</p>
+                        <div class="info-box">
+                            <p><strong>🔐 How it works:</strong> When you visit a website with HTTPS, encryption scrambles the data traveling between your browser and the server. Even if someone intercepts the data, they can't read it without the decryption key!</p>
+                        </div>
+                        <div class="highlight-box">
+                            <p><strong>Real-world example:</strong> When you send a message like "Hello" through encryption, it might become something like "X7k2pQ9" during transmission. Only the recipient with the key can convert it back to "Hello".</p>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Always look for the padlock icon in your browser's address bar—it means your connection is encrypted!</p>
+                    </div>
+                `,
+                question: {
+                    text: 'Which of the following is an example of malware?',
+                    options: [
+                        'A spreadsheet program',
+                        'An antivirus application',
+                        'A ransomware program',
+                        'A web browser'
+                    ],
+                    correct: 2
+                }
+            },
+            5: {
+                title: '📈 Lesson 5: Computing Impacts & Data Analysis',
+                subtitle: 'Explore how computing transforms society and learn why ethical considerations matter in our data-driven world!',
+                arcadeMode: 'tic',
+                arcadeTarget: 5,
+                arcadeMessage: 'Outsmart the quiz bot in a best-of-five tic-tac-toe duel.',
+                arcadeComplete: 'Insights gathered! Finish the reading to conquer Section 1.',
+                content: `
+                    <div class="section">
+                        <p>Computers have transformed society in countless ways. Big data and analytics allow us to discover patterns and make predictions, but they also raise important questions about privacy, bias, and the ethical use of information.</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Big Data</h2>
+                        <p>Big data refers to datasets that are too large or complex to be processed by traditional tools. These massive collections of information can reveal insights that were previously impossible to discover.</p>
+                        <div class="highlight-box">
+                            <p><strong>🔍 Technologies & Applications:</strong></p>
+                            <ul style="margin: 0.4rem 0 0 1.2rem; padding: 0;">
+                                <li><strong>Hadoop:</strong> Processes huge datasets across multiple computers</li>
+                                <li><strong>Cloud Computing:</strong> Provides scalable storage and processing power</li>
+                                <li><strong>Machine Learning:</strong> Finds patterns in complex data automatically</li>
+                            </ul>
+                        </div>
+                        <div class="highlight-box">
+                            <p><strong>Real-world examples:</strong> Streaming services analyze billions of viewing patterns to recommend shows. Healthcare systems analyze patient data to predict disease outbreaks. Social media platforms process millions of posts per second to detect trends.</p>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Big data helps us make better decisions, but requires powerful tools and careful analysis!</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Privacy & Ethics</h2>
+                        <p>Collecting and analyzing personal data can lead to discoveries that benefit society, but mishandling data can harm individuals. Ethical computing emphasizes transparency, fairness, and respect for user privacy.</p>
+                        <div class="ethics-box">
+                            <p><strong>⚖️ Key Ethical Principles:</strong></p>
+                            <ul style="margin: 0.4rem 0 0 1.2rem; padding: 0;">
+                                <li><strong>Transparency:</strong> Users should know what data is collected and how it's used</li>
+                                <li><strong>Consent:</strong> People should control their own information</li>
+                                <li><strong>Fairness:</strong> Algorithms should not discriminate or create bias</li>
+                                <li><strong>Privacy:</strong> Personal information must be protected from misuse</li>
+                            </ul>
+                        </div>
+                        <div class="ethics-box">
+                            <p><strong>⚠️ Ethical challenges:</strong> Facial recognition can identify criminals but also enable surveillance. AI hiring tools can speed up recruitment but may inherit human biases. Health data analysis can improve care but risks exposing sensitive information.</p>
+                        </div>
+                        <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 With great data comes great responsibility—ethical computing protects both individuals and society!</p>
+                    </div>
+                `,
+                question: {
+                    text: 'Why is ethical consideration important when analyzing personal data?',
+                    options: [
+                        'Ethics slow down analysis and should be avoided.',
+                        'To ensure fairness and protect privacy rights.',
+                        'Because algorithms always produce unbiased results.',
+                        'There is no need for ethics in data science.'
+                    ],
+                    correct: 1
+                }
+            }
+        };
+        
+        // Function to show lesson inline
+        function showInlineLesson(lessonNum) {
+            var lesson = LESSON_CONTENT[lessonNum];
+            if (!lesson) {
+                alert('Lesson content not found.');
+                return;
+            }
+            
+            var container = document.getElementById('inline-lesson-container');
+            var content = document.getElementById('inline-lesson-content');
+            
+            if (!container || !content) {
+                console.error('Inline lesson container not found');
+                return;
+            }
+            
+            // Build the HTML
+            var html = `
+                <div class="container">
+                    <div class="header">
+                        <h1>${lesson.title}</h1>
+                        <p>${lesson.subtitle}</p>
+                    </div>
+
+                    <div class="arcade-zone lesson-arcade" data-arcade-mode="${lesson.arcadeMode}" data-arcade-target="${lesson.arcadeTarget}" data-arcade-message="${lesson.arcadeMessage}" data-arcade-complete="${lesson.arcadeComplete}">
+                        <div class="arcade-header">
+                            <h2>Mini-Quest</h2>
+                            <p>${lesson.arcadeMessage}</p>
+                        </div>
+                        <div class="arcade-grid"></div>
+                        <div class="arcade-status">Use WASD or arrow keys to move.</div>
+                    </div>
+
+                    <div class="content">
+                        ${lesson.content}
+                        
+                        <div class="question">
+                            <h3>💡 Interactive Quiz</h3>
+                            <p>Test your knowledge! ${lesson.question.text}</p>
+                            ${lesson.question.code ? '<pre><code>' + lesson.question.code + '</code></pre>' : ''}
+                            <div class="options">
+                                ${lesson.question.options.map(function(opt, i) {
+                                    return '<label><input type="radio" name="inline-q' + lessonNum + '" value="' + i + '"><span>' + opt + '</span></label>';
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <button id="inline-complete-btn" data-lesson="${lessonNum}">
+                            <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            container.classList.add('active');
+            
+            // Scroll to the lesson
+            setTimeout(function() {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+            
+            // Initialize arcade using the exposed initZone function
+            setTimeout(function() {
+                var arcadeZone = content.querySelector('.lesson-arcade');
+                
+                if (!arcadeZone) {
+                    console.error('Arcade zone not found in content');
+                    return;
+                }
+                
+                console.log('🎮 Initializing arcade for lesson', lessonNum);
+                
+                // Method 1: Use the exposed initArcadeZone function (BEST)
+                if (typeof window.initArcadeZone === 'function') {
+                    try {
+                        window.initArcadeZone(arcadeZone);
+                        console.log('✓ Arcade initialized via window.initArcadeZone');
+                        
+                        // Verify it worked
+                        setTimeout(function() {
+                            if (arcadeZone.__arcadeState) {
+                                console.log('✓✓ Arcade fully functional!');
+                            } else {
+                                console.warn('Arcade zone initialized but no state found');
+                            }
+                        }, 100);
+                        return;
+                    } catch(e) {
+                        console.error('Failed to initialize arcade:', e);
+                    }
+                } else {
+                    console.error('❌ window.initArcadeZone is not available!');
+                    console.error('You need to modify lesson-arcade.js to expose the initZone function.');
+                    console.error('See ARCADE_FIX_INSTRUCTIONS.md for details.');
+                    console.error('Add this line to lesson-arcade.js:');
+                    console.error('    window.initArcadeZone = initZone;');
+                }
+                
+                // Method 2: Try reinitializeAllArcades as fallback
+                if (typeof window.reinitializeAllArcades === 'function') {
+                    console.log('Trying reinitializeAllArcades fallback...');
+                    window.reinitializeAllArcades();
+                }
+            }, 300);
+            
+            // Add complete button handler
+            var completeBtn = document.getElementById('inline-complete-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', function() {
+                    handleInlineLessonComplete(lessonNum);
+                });
+            }
+        }
+        
+        // Function to handle lesson completion
+        function handleInlineLessonComplete(lessonNum) {
+            var lesson = LESSON_CONTENT[lessonNum];
+            var selected = document.querySelector('input[name="inline-q' + lessonNum + '"]:checked');
+            
+            if (!selected) {
+                alert('Please select an answer before completing the lesson.');
+                return;
+            }
+            
+            var correct = (parseInt(selected.value) === lesson.question.correct);
+            
+            if (!correct) {
+                alert('Incorrect answer. Review the lesson and try again!');
+                return;
+            }
+            
+            var API_URL = 'http://localhost:8001/api';
+            
+            fetch(API_URL + '/snakes/complete-lesson', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ lesson_number: lessonNum, bullets_earned: 5 })
+            })
+            .then(function(res) {
+                if (res.ok) {
+                    alert('Lesson completed! You earned 5 bullets.');
+                    
+                    // Update game state
+                    if (typeof gameState !== 'undefined') {
+                        if (gameState.completedLessons.indexOf(lessonNum) === -1) {
+                            gameState.completedLessons.push(lessonNum);
+                        }
+                        gameState.bullets += 5;
+                        
+                        // Check if all lessons are complete
+                        var allComplete = true;
+                        for (var i = 1; i <= 5; i++) {
+                            if (gameState.completedLessons.indexOf(i) === -1) {
+                                allComplete = false;
+                                break;
+                            }
+                        }
+                        
+                        if (allComplete && gameState.unlockedSections.indexOf('half2') === -1) {
+                            gameState.unlockedSections.push('half2');
+                        }
+                        
+                        if (typeof updatePlayerInfo === 'function') updatePlayerInfo();
+                        if (typeof saveProgress === 'function') saveProgress();
+                    }
+                    
+                    // Hide the lesson
+                    var container = document.getElementById('inline-lesson-container');
+                    if (container) {
+                        container.classList.remove('active');
+                    }
+                    
+                    // Refresh the board
+                    if (typeof createGameBoard === 'function') {
+                        createGameBoard();
+                    }
+                } else {
+                    return res.json().then(function(data) {
+                        alert(data.error || 'Error completing lesson.');
+                    });
+                }
+            })
+            .catch(function(err) {
+                console.error(err);
+                alert('Network error. Please try again later.');
+            });
+        }
+        
         // CHARACTER CAROUSEL FUNCTIONALITY
-        // NOTE: This only handles visual cycling. Character selection is handled by snakes-game.js
         (function() {
-            // Wait for snakes-game.js to initialize first
             var initCarousel = function() {
                 var currentIndex = 0;
                 var cards = document.querySelectorAll('.character-card');
@@ -771,7 +1511,6 @@
                     });
                 }
                 
-                // Arrow button navigation
                 prevBtn.addEventListener('click', function() {
                     currentIndex = (currentIndex - 1 + cards.length) % cards.length;
                     updateCarousel();
@@ -782,11 +1521,8 @@
                     updateCarousel();
                 });
                 
-                // When a card is clicked (handled by snakes-game.js selectCharacter()),
-                // also update carousel position to center that card
                 cards.forEach(function(card, index) {
                     card.addEventListener('click', function() {
-                        // Move clicked card to center
                         if (index !== currentIndex) {
                             currentIndex = index;
                             updateCarousel();
@@ -794,7 +1530,6 @@
                     });
                 });
                 
-                // Keyboard navigation
                 document.addEventListener('keydown', function(e) {
                     var characterSelection = document.getElementById('character-selection');
                     if (!characterSelection || characterSelection.classList.contains('hidden')) return;
@@ -811,17 +1546,79 @@
                     }
                 });
                 
-                // Initialize carousel
                 updateCarousel();
             };
             
-            // Initialize after DOM is ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initCarousel);
             } else {
                 initCarousel();
             }
         })();
+        
+        // Override handleSquareEvent to show lessons inline
+        window.addEventListener('load', function() {
+            // Check if lesson-arcade.js loaded properly
+            setTimeout(function() {
+                if (!window.SnakesArcade) {
+                    console.error('SnakesArcade not loaded! Check if lesson-arcade.js is accessible.');
+                }
+            }, 1000);
+            
+            // Save original handleSquareEvent if it exists
+            if (typeof handleSquareEvent !== 'undefined') {
+                var originalHandleSquareEvent = handleSquareEvent;
+                
+                // Override with new version
+                window.handleSquareEvent = function() {
+                    var section = window.snakesGameSection || 1;
+                    var square = (typeof gameState !== 'undefined') ? gameState.currentSquare : 0;
+                    console.log('Section:', section, 'Square:', square);
+                    
+                    if (section === 1) {
+                        if (square === 0) {
+                            alert('This is START. Roll the dice to move to the first lesson.');
+                            return;
+                        }
+                        
+                        var FIRST_LESSON_COUNT = 5;
+                        
+                        if (square >= 1 && square <= FIRST_LESSON_COUNT) {
+                            var lessonNum = square;
+                            if (typeof gameState !== 'undefined' && gameState.completedLessons.indexOf(lessonNum) === -1) {
+                                showInlineLesson(lessonNum);
+                                return;
+                            }
+                            
+                            var allDone = true;
+                            if (typeof gameState !== 'undefined') {
+                                for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
+                                    if (gameState.completedLessons.indexOf(i) === -1) { 
+                                        allDone = false; 
+                                        break; 
+                                    }
+                                }
+                                if (allDone) {
+                                    if (gameState.unlockedSections.indexOf('half2') === -1) {
+                                        gameState.unlockedSections.push('half2');
+                                    }
+                                    if (typeof saveProgress === 'function') saveProgress();
+                                    alert('All lessons completed! You can now go to the next section.');
+                                } else {
+                                    alert('Lesson already complete. Finish all lessons to proceed.');
+                                }
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // For other cases, call original if it exists
+                    if (originalHandleSquareEvent) {
+                        originalHandleSquareEvent();
+                    }
+                };
+            }
+        });
     </script>
 </body>
 </html>

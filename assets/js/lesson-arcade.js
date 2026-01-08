@@ -463,4 +463,5 @@
     });
 
     window.SnakesArcade = Arcade;
+    window.initArcadeZone = initZone; // ✨ FIXED: Expose for dynamic arcade initialization
 })();
