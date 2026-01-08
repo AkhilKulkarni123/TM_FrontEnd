@@ -109,6 +109,16 @@ function initializeEventListeners() {
             body: JSON.stringify({ damage: 50 })
         }).catch(function () {});
     });
+// Close overlay button handler
+    var closeOverlayBtn = document.getElementById('close-overlay-btn');
+    if (closeOverlayBtn) {
+        closeOverlayBtn.addEventListener('click', function() {
+            var overlay = document.getElementById('locked-overlay');
+            if (overlay) overlay.style.display = 'none';
+            // Navigate back to part 1
+            window.location.href = 'game-board-part1.html';
+        });
+    }
 }
 
 function checkExistingLogin() {
