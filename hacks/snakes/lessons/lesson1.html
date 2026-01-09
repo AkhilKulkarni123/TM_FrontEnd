@@ -5,6 +5,7 @@
     <title>Lesson 1 – Algorithms & Programming Basics</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
     <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
+    <link rel="stylesheet" href="../../../assets/css/mini-games.css">
     <style>
         * {
             margin: 0;
@@ -246,13 +247,13 @@
             <p>Master the fundamental building blocks of programming: variables, conditionals, and loops. These concepts are the foundation of every algorithm!</p>
         </div>
 
-        <div class="arcade-zone lesson-arcade" data-arcade-mode="orb" data-arcade-target="3" data-arcade-message="Use WASD or arrow keys to collect all three idea orbs." data-arcade-complete="Arcade complete! You're ready for the reading.">
+        <div class="arcade-zone lesson-arcade compact" data-arcade-lesson="1" data-arcade-game="loopRacer" data-arcade-complete="Challenge complete! You're ready for the reading.">
             <div class="arcade-header">
-                <h2>Mini-Quest</h2>
-                <p>Guide your hero to collect glowing ideas before reading the lesson below.</p>
+                <h2>Loop Racer</h2>
+                <p>Guide your character through a maze using loop commands!</p>
             </div>
             <div class="arcade-grid"></div>
-            <div class="arcade-status">Use WASD or arrow keys to move.</div>
+            <div class="arcade-status">Complete the challenge to unlock the content.</div>
         </div>
 
         <div class="content">
@@ -315,6 +316,7 @@ console.log(total);</code></pre>
         </div>
     </div>
     </div>
+    <script src="../../../assets/js/mini-games.js"></script>
     <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8301/api';

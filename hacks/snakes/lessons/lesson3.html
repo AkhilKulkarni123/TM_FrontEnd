@@ -5,6 +5,7 @@
     <title>Lesson 3 – Internet & Networking</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
     <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
+    <link rel="stylesheet" href="../../../assets/css/mini-games.css">
     <style>
         * {
             margin: 0;
@@ -238,13 +239,13 @@
             <p>Discover how computers communicate across the globe through IP addresses, domain names, and the DNS system!</p>
         </div>
 
-        <div class="arcade-zone lesson-arcade" data-arcade-mode="tic" data-arcade-target="3" data-arcade-message="Face the AI in quiz-powered tic-tac-toe to stabilize the network." data-arcade-complete="Network stable! Continue below.">
+        <div class="arcade-zone lesson-arcade compact" data-arcade-lesson="3" data-arcade-game="ipAddressMatcher" data-arcade-complete="Network stable! Continue below.">
             <div class="arcade-header">
-                <h2>Network Hop Mini-Quest</h2>
-                <p>Collect all routing tokens with WASD or arrow keys to stabilize your connection.</p>
+                <h2>IP Address Matcher</h2>
+                <p>Connect devices to their correct IP addresses!</p>
             </div>
             <div class="arcade-grid"></div>
-            <div class="arcade-status">Collect routing tokens.</div>
+            <div class="arcade-status">Complete the challenge to unlock the content.</div>
         </div>
 
         <div class="content">
@@ -299,20 +300,21 @@
         </div>
     </div>
     </div>
+    <script src="../../../assets/js/mini-games.js"></script>
     <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8301/api';
 
         document.getElementById('complete-btn').addEventListener('click', async () => {
             const selected = document.querySelector('input[name="q1"]:checked');
-            
+
             if (!selected) {
                 alert('Please select an answer before completing the lesson.');
                 return;
             }
 
             const correct = (selected.value === '2');
-            
+
             if (!correct) {
                 alert('Incorrect. DNS translates domain names into IP addresses.');
                 return;

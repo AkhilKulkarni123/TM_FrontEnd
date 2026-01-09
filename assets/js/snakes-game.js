@@ -954,23 +954,76 @@ function showQuestionModal(square, row, index) {
     
     var arcadeZone = modal.querySelector('.question-arcade');
     if (arcadeZone) {
-        var arcadeModes = ['orb', 'sequence', 'tic'];
-        var chosenMode = arcadeModes[Math.abs(square + row + index) % arcadeModes.length];
-        arcadeZone.dataset.arcadeMode = chosenMode;
-        arcadeZone.querySelector('.arcade-header h3').textContent = 'Square ' + square + ' Mini Challenge';
-        
-        if (chosenMode === 'sequence') {
-            arcadeZone.dataset.arcadeTarget = 4;
-            arcadeZone.dataset.arcadeMessage = 'Memorize the flashing arrow pattern to prime your brain.';
-            arcadeZone.dataset.arcadeComplete = 'Pattern locked! Time to answer.';
-        } else if (chosenMode === 'tic') {
-            arcadeZone.dataset.arcadeMessage = 'Win a quiz-powered tic-tac-toe match to earn your attempt.';
-            arcadeZone.dataset.arcadeComplete = 'Nice victory! Answer to collect bullets.';
+        // Use MiniGames system for lesson-related games
+        var gameName = null;
+        var gameTitle = 'Mini Challenge';
+        var gameDesc = 'Complete the challenge!';
+
+        if (window.MiniGames) {
+            // Get the game distribution for this row (cached per row)
+            // Each row has 10 squares, each game appears twice
+            if (!window.questionGameDistributions) {
+                window.questionGameDistributions = {};
+            }
+            if (!window.questionGameDistributions[row]) {
+                // Get all 5 game names for this lesson
+                var gameNames = window.MiniGames.GAME_NAMES[row] || [];
+                if (gameNames.length >= 5) {
+                    // Each game appears twice for 10 squares total
+                    var fullDistribution = [];
+                    gameNames.forEach(function(name) {
+                        fullDistribution.push(name);
+                        fullDistribution.push(name);
+                    });
+                    // Shuffle the distribution
+                    for (var i = fullDistribution.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var temp = fullDistribution[i];
+                        fullDistribution[i] = fullDistribution[j];
+                        fullDistribution[j] = temp;
+                    }
+                    window.questionGameDistributions[row] = fullDistribution;
+                } else {
+                    // Fallback to basic distribution
+                    window.questionGameDistributions[row] = window.MiniGames.getGameDistributionForRow(row);
+                }
+            }
+            var distribution = window.questionGameDistributions[row];
+            gameName = distribution[index % distribution.length];
+
+            // Get game display name from the game object
+            var gameObj = window.MiniGames.getGame(row, gameName);
+            if (gameObj && gameObj.name) {
+                gameTitle = gameObj.name;
+            }
+
+            // Set attributes for MiniGames integration
+            arcadeZone.dataset.arcadeLesson = row;
+            arcadeZone.dataset.arcadeGame = gameName;
+            arcadeZone.classList.add('compact');
+            delete arcadeZone.dataset.arcadeMode; // Remove old mode attribute
+
+            gameDesc = 'Complete the ' + gameTitle + ' challenge to unlock the question!';
         } else {
-            arcadeZone.dataset.arcadeMessage = 'Move your hero with WASD or arrows while you prep for row ' + row + '.';
-            arcadeZone.dataset.arcadeComplete = 'Nice run! Now answer the question to earn bullets.';
+            // Fallback to old arcade modes if MiniGames not loaded
+            var arcadeModes = ['orb', 'sequence', 'tic'];
+            var chosenMode = arcadeModes[Math.abs(square + row + index) % arcadeModes.length];
+            arcadeZone.dataset.arcadeMode = chosenMode;
+
+            if (chosenMode === 'sequence') {
+                arcadeZone.dataset.arcadeTarget = 4;
+                gameDesc = 'Memorize the flashing arrow pattern to prime your brain.';
+            } else if (chosenMode === 'tic') {
+                gameDesc = 'Win a quiz-powered tic-tac-toe match to earn your attempt.';
+            } else {
+                gameDesc = 'Move your hero with WASD or arrows while you prep for row ' + row + '.';
+            }
         }
-        
+
+        arcadeZone.querySelector('.arcade-header h3').textContent = gameTitle;
+        arcadeZone.querySelector('.arcade-header p').textContent = gameDesc;
+        arcadeZone.dataset.arcadeComplete = 'Challenge complete! Now answer the question to earn bullets.';
+
         // Initialize arcade when modal opens
         if (typeof window.initArcadeZone === 'function') {
             try {

@@ -69,42 +69,6 @@
             transition: width 0.3s ease;
         }
 
-        .players-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(233, 69, 96, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 250px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .player-item {
-            padding: 8px;
-            margin-bottom: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .player-item.dead {
-            opacity: 0.4;
-            text-decoration: line-through;
-        }
-
-        .player-item.current-user {
-            border-left: 3px solid #ffd93d;
-            background: rgba(255, 217, 61, 0.2);
-        }
-
-        .player-item {
-            border-left: 3px solid transparent;
-        }
-
         @keyframes bounce {
             0%, 100% { transform: translateX(-50%) translateY(0); }
             50% { transform: translateX(-50%) translateY(-10px); }
@@ -189,15 +153,6 @@
             <div class="stat-label">💰 Bullets</div>
             <div class="stat-value" id="bulletsCount">50</div>
         </div>
-        <div class="stat-box">
-            <div class="stat-label">Players Alive</div>
-            <div class="stat-value" id="playersAlive">1</div>
-        </div>
-    </div>
-
-    <div class="players-panel">
-        <h3>🎮 Active Players</h3>
-        <div id="playersList"></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -258,7 +213,11 @@
                 size: 90,   // Increased from 80 to 90
                 health: 1000,
                 maxHealth: 1000,
-                angle: 0    // Add this line for rotation
+                angle: 0,    // For rotation
+                moveDirection: 1,  // 1 = right, -1 = left
+                moveSpeed: 2,      // Horizontal movement speed
+                verticalDirection: 1, // 1 = down, -1 = up
+                verticalSpeed: 0.5    // Vertical movement speed
             },
             playerBullets: [],
             bossProjectiles: [],
@@ -428,9 +387,6 @@
                 if (typeof room.boss_health === 'number') gameState.boss.health = room.boss_health;
                 if (typeof room.max_boss_health === 'number') gameState.boss.maxHealth = room.max_boss_health;
                 updateBossHealthBar();
-                if (typeof room.player_count !== 'undefined') {
-                    document.getElementById('playersAlive').textContent = room.player_count;
-                }
             }
             if (Array.isArray(players)) {
                 gameState.players = players;
@@ -466,6 +422,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             movePlayer();
+            moveBoss();  // Added boss movement
             moveBullets();
             moveBossProjectiles();
             spawnBossProjectiles();
@@ -524,15 +481,54 @@
         }
 
         function spawnBossProjectiles() {
-            if (Math.random() < 0.02) {
+            // Increased spawn rate from 0.02 to 0.06 (3x more frequent)
+            if (Math.random() < 0.06) {
                 const angle = Math.random() * Math.PI / 2 + Math.PI / 4;
                 gameState.bossProjectiles.push({
                     x: gameState.boss.x,
                     y: gameState.boss.y + gameState.boss.size,
                     size: 12,
-                    speed: 4,
-                    dx: Math.cos(angle) * 2 - 1
+                    speed: 5,  // Increased from 4 to 5
+                    dx: Math.cos(angle) * 2.5 - 1.25  // Wider spread
                 });
+            }
+            // Occasionally spawn a burst of projectiles
+            if (Math.random() < 0.01) {
+                for (let i = 0; i < 3; i++) {
+                    const burstAngle = (Math.PI / 4) + (i * Math.PI / 4);
+                    gameState.bossProjectiles.push({
+                        x: gameState.boss.x,
+                        y: gameState.boss.y + gameState.boss.size,
+                        size: 10,
+                        speed: 4,
+                        dx: Math.cos(burstAngle) * 2 - 1
+                    });
+                }
+            }
+        }
+
+        function moveBoss() {
+            const boss = gameState.boss;
+            const margin = 100;  // Keep boss away from edges
+
+            // Horizontal movement
+            boss.x += boss.moveSpeed * boss.moveDirection;
+
+            // Bounce off walls
+            if (boss.x >= canvas.width - margin) {
+                boss.moveDirection = -1;
+            } else if (boss.x <= margin) {
+                boss.moveDirection = 1;
+            }
+
+            // Vertical movement (slight bobbing)
+            boss.y += boss.verticalSpeed * boss.verticalDirection;
+
+            // Vertical bounds (keep boss in upper portion of screen)
+            if (boss.y >= 180) {
+                boss.verticalDirection = -1;
+            } else if (boss.y <= 80) {
+                boss.verticalDirection = 1;
             }
         }
 
@@ -654,27 +650,8 @@
         }
 
         function updatePlayersList() {
-            const list = document.getElementById('playersList');
-            list.innerHTML = '';
-            
-            gameState.players.forEach(player => {
-                const item = document.createElement('div');
-                item.className = 'player-item' + (player.lives <= 0 ? ' dead' : '');
-                
-                // Get character icon for this player
-                const playerChar = player.selected_character || 'knight';
-                const charConfig = CHARACTER_CONFIG[playerChar];
-                const charIcon = charConfig ? charConfig.icon : '🙂';
-                
-                item.innerHTML = `
-                    <span>${charIcon} ${player.username || player.name || 'Player'}</span>
-                    <span>❤️ ${player.lives}</span>
-                `;
-                list.appendChild(item);
-            });
-            
-            const alive = gameState.players.filter(p => p.lives > 0).length;
-            document.getElementById('playersAlive').textContent = alive;
+            // Players list panel removed - this function now just tracks player data internally
+            // The active players count is now shown on the game boards instead
         }
 
         function showMessage(msg) {

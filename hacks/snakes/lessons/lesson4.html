@@ -5,6 +5,7 @@
     <title>Lesson 4 – Cybersecurity & Encryption</title>
     <link rel="stylesheet" href="../../../assets/css/snakes-game.css">
     <link rel="stylesheet" href="../../../assets/css/lesson-arcade.css">
+    <link rel="stylesheet" href="../../../assets/css/mini-games.css">
     <style>
         * {
             margin: 0;
@@ -252,13 +253,13 @@
             <p>Learn how to protect digital systems from attacks and understand the power of encryption to keep data secure!</p>
         </div>
 
-        <div class="arcade-zone lesson-arcade" data-arcade-mode="sequence" data-arcade-target="4" data-arcade-message="Copy each flashing security pattern to sneak through the grid." data-arcade-complete="Firewall fortified! Jump into the reading.">
+        <div class="arcade-zone lesson-arcade compact" data-arcade-lesson="4" data-arcade-game="passwordStrengthSmash" data-arcade-complete="Firewall fortified! Jump into the reading.">
             <div class="arcade-header">
-                <h2>Firewall Sprint Mini-Quest</h2>
-                <p>Collect encryption keys hidden in the grid before tackling the lesson text.</p>
+                <h2>Password Strength Smash</h2>
+                <p>Rate passwords as weak, medium, or strong!</p>
             </div>
             <div class="arcade-grid"></div>
-            <div class="arcade-status">Collect all keys to charge your shield.</div>
+            <div class="arcade-status">Complete the challenge to unlock the content.</div>
         </div>
 
         <div class="content">
@@ -321,20 +322,21 @@
         </div>
     </div>
     </div>
+    <script src="../../../assets/js/mini-games.js"></script>
     <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
         const API_URL = 'http://localhost:8301/api';
 
         document.getElementById('complete-btn').addEventListener('click', async () => {
             const selected = document.querySelector('input[name="q1"]:checked');
-            
+
             if (!selected) {
                 alert('Please select an answer before completing the lesson.');
                 return;
             }
 
             const correct = (selected.value === '2');
-            
+
             if (!correct) {
                 alert('Incorrect. Ransomware is a type of malware.');
                 return;

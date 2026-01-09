@@ -26,6 +26,15 @@
         { prompt: 'API stands for...', options: ['Application Programming Interface', 'Advanced Program Interaction', 'Applied Protocol Input'], answer: 0 }
     ];
 
+    // Lesson to row mapping for game distribution
+    var LESSON_ROW_MAP = {
+        1: 1, // Lesson 1 -> Row 1 (Programming Basics)
+        2: 2, // Lesson 2 -> Row 2 (Data Structures)
+        3: 3, // Lesson 3 -> Row 3 (Internet & Networking)
+        4: 4, // Lesson 4 -> Row 4 (Cybersecurity)
+        5: 5  // Lesson 5 -> Row 5 (Data & Ethics)
+    };
+
     function getCharacterIcon(fallback) {
         try {
             var saved = localStorage.getItem('snakes_selected_character');
@@ -444,12 +453,126 @@
         return list[Math.floor(Math.random() * list.length)];
     }
 
+    /* === MODE: Custom Mini-Game from MiniGames system === */
+    function initCustomMiniGame(zone, lessonNumber, gameName) {
+        if (!window.MiniGames) {
+            console.warn('MiniGames not loaded, falling back to orb mode');
+            return initOrbMode(zone);
+        }
+
+        var grid = zone.querySelector('.arcade-grid');
+        if (!grid) return null;
+
+        zone.classList.add('mode-custom');
+
+        var game;
+        if (gameName) {
+            game = window.MiniGames.getGame(lessonNumber, gameName);
+        } else {
+            game = window.MiniGames.getLessonMiniGame(lessonNumber);
+        }
+
+        if (!game) {
+            console.warn('Game not found for lesson ' + lessonNumber + ', falling back to orb mode');
+            return initOrbMode(zone);
+        }
+
+        // Update header with game info
+        var header = zone.querySelector('.arcade-header');
+        if (header) {
+            var h2 = header.querySelector('h2');
+            var p = header.querySelector('p');
+            if (h2) h2.textContent = game.name;
+            if (p) p.textContent = game.description;
+        }
+
+        var state = {
+            zone: zone,
+            type: 'custom',
+            lessonNumber: lessonNumber,
+            gameName: gameName || 'lesson-game',
+            completed: false,
+            completeMessage: zone.dataset.arcadeComplete || 'Challenge complete! Continue below.'
+        };
+
+        // Initialize the game
+        game.init(grid, function(success, score) {
+            state.completed = success;
+            if (success) {
+                updateZoneStatus(zone, state.completeMessage, true);
+            } else {
+                updateZoneStatus(zone, 'Time\'s up! You can continue, but try to do better next time.');
+            }
+            // Store completion state
+            zone.dataset.arcadeCompleted = success ? 'true' : 'false';
+            zone.dataset.arcadeScore = score || 0;
+        });
+
+        updateZoneStatus(zone, 'Complete the challenge to unlock the content below.');
+        zone.__arcadeState = state;
+        return state;
+    }
+
     function initZone(zone) {
         var mode = (zone.dataset.arcadeMode || zone.dataset.arcadeStyle || '').toLowerCase();
+
+        // Check for custom mini-game mode
+        var lessonNumber = parseInt(zone.dataset.arcadeLesson || zone.dataset.lesson || 0);
+        var gameName = zone.dataset.arcadeGame || zone.dataset.game || '';
+
+        // If a lesson number is specified, use the MiniGames system
+        if (lessonNumber > 0 && window.MiniGames) {
+            return initCustomMiniGame(zone, lessonNumber, gameName);
+        }
+
+        // Fallback to original modes
         if (!mode || mode === 'random') mode = chooseMode(zone);
         zone.dataset.arcadeMode = mode;
         var builder = MODES[mode] || MODES.orb;
         builder(zone);
+    }
+
+    /**
+     * Initialize a mini-game for a specific lesson and game
+     * @param {HTMLElement} container - The container element
+     * @param {number} lessonNumber - The lesson number (1-5)
+     * @param {string} gameName - Optional specific game name
+     * @param {function} onComplete - Callback when game completes
+     */
+    function initLessonMiniGame(container, lessonNumber, gameName, onComplete) {
+        if (!window.MiniGames) {
+            console.error('MiniGames not loaded');
+            return null;
+        }
+
+        var game;
+        if (gameName) {
+            game = window.MiniGames.getGame(lessonNumber, gameName);
+        } else {
+            game = window.MiniGames.getLessonMiniGame(lessonNumber);
+        }
+
+        if (!game) {
+            console.error('Game not found for lesson ' + lessonNumber);
+            return null;
+        }
+
+        container.innerHTML = '<div class="arcade-grid"></div>';
+        var grid = container.querySelector('.arcade-grid');
+
+        return game.init(grid, onComplete || function() {});
+    }
+
+    /**
+     * Get a random game for a question square based on row
+     * @param {number} rowNumber - The row number (1-5)
+     * @returns {Object} Game info with name and game object
+     */
+    function getQuestionSquareGame(rowNumber) {
+        if (!window.MiniGames) return null;
+
+        var game = window.MiniGames.getRandomGameForLesson(rowNumber);
+        return game;
     }
 
     document.addEventListener('keydown', function (event) {
@@ -463,5 +586,7 @@
     });
 
     window.SnakesArcade = Arcade;
-    window.initArcadeZone = initZone; // ✨ FIXED: Expose for dynamic arcade initialization
+    window.initArcadeZone = initZone;
+    window.initLessonMiniGame = initLessonMiniGame;
+    window.getQuestionSquareGame = getQuestionSquareGame;
 })();

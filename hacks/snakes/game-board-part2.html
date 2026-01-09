@@ -10,6 +10,7 @@
     <title>Snakes and Ladders – Questions</title>
     <link rel="stylesheet" href="../../assets/css/snakes-game.css">
     <link rel="stylesheet" href="../../assets/css/lesson-arcade.css">
+    <link rel="stylesheet" href="../../assets/css/mini-games.css">
     <style>
         .navigation-buttons {
             display: flex;
@@ -304,6 +305,32 @@
             color: #999;
             text-align: center;
         }
+
+        .active-players-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75em;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+        }
     </style>
 </head>
 <body>
@@ -345,7 +372,13 @@
                         <h3>Question Gauntlet</h3>
                         <p>Row by row, earn bullets and stay ahead of the snakes! Take ladders up to progress faster!</p>
                     </div>
-                    <div class="status-pill">Section 2</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="active-players-badge" id="active-players-display" title="Players currently online">
+                            <span class="online-dot"></span>
+                            <span id="active-players-count">0</span> Online
+                        </div>
+                        <div class="status-pill">Section 2</div>
+                    </div>
                 </div>
                 <div class="board-stage">
                     <div class="board-grid-frame">
@@ -522,9 +555,42 @@
     <!-- Load scripts in correct order -->
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="questions/questions_bank.js"></script>
+    <script src="../../assets/js/mini-games.js"></script>
     <script src="../../assets/js/lesson-arcade.js"></script>
     <script>
         window.snakesGameSection = 2;
+
+        // Active Players Counter
+        (function() {
+            var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            var API_BASE = IS_LOCAL ? 'http://localhost:8301' : 'https://tm-flask-backend.onrender.com';
+
+            function fetchActivePlayers() {
+                fetch(API_BASE + '/api/snakes/leaderboard', { credentials: 'include' })
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        var count = 0;
+                        if (data && Array.isArray(data)) {
+                            // Count players active in last 24 hours (simplified: just show leaderboard count)
+                            count = data.length;
+                        }
+                        var el = document.getElementById('active-players-count');
+                        if (el) el.textContent = count;
+                    })
+                    .catch(function(err) {
+                        console.log('Could not fetch active players:', err);
+                    });
+            }
+
+            // Fetch on load and periodically
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fetchActivePlayers);
+            } else {
+                fetchActivePlayers();
+            }
+            // Refresh every 30 seconds
+            setInterval(fetchActivePlayers, 30000);
+        })();
     </script>
 </body>
 </html>
