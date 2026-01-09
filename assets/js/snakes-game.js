@@ -34,15 +34,7 @@ function $(selector) { return document.querySelector(selector); }
 function $all(selector) { return document.querySelectorAll(selector); }
 
 document.addEventListener('DOMContentLoaded', function () {
-    var hasStarted = false;
-    try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
-    if (hasStarted) {
-        var loginContainer = document.getElementById('login-container');
-        var characterSelection = document.getElementById('character-selection');
-        if (loginContainer) loginContainer.classList.add('hidden');
-        if (characterSelection) characterSelection.classList.add('hidden');
-    }
-    
+    // DON'T hide character selection here - let autoResumeIfReady handle it
     initializeEventListeners();
     checkExistingLogin().then(function () {
         autoResumeIfReady();
@@ -56,12 +48,8 @@ function initializeEventListeners() {
     var btnGuest = document.getElementById('play-as-guest');
     if (btnGuest) btnGuest.addEventListener('click', playAsGuest);
 
-    var characterCards = $all('.character-card');
-    for (var i = 0; i < characterCards.length; i++) {
-        (function (card) {
-            card.addEventListener('click', function () { selectCharacter(card); });
-        })(characterCards[i]);
-    }
+    // DON'T add click handlers to character cards here - carousel handles it
+    // The carousel will call selectCharacter only for the centered card
 
     var startBtn = document.getElementById('start-game-btn');
     if (startBtn) startBtn.addEventListener('click', startGame);
@@ -195,6 +183,8 @@ function loadOrCreateGameData() {
     return fetch(API_URL + '/snakes/', { credentials: 'include' })
         .then(function (response) {
             if (response.status === 404) {
+                // Create new game with current character
+                console.log('Creating new game data with character:', gameState.character);
                 return fetch(API_URL + '/snakes/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -219,7 +209,14 @@ function loadOrCreateGameData() {
             gameState.lives = Number(data.lives || 3);
             gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
             gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
-            gameState.character = data.selected_character || gameState.character;
+            
+            // IMPORTANT: Only load character from server if we don't have one selected yet
+            if (!gameState.character && data.selected_character) {
+                console.log('Loading character from server:', data.selected_character);
+                gameState.character = data.selected_character;
+            } else if (gameState.character) {
+                console.log('Keeping locally selected character:', gameState.character);
+            }
 
             if (gameState.timeStarted === null) {
                 gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
@@ -247,7 +244,14 @@ function loadProgress() {
             gameState.lives = Number(data.lives || gameState.lives);
             gameState.completedLessons = data.completed_lessons || [];
             gameState.unlockedSections = data.unlocked_sections || gameState.unlockedSections;
-            if (data.selected_character) gameState.character = data.selected_character;
+            
+            // IMPORTANT: Only load character from server if we don't have one selected yet
+            if (!gameState.character && data.selected_character) {
+                console.log('Loading character from progress:', data.selected_character);
+                gameState.character = data.selected_character;
+            } else if (gameState.character) {
+                console.log('Preserving selected character:', gameState.character);
+            }
 
             if (typeof data.time_played !== 'undefined' && data.time_played !== null) {
                 gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
@@ -286,13 +290,64 @@ function selectCharacter(card) {
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
     try { localStorage.setItem('snakes_selected_character', gameState.character); } catch (e) {}
+    
+    console.log('======================');
+    console.log('CHARACTER SELECTED:', gameState.character);
+    console.log('Card data-character:', card.getAttribute('data-character'));
+    console.log('Character name displayed:', card.querySelector('.character-name').textContent);
+    console.log('======================');
+    
+    // Visual feedback
+    var characterName = card.querySelector('.character-name').textContent;
+    alert('✓ ' + characterName + ' selected! Click START ADVENTURE to begin.');
+    
+    // Update UI immediately
     updatePlayerInfo();
-    if (!gameState.isGuest) {
-        loadOrCreateGameData().then(function () {
-            saveProgress().catch(function () {});
-        }).catch(function () {
-            saveProgress().catch(function () {});
-        });
+    
+    // Save to backend if not guest
+    if (!gameState.isGuest && gameState.userId) {
+        console.log('Saving character to backend:', gameState.character);
+        // First, create or load game data with the selected character
+        fetch(API_URL + '/snakes/', { credentials: 'include' })
+            .then(function (response) {
+                if (response.status === 404) {
+                    // Create new game entry with selected character
+                    console.log('Creating new game entry with character:', gameState.character);
+                    return fetch(API_URL + '/snakes/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ selected_character: gameState.character })
+                    });
+                } else {
+                    // Update existing game entry with selected character
+                    console.log('Updating existing game with character:', gameState.character);
+                    return fetch(API_URL + '/snakes/', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            selected_character: gameState.character,
+                            current_square: gameState.currentSquare + 1,
+                            visited_squares: gameState.visitedSquares.map(function (s) { return s + 1; }),
+                            total_bullets: gameState.bullets,
+                            time_played: gameState.timeElapsed,
+                            lives: gameState.lives,
+                            boss_battle_attempts: gameState.bossAttempts
+                        })
+                    });
+                }
+            })
+            .then(function(response) {
+                if (response && response.ok) {
+                    console.log('✓ Character saved successfully to backend');
+                } else {
+                    console.warn('⚠ Failed to save character to backend');
+                }
+            })
+            .catch(function (error) {
+                console.error('❌ Error saving character:', error);
+            });
     }
 
     var startBtn = document.getElementById('start-game-btn');
@@ -305,8 +360,21 @@ function startGame() {
         return;
     }
 
+    console.log('Starting game with character:', gameState.character);
+
     loadOrCreateGameData()
-        .then(function () { return loadProgress(); })
+        .then(function () { 
+            console.log('Game data loaded, character is:', gameState.character);
+            return loadProgress(); 
+        })
+        .then(function () {
+            console.log('Progress loaded, character is:', gameState.character);
+            
+            // Ensure character is saved after loading progress
+            if (gameState.character) {
+                return saveProgress();
+            }
+        })
         .then(function () {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
@@ -324,38 +392,21 @@ function startGame() {
             createGameBoard();
             updatePlayerInfo();
             checkSectionLock();
+            
+            console.log('Game started successfully with character:', gameState.character);
         });
 }
 
 function autoResumeIfReady() {
-    var hasStarted = false;
-    try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) { hasStarted = false; }
-    
-    if (gameState.userId) {
-        return loadProgress().then(function () {
-            if (gameState.character) {
-                var characterSelection = document.getElementById('character-selection');
-                var gameContainer = document.getElementById('game-container');
-                var loginContainer = document.getElementById('login-container');
-                if (characterSelection) characterSelection.classList.add('hidden');
-                if (gameContainer) gameContainer.classList.remove('hidden');
-                if (loginContainer) loginContainer.classList.add('hidden');
-
-                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
-                return;
-            }
-        }).catch(function () {});
-    }
-    
-    if (!hasStarted) {
-        return Promise.resolve();
-    }
-    
+    // Check if user has previously selected a character AND started the game
     var storedChar = null;
-    try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) { storedChar = null; }
-
-    if (storedChar && !gameState.character) {
+    try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) {}
+    
+    var hasStarted = false;
+    try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
+    
+    // Only auto-resume if BOTH character is selected AND game was started
+    if (storedChar && hasStarted && gameState.userId) {
         gameState.character = storedChar;
         gameState.isGuest = (localStorage.getItem('snakes_isGuest') === '1');
 
@@ -371,7 +422,8 @@ function autoResumeIfReady() {
             startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
         }).catch(function () {});
     }
-
+    
+    // Otherwise, show the appropriate screen (login or character selection)
     return Promise.resolve();
 }
 
@@ -486,7 +538,11 @@ function createGameBoard() {
 
 function getCharacterIcon(character) {
     var icons = { knight: '🛡️', wizard: '🧙', archer: '🏹', warrior: '⚔️' };
-    return icons[character] || '🙂';
+    var icon = icons[character] || '🙂';
+    if (icon === '🙂') {
+        console.warn('Character not recognized:', character, '- available characters:', Object.keys(icons));
+    }
+    return icon;
 }
 
 function updatePlayerInfo() {
@@ -496,6 +552,8 @@ function updatePlayerInfo() {
     var squareSpan = document.getElementById('player-square');
     var timeSpan = document.getElementById('player-time');
 
+    console.log('Updating player info with character:', gameState.character);
+    
     if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character);
     if (bulletsSpan) bulletsSpan.textContent = gameState.bullets;
     if (livesSpan) livesSpan.textContent = gameState.lives;
@@ -714,8 +772,8 @@ function showQuestionModal(square, row, index) {
             arcadeZone.dataset.arcadeComplete = 'Nice run! Now answer the question to earn bullets.';
         }
         
-        // CRITICAL FIX: Reinitialize the arcade when modal opens
-        if (window.SnakesArcade) {
+        // Initialize arcade when modal opens
+        if (typeof window.initArcadeZone === 'function') {
             try {
                 // Clear any existing arcade instance
                 var existingGrid = arcadeZone.querySelector('.arcade-grid');
@@ -723,7 +781,7 @@ function showQuestionModal(square, row, index) {
                     existingGrid.innerHTML = '';
                 }
                 // Create new arcade instance
-                new window.SnakesArcade(arcadeZone);
+                window.initArcadeZone(arcadeZone);
             } catch(e) {
                 console.warn('Could not initialize arcade:', e);
             }
