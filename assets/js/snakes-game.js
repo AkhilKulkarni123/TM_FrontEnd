@@ -3,7 +3,7 @@
  * Integrated version with question modals and all original features
  */
 
-var API_URL = 'http://localhost:8301/api';
+var API_URL = 'http://localhost:6/api';
 var FIRST_LESSON_COUNT = 5;
 var FIRST_SECTION_SIZE = FIRST_LESSON_COUNT + 1;
 var SECOND_SECTION_SIZE = 50;

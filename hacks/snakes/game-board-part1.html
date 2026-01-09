@@ -1792,7 +1792,7 @@ console.log(student.name); // 'Ada'</code></pre>
                 return;
             }
             
-            var API_URL = 'http://localhost:8301/api';
+            var API_URL = 'http://localhost:8306/api';
             
             fetch(API_URL + '/snakes/complete-lesson', {
                 method: 'POST',
@@ -2021,7 +2021,7 @@ console.log(student.name); // 'Ada'</code></pre>
         // Active Players Counter
         (function() {
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            var API_BASE = IS_LOCAL ? 'http://localhost:8301' : 'https://tm-flask-backend.onrender.com';
+            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
 
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/leaderboard', { credentials: 'include' })

@@ -563,7 +563,7 @@
         // Active Players Counter
         (function() {
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            var API_BASE = IS_LOCAL ? 'http://localhost:8301' : 'https://tm-flask-backend.onrender.com';
+            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
 
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/leaderboard', { credentials: 'include' })
