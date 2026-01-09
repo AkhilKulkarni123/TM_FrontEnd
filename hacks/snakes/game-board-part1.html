@@ -1198,6 +1198,91 @@
         </div>
     </div>
 
+    <!-- Player Info Modal -->
+    <div id="player-info-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content player-info-content">
+            <span class="close-modal close-player-info">&times;</span>
+            <div class="player-info-header">
+                <div class="player-info-character" id="popup-character-icon"></div>
+                <h2 id="popup-player-name">Player Name</h2>
+            </div>
+            <div class="player-info-body">
+                <div class="player-stat-row">
+                    <span class="stat-label">Character</span>
+                    <span class="stat-value" id="popup-character-name"></span>
+                </div>
+                <div class="player-stat-row">
+                    <span class="stat-label">Current Position</span>
+                    <span class="stat-value" id="popup-position"></span>
+                </div>
+                <div class="player-stat-row">
+                    <span class="stat-label">Total Bullets</span>
+                    <span class="stat-value" id="popup-bullets"></span>
+                </div>
+                <div class="player-stat-row">
+                    <span class="stat-label">Time Played</span>
+                    <span class="stat-value" id="popup-time"></span>
+                </div>
+                <div class="player-stat-row">
+                    <span class="stat-label">Lives</span>
+                    <span class="stat-value" id="popup-lives"></span>
+                </div>
+                <div class="player-stat-row">
+                    <span class="stat-label">Squares Visited</span>
+                    <span class="stat-value" id="popup-visited"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dice Animation Overlay -->
+    <div id="dice-overlay" class="dice-overlay hidden">
+        <div class="dice-container">
+            <div class="dice-scene">
+                <div class="dice-cube" id="dice-cube">
+                    <div class="dice-face dice-face-1">
+                        <span class="dice-dot center"></span>
+                    </div>
+                    <div class="dice-face dice-face-2">
+                        <span class="dice-dot top-left"></span>
+                        <span class="dice-dot bottom-right"></span>
+                    </div>
+                    <div class="dice-face dice-face-3">
+                        <span class="dice-dot top-left"></span>
+                        <span class="dice-dot center"></span>
+                        <span class="dice-dot bottom-right"></span>
+                    </div>
+                    <div class="dice-face dice-face-4">
+                        <span class="dice-dot top-left"></span>
+                        <span class="dice-dot top-right"></span>
+                        <span class="dice-dot bottom-left"></span>
+                        <span class="dice-dot bottom-right"></span>
+                    </div>
+                    <div class="dice-face dice-face-5">
+                        <span class="dice-dot top-left"></span>
+                        <span class="dice-dot top-right"></span>
+                        <span class="dice-dot center"></span>
+                        <span class="dice-dot bottom-left"></span>
+                        <span class="dice-dot bottom-right"></span>
+                    </div>
+                    <div class="dice-face dice-face-6">
+                        <span class="dice-dot top-left"></span>
+                        <span class="dice-dot top-right"></span>
+                        <span class="dice-dot middle-left"></span>
+                        <span class="dice-dot middle-right"></span>
+                        <span class="dice-dot bottom-left"></span>
+                        <span class="dice-dot bottom-right"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="dice-result-display" id="dice-result-display">
+                <span class="dice-result-text">You rolled</span>
+                <span class="dice-result-number" id="dice-result-number">6</span>
+            </div>
+        </div>
+    </div>
+
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="../../assets/js/lesson-arcade.js"></script>
     <script>
@@ -1673,7 +1758,7 @@ console.log(student.name); // 'Ada'</code></pre>
                 return;
             }
             
-            var API_URL = 'http://localhost:8001/api';
+            var API_URL = 'http://localhost:8301/api';
             
             fetch(API_URL + '/snakes/complete-lesson', {
                 method: 'POST',

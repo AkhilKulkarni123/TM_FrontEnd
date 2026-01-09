@@ -3,7 +3,7 @@
  * Integrated version with question modals and all original features
  */
 
-var API_URL = 'http://localhost:8001/api';
+var API_URL = 'http://localhost:8301/api';
 var FIRST_LESSON_COUNT = 5;
 var FIRST_SECTION_SIZE = FIRST_LESSON_COUNT + 1;
 var SECOND_SECTION_SIZE = 50;
@@ -28,6 +28,13 @@ var gameState = {
     timeElapsed: 0,
     bossAttempts: 0,
     socket: null
+};
+
+var multiplayerState = {
+    otherPlayers: [],
+    refreshInterval: null,
+    REFRESH_RATE_MS: 5000,
+    MAX_PLAYERS_ON_BOARD: 50
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -112,6 +119,21 @@ function initializeEventListeners() {
             var overlay = document.getElementById('locked-overlay');
             if (overlay) overlay.style.display = 'none';
             window.location.href = 'game-board-part1.html';
+        });
+    }
+
+    // Player info popup close handlers
+    var closePlayerInfo = document.querySelector('.close-player-info');
+    if (closePlayerInfo) {
+        closePlayerInfo.addEventListener('click', closePlayerInfoPopup);
+    }
+
+    var playerInfoModal = document.getElementById('player-info-modal');
+    if (playerInfoModal) {
+        playerInfoModal.addEventListener('click', function(e) {
+            if (e.target === playerInfoModal) {
+                closePlayerInfoPopup();
+            }
         });
     }
 }
@@ -392,7 +414,8 @@ function startGame() {
             createGameBoard();
             updatePlayerInfo();
             checkSectionLock();
-            
+            startMultiplayerRefresh();
+
             console.log('Game started successfully with character:', gameState.character);
         });
 }
@@ -419,7 +442,7 @@ function autoResumeIfReady() {
             if (loginContainer) loginContainer.classList.add('hidden');
 
             if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock();
+            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
         }).catch(function () {});
     }
     
@@ -477,6 +500,8 @@ function createGameBoard() {
                 square.appendChild(marker);
             }
 
+            renderOtherPlayersOnSquare(square, squareNum);
+
             row.appendChild(square);
         }
         board.appendChild(row);
@@ -530,6 +555,8 @@ function createGameBoard() {
                 square.appendChild(marker);
             }
 
+            renderOtherPlayersOnSquare(square, squareNum);
+
             rowDiv.appendChild(square);
         }
         board.appendChild(rowDiv);
@@ -543,6 +570,132 @@ function getCharacterIcon(character) {
         console.warn('Character not recognized:', character, '- available characters:', Object.keys(icons));
     }
     return icon;
+}
+
+// ============================================
+// MULTIPLAYER FUNCTIONS
+// ============================================
+
+function fetchAllPlayers() {
+    return fetch(API_URL + '/snakes/leaderboard?limit=' + multiplayerState.MAX_PLAYERS_ON_BOARD, {
+        credentials: 'include'
+    })
+    .then(function(response) {
+        if (!response.ok) throw new Error('Failed to fetch players');
+        return response.json();
+    })
+    .then(function(data) {
+        multiplayerState.otherPlayers = (data.leaderboard || []).filter(function(player) {
+            return player.user_id !== gameState.userId;
+        });
+        return multiplayerState.otherPlayers;
+    })
+    .catch(function(error) {
+        console.error('Error fetching players:', error);
+        return [];
+    });
+}
+
+function getPlayersOnSquare(squareNum) {
+    var apiSquareNum = squareNum + 1;
+    return multiplayerState.otherPlayers.filter(function(player) {
+        return player.current_square === apiSquareNum;
+    });
+}
+
+function renderOtherPlayersOnSquare(square, squareNum) {
+    var playersHere = getPlayersOnSquare(squareNum);
+    if (playersHere.length === 0) return;
+
+    var container = document.createElement('div');
+    container.className = 'other-players-container';
+
+    var maxVisible = 3;
+    var visiblePlayers = playersHere.slice(0, maxVisible);
+    var hiddenCount = playersHere.length - maxVisible;
+
+    visiblePlayers.forEach(function(player, index) {
+        var marker = document.createElement('div');
+        marker.className = 'other-player-marker';
+        marker.setAttribute('data-player-id', player.user_id);
+        marker.setAttribute('data-player-name', player.username);
+        marker.textContent = getCharacterIcon(player.selected_character);
+        marker.style.transform = 'translate(' + (index * 8) + 'px, ' + (index * -4) + 'px)';
+
+        marker.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showPlayerInfoPopup(player);
+        });
+
+        container.appendChild(marker);
+    });
+
+    if (hiddenCount > 0) {
+        var badge = document.createElement('div');
+        badge.className = 'player-count-badge';
+        badge.textContent = '+' + hiddenCount;
+        container.appendChild(badge);
+    }
+
+    square.appendChild(container);
+}
+
+function startMultiplayerRefresh() {
+    fetchAllPlayers().then(function() {
+        createGameBoard();
+    });
+
+    if (multiplayerState.refreshInterval) {
+        clearInterval(multiplayerState.refreshInterval);
+    }
+    multiplayerState.refreshInterval = setInterval(function() {
+        fetchAllPlayers().then(function() {
+            createGameBoard();
+        });
+    }, multiplayerState.REFRESH_RATE_MS);
+}
+
+function stopMultiplayerRefresh() {
+    if (multiplayerState.refreshInterval) {
+        clearInterval(multiplayerState.refreshInterval);
+        multiplayerState.refreshInterval = null;
+    }
+}
+
+function showPlayerInfoPopup(player) {
+    var modal = document.getElementById('player-info-modal');
+    if (!modal) return;
+
+    var characterIcon = document.getElementById('popup-character-icon');
+    var playerName = document.getElementById('popup-player-name');
+    var characterName = document.getElementById('popup-character-name');
+    var position = document.getElementById('popup-position');
+    var bullets = document.getElementById('popup-bullets');
+    var time = document.getElementById('popup-time');
+    var lives = document.getElementById('popup-lives');
+    var visited = document.getElementById('popup-visited');
+
+    if (characterIcon) characterIcon.textContent = getCharacterIcon(player.selected_character);
+    if (playerName) playerName.textContent = player.username || 'Unknown Player';
+    if (characterName) {
+        var charNames = { knight: 'Knight', wizard: 'Wizard', archer: 'Archer', warrior: 'Warrior' };
+        characterName.textContent = charNames[player.selected_character] || 'Unknown';
+    }
+    if (position) position.textContent = 'Square ' + (player.current_square || 1);
+    if (bullets) bullets.textContent = (player.total_bullets || 0) + ' bullets';
+    if (time) time.textContent = formatTime(player.time_played || 0);
+    if (lives) lives.textContent = (player.lives || 0) + ' remaining';
+    if (visited) {
+        var visitedCount = (player.visited_squares || []).length;
+        visited.textContent = visitedCount + ' squares';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closePlayerInfoPopup() {
+    var modal = document.getElementById('player-info-modal');
+    if (modal) modal.classList.add('hidden');
 }
 
 function updatePlayerInfo() {
@@ -597,12 +750,58 @@ function rollDice() {
         roll = Math.floor(Math.random() * 6) + 1;
     }
 
-    setTimeout(function () {
-        alert('You rolled a ' + roll + '!');
+    showDiceAnimation(roll).then(function() {
         movePlayer(roll).then(function () {
             if (diceBtn) diceBtn.disabled = false;
         });
-    }, 300);
+    });
+}
+
+function showDiceAnimation(roll) {
+    return new Promise(function(resolve) {
+        var overlay = document.getElementById('dice-overlay');
+        var cube = document.getElementById('dice-cube');
+        var resultDisplay = document.getElementById('dice-result-display');
+        var resultNumber = document.getElementById('dice-result-number');
+
+        if (!overlay || !cube) {
+            alert('You rolled a ' + roll + '!');
+            resolve();
+            return;
+        }
+
+        var faceRotations = {
+            1: 'rotateX(0deg) rotateY(0deg)',
+            2: 'rotateX(0deg) rotateY(90deg)',
+            3: 'rotateX(-90deg) rotateY(0deg)',
+            4: 'rotateX(90deg) rotateY(0deg)',
+            5: 'rotateX(0deg) rotateY(-90deg)',
+            6: 'rotateX(0deg) rotateY(180deg)'
+        };
+
+        overlay.classList.remove('hidden');
+        if (resultDisplay) resultDisplay.classList.remove('show');
+        cube.classList.remove('rolling');
+        cube.style.transform = '';
+
+        void cube.offsetWidth;
+
+        cube.classList.add('rolling');
+
+        setTimeout(function() {
+            cube.classList.remove('rolling');
+            cube.style.transform = faceRotations[roll];
+
+            if (resultNumber) resultNumber.textContent = roll;
+            if (resultDisplay) resultDisplay.classList.add('show');
+
+            setTimeout(function() {
+                overlay.classList.add('hidden');
+                cube.style.transform = '';
+                resolve();
+            }, 1200);
+        }, 1500);
+    });
 }
 
 function movePlayer(steps) {
