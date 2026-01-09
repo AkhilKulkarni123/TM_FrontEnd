@@ -1,12 +1,11 @@
 export const baseurl = "{{ site.baseurl }}";
 
-export var pythonURI;
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-    pythonURI = "http://localhost:8001";  // Same URI for localhost or 127.0.0.1
-} else {
-    pythonURI = "https://flask.opencodingsociety.com";
-
-}
+ export var pythonURI;
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+      pythonURI = "http://localhost:8301";  // Same URI for localhost or 127.0.0.1
+  } else {
+      pythonURI = "https://snakes.opencodingsociety.com";
+  }
 
 export var javaURI;
 
