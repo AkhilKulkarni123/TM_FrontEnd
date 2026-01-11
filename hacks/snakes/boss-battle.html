@@ -178,7 +178,7 @@
         const ctx = canvas.getContext('2d');
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
-        const BOSS_API_BASE = IS_LOCAL ? 'http://localhost:8587' : 'https://tm-flask-backend.onrender.com';
+        const BOSS_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
         const GAME_API_ROOT = GAME_API_BASE + '/api';
         const BOSS_API_ROOT = BOSS_API_BASE + '/api';
         canvas.width = window.innerWidth;
