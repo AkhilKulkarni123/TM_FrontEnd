@@ -842,6 +842,15 @@ function movePlayer(steps) {
         updatePlayerInfo();
         saveProgress();
 
+        // Add landing animation to player marker
+        var playerMarker = document.querySelector('.player-marker');
+        if (playerMarker) {
+            playerMarker.classList.add('landing');
+            setTimeout(function() {
+                playerMarker.classList.remove('landing');
+            }, 400);
+        }
+
         handleSquareEvent();
         resolve();
     });
@@ -1101,20 +1110,37 @@ function showQuestionModal(square, row, index) {
 }
 
 var snakesAndLaddersMap = {
-    9: 19,
-    13: 31,
-    24: 35,
-    29: 41,
-    16: 8,
-    38: 21,
-    45: 33,
-    51: 42
+    // LADDERS (10 total) - go UP from lower to higher square
+    7: 14,    // Ladder 1
+    9: 19,    // Ladder 2
+    12: 26,   // Ladder 3
+    13: 31,   // Ladder 4
+    21: 39,   // Ladder 5
+    24: 35,   // Ladder 6
+    29: 41,   // Ladder 7
+    33: 47,   // Ladder 8
+    36: 49,   // Ladder 9
+    43: 53,   // Ladder 10
+
+    // SNAKES (10 total) - go DOWN from higher to lower square
+    16: 8,    // Snake 1
+    18: 10,   // Snake 2
+    27: 15,   // Snake 3
+    32: 20,   // Snake 4
+    38: 22,   // Snake 5
+    40: 28,   // Snake 6
+    45: 34,   // Snake 7
+    48: 37,   // Snake 8
+    51: 42,   // Snake 9
+    54: 44    // Snake 10
 };
 
 function animateMoveToSquare(from, to) {
     var board = document.getElementById('game-board');
     var fromEl = board.querySelector('[data-square="' + from + '"]');
     var toEl = board.querySelector('[data-square="' + to + '"]');
+    var isLadder = to > from;
+
     if (!fromEl || !toEl) {
         gameState.currentSquare = to;
         if (gameState.visitedSquares.indexOf(to) === -1) gameState.visitedSquares.push(to);
@@ -1133,15 +1159,20 @@ function animateMoveToSquare(from, to) {
     var fromRect = fromEl.getBoundingClientRect();
     var toRect = toEl.getBoundingClientRect();
 
-    marker.style.left = (fromRect.left + (fromRect.width / 2) - 12) + 'px';
-    marker.style.top = (fromRect.top + (fromRect.height / 2) - 12) + 'px';
+    // Center the larger marker properly
+    marker.style.left = (fromRect.left + (fromRect.width / 2) - 20) + 'px';
+    marker.style.top = (fromRect.top + (fromRect.height / 2) - 20) + 'px';
     marker.style.transition = 'all 0.9s cubic-bezier(.2,.8,.2,1)';
 
-    if (to > from) marker.classList.add('ladder-anim'); else marker.classList.add('snake-anim');
+    if (isLadder) {
+        marker.classList.add('ladder-anim');
+    } else {
+        marker.classList.add('snake-anim');
+    }
 
     setTimeout(function () {
-        marker.style.left = (toRect.left + (toRect.width / 2) - 12) + 'px';
-        marker.style.top = (toRect.top + (toRect.height / 2) - 12) + 'px';
+        marker.style.left = (toRect.left + (toRect.width / 2) - 20) + 'px';
+        marker.style.top = (toRect.top + (toRect.height / 2) - 20) + 'px';
     }, 20);
 
     setTimeout(function () {
@@ -1149,6 +1180,23 @@ function animateMoveToSquare(from, to) {
         gameState.currentSquare = to;
         if (gameState.visitedSquares.indexOf(to) === -1) gameState.visitedSquares.push(to);
         createGameBoard(); updatePlayerInfo(); saveProgress();
+
+        // Add climbing or sliding animation to the player marker after landing
+        var playerMarker = document.querySelector('.player-marker');
+        if (playerMarker) {
+            if (isLadder) {
+                playerMarker.classList.add('climbing');
+                setTimeout(function() {
+                    playerMarker.classList.remove('climbing');
+                }, 800);
+            } else {
+                playerMarker.classList.add('sliding');
+                setTimeout(function() {
+                    playerMarker.classList.remove('sliding');
+                }, 800);
+            }
+        }
+
         handleSquareEvent();
     }, 1000);
 }
