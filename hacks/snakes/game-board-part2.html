@@ -337,6 +337,13 @@
             font-size: 0.75em;
             font-weight: bold;
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .active-players-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5);
         }
 
         .online-dot {
@@ -350,6 +357,128 @@
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.6; transform: scale(0.8); }
+        }
+
+        /* Online Players Modal */
+        .online-players-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .online-players-modal.active {
+            display: flex;
+        }
+
+        .online-players-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .online-players-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .online-players-header h3 {
+            margin: 0;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-players-close {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .online-players-close:hover {
+            color: #fff;
+        }
+
+        .online-players-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .online-player-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .online-player-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .online-player-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(79, 172, 254, 0.2);
+            border-radius: 50%;
+        }
+
+        .online-player-info {
+            flex: 1;
+        }
+
+        .online-player-name {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .online-player-details {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .online-player-status {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        .no-players-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
         }
     </style>
 </head>
@@ -572,6 +701,19 @@
         </div>
     </div>
 
+    <!-- Online Players Modal -->
+    <div id="online-players-modal" class="online-players-modal">
+        <div class="online-players-content">
+            <div class="online-players-header">
+                <h3><span class="online-dot"></span> Online Players</h3>
+                <button class="online-players-close" id="close-online-modal">&times;</button>
+            </div>
+            <ul class="online-players-list" id="online-players-list">
+                <!-- Players will be inserted here -->
+            </ul>
+        </div>
+    </div>
+
     <!-- Load scripts in correct order -->
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="questions/questions_bank.js"></script>
@@ -580,10 +722,23 @@
     <script>
         window.snakesGameSection = 2;
 
-        // Active Players Counter
+        // Active Players Counter and Modal
         (function() {
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
             var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
+            var cachedPlayers = [];
+
+            var CHARACTER_ICONS = {
+                knight: '🛡️',
+                wizard: '🧙',
+                archer: '🏹',
+                warrior: '⚔️',
+                default: '🙂'
+            };
+
+            function getCharacterIcon(character) {
+                return CHARACTER_ICONS[character] || CHARACTER_ICONS.default;
+            }
 
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
@@ -592,6 +747,7 @@
                         var count = 0;
                         if (data && typeof data.active_players === 'number') {
                             count = data.active_players;
+                            cachedPlayers = data.players || [];
                         }
                         var el = document.getElementById('active-players-count');
                         if (el) el.textContent = count;
@@ -601,14 +757,79 @@
                     });
             }
 
-            // Fetch on load and periodically
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', fetchActivePlayers);
-            } else {
-                fetchActivePlayers();
+            function showOnlinePlayersModal() {
+                var modal = document.getElementById('online-players-modal');
+                var list = document.getElementById('online-players-list');
+                if (!modal || !list) return;
+
+                // Clear existing content
+                list.innerHTML = '';
+
+                if (cachedPlayers.length === 0) {
+                    list.innerHTML = '<li class="no-players-message">No players currently online</li>';
+                } else {
+                    cachedPlayers.forEach(function(player) {
+                        var li = document.createElement('li');
+                        li.className = 'online-player-item';
+                        li.innerHTML =
+                            '<div class="online-player-icon">' + getCharacterIcon(player.selected_character) + '</div>' +
+                            '<div class="online-player-info">' +
+                                '<div class="online-player-name">' + (player.username || 'Unknown') + '</div>' +
+                                '<div class="online-player-details">Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
+                            '</div>' +
+                            '<div class="online-player-status"></div>';
+                        list.appendChild(li);
+                    });
+                }
+
+                modal.classList.add('active');
             }
-            // Refresh every 30 seconds
-            setInterval(fetchActivePlayers, 30000);
+
+            function hideOnlinePlayersModal() {
+                var modal = document.getElementById('online-players-modal');
+                if (modal) modal.classList.remove('active');
+            }
+
+            // Event listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                var badge = document.getElementById('active-players-display');
+                if (badge) {
+                    badge.addEventListener('click', function() {
+                        // Refresh the list before showing
+                        fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
+                            .then(function(res) { return res.ok ? res.json() : null; })
+                            .then(function(data) {
+                                if (data) {
+                                    cachedPlayers = data.players || [];
+                                    var el = document.getElementById('active-players-count');
+                                    if (el) el.textContent = data.active_players || 0;
+                                }
+                                showOnlinePlayersModal();
+                            })
+                            .catch(function() {
+                                showOnlinePlayersModal();
+                            });
+                    });
+                }
+
+                var closeBtn = document.getElementById('close-online-modal');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', hideOnlinePlayersModal);
+                }
+
+                var modal = document.getElementById('online-players-modal');
+                if (modal) {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) hideOnlinePlayersModal();
+                    });
+                }
+
+                // Initial fetch
+                fetchActivePlayers();
+            });
+
+            // Refresh every 10 seconds
+            setInterval(fetchActivePlayers, 10000);
         })();
     </script>
 </body>
