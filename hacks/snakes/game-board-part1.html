@@ -2024,13 +2024,12 @@ console.log(student.name); // 'Ada'</code></pre>
             var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
 
             function fetchActivePlayers() {
-                fetch(API_BASE + '/api/snakes/leaderboard', { credentials: 'include' })
+                fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
                     .then(function(res) { return res.ok ? res.json() : null; })
                     .then(function(data) {
                         var count = 0;
-                        if (data && Array.isArray(data)) {
-                            // Count players active in last 24 hours (simplified: just show leaderboard count)
-                            count = data.length;
+                        if (data && typeof data.active_players === 'number') {
+                            count = data.active_players;
                         }
                         var el = document.getElementById('active-players-count');
                         if (el) el.textContent = count;

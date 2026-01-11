@@ -131,10 +131,10 @@
 
         .question-modal-content {
             background: white;
-            border-radius: 20px;
-            max-width: 700px;
+            border-radius: 16px;
+            max-width: 600px;
             width: 100%;
-            max-height: 85vh;
+            max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             animation: slideUp 0.4s ease-out;
@@ -170,97 +170,117 @@
         .question-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 20px 20px 0 0;
+            padding: 1rem 1.5rem;
+            border-radius: 16px 16px 0 0;
         }
 
         .question-header h2 {
             margin: 0;
-            font-size: 1.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .question-header p {
-            margin: 0.5rem 0 0 0;
+            margin: 0.25rem 0 0 0;
             opacity: 0.95;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
 
         .question-body {
-            padding: 2rem;
+            padding: 1.25rem;
         }
 
-        .arcade-zone {
+        .question-body .arcade-zone {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            padding: 0.75rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .arcade-header h3 {
+        .question-body .arcade-header {
+            margin-bottom: 0.5rem;
+        }
+
+        .question-body .arcade-header h3 {
             color: white;
-            font-size: 1.2rem;
-            margin: 0 0 0.5rem 0;
+            font-size: 0.95rem;
+            margin: 0 0 0.25rem 0;
         }
 
-        .arcade-header p {
+        .question-body .arcade-header p {
             color: rgba(255, 255, 255, 0.9);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             margin: 0;
         }
 
-        .arcade-grid {
+        .question-body .arcade-grid {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            min-height: 200px;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            min-height: 120px;
+            max-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .arcade-status {
+        .question-body .arcade-status {
             color: white;
             text-align: center;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
             font-weight: bold;
         }
 
+        /* When arcade is complete, shrink it further */
+        .question-body .arcade-zone.arcade-complete {
+            padding: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .question-body .arcade-zone.arcade-complete .arcade-grid {
+            min-height: 60px;
+            max-height: 80px;
+        }
+
         .question-prompt {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #2b2c4a;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
+            margin-bottom: 1rem;
+            line-height: 1.5;
             font-weight: 500;
         }
 
         .question-options {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .question-options label {
             background: rgba(102, 126, 234, 0.08);
-            padding: 1rem 1.2rem;
-            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.6rem;
+            font-size: 0.95rem;
         }
 
         .question-options label:hover {
             background: rgba(102, 126, 234, 0.15);
-            transform: translateX(5px);
+            transform: translateX(3px);
             border-color: rgba(102, 126, 234, 0.3);
         }
 
         .question-options input[type="radio"] {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
             accent-color: #667eea;
             flex-shrink: 0;
@@ -274,24 +294,24 @@
 
         .question-submit {
             width: 100%;
-            margin-top: 1.5rem;
-            padding: 1rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
             background: linear-gradient(135deg, #ff9966, #ff5e62);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(255, 94, 98, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .question-submit:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 94, 98, 0.5);
+            box-shadow: 0 6px 20px rgba(255, 94, 98, 0.5);
         }
 
         .question-submit:disabled {
@@ -300,8 +320,8 @@
         }
 
         .question-meta {
-            margin-top: 1rem;
-            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
             color: #999;
             text-align: center;
         }
@@ -566,13 +586,12 @@
             var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
 
             function fetchActivePlayers() {
-                fetch(API_BASE + '/api/snakes/leaderboard', { credentials: 'include' })
+                fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
                     .then(function(res) { return res.ok ? res.json() : null; })
                     .then(function(data) {
                         var count = 0;
-                        if (data && Array.isArray(data)) {
-                            // Count players active in last 24 hours (simplified: just show leaderboard count)
-                            count = data.length;
+                        if (data && typeof data.active_players === 'number') {
+                            count = data.active_players;
                         }
                         var el = document.getElementById('active-players-count');
                         if (el) el.textContent = count;
