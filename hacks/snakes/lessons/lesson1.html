@@ -319,18 +319,72 @@ console.log(total);</code></pre>
     <script src="../../../assets/js/mini-games.js"></script>
     <script src="../../../assets/js/lesson-arcade.js"></script>
     <script>
-        const API_URL = 'http://localhost:8306/api';
+        var API_URL;
+        if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+            API_URL = "http://localhost:8306/api";
+        } else {
+            API_URL = "https://snakes.opencodingsociety.com/api";
+        }
+
+        // Track mini-game completion
+        let miniGameCompleted = false;
+
+        // Disable quiz and complete button initially
+        function updateQuizState() {
+            const quizOptions = document.querySelectorAll('.question input[type="radio"]');
+            const completeBtn = document.getElementById('complete-btn');
+
+            if (!miniGameCompleted) {
+                quizOptions.forEach(opt => opt.disabled = true);
+                completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.5';
+                completeBtn.style.cursor = 'not-allowed';
+            } else {
+                quizOptions.forEach(opt => opt.disabled = false);
+                completeBtn.disabled = false;
+                completeBtn.style.opacity = '1';
+                completeBtn.style.cursor = 'pointer';
+            }
+        }
+
+        // Check for mini-game completion periodically
+        // ONLY checks for arcadeCompleted='true' which is set by MiniGames system on successful completion
+        function checkMiniGameCompletion() {
+            const arcadeZone = document.querySelector('.arcade-zone');
+            // Only unlock if the game was successfully completed (not just finished/timed out)
+            if (arcadeZone && arcadeZone.dataset.arcadeCompleted === 'true') {
+                miniGameCompleted = true;
+                updateQuizState();
+                return;
+            }
+            // Keep checking if not completed
+            if (!miniGameCompleted) {
+                setTimeout(checkMiniGameCompletion, 500);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateQuizState();
+            checkMiniGameCompletion();
+        });
 
         document.getElementById('complete-btn').addEventListener('click', async () => {
+            // Check mini-game completion first
+            if (!miniGameCompleted) {
+                alert('Please complete the mini-game challenge before answering the quiz!');
+                return;
+            }
+
             const selected = document.querySelector('input[name="q1"]:checked');
-            
+
             if (!selected) {
                 alert('Please select an answer before completing the lesson.');
                 return;
             }
 
             const correct = (selected.value === '6');
-            
+
             if (!correct) {
                 alert('Incorrect answer. Review the lesson and try again!');
                 return;

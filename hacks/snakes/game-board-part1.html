@@ -61,6 +61,32 @@
             display: none;
             position: relative;
         }
+
+        #inline-lesson-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #666;
+            z-index: 100;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+        }
+
+        #inline-lesson-close:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: scale(1.1);
+        }
         
         /* Make board shell more compact */
         .board-shell {
@@ -1467,123 +1493,77 @@
         // We need to manually trigger initialization like the script does
         
         // Replicate the initZone function from lesson-arcade.js
+        // Initialize arcade zone using MiniGames system
         window.initializeArcadeZone = function(zone) {
-            console.log('🎮 Manually initializing arcade zone...');
-            
+            console.log('🎮 Initializing arcade zone with MiniGames...');
+
             if (!zone) {
                 console.error('No zone provided');
                 return false;
             }
-            
+
             // Make sure it has the right class
             if (!zone.classList.contains('arcade-zone')) {
                 zone.classList.add('arcade-zone');
             }
-            
-            // Get the mode from data attributes
-            var mode = (zone.dataset.arcadeMode || zone.dataset.arcadeStyle || '').toLowerCase();
-            
-            // If no mode or random, pick one
-            if (!mode || mode === 'random') {
-                var modes = ['orb', 'sequence', 'tic'];
-                mode = modes[Math.floor(Math.random() * modes.length)];
-                zone.dataset.arcadeMode = mode;
+
+            // Use the global initArcadeZone from lesson-arcade.js
+            if (typeof window.initArcadeZone === 'function') {
+                window.initArcadeZone(zone);
+                console.log('✓ Arcade zone initialized with MiniGames');
+                return true;
+            } else {
+                console.error('initArcadeZone not available');
+                return false;
             }
-            
-            console.log('Initializing arcade mode:', mode);
-            console.log('Target:', zone.dataset.arcadeTarget);
-            console.log('Message:', zone.dataset.arcadeMessage);
-            
-            // The lesson-arcade.js has internal functions for each mode
-            // Since we can't access them directly, we trigger a DOM event
-            // that the script might pick up, or we wait for the zone to be initialized
-            
-            // Dispatch an event in case the script listens for it
-            try {
-                var event = new Event('DOMContentLoaded');
-                document.dispatchEvent(event);
-            } catch(e) {}
-            
-            // Alternative: Manually query and initialize arcade zones
-            // by simulating what DOMContentLoaded does
-            setTimeout(function() {
-                // Check if the zone got initialized (it will have __arcadeState)
-                if (zone.__arcadeState) {
-                    console.log('✓ Arcade zone initialized successfully');
-                    console.log('Zone state:', zone.__arcadeState);
-                } else {
-                    console.warn('⚠️ Zone not initialized by arcade script');
-                    console.warn('The lesson-arcade.js initZone function may need to be called directly');
-                    console.warn('Consider adding: window.initArcadeZone = initZone; to lesson-arcade.js');
-                }
-            }, 200);
-            
-            return true;
         };
-        
-        // Force re-initialization by simulating DOMContentLoaded
+
+        // Reinitialize all arcade zones
         window.reinitializeAllArcades = function() {
             console.log('🔄 Reinitializing all arcade zones...');
-            
-            // Get all arcade zones
-            var zones = document.querySelectorAll('.arcade-zone, .lesson-arcade, .question-arcade');
+
+            var zones = document.querySelectorAll('.arcade-zone, .lesson-arcade');
             console.log('Found', zones.length, 'arcade zones');
-            
+
             zones.forEach(function(zone, index) {
-                console.log('Zone', index + 1, ':', {
-                    hasClass: zone.classList.contains('arcade-zone'),
-                    hasState: !!zone.__arcadeState,
-                    mode: zone.dataset.arcadeMode
-                });
-                
-                // If zone doesn't have state, try to initialize it
-                if (!zone.__arcadeState) {
-                    console.log('Attempting to initialize zone', index + 1);
-                    window.initializeArcadeZone(zone);
+                if (!zone.__arcadeState && typeof window.initArcadeZone === 'function') {
+                    console.log('Initializing zone', index + 1);
+                    window.initArcadeZone(zone);
                 }
             });
         };
         
         window.snakesGameSection = 1;
-        
+
         // Debug info
         window.addEventListener('load', function() {
             setTimeout(function() {
                 console.log('=== ARCADE DEBUG ===');
-                console.log('SnakesArcade:', typeof window.SnakesArcade);
+                console.log('MiniGames:', typeof window.MiniGames);
                 console.log('initArcadeZone:', typeof window.initArcadeZone);
-                
-                if (typeof window.initArcadeZone !== 'function') {
-                    console.error('');
-                    console.error('⚠️⚠️⚠️ ARCADE NOT PROPERLY CONFIGURED ⚠️⚠️⚠️');
-                    console.error('');
-                    console.error('The lesson-arcade.js file needs to be modified to expose');
-                    console.error('the initZone function. Here\'s how:');
-                    console.error('');
-                    console.error('1. Open: assets/js/lesson-arcade.js');
-                    console.error('2. Find the line: window.SnakesArcade = Arcade;');
-                    console.error('3. Add below it: window.initArcadeZone = initZone;');
-                    console.error('4. Save and refresh');
-                    console.error('');
-                    console.error('See ARCADE_FIX_INSTRUCTIONS.md for detailed steps');
-                    console.error('');
+
+                if (typeof window.MiniGames !== 'object') {
+                    console.error('MiniGames system not loaded!');
                 } else {
-                    console.log('✓ Arcade properly configured!');
+                    console.log('✓ MiniGames system loaded');
                 }
-                
+
+                if (typeof window.initArcadeZone === 'function') {
+                    console.log('✓ Arcade system ready');
+                }
                 console.log('==================');
             }, 500);
         });
         
-        // Inline Lesson Content Storage
+        // Inline Lesson Content Storage - Uses MiniGames system
         var LESSON_CONTENT = {
             1: {
                 title: '🎯 Lesson 1: Algorithms & Programming Basics',
                 subtitle: 'Master the fundamental building blocks of programming: variables, conditionals, and loops. These concepts are the foundation of every algorithm!',
-                arcadeMode: 'orb',
-                arcadeTarget: 3,
-                arcadeMessage: 'Use WASD or arrow keys to collect all three idea orbs.',
-                arcadeComplete: 'Arcade complete! You\'re ready for the reading.',
+                arcadeLesson: 1,
+                arcadeGame: 'loopRacer',
+                arcadeMessage: 'Guide your character through the maze using loop commands!',
+                arcadeComplete: 'Challenge complete! You\'re ready for the reading.',
                 content: `
                     <div class="section">
                         <h2>Variables</h2>
@@ -1624,10 +1604,10 @@ console.log(total);`,
             2: {
                 title: '📊 Lesson 2: Data Structures',
                 subtitle: 'Learn how to organize and store data efficiently using arrays and objects—two fundamental data structures in programming!',
-                arcadeMode: 'sequence',
-                arcadeTarget: 4,
-                arcadeMessage: 'Memorize the dataset directions and replay them to unlock the reading.',
-                arcadeComplete: 'Inventory stocked! Time to study.',
+                arcadeLesson: 2,
+                arcadeGame: 'arrayAssembler',
+                arcadeMessage: 'Assemble array elements in the correct order!',
+                arcadeComplete: 'Challenge complete! Time to study.',
                 content: `
                     <div class="section">
                         <h2>Arrays</h2>
@@ -1655,9 +1635,9 @@ console.log(student.name); // 'Ada'</code></pre>
             3: {
                 title: '🌐 Lesson 3: Internet & Networking',
                 subtitle: 'Discover how computers communicate across the globe through IP addresses, domain names, and the DNS system!',
-                arcadeMode: 'tic',
-                arcadeTarget: 3,
-                arcadeMessage: 'Face the AI in quiz-powered tic-tac-toe to stabilize the network.',
+                arcadeLesson: 3,
+                arcadeGame: 'ipAddressMatcher',
+                arcadeMessage: 'Match IP addresses to their network classes!',
                 arcadeComplete: 'Network stable! Continue below.',
                 content: `
                     <div class="section">
@@ -1696,9 +1676,9 @@ console.log(student.name); // 'Ada'</code></pre>
             4: {
                 title: '🔒 Lesson 4: Cybersecurity & Encryption',
                 subtitle: 'Learn how to protect digital systems from attacks and understand the power of encryption to keep data secure!',
-                arcadeMode: 'sequence',
-                arcadeTarget: 4,
-                arcadeMessage: 'Copy each flashing security pattern to sneak through the grid.',
+                arcadeLesson: 4,
+                arcadeGame: 'passwordStrengthSmash',
+                arcadeMessage: 'Test password strength to fortify the firewall!',
                 arcadeComplete: 'Firewall fortified! Jump into the reading.',
                 content: `
                     <div class="section">
@@ -1745,9 +1725,9 @@ console.log(student.name); // 'Ada'</code></pre>
             5: {
                 title: '📈 Lesson 5: Computing Impacts & Data Analysis',
                 subtitle: 'Explore how computing transforms society and learn why ethical considerations matter in our data-driven world!',
-                arcadeMode: 'tic',
-                arcadeTarget: 5,
-                arcadeMessage: 'Outsmart the quiz bot in a best-of-five tic-tac-toe duel.',
+                arcadeLesson: 5,
+                arcadeGame: 'biasBuster',
+                arcadeMessage: 'Identify biased datasets and ethical concerns!',
                 arcadeComplete: 'Insights gathered! Finish the reading to conquer Section 1.',
                 content: `
                     <div class="section">
@@ -1803,139 +1783,205 @@ console.log(student.name); // 'Ada'</code></pre>
         };
         
         // Function to show lesson inline
+        // Track mini-game completion for inline lessons
+        var inlineLessonMiniGameCompleted = false;
+        var currentInlineLessonNum = 0;
+
+        function updateInlineQuizState() {
+            var quizOptions = document.querySelectorAll('#inline-lesson-container .options input[type="radio"]');
+            var completeBtn = document.getElementById('inline-complete-btn');
+
+            if (!inlineLessonMiniGameCompleted) {
+                quizOptions.forEach(function(opt) { opt.disabled = true; });
+                if (completeBtn) {
+                    completeBtn.disabled = true;
+                    completeBtn.style.opacity = '0.5';
+                    completeBtn.style.cursor = 'not-allowed';
+                }
+            } else {
+                quizOptions.forEach(function(opt) { opt.disabled = false; });
+                if (completeBtn) {
+                    completeBtn.disabled = false;
+                    completeBtn.style.opacity = '1';
+                    completeBtn.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        function checkInlineMiniGameCompletion() {
+            var container = document.getElementById('inline-lesson-container');
+            if (!container || !container.classList.contains('active')) return;
+
+            var arcadeZone = container.querySelector('.arcade-zone');
+            if (arcadeZone && arcadeZone.dataset.arcadeCompleted === 'true') {
+                inlineLessonMiniGameCompleted = true;
+                updateInlineQuizState();
+                return;
+            }
+            // Keep checking
+            if (!inlineLessonMiniGameCompleted) {
+                setTimeout(checkInlineMiniGameCompletion, 500);
+            }
+        }
+
         function showInlineLesson(lessonNum) {
             var lesson = LESSON_CONTENT[lessonNum];
             if (!lesson) {
                 alert('Lesson content not found.');
                 return;
             }
-            
+
             var container = document.getElementById('inline-lesson-container');
             var content = document.getElementById('inline-lesson-content');
-            
+
             if (!container || !content) {
                 console.error('Inline lesson container not found');
                 return;
             }
-            
+
+            // Reset mini-game completion state
+            inlineLessonMiniGameCompleted = false;
+            currentInlineLessonNum = lessonNum;
+
             // Build the HTML
             var html = `
+                <button id="inline-lesson-close" title="Close lesson">&times;</button>
                 <div class="container">
                     <div class="header">
                         <h1>${lesson.title}</h1>
                         <p>${lesson.subtitle}</p>
                     </div>
 
-                    <div class="arcade-zone lesson-arcade" data-arcade-mode="${lesson.arcadeMode}" data-arcade-target="${lesson.arcadeTarget}" data-arcade-message="${lesson.arcadeMessage}" data-arcade-complete="${lesson.arcadeComplete}">
+                    <div class="arcade-zone lesson-arcade compact" data-arcade-lesson="${lesson.arcadeLesson}" data-arcade-game="${lesson.arcadeGame}" data-arcade-complete="${lesson.arcadeComplete}">
                         <div class="arcade-header">
-                            <h2>Mini-Quest</h2>
+                            <h2>Mini Challenge</h2>
                             <p>${lesson.arcadeMessage}</p>
                         </div>
                         <div class="arcade-grid"></div>
-                        <div class="arcade-status">Use WASD or arrow keys to move.</div>
+                        <div class="arcade-status">Complete the challenge to unlock the content.</div>
                     </div>
 
                     <div class="content">
                         ${lesson.content}
-                        
+
                         <div class="question">
                             <h3>💡 Interactive Quiz</h3>
-                            <p>Test your knowledge! ${lesson.question.text}</p>
+                            <p>Complete the mini-game above, then test your knowledge! ${lesson.question.text}</p>
                             ${lesson.question.code ? '<pre><code>' + lesson.question.code + '</code></pre>' : ''}
                             <div class="options">
                                 ${lesson.question.options.map(function(opt, i) {
-                                    return '<label><input type="radio" name="inline-q' + lessonNum + '" value="' + i + '"><span>' + opt + '</span></label>';
+                                    return '<label><input type="radio" name="inline-q' + lessonNum + '" value="' + i + '" disabled><span>' + opt + '</span></label>';
                                 }).join('')}
                             </div>
                         </div>
 
-                        <button id="inline-complete-btn" data-lesson="${lessonNum}">
+                        <button id="inline-complete-btn" data-lesson="${lessonNum}" disabled style="opacity: 0.5; cursor: not-allowed;">
                             <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
                         </button>
                     </div>
                 </div>
             `;
-            
+
             content.innerHTML = html;
             container.classList.add('active');
-            
+
             // Scroll to the lesson
             setTimeout(function() {
                 container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
-            
+
             // Initialize arcade using the exposed initZone function
             setTimeout(function() {
                 var arcadeZone = content.querySelector('.lesson-arcade');
-                
+
                 if (!arcadeZone) {
                     console.error('Arcade zone not found in content');
                     return;
                 }
-                
+
                 console.log('🎮 Initializing arcade for lesson', lessonNum);
-                
-                // Method 1: Use the exposed initArcadeZone function (BEST)
+
                 if (typeof window.initArcadeZone === 'function') {
                     try {
                         window.initArcadeZone(arcadeZone);
                         console.log('✓ Arcade initialized via window.initArcadeZone');
-                        
-                        // Verify it worked
-                        setTimeout(function() {
-                            if (arcadeZone.__arcadeState) {
-                                console.log('✓✓ Arcade fully functional!');
-                            } else {
-                                console.warn('Arcade zone initialized but no state found');
-                            }
-                        }, 100);
-                        return;
+
+                        // Start checking for completion
+                        setTimeout(checkInlineMiniGameCompletion, 500);
                     } catch(e) {
                         console.error('Failed to initialize arcade:', e);
                     }
                 } else {
                     console.error('❌ window.initArcadeZone is not available!');
-                    console.error('You need to modify lesson-arcade.js to expose the initZone function.');
-                    console.error('See ARCADE_FIX_INSTRUCTIONS.md for details.');
-                    console.error('Add this line to lesson-arcade.js:');
-                    console.error('    window.initArcadeZone = initZone;');
-                }
-                
-                // Method 2: Try reinitializeAllArcades as fallback
-                if (typeof window.reinitializeAllArcades === 'function') {
-                    console.log('Trying reinitializeAllArcades fallback...');
-                    window.reinitializeAllArcades();
                 }
             }, 300);
-            
+
+            // Add close button handler
+            var closeBtn = document.getElementById('inline-lesson-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    container.classList.remove('active');
+                    // Reset state
+                    inlineLessonMiniGameCompleted = false;
+                });
+            }
+
             // Add complete button handler
             var completeBtn = document.getElementById('inline-complete-btn');
             if (completeBtn) {
                 completeBtn.addEventListener('click', function() {
+                    if (!inlineLessonMiniGameCompleted) {
+                        alert('Please complete the mini-game challenge first!');
+                        return;
+                    }
                     handleInlineLessonComplete(lessonNum);
                 });
             }
         }
+
+        // Function to close the inline lesson
+        function closeInlineLesson() {
+            var container = document.getElementById('inline-lesson-container');
+            if (container) {
+                container.classList.remove('active');
+                inlineLessonMiniGameCompleted = false;
+            }
+        }
+
+        // Expose functions globally so snakes-game.js can call them
+        window.showInlineLesson = showInlineLesson;
+        window.closeInlineLesson = closeInlineLesson;
         
         // Function to handle lesson completion
         function handleInlineLessonComplete(lessonNum) {
+            // Check mini-game completion first
+            if (!inlineLessonMiniGameCompleted) {
+                alert('Please complete the mini-game challenge first!');
+                return;
+            }
+
             var lesson = LESSON_CONTENT[lessonNum];
             var selected = document.querySelector('input[name="inline-q' + lessonNum + '"]:checked');
-            
+
             if (!selected) {
                 alert('Please select an answer before completing the lesson.');
                 return;
             }
-            
+
             var correct = (parseInt(selected.value) === lesson.question.correct);
-            
+
             if (!correct) {
                 alert('Incorrect answer. Review the lesson and try again!');
                 return;
             }
             
-            var API_URL = 'http://localhost:8306/api';
-            
+            var API_URL;
+            if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+                API_URL = "http://localhost:8306/api";
+            } else {
+                API_URL = "https://snakes.opencodingsociety.com/api";
+            }
+
             fetch(API_URL + '/snakes/complete-lesson', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2163,7 +2209,7 @@ console.log(student.name); // 'Ada'</code></pre>
         // Active Players Counter and Modal
         (function() {
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
+            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
             var cachedPlayers = [];
 
             var CHARACTER_ICONS = {

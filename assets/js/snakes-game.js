@@ -3,7 +3,12 @@
  * Integrated version with question modals and all original features
  */
 
-var API_URL = 'http://localhost:8306/api';
+var API_URL;
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+    API_URL = "http://localhost:8306/api";  // Local Flask backend
+} else {
+    API_URL = "https://snakes.opencodingsociety.com/api";  // Deployed backend
+}
 var FIRST_LESSON_COUNT = 5;
 var FIRST_SECTION_SIZE = FIRST_LESSON_COUNT + 1;
 var SECOND_SECTION_SIZE = 50;
@@ -482,6 +487,13 @@ function createGameBoard() {
             if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');
             if (squareNum === gameState.currentSquare) square.classList.add('current');
 
+            // Check if this lesson is completed
+            var lessonNum = squareNum;
+            var isLessonCompleted = gameState.completedLessons.indexOf(lessonNum) !== -1;
+            if (isLessonCompleted) {
+                square.classList.add('lesson-completed');
+            }
+
             var numSpan = document.createElement('span');
             numSpan.className = 'square-number';
             numSpan.textContent = (squareNum === 0) ? 'START' : squareNum;
@@ -490,7 +502,12 @@ function createGameBoard() {
 
             var icon = document.createElement('div');
             icon.className = 'square-icon';
-            icon.textContent = '📘';
+            // Show checkmark for completed lessons, book for incomplete
+            if (isLessonCompleted) {
+                icon.textContent = '✅';
+            } else {
+                icon.textContent = '📘';
+            }
             square.appendChild(icon);
 
             if (squareNum === gameState.currentSquare) {
@@ -498,6 +515,17 @@ function createGameBoard() {
                 marker.className = 'player-marker';
                 marker.textContent = getCharacterIcon(gameState.character);
                 square.appendChild(marker);
+            }
+
+            // Add click handler for visited lesson squares (not START)
+            if (squareNum > 0 && gameState.visitedSquares.indexOf(squareNum) !== -1) {
+                square.style.cursor = 'pointer';
+                (function(sq) {
+                    square.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        goToLesson(sq);
+                    });
+                })(squareNum);
             }
 
             renderOtherPlayersOnSquare(square, squareNum);
@@ -856,34 +884,74 @@ function movePlayer(steps) {
     });
 }
 
+// Function to show a lesson (for clicking on visited squares or landing)
+function goToLesson(lessonNum) {
+    if (lessonNum < 1 || lessonNum > FIRST_LESSON_COUNT) {
+        console.warn('Invalid lesson number:', lessonNum);
+        return;
+    }
+    // Use inline lesson system if available (stays on same page)
+    if (typeof window.showInlineLesson === 'function') {
+        window.showInlineLesson(lessonNum);
+    } else {
+        // Fallback to separate page
+        window.location.href = 'lessons/lesson' + lessonNum + '.html';
+    }
+}
+
+// Function to check how many lessons are completed and show status
+function checkLessonProgress() {
+    var completed = 0;
+    var incomplete = [];
+    for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
+        if (gameState.completedLessons.indexOf(i) !== -1) {
+            completed++;
+        } else if (gameState.visitedSquares.indexOf(i) !== -1) {
+            incomplete.push(i);
+        }
+    }
+    return { completed: completed, incomplete: incomplete, total: FIRST_LESSON_COUNT };
+}
+
 function handleSquareEvent() {
     var section = window.snakesGameSection || 1;
     var square = gameState.currentSquare;
     console.log('Section:', section, 'Square:', square);
-    
+
     if (section === 1) {
         if (square === 0) {
             alert('This is START. Roll the dice to move to the first lesson.');
             return;
         }
-        
+
         if (square >= 1 && square <= FIRST_LESSON_COUNT) {
             var lessonNum = square;
+
+            // Always go to lesson if not completed yet
             if (gameState.completedLessons.indexOf(lessonNum) === -1) {
-                window.location.href = 'lessons/lesson' + lessonNum + '.html';
+                goToLesson(lessonNum);
                 return;
             }
-            
-            var allDone = true;
-            for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
-                if (gameState.completedLessons.indexOf(i) === -1) { allDone = false; break; }
-            }
-            if (allDone) {
-                if (gameState.unlockedSections.indexOf('half2') === -1) gameState.unlockedSections.push('half2');
-                saveProgress();
-                alert('All lessons completed! You can now go to the next section.');
+
+            // Lesson is completed - check overall progress
+            var progress = checkLessonProgress();
+
+            if (progress.completed >= FIRST_LESSON_COUNT) {
+                // All lessons done!
+                if (gameState.unlockedSections.indexOf('half2') === -1) {
+                    gameState.unlockedSections.push('half2');
+                    saveProgress();
+                }
+                alert('All lessons completed! You can now go to the next section using the arrow button.');
             } else {
-                alert('Lesson already complete. Finish all lessons to proceed.');
+                // Some lessons still incomplete
+                var msg = 'Lesson ' + lessonNum + ' is already complete!\n\n';
+                msg += 'Progress: ' + progress.completed + '/' + progress.total + ' lessons completed.\n\n';
+                if (progress.incomplete.length > 0) {
+                    msg += 'Click on lesson squares ' + progress.incomplete.join(', ') + ' to complete them.\n';
+                    msg += 'You can revisit any visited square by clicking on it.';
+                }
+                alert(msg);
             }
             return;
         }
@@ -927,107 +995,139 @@ function showQuestionModal(square, row, index) {
         console.error('Question modal not found');
         return;
     }
-    
+
     if (!window.QUESTIONS_BANK) {
         alert('Question data not loaded. Please refresh the page.');
         return;
     }
-    
+
     var BANK = window.QUESTIONS_BANK;
     if (!BANK[row] || !BANK[row][index]) {
         console.error('Question not found for row/index:', row, index);
         alert('Question not found. Please try again.');
         return;
     }
-    
+
     var question = BANK[row][index];
-    
+
     document.getElementById('question-title').textContent = 'Lesson ' + row + ' • Question ' + (index + 1);
-    document.getElementById('question-subtitle').textContent = 'Answer correctly to earn 5 bullets!';
+    document.getElementById('question-subtitle').textContent = 'Complete the mini-game first, then answer to earn 5 bullets!';
     document.getElementById('question-prompt').textContent = question.prompt;
     document.getElementById('question-meta').textContent = 'Square: ' + square + ' (Row ' + row + ', Index ' + index + ')';
-    
+
     var optionsDiv = document.getElementById('question-options');
     optionsDiv.innerHTML = '';
-    
+
     question.options.forEach(function(opt, i) {
         var label = document.createElement('label');
         var radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = 'question-answer';
         radio.value = i;
+        radio.disabled = true; // Initially disabled until mini-game is completed
         label.appendChild(radio);
         label.appendChild(document.createTextNode(' ' + opt));
         optionsDiv.appendChild(label);
     });
-    
-    var arcadeZone = modal.querySelector('.question-arcade');
-    if (arcadeZone) {
-        // Use MiniGames system for lesson-related games
-        var gameName = null;
-        var gameTitle = 'Mini Challenge';
-        var gameDesc = 'Complete the challenge!';
 
-        if (window.MiniGames) {
-            // Get the game distribution for this row (cached per row)
-            // Each row has 10 squares, each game appears twice
-            if (!window.questionGameDistributions) {
-                window.questionGameDistributions = {};
-            }
-            if (!window.questionGameDistributions[row]) {
-                // Get all 5 game names for this lesson
-                var gameNames = window.MiniGames.GAME_NAMES[row] || [];
-                if (gameNames.length >= 5) {
-                    // Each game appears twice for 10 squares total
-                    var fullDistribution = [];
-                    gameNames.forEach(function(name) {
-                        fullDistribution.push(name);
-                        fullDistribution.push(name);
-                    });
-                    // Shuffle the distribution
-                    for (var i = fullDistribution.length - 1; i > 0; i--) {
-                        var j = Math.floor(Math.random() * (i + 1));
-                        var temp = fullDistribution[i];
-                        fullDistribution[i] = fullDistribution[j];
-                        fullDistribution[j] = temp;
-                    }
-                    window.questionGameDistributions[row] = fullDistribution;
-                } else {
-                    // Fallback to basic distribution
-                    window.questionGameDistributions[row] = window.MiniGames.getGameDistributionForRow(row);
-                }
-            }
-            var distribution = window.questionGameDistributions[row];
-            gameName = distribution[index % distribution.length];
+    // Track mini-game completion for this question modal
+    var miniGameCompleted = false;
 
-            // Get game display name from the game object
-            var gameObj = window.MiniGames.getGame(row, gameName);
-            if (gameObj && gameObj.name) {
-                gameTitle = gameObj.name;
-            }
+    // Function to enable question UI after mini-game completion
+    function enableQuestionUI() {
+        miniGameCompleted = true;
+        var radios = optionsDiv.querySelectorAll('input[type="radio"]');
+        radios.forEach(function(radio) {
+            radio.disabled = false;
+        });
+        var submitBtn = document.getElementById('question-submit');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+        }
+        document.getElementById('question-subtitle').textContent = 'Answer correctly to earn 5 bullets!';
+    }
 
-            // Set attributes for MiniGames integration
-            arcadeZone.dataset.arcadeLesson = row;
-            arcadeZone.dataset.arcadeGame = gameName;
-            arcadeZone.classList.add('compact');
-            delete arcadeZone.dataset.arcadeMode; // Remove old mode attribute
+    // Function to check mini-game completion periodically
+    // Function to check mini-game completion periodically
+    // ONLY checks for arcadeCompleted='true' which is set by MiniGames system on successful completion
+    function checkMiniGameCompletion() {
+        if (miniGameCompleted) return;
 
-            gameDesc = 'Complete the ' + gameTitle + ' challenge to unlock the question!';
-        } else {
-            // Fallback to old arcade modes if MiniGames not loaded
-            var arcadeModes = ['orb', 'sequence', 'tic'];
-            var chosenMode = arcadeModes[Math.abs(square + row + index) % arcadeModes.length];
-            arcadeZone.dataset.arcadeMode = chosenMode;
-
-            if (chosenMode === 'sequence') {
-                arcadeZone.dataset.arcadeTarget = 4;
-                gameDesc = 'Memorize the flashing arrow pattern to prime your brain.';
-            } else if (chosenMode === 'tic') {
-                gameDesc = 'Win a quiz-powered tic-tac-toe match to earn your attempt.';
-            } else {
-                gameDesc = 'Move your hero with WASD or arrows while you prep for row ' + row + '.';
+        var arcadeZone = modal.querySelector('.question-arcade');
+        if (arcadeZone) {
+            // Only unlock if the game was successfully completed (not just finished/timed out)
+            if (arcadeZone.dataset.arcadeCompleted === 'true') {
+                enableQuestionUI();
+                return;
             }
         }
+        // Keep checking if modal is still active
+        if (modal.classList.contains('active')) {
+            setTimeout(checkMiniGameCompletion, 500);
+        }
+    }
+
+    var arcadeZone = modal.querySelector('.question-arcade');
+    if (arcadeZone) {
+        // Reset arcade completion state
+        delete arcadeZone.dataset.arcadeCompleted;
+        delete arcadeZone.dataset.arcadeMode; // Remove any old mode attribute
+
+        // ALWAYS use MiniGames system - no fallback to old games
+        if (!window.MiniGames) {
+            console.error('MiniGames not loaded! Cannot show question modal.');
+            alert('Game system not loaded. Please refresh the page.');
+            return;
+        }
+
+        // Get the game distribution for this row (cached per row)
+        // Each row has 10 squares, each game appears twice
+        if (!window.questionGameDistributions) {
+            window.questionGameDistributions = {};
+        }
+        if (!window.questionGameDistributions[row]) {
+            // Get all 5 game names for this lesson
+            var gameNames = window.MiniGames.GAME_NAMES[row] || [];
+            if (gameNames.length >= 5) {
+                // Each game appears twice for 10 squares total
+                var fullDistribution = [];
+                gameNames.forEach(function(name) {
+                    fullDistribution.push(name);
+                    fullDistribution.push(name);
+                });
+                // Shuffle the distribution
+                for (var i = fullDistribution.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = fullDistribution[i];
+                    fullDistribution[i] = fullDistribution[j];
+                    fullDistribution[j] = temp;
+                }
+                window.questionGameDistributions[row] = fullDistribution;
+            } else {
+                // Fallback to basic distribution
+                window.questionGameDistributions[row] = window.MiniGames.getGameDistributionForRow(row);
+            }
+        }
+        var distribution = window.questionGameDistributions[row];
+        var gameName = distribution[index % distribution.length];
+
+        // Get game display name from the game object
+        var gameObj = window.MiniGames.getGame(row, gameName);
+        var gameTitle = 'Mini Challenge';
+        var gameDesc = 'Complete the challenge!';
+        if (gameObj && gameObj.name) {
+            gameTitle = gameObj.name;
+        }
+
+        // Set attributes for MiniGames integration
+        arcadeZone.dataset.arcadeLesson = row;
+        arcadeZone.dataset.arcadeGame = gameName;
+        arcadeZone.classList.add('arcade-zone', 'compact');
+        delete arcadeZone.dataset.arcadeDefer; // Remove defer flag
+
+        gameDesc = 'Complete the ' + gameTitle + ' challenge to unlock the question!';
 
         arcadeZone.querySelector('.arcade-header h3').textContent = gameTitle;
         arcadeZone.querySelector('.arcade-header p').textContent = gameDesc;
@@ -1048,24 +1148,35 @@ function showQuestionModal(square, row, index) {
             }
         }
     }
-    
+
     var submitBtn = document.getElementById('question-submit');
     var newBtn = submitBtn.cloneNode(true);
     submitBtn.parentNode.replaceChild(newBtn, submitBtn);
-    
+
+    // Initially disable submit button until mini-game is completed
+    newBtn.disabled = true;
+    newBtn.style.opacity = '0.5';
+    newBtn.style.cursor = 'not-allowed';
+
     newBtn.addEventListener('click', function() {
+        // Check if mini-game is completed
+        if (!miniGameCompleted) {
+            alert('Please complete the mini-game challenge first!');
+            return;
+        }
+
         var selected = document.querySelector('input[name="question-answer"]:checked');
         if (!selected) {
             alert('Please select an answer.');
             return;
         }
-        
+
         newBtn.disabled = true;
-        
+
         var chosen = parseInt(selected.value, 10);
         var correct = (chosen === question.answer);
         var bullets = correct ? QUESTION_BULLETS : 0;
-        
+
         fetch(API_URL + '/snakes/answer-question', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1081,18 +1192,18 @@ function showQuestionModal(square, row, index) {
         .then(function(res) {
             if (res.ok) {
                 alert(correct ? 'Correct! You earned ' + QUESTION_BULLETS + ' bullets.' : 'Incorrect. No bullets awarded.');
-                
+
                 if (correct) {
                     gameState.bullets += QUESTION_BULLETS;
                     updatePlayerInfo();
                 }
-                
+
                 closeQuestionModal();
                 createGameBoard();
-                
+
                 return;
             }
-            
+
             return res.json().then(function(data) {
                 alert(data.error || data.message || 'Error submitting answer.');
             });
@@ -1105,8 +1216,11 @@ function showQuestionModal(square, row, index) {
             newBtn.disabled = false;
         });
     });
-    
+
     modal.classList.add('active');
+
+    // Start checking for mini-game completion
+    setTimeout(checkMiniGameCompletion, 500);
 }
 
 var snakesAndLaddersMap = {

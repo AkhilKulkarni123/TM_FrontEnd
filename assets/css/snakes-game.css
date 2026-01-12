@@ -330,6 +330,33 @@ body {
   border-color: #4caf50;
 }
 
+/* Completed lesson squares - green with emphasis */
+.square.lesson-completed {
+  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+  border-color: #2e7d32;
+  border-width: 2px;
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+}
+
+.square.lesson-completed:hover {
+  background: linear-gradient(135deg, #a5d6a7 0%, #81c784 100%);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.4);
+}
+
+/* Visited but not completed lessons - hint to click */
+.square.visited:not(.lesson-completed):not(.start) {
+  background: #fff3e0;
+  border-color: #ff9800;
+  cursor: pointer;
+}
+
+.square.visited:not(.lesson-completed):not(.start):hover {
+  background: #ffe0b2;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+}
+
 .square.current {
   background: #fff3cd;
   border-color: #ffc107;

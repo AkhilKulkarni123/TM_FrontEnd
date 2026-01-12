@@ -551,13 +551,13 @@
                 <p id="question-subtitle">Answer correctly to earn bullets!</p>
             </div>
             <div class="question-body">
-                <div class="arcade-zone question-arcade" data-arcade-target="3" data-arcade-message="Collect energy cores to unlock the question!" data-arcade-complete="Energy charged! Answer the question below.">
+                <div class="question-arcade" data-arcade-defer="true">
                     <div class="arcade-header">
                         <h3>Mini Challenge</h3>
-                        <p>Use WASD or arrow keys to move your character through the grid.</p>
+                        <p>Complete the challenge to unlock the question!</p>
                     </div>
                     <div class="arcade-grid"></div>
-                    <div class="arcade-status">Collect every core.</div>
+                    <div class="arcade-status">Complete the challenge to unlock the question.</div>
                 </div>
                 
                 <div class="question-prompt" id="question-prompt"></div>
@@ -725,7 +725,7 @@
         // Active Players Counter and Modal
         (function() {
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://tm-flask-backend.onrender.com';
+            var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
             var cachedPlayers = [];
 
             var CHARACTER_ICONS = {

@@ -454,10 +454,21 @@
     }
 
     /* === MODE: Custom Mini-Game from MiniGames system === */
-    function initCustomMiniGame(zone, lessonNumber, gameName) {
+    function initCustomMiniGame(zone, lessonNumber, gameName, retryCount) {
+        retryCount = retryCount || 0;
+        var maxRetries = 10;
+
         if (!window.MiniGames) {
-            console.warn('MiniGames not loaded, falling back to orb mode');
-            return initOrbMode(zone);
+            if (retryCount < maxRetries) {
+                console.log('MiniGames not loaded yet, retrying... (' + (retryCount + 1) + '/' + maxRetries + ')');
+                setTimeout(function() {
+                    initCustomMiniGame(zone, lessonNumber, gameName, retryCount + 1);
+                }, 200);
+                return null;
+            }
+            console.error('MiniGames failed to load after ' + maxRetries + ' retries');
+            updateZoneStatus(zone, 'Error: Game system failed to load. Please refresh the page.');
+            return null;
         }
 
         var grid = zone.querySelector('.arcade-grid');
@@ -473,8 +484,9 @@
         }
 
         if (!game) {
-            console.warn('Game not found for lesson ' + lessonNumber + ', falling back to orb mode');
-            return initOrbMode(zone);
+            console.error('Game not found for lesson ' + lessonNumber + ' with name ' + gameName);
+            updateZoneStatus(zone, 'Error: Game not found. Please refresh the page.');
+            return null;
         }
 
         // Update header with game info
@@ -514,22 +526,26 @@
     }
 
     function initZone(zone) {
-        var mode = (zone.dataset.arcadeMode || zone.dataset.arcadeStyle || '').toLowerCase();
+        // Skip deferred zones - they will be initialized later by JavaScript
+        if (zone.dataset.arcadeDefer === 'true') {
+            console.log('Skipping deferred arcade zone');
+            return null;
+        }
 
-        // Check for custom mini-game mode
+        // Check for custom mini-game mode (lesson-based games)
         var lessonNumber = parseInt(zone.dataset.arcadeLesson || zone.dataset.lesson || 0);
         var gameName = zone.dataset.arcadeGame || zone.dataset.game || '';
 
-        // If a lesson number is specified, use the MiniGames system
-        if (lessonNumber > 0 && window.MiniGames) {
+        // If a lesson number is specified, ALWAYS use the MiniGames system
+        // This ensures the proper educational games are used with completion tracking
+        if (lessonNumber > 0) {
             return initCustomMiniGame(zone, lessonNumber, gameName);
         }
 
-        // Fallback to original modes
-        if (!mode || mode === 'random') mode = chooseMode(zone);
-        zone.dataset.arcadeMode = mode;
-        var builder = MODES[mode] || MODES.orb;
-        builder(zone);
+        // For zones without lesson number, show error - old modes are disabled
+        console.warn('Arcade zone without lesson number found. Old modes are disabled.');
+        updateZoneStatus(zone, 'Error: Game configuration missing. Please refresh.');
+        return null;
     }
 
     /**
