@@ -397,7 +397,12 @@ input:checked + .slider:before {
 <script type="module">
     import { pythonURI, javaURI, fetchOptions } from '{{site.baseurl}}/assets/js/api/config.js';
 
-    
+    // Log config for debugging
+    console.log('Login page loaded');
+    console.log('Python URI:', pythonURI);
+    console.log('Java URI:', javaURI);
+    console.log('Fetch Options:', fetchOptions);
+
     let validationTimeout = null;
 
 
@@ -529,11 +534,8 @@ input:checked + .slider:before {
         try {
             // Try Flask login first
             const flaskResponse = await fetch(`${pythonURI}/api/authenticate`, {
+                ...fetchOptions,
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
                 body: JSON.stringify({ uid, password })
             });
 
@@ -567,11 +569,8 @@ input:checked + .slider:before {
     async function trySpringLogin(uid, password) {
         try {
             const springResponse = await fetch(`${javaURI}/authenticate`, {
+                ...fetchOptions,
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
                 body: JSON.stringify({ uid, password })
             });
 
@@ -634,11 +633,8 @@ input:checked + .slider:before {
 
         // Flask signup
         const flaskPromise = fetch(`${pythonURI}/api/user`, {
+            ...fetchOptions,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
             body: JSON.stringify(formData)
         })
         .then(response => {
@@ -660,11 +656,8 @@ input:checked + .slider:before {
 
         // Spring signup
         const springPromise = fetch(`${javaURI}/api/person/create`, {
+            ...fetchOptions,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
             body: JSON.stringify(springData)
         })
         .then(response => {

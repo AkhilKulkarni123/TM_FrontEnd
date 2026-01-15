@@ -9,6 +9,17 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
 } else {
     API_URL = "https://snakes.opencodingsociety.com/api";  // Deployed backend
 }
+
+// Standard fetch options for CORS requests - matches config.js
+var fetchOptions = {
+    mode: 'cors',
+    cache: 'default',
+    credentials: 'include',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Origin': 'client'
+    }
+};
 var FIRST_LESSON_COUNT = 5;
 var FIRST_SECTION_SIZE = FIRST_LESSON_COUNT + 1;
 var SECOND_SECTION_SIZE = 50;
@@ -112,7 +123,11 @@ function initializeEventListeners() {
         saveProgress();
 
         fetch(API_URL + '/boss/attack', {
-            method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            mode: fetchOptions.mode,
+            cache: fetchOptions.cache,
+            credentials: fetchOptions.credentials,
+            headers: fetchOptions.headers,
             body: JSON.stringify({ damage: 50 })
         }).catch(function () {});
     });
@@ -151,7 +166,13 @@ function closeQuestionModal() {
 }
 
 function checkExistingLogin() {
-    return fetch(API_URL + '/id', { credentials: 'include' })
+    return fetch(API_URL + '/id', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (userData) {
             if (!userData) return null;
@@ -163,7 +184,13 @@ function checkExistingLogin() {
 }
 
 function useExistingLogin() {
-    fetch(API_URL + '/id', { credentials: 'include' })
+    fetch(API_URL + '/id', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (response) {
             if (!response.ok) {
                 alert('Please log in to the website first, then return to the game.');
@@ -207,15 +234,23 @@ function playAsGuest() {
 function loadOrCreateGameData() {
     if (gameState.isGuest) return Promise.resolve();
 
-    return fetch(API_URL + '/snakes/', { credentials: 'include' })
+    return fetch(API_URL + '/snakes/', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (response) {
             if (response.status === 404) {
                 // Create new game with current character
                 console.log('Creating new game data with character:', gameState.character);
                 return fetch(API_URL + '/snakes/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    mode: fetchOptions.mode,
+                    cache: fetchOptions.cache,
+                    credentials: fetchOptions.credentials,
+                    headers: fetchOptions.headers,
                     body: JSON.stringify({ selected_character: gameState.character })
                 });
             }
@@ -255,7 +290,13 @@ function loadOrCreateGameData() {
 function loadProgress() {
     if (gameState.isGuest) return Promise.resolve();
 
-    return fetch(API_URL + '/snakes/progress', { credentials: 'include' })
+    return fetch(API_URL + '/snakes/progress', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (response) { if (!response.ok) return null; return response.json(); })
         .then(function (data) {
             if (!data) return;
@@ -295,8 +336,10 @@ function saveProgress() {
 
     return fetch(API_URL + '/snakes/', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers,
         body: JSON.stringify({
             current_square: Number(gameState.currentSquare) + 1,
             visited_squares: (gameState.visitedSquares || []).map(function (s) { return Number(s) + 1; }),
@@ -335,15 +378,23 @@ function selectCharacter(card) {
     if (!gameState.isGuest && gameState.userId) {
         console.log('Saving character to backend:', gameState.character);
         // First, create or load game data with the selected character
-        fetch(API_URL + '/snakes/', { credentials: 'include' })
+        fetch(API_URL + '/snakes/', {
+            method: 'GET',
+            mode: fetchOptions.mode,
+            cache: fetchOptions.cache,
+            credentials: fetchOptions.credentials,
+            headers: fetchOptions.headers
+        })
             .then(function (response) {
                 if (response.status === 404) {
                     // Create new game entry with selected character
                     console.log('Creating new game entry with character:', gameState.character);
                     return fetch(API_URL + '/snakes/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
+                        mode: fetchOptions.mode,
+                        cache: fetchOptions.cache,
+                        credentials: fetchOptions.credentials,
+                        headers: fetchOptions.headers,
                         body: JSON.stringify({ selected_character: gameState.character })
                     });
                 } else {
@@ -351,8 +402,10 @@ function selectCharacter(card) {
                     console.log('Updating existing game with character:', gameState.character);
                     return fetch(API_URL + '/snakes/', {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
+                        mode: fetchOptions.mode,
+                        cache: fetchOptions.cache,
+                        credentials: fetchOptions.credentials,
+                        headers: fetchOptions.headers,
                         body: JSON.stringify({
                             selected_character: gameState.character,
                             current_square: gameState.currentSquare + 1,
@@ -606,7 +659,11 @@ function getCharacterIcon(character) {
 
 function fetchAllPlayers() {
     return fetch(API_URL + '/snakes/leaderboard?limit=' + multiplayerState.MAX_PLAYERS_ON_BOARD, {
-        credentials: 'include'
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
     })
     .then(function(response) {
         if (!response.ok) throw new Error('Failed to fetch players');
@@ -1179,8 +1236,10 @@ function showQuestionModal(square, row, index) {
 
         fetch(API_URL + '/snakes/answer-question', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            mode: fetchOptions.mode,
+            cache: fetchOptions.cache,
+            credentials: fetchOptions.credentials,
+            headers: fetchOptions.headers,
             body: JSON.stringify({
                 square: Number(square) + 1,
                 row: row,
@@ -1349,7 +1408,13 @@ function navigateNext() {
 }
 
 function checkPlayerTopFive() {
-    return fetch(API_URL + '/snakes/leaderboard?limit=10', { credentials: 'include' })
+    return fetch(API_URL + '/snakes/leaderboard?limit=10', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (res) { if (!res.ok) throw new Error('Leaderboard fetch failed'); return res.json(); })
         .then(function (data) {
             var lb = data.leaderboard || [];
@@ -1378,7 +1443,13 @@ function viewLeaderboard() {
     tbody.innerHTML = '<tr><td colspan="4" class="loading-spinner">Loading leaderboard...</td></tr>';
     if (modal) modal.classList.remove('hidden');
 
-    fetch(API_URL + '/snakes/leaderboard?limit=10', { credentials: 'include' })
+    fetch(API_URL + '/snakes/leaderboard?limit=10', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
         .then(function (res) { if (!res.ok) throw new Error('Failed to fetch leaderboard'); return res.json(); })
         .then(function (data) {
             tbody.innerHTML = '';
