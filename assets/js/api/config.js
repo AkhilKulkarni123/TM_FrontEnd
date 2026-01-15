@@ -1,4 +1,14 @@
-export const baseurl = "{{ site.baseurl }}";
+// Dynamically determine baseurl from the page URL
+// This handles both local development and GitHub Pages deployment
+export const baseurl = (() => {
+    const path = window.location.pathname;
+    // Check if we're on GitHub Pages with /TM_FrontEnd/ prefix
+    if (path.startsWith('/TM_FrontEnd')) {
+        return '/TM_FrontEnd';
+    }
+    // Local development or root deployment
+    return '';
+})();
 
  export var pythonURI;
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
