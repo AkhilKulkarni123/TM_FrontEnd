@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Battle - Final Arena</title>
+    <title>Boss Battle - Multiplayer Arena</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -18,17 +19,30 @@
             color: white;
         }
 
+        .game-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
         #gameCanvas {
             display: block;
             background: radial-gradient(circle, #0f3460 0%, #1a1a2e 100%);
             border: 3px solid #e94560;
         }
 
+        /* HUD Styles */
         .hud {
             position: absolute;
             top: 20px;
             left: 20px;
-            right: 20px;
+            right: 320px;
             display: flex;
             justify-content: space-between;
             gap: 20px;
@@ -69,14 +83,140 @@
             transition: width 0.3s ease;
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-10px); }
+        /* Right Sidebar - Players & Chat */
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #e94560;
         }
 
-        .message-box {
-            animation: bounce 0.5s ease;
+        .sidebar-section {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+
+        .sidebar-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e94560;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Players List */
+        .players-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .player-icon {
+            font-size: 1.5em;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .player-stats {
+            font-size: 0.75em;
+            opacity: 0.7;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-message {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .chat-message .sender {
+            font-weight: bold;
+            color: #4facfe;
+            margin-right: 5px;
+        }
+
+        .chat-message .sender-icon {
+            margin-right: 3px;
+        }
+
+        .chat-message.system {
+            background: rgba(233, 69, 96, 0.2);
+            font-style: italic;
+            text-align: center;
+        }
+
+        .chat-input-wrapper {
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .chat-send-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #e94560;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .chat-send-btn:hover {
+            background: #ff6b6b;
+        }
+
+        /* Controls */
         .controls {
             position: absolute;
             bottom: 20px;
@@ -118,6 +258,7 @@
             border-radius: 20px;
             text-align: center;
             display: none;
+            z-index: 100;
         }
 
         .game-over h1 {
@@ -134,61 +275,141 @@
             padding: 15px 30px;
             border-radius: 10px;
             display: none;
+            z-index: 50;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .message-box.show {
+            display: block;
+            animation: bounce 0.5s ease;
+        }
+
+        /* Room info badge */
+        .room-badge {
+            position: absolute;
+            top: 20px;
+            right: 320px;
+            background: rgba(79, 172, 254, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar,
+        .players-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track,
+        .players-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb,
+        .players-list::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
-    <div class="hud">
-        <div class="stat-box">
-            <div class="stat-label">Boss Health</div>
-            <div class="health-bar">
-                <div class="health-fill" id="bossHealth" style="width: 100%"></div>
+    <div class="game-wrapper">
+        <div class="game-area">
+            <div class="hud">
+                <div class="stat-box">
+                    <div class="stat-label">Boss Health</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="bossHealth" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Your Lives</div>
+                    <div class="stat-value" id="playerLives">3</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Bullets</div>
+                    <div class="stat-value" id="bulletsCount">50</div>
+                </div>
+            </div>
+
+            <div class="room-badge" id="roomBadge" style="display: none;">
+                Room: <span id="roomCode">---</span> | Players: <span id="playerCount">0</span>
+            </div>
+
+            <canvas id="gameCanvas"></canvas>
+
+            <div class="controls">
+                <div style="margin-bottom: 15px; font-size: 1.2em;">
+                    Use WASD or Arrow Keys to move | SPACE to shoot
+                </div>
+                <button class="btn" onclick="startBattle()" id="startBtn">Start Battle</button>
+                <button class="btn" onclick="leaveBattle()">Leave Arena</button>
+            </div>
+
+            <div class="message-box" id="messageBox"></div>
+
+            <div class="game-over" id="gameOver">
+                <h1 id="gameOverTitle">Victory!</h1>
+                <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+                <button class="btn" onclick="returnToBoard()">Return to Board</button>
             </div>
         </div>
-        <div class="stat-box">
-            <div class="stat-label">Your Lives</div>
-            <div class="stat-value">❤️ <span id="playerLives">3</span></div>
+
+        <!-- Sidebar: Players & Chat -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Players in Room</div>
+                <div class="players-list" id="playersList">
+                    <div class="player-item" style="opacity: 0.5;">
+                        <span>Waiting for players...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section chat-section">
+                <div class="sidebar-title">Battle Chat</div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message system">
+                        Welcome to the Boss Battle Arena! Team up to defeat the dragon!
+                    </div>
+                </div>
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="280">
+                    <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+                </div>
+            </div>
         </div>
-        <div class="stat-box">
-            <div class="stat-label">💰 Bullets</div>
-            <div class="stat-value" id="bulletsCount">50</div>
-        </div>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="controls">
-        <div style="margin-bottom: 15px; font-size: 1.2em;">
-            Use WASD or Arrow Keys to move | SPACE to shoot
-        </div>
-        <button class="btn" onclick="startBattle()" id="startBtn">⚔️ Start Battle</button>
-        <button class="btn" onclick="leaveBattle()">🚪 Leave Arena</button>
-    </div>
-
-    <div class="message-box" id="messageBox"></div>
-
-    <div class="game-over" id="gameOver">
-        <h1 id="gameOverTitle">Victory!</h1>
-        <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
-        <button class="btn" onclick="returnToBoard()">Return to Board</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
-        const BOSS_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+        // Flask runs on port 8306, Socket.IO on port 8500
+        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://flask.opencodingsociety.com';
+        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://flask.opencodingsociety.com:8500';
         const GAME_API_ROOT = GAME_API_BASE + '/api';
-        const BOSS_API_ROOT = BOSS_API_BASE + '/api';
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 200;
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth - 300; // Account for sidebar
+            canvas.height = window.innerHeight - 200;
+        }
+        resizeCanvas();
 
         let gameActive = false;
         let roomId = null;
-        let ws = null;
+        let socket = null;
         let roomPollInterval = null;
+        let positionBroadcastInterval = null;
         const DEFAULT_LIVES = 3;
+
         const CHARACTER_CONFIG = {
             knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
             wizard: { icon: '🧙', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard' },
@@ -200,30 +421,322 @@
             player: {
                 x: canvas.width / 2,
                 y: canvas.height - 100,
-                size: 35,  // Increased from 30 to 35
-                speed: 6,   // Increased from 5 to 6
+                size: 35,
+                speed: 6,
                 lives: 3,
                 bullets: 50,
-                character: 'knight', // Add this line
-                color: '#4facfe'
+                character: 'knight',
+                color: '#4facfe',
+                username: 'Player'
             },
             boss: {
                 x: canvas.width / 2,
                 y: 100,
-                size: 90,   // Increased from 80 to 90
+                size: 90,
                 health: 1000,
                 maxHealth: 1000,
-                angle: 0,    // For rotation
-                moveDirection: 1,  // 1 = right, -1 = left
-                moveSpeed: 2,      // Horizontal movement speed
-                verticalDirection: 1, // 1 = down, -1 = up
-                verticalSpeed: 0.5    // Vertical movement speed
+                angle: 0,
+                moveDirection: 1,
+                moveSpeed: 2,
+                verticalDirection: 1,
+                verticalSpeed: 0.5
             },
             playerBullets: [],
             bossProjectiles: [],
             keys: {},
-            players: []
+            otherPlayers: {},  // { odfsid: {x, y, character, username, lives, bullets} }
+            chatMessages: []
         };
+
+        // Load player data from server
+        function loadPlayerData() {
+            return fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    console.log('Loaded player data:', data);
+
+                    if (data.selected_character) {
+                        gameState.player.character = data.selected_character;
+                        const charConfig = CHARACTER_CONFIG[data.selected_character];
+                        if (charConfig) {
+                            gameState.player.color = charConfig.color;
+                        }
+                    }
+
+                    if (typeof data.total_bullets !== 'undefined') {
+                        gameState.player.bullets = Number(data.total_bullets || 0);
+                        updateBulletsDisplay();
+                    }
+                    if (typeof data.lives !== 'undefined') {
+                        gameState.player.lives = Number(data.lives || 3);
+                        updateLives();
+                    }
+                })
+                .catch(err => console.error('Could not load player progress', err));
+        }
+
+        // Get username
+        function loadUserInfo() {
+            return fetch(GAME_API_ROOT.replace('/api', '') + '/api/id', { credentials: 'include' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.name) {
+                        gameState.player.username = data.name;
+                    }
+                })
+                .catch(err => console.error('Could not load user info', err));
+        }
+
+        // Initialize
+        loadPlayerData();
+        loadUserInfo();
+
+        // Key handlers
+        window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameActive) {
+                e.preventDefault();
+                shoot();
+            }
+        });
+
+        // Chat input enter key
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        // Connect to Socket.IO
+        function connectSocket() {
+            if (socket) return;
+
+            socket = io(SOCKET_URL, {
+                transports: ['polling', 'websocket'],
+                upgrade: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            });
+
+            socket.on('connect', () => {
+                console.log('Socket connected:', socket.id);
+                addSystemMessage('Connected to server!');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Socket disconnected');
+                addSystemMessage('Disconnected from server');
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error);
+                addSystemMessage('Connection error - retrying...');
+            });
+
+            // Room state when joining
+            socket.on('boss_room_state', (data) => {
+                console.log('Room state received:', data);
+                if (data.bossHealth !== undefined) {
+                    gameState.boss.health = data.bossHealth;
+                    gameState.boss.maxHealth = data.maxBossHealth || 1000;
+                    updateBossHealthBar();
+                }
+                if (data.players) {
+                    // Clear any stale player data from REST API (keyed differently)
+                    gameState.otherPlayers = {};
+                    // Add players with their socket sid as key
+                    data.players.forEach(p => {
+                        if (p.sid && p.sid !== socket.id) {
+                            gameState.otherPlayers[p.sid] = p;
+                        }
+                    });
+                    updatePlayersList();
+                    document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
+                }
+            });
+
+            // Player joined
+            socket.on('boss_player_joined', (data) => {
+                console.log('Player joined:', data);
+                if (data.player && data.player.sid !== socket.id) {
+                    gameState.otherPlayers[data.player.sid] = data.player;
+                    updatePlayersList();
+                    addSystemMessage(`${data.player.username} joined the battle!`);
+                }
+                document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
+            });
+
+            // Player left
+            socket.on('boss_player_left', (data) => {
+                console.log('Player left:', data);
+                if (data.player) {
+                    delete gameState.otherPlayers[data.player.sid];
+                    updatePlayersList();
+                    addSystemMessage(`${data.player.username} left the battle`);
+                }
+                document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
+            });
+
+            // Player position update
+            socket.on('boss_player_position', (data) => {
+                if (gameState.otherPlayers[data.sid]) {
+                    gameState.otherPlayers[data.sid].x = data.x;
+                    gameState.otherPlayers[data.sid].y = data.y;
+                }
+            });
+
+            // Boss health update
+            socket.on('boss_health_update', (data) => {
+                console.log('Boss health update:', data);
+                gameState.boss.health = data.bossHealth;
+                gameState.boss.maxHealth = data.maxBossHealth || 1000;
+                updateBossHealthBar();
+                if (data.attacker && data.attacker !== gameState.player.username) {
+                    addSystemMessage(`${data.attacker} dealt ${data.damage} damage!`);
+                }
+            });
+
+            // Room full notification
+            socket.on('boss_room_full', (data) => {
+                console.log('Room full:', data);
+                addSystemMessage('Room is full (max 5 players). Try again later.');
+                showMessage('Room is full!');
+            });
+
+            // Boss defeated
+            socket.on('boss_defeated', (data) => {
+                addSystemMessage('The boss has been defeated!');
+                endGame(true);
+            });
+
+            // Player stats update
+            socket.on('boss_player_stats_update', (data) => {
+                if (data.player && gameState.otherPlayers[data.player.sid]) {
+                    Object.assign(gameState.otherPlayers[data.player.sid], data.player);
+                    updatePlayersList();
+                }
+            });
+
+            // Player damaged/died
+            socket.on('boss_player_damaged', (data) => {
+                if (data.player && gameState.otherPlayers[data.player.sid]) {
+                    gameState.otherPlayers[data.player.sid].lives = data.lives;
+                    updatePlayersList();
+                }
+            });
+
+            socket.on('boss_player_died', (data) => {
+                addSystemMessage(data.message);
+                if (data.player && gameState.otherPlayers[data.player.sid]) {
+                    gameState.otherPlayers[data.player.sid].lives = 0;
+                    updatePlayersList();
+                }
+            });
+
+            // Chat message
+            socket.on('boss_chat_message', (data) => {
+                addChatMessage(data);
+            });
+        }
+
+        async function startBattle() {
+            try {
+                // Join room via REST API
+                const response = await fetch(`${GAME_API_ROOT}/boss/join`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bullets: gameState.player.bullets,
+                        lives: gameState.player.lives,
+                        character: gameState.player.character,
+                        dev_mode: true  // Skip square 25 requirement for testing
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    roomId = data.room_id;
+                    console.log('Joined room:', data);
+
+                    // Update room badge
+                    document.getElementById('roomBadge').style.display = 'block';
+                    document.getElementById('roomCode').textContent = data.room_id.substring(0, 8);
+                    document.getElementById('playerCount').textContent = data.room.player_count || data.room.total_players || 1;
+
+                    // Sync boss state
+                    if (data.room) {
+                        gameState.boss.health = data.room.boss_health;
+                        gameState.boss.maxHealth = data.room.max_boss_health;
+                        updateBossHealthBar();
+                    }
+
+                    // Note: Players will be populated via socket 'boss_room_state' event
+                    // which provides proper socket session IDs for position syncing
+                    console.log('Players in room from REST API:', data.players?.length || 0);
+
+                    // Connect socket and join room
+                    connectSocket();
+                    setTimeout(() => {
+                        if (socket && socket.connected) {
+                            socket.emit('boss_join_room', {
+                                room_id: roomId,
+                                boss_health: gameState.boss.health,
+                                max_boss_health: gameState.boss.maxHealth,
+                                player: {
+                                    user_id: data.player?.user_id,
+                                    username: data.player?.username || gameState.player.username,
+                                    character: gameState.player.character,
+                                    x: gameState.player.x,
+                                    y: gameState.player.y,
+                                    bullets: gameState.player.bullets,
+                                    lives: gameState.player.lives
+                                }
+                            });
+                        }
+                    }, 500);
+
+                    // Start position broadcasting
+                    startPositionBroadcast();
+
+                    gameActive = true;
+                    document.getElementById('startBtn').disabled = true;
+                    addSystemMessage('Battle started! Work together to defeat the boss!');
+                    gameLoop();
+                }
+            } catch (error) {
+                console.error('Join battle error:', error);
+                // Fallback to single player mode
+                gameActive = true;
+                document.getElementById('startBtn').disabled = true;
+                addSystemMessage('Playing in offline mode');
+                gameLoop();
+            }
+        }
+
+        function startPositionBroadcast() {
+            if (positionBroadcastInterval) clearInterval(positionBroadcastInterval);
+            positionBroadcastInterval = setInterval(() => {
+                if (socket && socket.connected && roomId) {
+                    socket.emit('boss_player_move', {
+                        room_id: roomId,
+                        x: gameState.player.x,
+                        y: gameState.player.y
+                    });
+                }
+            }, 50); // 20 FPS position updates
+        }
+
+        function stopPositionBroadcast() {
+            if (positionBroadcastInterval) {
+                clearInterval(positionBroadcastInterval);
+                positionBroadcastInterval = null;
+            }
+        }
 
         function savePlayerState(overrides) {
             const payload = Object.assign({
@@ -236,184 +749,7 @@
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).catch(function (err) {
-                console.error('Failed to save player state', err);
-            });
-        }
-
-        // Populate initial player bullets / lives from saved progress if available
-        fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
-            .then(function (res) { if (!res.ok) return null; return res.json(); })
-            .then(function (data) {
-                if (!data) return;
-                console.log('Loaded player data:', data);
-        
-        // Load character selection
-        if (data.selected_character) {
-            gameState.player.character = data.selected_character;
-            const charConfig = CHARACTER_CONFIG[data.selected_character];
-            if (charConfig) {
-                gameState.player.color = charConfig.color;
-                console.log('✅ Character loaded:', charConfig.name);
-            }
-        }
-        
-            if (typeof data.total_bullets !== 'undefined') {
-                gameState.player.bullets = Number(data.total_bullets || 0);
-                updateBulletsDisplay();
-        }
-            if (typeof data.lives !== 'undefined') {
-                gameState.player.lives = Number(data.lives || gameState.player.lives);
-                updateLives();
-        }
-        })
-            .catch(function (err) { console.error('Could not load player progress', err); });
-        window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && gameActive) {
-                e.preventDefault();
-                shoot();
-            }
-        });
-
-        async function startBattle() {
-            try {
-                const response = await fetch(`${BOSS_API_ROOT}/boss/join`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    roomId = data.room_id;
-                    syncBossState(data.room, data.players);
-                    pollRoomState();
-                    startRoomPolling();
-                    connectWebSocket();
-                    gameActive = true;
-                    document.getElementById('startBtn').disabled = true;
-                    gameLoop();
-                }
-            } catch (error) {
-                console.error('Join battle error:', error);
-                gameActive = true;
-                gameLoop();
-            }
-        }
-
-        function connectWebSocket() {
-            var wsProtocol = BOSS_API_BASE.startsWith('https') ? 'wss' : 'ws';
-            var wsUrl = BOSS_API_BASE.replace(/^https?/, wsProtocol) + '/ws/boss';
-            ws = new WebSocket(wsUrl);
-            
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'boss_health') {
-                    gameState.boss.health = data.health;
-                    updateBossHealthBar();
-                }
-                else if (data.type === 'player_hit') {
-                    if (data.player === 'you') {
-                        gameState.player.lives--;
-                        updateLives();
-                        savePlayerState();
-                        showMessage('💥 You were hit!');
-                    } else {
-                        showMessage(`💀 ${data.player} was hit!`);
-                    }
-                }
-                else if (data.type === 'player_died') {
-                    showMessage(`☠️ ${data.player} has fallen!`);
-                    updatePlayersList();
-                    // If this client died, respawn them back to start of section 2
-                        if (data.player === 'you') {
-                        const SECTION2_START = 6; // square where section 2 begins (0-based scheme) (START at 0, lessons 1-5)
-                        // Fetch current progress to determine first unvisited square in section 2
-                        fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
-                            .then(function (res) { if (!res.ok) return null; return res.json(); })
-                            .then(function (data) {
-                                var visitedRaw = (data && data.visited_squares) ? data.visited_squares : [];
-                                // convert server 1-based visited_squares to 0-based
-                                var visited = visitedRaw.map(function (s) { return Number(s) - 1; });
-                                var firstUnvisited = SECTION2_START;
-                                // Find the first unvisited square in section 2
-                                for (var s = SECTION2_START; s < SECTION2_START + 50; s++) {
-                                    if (visited.indexOf(s) === -1) { firstUnvisited = s; break; }
-                                }
-                                // Update server with new current square (convert to 1-based)
-                                gameState.player.lives = DEFAULT_LIVES;
-                                updateLives();
-                                fetch(GAME_API_ROOT + '/snakes/', {
-                                    method: 'PUT',
-                                    credentials: 'include',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ current_square: Number(firstUnvisited) + 1, lives: DEFAULT_LIVES })
-                                }).catch(function (err) { console.error('Respawn update failed', err); });
-
-                                // Redirect back to section 2 board and show a respawn message
-                                setTimeout(function () {
-                                    alert('You have fallen in the boss fight. You have been returned to Section 2.');
-                                    window.location.href = 'game-board-part2.html';
-                                }, 800);
-                            }).catch(function (err) {
-                                console.error('Error fetching progress for respawn', err);
-                                // Fallback: set to SECTION2_START (convert to 1-based)
-                                gameState.player.lives = DEFAULT_LIVES;
-                                updateLives();
-                                fetch(GAME_API_ROOT + '/snakes/', {
-                                    method: 'PUT',
-                                    credentials: 'include',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ current_square: Number(SECTION2_START) + 1, lives: DEFAULT_LIVES })
-                                }).catch(function () {});
-                                setTimeout(function () { window.location.href = 'game-board-part2.html'; }, 800);
-                            });
-                    }
-                }
-                else if (data.type === 'boss_defeated') {
-                    endGame(true);
-                }
-                else if (data.type === 'players_update') {
-                    syncBossState(null, data.players);
-                }
-            };
-        }
-
-        function syncBossState(room, players) {
-            if (room) {
-                if (typeof room.boss_health === 'number') gameState.boss.health = room.boss_health;
-                if (typeof room.max_boss_health === 'number') gameState.boss.maxHealth = room.max_boss_health;
-                updateBossHealthBar();
-            }
-            if (Array.isArray(players)) {
-                gameState.players = players;
-                updatePlayersList();
-            }
-        }
-
-        function pollRoomState() {
-            if (!roomId) return;
-            fetch(`${BOSS_API_ROOT}/boss/room/${roomId}`, { credentials: 'include' })
-                .then(function (res) { if (!res.ok) throw new Error('room poll failed'); return res.json(); })
-                .then(function (data) {
-                    syncBossState(data.room, data.players);
-                })
-                .catch(function (err) { console.warn('Boss room poll error:', err); });
-        }
-
-        function startRoomPolling() {
-            if (roomPollInterval) clearInterval(roomPollInterval);
-            roomPollInterval = setInterval(pollRoomState, 5000);
-        }
-
-        function stopRoomPolling() {
-            if (roomPollInterval) {
-                clearInterval(roomPollInterval);
-                roomPollInterval = null;
-            }
+            }).catch(err => console.error('Failed to save player state', err));
         }
 
         function gameLoop() {
@@ -422,7 +758,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             movePlayer();
-            moveBoss();  // Added boss movement
+            moveBoss();
             moveBullets();
             moveBossProjectiles();
             spawnBossProjectiles();
@@ -458,9 +794,13 @@
                 gameState.player.bullets--;
                 updateBulletsDisplay();
                 savePlayerState();
-                
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({type: 'shoot', bullets: gameState.player.bullets}));
+
+                // Broadcast stats
+                if (socket && socket.connected && roomId) {
+                    socket.emit('boss_player_stats', {
+                        room_id: roomId,
+                        bullets: gameState.player.bullets
+                    });
                 }
             }
         }
@@ -481,18 +821,16 @@
         }
 
         function spawnBossProjectiles() {
-            // Increased spawn rate from 0.02 to 0.06 (3x more frequent)
             if (Math.random() < 0.06) {
                 const angle = Math.random() * Math.PI / 2 + Math.PI / 4;
                 gameState.bossProjectiles.push({
                     x: gameState.boss.x,
                     y: gameState.boss.y + gameState.boss.size,
                     size: 12,
-                    speed: 5,  // Increased from 4 to 5
-                    dx: Math.cos(angle) * 2.5 - 1.25  // Wider spread
+                    speed: 5,
+                    dx: Math.cos(angle) * 2.5 - 1.25
                 });
             }
-            // Occasionally spawn a burst of projectiles
             if (Math.random() < 0.01) {
                 for (let i = 0; i < 3; i++) {
                     const burstAngle = (Math.PI / 4) + (i * Math.PI / 4);
@@ -509,40 +847,34 @@
 
         function moveBoss() {
             const boss = gameState.boss;
-            const margin = 100;  // Keep boss away from edges
+            const margin = 100;
 
-            // Horizontal movement
             boss.x += boss.moveSpeed * boss.moveDirection;
+            if (boss.x >= canvas.width - margin) boss.moveDirection = -1;
+            else if (boss.x <= margin) boss.moveDirection = 1;
 
-            // Bounce off walls
-            if (boss.x >= canvas.width - margin) {
-                boss.moveDirection = -1;
-            } else if (boss.x <= margin) {
-                boss.moveDirection = 1;
-            }
-
-            // Vertical movement (slight bobbing)
             boss.y += boss.verticalSpeed * boss.verticalDirection;
-
-            // Vertical bounds (keep boss in upper portion of screen)
-            if (boss.y >= 180) {
-                boss.verticalDirection = -1;
-            } else if (boss.y <= 80) {
-                boss.verticalDirection = 1;
-            }
+            if (boss.y >= 180) boss.verticalDirection = -1;
+            else if (boss.y <= 80) boss.verticalDirection = 1;
         }
 
         function checkCollisions() {
+            // Player bullets hitting boss
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                 const distance = Math.hypot(bullet.x - gameState.boss.x, bullet.y - gameState.boss.y);
                 if (distance < gameState.boss.size) {
-                    gameState.boss.health = Math.max(0, gameState.boss.health - 10);
+                    const damage = 10;
+                    gameState.boss.health = Math.max(0, gameState.boss.health - damage);
                     updateBossHealthBar();
-                    
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({type: 'damage', amount: 10}));
+
+                    // Broadcast damage
+                    if (socket && socket.connected && roomId) {
+                        socket.emit('boss_damage', {
+                            room_id: roomId,
+                            damage: damage
+                        });
                     }
-                    
+
                     if (gameState.boss.health <= 0) {
                         endGame(true);
                     }
@@ -551,6 +883,7 @@
                 return true;
             });
 
+            // Boss projectiles hitting player
             gameState.bossProjectiles.forEach(proj => {
                 const distance = Math.hypot(proj.x - gameState.player.x, proj.y - gameState.player.y);
                 if (distance < gameState.player.size + proj.size) {
@@ -558,7 +891,15 @@
                     updateLives();
                     savePlayerState();
                     proj.y = canvas.height + 100;
-                    
+
+                    // Broadcast hit
+                    if (socket && socket.connected && roomId) {
+                        socket.emit('boss_player_hit', {
+                            room_id: roomId,
+                            lives: gameState.player.lives
+                        });
+                    }
+
                     if (gameState.player.lives <= 0) {
                         endGame(false);
                     }
@@ -567,53 +908,82 @@
         }
 
         function drawGame() {
-            // Draw boss with rotation and glow
+            // Draw boss
             gameState.boss.angle += 0.01;
-            
-            // Boss glow effect
             ctx.shadowBlur = 30;
             ctx.shadowColor = '#e94560';
-            
-            // Boss body
             ctx.fillStyle = '#ff4757';
             ctx.beginPath();
             ctx.arc(gameState.boss.x, gameState.boss.y, gameState.boss.size, 0, Math.PI * 2);
             ctx.fill();
-            
-            // Boss icon (rotating snake)
+
             ctx.save();
             ctx.translate(gameState.boss.x, gameState.boss.y);
             ctx.rotate(gameState.boss.angle);
             ctx.font = '60px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('🐍', 0, 0);
+            ctx.fillText('🐲', 0, 0);
             ctx.restore();
 
-            // ===== PLAYER CHARACTER DRAWING (FIXED) =====
-            const charConfig = CHARACTER_CONFIG[gameState.player.character];
-            
-            // Player glow circle behind character
+            // Draw other players
+            Object.values(gameState.otherPlayers).forEach(player => {
+                if (!player.x || !player.y) return;
+
+                const charConfig = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
+
+                // Glow circle
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = charConfig.glow;
+                ctx.fillStyle = charConfig.color;
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                // Character icon
+                ctx.shadowBlur = 10;
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(charConfig.icon, player.x, player.y);
+
+                // Player name
+                ctx.shadowBlur = 0;
+                ctx.font = 'bold 12px Arial';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(player.username || 'Player', player.x, player.y - 45);
+            });
+
+            // Draw current player
+            const charConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
             ctx.shadowBlur = 25;
-            ctx.shadowColor = charConfig ? charConfig.glow : gameState.player.color;
-            ctx.fillStyle = charConfig ? charConfig.color : gameState.player.color;
-            ctx.globalAlpha = 0.3; // Make circle semi-transparent
+            ctx.shadowColor = charConfig.glow;
+            ctx.fillStyle = charConfig.color;
+            ctx.globalAlpha = 0.3;
             ctx.beginPath();
             ctx.arc(gameState.player.x, gameState.player.y, gameState.player.size, 0, Math.PI * 2);
             ctx.fill();
-            ctx.globalAlpha = 1.0; // Reset transparency
-            
-            // Draw the actual character ICON (big and clear)
+            ctx.globalAlpha = 1.0;
+
             ctx.shadowBlur = 15;
-            ctx.shadowColor = charConfig ? charConfig.glow : '#ffffff';
-            ctx.font = 'bold 50px Arial'; // Make it BIGGER
+            ctx.font = 'bold 50px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff'; // White so emoji shows clearly
-            ctx.fillText(charConfig ? charConfig.icon : '🙂', gameState.player.x, gameState.player.y);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(charConfig.icon, gameState.player.x, gameState.player.y);
+
+            // "You" label
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#4facfe';
+            ctx.fillText('You', gameState.player.x, gameState.player.y - 45);
+
             ctx.shadowBlur = 0;
 
-            // Player bullets with glow
+            // Draw player bullets
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#FFD700';
             ctx.fillStyle = '#FFD700';
@@ -623,7 +993,7 @@
                 ctx.fill();
             });
 
-            // Boss projectiles with glow
+            // Draw boss projectiles
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#e94560';
             ctx.fillStyle = '#e94560';
@@ -650,99 +1020,183 @@
         }
 
         function updatePlayersList() {
-            // Players list panel removed - this function now just tracks player data internally
-            // The active players count is now shown on the game boards instead
+            const list = document.getElementById('playersList');
+            const players = Object.values(gameState.otherPlayers);
+
+            let html = '';
+
+            // Current player first
+            const myConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            html += `
+                <div class="player-item" style="border-left: 3px solid ${myConfig.color};">
+                    <span class="player-icon">${myConfig.icon}</span>
+                    <div class="player-info">
+                        <div class="player-name">${gameState.player.username} (You)</div>
+                        <div class="player-stats">Lives: ${gameState.player.lives} | Bullets: ${gameState.player.bullets}</div>
+                    </div>
+                </div>
+            `;
+
+            // Other players
+            players.forEach(player => {
+                const config = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
+                html += `
+                    <div class="player-item">
+                        <span class="player-icon">${config.icon}</span>
+                        <div class="player-info">
+                            <div class="player-name">${player.username || 'Player'}</div>
+                            <div class="player-stats">Lives: ${player.lives || 0} | Bullets: ${player.bullets || 0}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        function addChatMessage(data) {
+            const container = document.getElementById('chatMessages');
+            const config = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <span class="sender-icon">${config.icon}</span>
+                <span class="sender">${data.username}:</span>
+                ${escapeHtml(data.content)}
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-message system';
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return;
+
+            if (socket && socket.connected && roomId) {
+                socket.emit('boss_chat_send', {
+                    room_id: roomId,
+                    content: content,
+                    username: gameState.player.username,
+                    character: gameState.player.character
+                });
+            } else {
+                // Offline mode - just show locally
+                addChatMessage({
+                    username: gameState.player.username,
+                    character: gameState.player.character,
+                    content: content
+                });
+            }
+
+            input.value = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function showMessage(msg) {
             const box = document.getElementById('messageBox');
             box.textContent = msg;
-            box.style.display = 'block';
-            setTimeout(() => box.style.display = 'none', 3000);
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 3000);
         }
 
         function endGame(victory) {
             gameActive = false;
-            stopRoomPolling();
+            stopPositionBroadcast();
+
             const gameOver = document.getElementById('gameOver');
             const title = document.getElementById('gameOverTitle');
             const text = document.getElementById('gameOverText');
-            
+
             if (victory) {
-                title.textContent = '🎉 VICTORY! 🎉';
+                title.textContent = 'VICTORY!';
                 text.textContent = 'You and your team defeated the boss!';
                 gameState.player.lives = DEFAULT_LIVES;
                 updateLives();
                 savePlayerState({ lives: DEFAULT_LIVES });
-                // show victory animation and message
                 showVictoryAnimation();
             } else {
-                title.textContent = '💀 GAME OVER 💀';
+                title.textContent = 'GAME OVER';
                 text.textContent = 'The boss was too powerful...';
             }
-            
+
             gameOver.style.display = 'block';
-            
-            if (ws) {
-                ws.close();
+
+            if (socket && roomId) {
+                socket.emit('boss_leave_room', { room_id: roomId });
+            }
+        }
+
+        function showVictoryAnimation() {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'fixed';
+            confetti.style.top = 0;
+            confetti.style.left = 0;
+            confetti.style.width = '100%';
+            confetti.style.height = '100%';
+            confetti.style.pointerEvents = 'none';
+            confetti.style.zIndex = 2000;
+            document.body.appendChild(confetti);
+
+            for (let i = 0; i < 120; i++) {
+                const d = document.createElement('div');
+                d.style.position = 'absolute';
+                d.style.width = d.style.height = Math.random() * 10 + 6 + 'px';
+                d.style.left = Math.random() * 100 + '%';
+                d.style.top = -10 + 'px';
+                d.style.background = ['#ffd93d','#f39c12','#4facfe','#2ecc71','#e74c3c'][Math.floor(Math.random()*5)];
+                d.style.opacity = 0.95;
+                d.style.transform = 'translateY(0) rotate(' + (Math.random()*360) + 'deg)';
+                d.style.transition = 'transform 2.5s linear, top 2.5s linear, opacity 2.5s linear';
+                confetti.appendChild(d);
+                setTimeout(() => { d.style.top = (window.innerHeight + 50) + 'px'; d.style.transform = 'translateY(0) rotate(' + (Math.random()*720) + 'deg)'; d.style.opacity = 0.9; }, 10 + i*10);
             }
 
-            function showVictoryAnimation() {
-                // simple celebratory message + confetti dots
-                const confetti = document.createElement('div');
-                confetti.style.position = 'fixed';
-                confetti.style.top = 0;
-                confetti.style.left = 0;
-                confetti.style.width = '100%';
-                confetti.style.height = '100%';
-                confetti.style.pointerEvents = 'none';
-                confetti.style.zIndex = 2000;
-                document.body.appendChild(confetti);
-
-                for (let i = 0; i < 120; i++) {
-                    const d = document.createElement('div');
-                    d.style.position = 'absolute';
-                    d.style.width = d.style.height = Math.random() * 10 + 6 + 'px';
-                    d.style.left = Math.random() * 100 + '%';
-                    d.style.top = -10 + 'px';
-                    d.style.background = ['#ffd93d','#f39c12','#4facfe','#2ecc71','#e74c3c'][Math.floor(Math.random()*5)];
-                    d.style.opacity = 0.95;
-                    d.style.transform = 'translateY(0) rotate(' + (Math.random()*360) + 'deg)';
-                    d.style.transition = 'transform 2.5s linear, top 2.5s linear, opacity 2.5s linear';
-                    confetti.appendChild(d);
-                    setTimeout(function () { d.style.top = (window.innerHeight + 50) + 'px'; d.style.transform = 'translateY(0) rotate(' + (Math.random()*720) + 'deg)'; d.style.opacity = 0.9; }, 10 + i*10);
-                }
-
-                setTimeout(function () { confetti.style.opacity = 0; setTimeout(function () { document.body.removeChild(confetti); }, 1000); }, 3000);
-            }
+            setTimeout(() => { confetti.style.opacity = 0; setTimeout(() => { document.body.removeChild(confetti); }, 1000); }, 3000);
         }
 
         function leaveBattle() {
             if (confirm('Are you sure you want to leave the battle?')) {
-                stopRoomPolling();
-                if (roomId) {
-                    fetch(`${BOSS_API_ROOT}/boss/leave`, {
+                stopPositionBroadcast();
+                if (roomId && socket) {
+                    socket.emit('boss_leave_room', { room_id: roomId });
+                    fetch(`${GAME_API_ROOT}/boss/leave`, {
                         method: 'POST',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ room_id: roomId })
-                    }).catch(function () {});
+                    }).catch(() => {});
                 }
                 returnToBoard();
             }
         }
 
         function returnToBoard() {
-                stopRoomPolling();
-                roomId = null;
-                // Return users to section 2 board (boss battle follows section 2)
-                window.location.href = 'game-board-part2.html';
+            stopPositionBroadcast();
+            roomId = null;
+            window.location.href = 'game-board-part2.html';
         }
 
         window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 200;
+            resizeCanvas();
         });
+
+        // Initialize players list
+        updatePlayersList();
     </script>
 </body>
 </html>
