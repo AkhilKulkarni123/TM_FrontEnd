@@ -210,6 +210,29 @@ function useExistingLogin() {
         .then(function () {
             var loginContainer = document.getElementById('login-container');
             var characterSelection = document.getElementById('character-selection');
+            var gameContainer = document.getElementById('game-container');
+
+            // Check if user already has a character selected in the backend
+            // If they have a valid character (not 'default' or empty), skip character selection
+            if (gameState.character && gameState.character !== 'default' && gameState.character !== '') {
+                console.log('Returning user with character:', gameState.character);
+                // Store in localStorage for future auto-resume
+                try {
+                    localStorage.setItem('snakes_selected_character', gameState.character);
+                    localStorage.setItem('snakes_started', '1');
+                } catch (e) {}
+
+                // Skip character selection and go directly to game
+                if (loginContainer) loginContainer.classList.add('hidden');
+                if (characterSelection) characterSelection.classList.add('hidden');
+                if (gameContainer) gameContainer.classList.remove('hidden');
+
+                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+                return;
+            }
+
+            // New user - show character selection
             if (loginContainer) loginContainer.classList.add('hidden');
             if (characterSelection) characterSelection.classList.remove('hidden');
         })
@@ -482,10 +505,10 @@ function autoResumeIfReady() {
     // Check if user has previously selected a character AND started the game
     var storedChar = null;
     try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) {}
-    
+
     var hasStarted = false;
     try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
-    
+
     // Only auto-resume if BOTH character is selected AND game was started
     if (storedChar && hasStarted && gameState.userId) {
         gameState.character = storedChar;
@@ -503,7 +526,32 @@ function autoResumeIfReady() {
             startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
         }).catch(function () {});
     }
-    
+
+    // If user is logged in but no localStorage, check if they have backend data with character
+    if (gameState.userId && !storedChar) {
+        return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
+            // If backend has a valid character, auto-resume
+            if (gameState.character && gameState.character !== 'default' && gameState.character !== '') {
+                console.log('Auto-resuming with backend character:', gameState.character);
+                // Store in localStorage for future
+                try {
+                    localStorage.setItem('snakes_selected_character', gameState.character);
+                    localStorage.setItem('snakes_started', '1');
+                } catch (e) {}
+
+                var characterSelection = document.getElementById('character-selection');
+                var gameContainer = document.getElementById('game-container');
+                var loginContainer = document.getElementById('login-container');
+                if (characterSelection) characterSelection.classList.add('hidden');
+                if (gameContainer) gameContainer.classList.remove('hidden');
+                if (loginContainer) loginContainer.classList.add('hidden');
+
+                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+            }
+        }).catch(function () {});
+    }
+
     // Otherwise, show the appropriate screen (login or character selection)
     return Promise.resolve();
 }

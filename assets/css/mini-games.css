@@ -823,8 +823,247 @@
 }
 
 /* =====================================================
+   INSTRUCTION BOX STYLES - Compact inline version
+   ===================================================== */
+
+.game-instructions {
+    background: linear-gradient(135deg, #e8f4fc 0%, #d4edda 100%);
+    border-left: 4px solid #28a745;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    line-height: 1.3;
+}
+
+.game-instructions strong {
+    color: #155724;
+    display: inline;
+    margin-right: 5px;
+}
+
+.game-instructions p {
+    margin: 0 0 4px 0;
+    color: #333;
+    display: inline;
+}
+
+/* Collapsible instructions - starts collapsed */
+.game-instructions.collapsible {
+    cursor: pointer;
+    padding: 6px 12px;
+}
+
+.game-instructions.collapsible .instructions-content {
+    display: none;
+    margin-top: 6px;
+}
+
+.game-instructions.collapsible.expanded .instructions-content {
+    display: block;
+}
+
+.game-instructions .instructions-toggle {
+    font-size: 0.9em;
+    color: #155724;
+    font-weight: bold;
+}
+
+/* =====================================================
+   GAME HEADER STYLES
+   ===================================================== */
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.game-header .game-timer {
+    position: static;
+    background: #1e1e1e;
+    color: #ffd700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.game-header .game-score {
+    position: static;
+    background: transparent;
+    color: #333;
+    padding: 0;
+    font-weight: bold;
+    box-shadow: none;
+    font-size: 0.9em;
+}
+
+/* =====================================================
+   THREE-COLUMN LAYOUT - Game | Controls | Instructions
+   ===================================================== */
+
+.game-layout-three-col {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.2fr) minmax(150px, 0.8fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.game-layout-three-col .game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.game-layout-three-col .controls-area {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.game-layout-three-col .instructions-area {
+    background: linear-gradient(135deg, #e8f4fc 0%, #d4edda 100%);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    line-height: 1.4;
+}
+
+.game-layout-three-col .instructions-area h4 {
+    margin: 0 0 6px 0;
+    color: #155724;
+    font-size: 0.95em;
+}
+
+.game-layout-three-col .instructions-area p {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+/* =====================================================
+   TWO-COLUMN LAYOUT STYLES
+   ===================================================== */
+
+.game-layout-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.game-left-column,
+.game-right-column {
+    min-width: 0;
+}
+
+/* =====================================================
+   ARCADE GRID CONTAINER - Larger and more spacious
+   ===================================================== */
+
+.arcade-grid {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+}
+
+.arcade-grid .mini-game {
+    max-height: none;
+    overflow: visible;
+    padding: 20px;
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+/* Arcade zone expanded */
+.arcade-zone {
+    min-height: 500px;
+}
+
+.arcade-zone .arcade-grid {
+    min-height: 420px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* =====================================================
+   MINI-GAME BASE STYLES - Wider and cleaner
+   ===================================================== */
+
+.mini-game {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 680px;
+    width: 100%;
+    position: relative;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+/* Make maze grids larger */
+.loop-racer .maze-grid {
+    min-width: 220px;
+    min-height: 220px;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+.loop-racer .maze-cell {
+    min-width: 40px;
+    min-height: 40px;
+}
+
+/* Ensure game content areas have good width */
+.mini-game .game-layout-columns,
+.mini-game .game-layout-three-col {
+    max-width: 100%;
+}
+
+/* Stack layout - simpler vertical flow */
+.mini-game .game-content-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+/* =====================================================
    RESPONSIVE ADJUSTMENTS
    ===================================================== */
+
+@media (max-width: 900px) {
+    .game-layout-three-col {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .game-layout-three-col .instructions-area {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-layout-columns,
+    .game-layout-three-col {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .game-instructions {
+        padding: 6px 10px;
+        font-size: 0.75em;
+    }
+
+    .arcade-grid {
+        max-height: 450px;
+    }
+}
 
 @media (max-width: 600px) {
     .mini-game {

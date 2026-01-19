@@ -255,6 +255,13 @@ hide: true
 
 Empower yourself to solve real-world problems, unlock creativity, and open doors to every field—because coding is the language of innovation.
 
+<!-- Play Snakes Game Button -->
+<div style="text-align: center; margin: 30px 0;">
+  <a href="{{site.baseurl}}/hacks/snakes/game-board-part1.html" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 50px; font-size: 1.2em; font-weight: bold; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
+    Play Snakes & Ladders
+  </a>
+</div>
+
 > Invest in your technical skills through Project-based learning.
 
 <div style="display: flex; align-items: flex-start; justify-content: center; gap: 40px; flex-wrap: wrap;">

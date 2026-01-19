@@ -74,6 +74,16 @@
   margin-right: auto;
 }
 
+/* When arcade-grid contains a mini-game, make it wider */
+.arcade-grid:has(.mini-game),
+.arcade-grid.mini-game-container {
+  max-width: 700px;
+  width: 100%;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
 .arcade-cell {
   aspect-ratio: 1;
   border-radius: 10px;

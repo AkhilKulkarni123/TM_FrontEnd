@@ -32,21 +32,33 @@
 
                 container.innerHTML = `
                     <div class="mini-game loop-racer">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="maze-grid" id="maze-grid"></div>
-                        <div class="command-panel">
-                            <div class="command-buttons">
-                                <button class="cmd-btn" data-cmd="forward">Forward</button>
-                                <button class="cmd-btn" data-cmd="right">Turn Right</button>
-                                <button class="cmd-btn" data-cmd="left">Turn Left</button>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🏎️ Loop Racer</span>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Use command buttons to program your path. Click Forward/Turn to add commands, use Repeat to loop them, then Run Code to move!
+                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Guide the arrow to the target (🎯).
+                        </div>
+                        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
+                            <div class="maze-grid" id="maze-grid" style="background: #1a1a2e; padding: 15px; border-radius: 10px; flex-shrink: 0;"></div>
+                            <div class="controls-area" style="flex: 1; min-width: 280px; max-width: 350px;">
+                                <div class="command-buttons" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+                                    <button class="cmd-btn" data-cmd="forward" style="padding: 10px 18px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">⬆️ Forward</button>
+                                    <button class="cmd-btn" data-cmd="right" style="padding: 10px 18px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">➡️ Turn Right</button>
+                                    <button class="cmd-btn" data-cmd="left" style="padding: 10px 18px; background: #e67e22; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">⬅️ Turn Left</button>
+                                </div>
+                                <div class="loop-control" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                                    <label style="font-size: 0.95em;">Repeat: <input type="number" id="loop-count" min="1" max="5" value="1" style="width: 55px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;"></label>
+                                    <button id="add-loop" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer;">🔁 Add Loop</button>
+                                </div>
+                                <div style="margin-bottom: 8px; font-weight: 600; color: #333;">Your Code:</div>
+                                <div class="command-queue" id="cmd-queue" style="min-height: 50px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #e0e0e0; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button id="run-code" class="run-btn" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em;">▶️ Run Code</button>
+                                    <button id="clear-code" class="clear-btn" style="padding: 14px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">🗑️ Clear</button>
+                                </div>
                             </div>
-                            <div class="loop-control">
-                                <label>Repeat: <input type="number" id="loop-count" min="1" max="5" value="1"></label>
-                                <button id="add-loop">Add Loop</button>
-                            </div>
-                            <div class="command-queue" id="cmd-queue"></div>
-                            <button id="run-code" class="run-btn">Run Code</button>
-                            <button id="clear-code" class="clear-btn">Clear</button>
                         </div>
                     </div>
                 `;
@@ -171,11 +183,18 @@
 
                 container.innerHTML = `
                     <div class="mini-game variable-vault">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
-                        <div class="vault-container">
-                            <div class="variables-col" id="vars-col"></div>
-                            <div class="values-col" id="vals-col"></div>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🔐 Variable Vault</span>
+                            <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Click a variable name on the left, then click its matching value on the right.
+                            <strong style="margin-left: 10px;">💡 Tip:</strong> Numbers have no quotes, strings have "quotes", booleans are true/false.
+                        </div>
+                        <div class="vault-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="variables-col" id="vars-col" style="background: #f0f7ff; padding: 15px; border-radius: 10px;"></div>
+                            <div class="values-col" id="vals-col" style="background: #fff8f0; padding: 15px; border-radius: 10px;"></div>
                         </div>
                     </div>
                 `;
@@ -259,10 +278,18 @@
 
                 container.innerHTML = `
                     <div class="mini-game if-then-tower">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="tower-area">
-                            <div class="tower" id="tower"></div>
-                            <div class="condition-panel" id="condition-panel"></div>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🏗️ If-Then Tower</span>
+                            <div class="game-score">Height: <span id="score">0</span>/6</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Read the if-statement and check if it's TRUE or FALSE with the given value. Click the correct colored block.
+                            <strong style="margin-left: 10px;">💡 Example:</strong> if score > 10 with value 15 → TRUE!
+                        </div>
+                        <div style="display: flex; gap: 25px; align-items: flex-start; justify-content: center; flex-wrap: wrap;">
+                            <div class="tower" id="tower" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:220px;min-width:120px;border-bottom:4px solid #333;padding:15px;background:#f8f9fa;border-radius:10px;"></div>
+                            <div class="condition-panel" id="condition-panel" style="flex: 1; min-width: 280px; max-width: 400px;"></div>
                         </div>
                     </div>
                 `;
@@ -335,10 +362,16 @@
 
                 container.innerHTML = `
                     <div class="mini-game bug-squasher">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Bugs Found: <span id="score">0</span>/${state.total}</div>
-                        <div class="code-display" id="code-display"></div>
-                        <div class="hint-box" id="hint-box" style="display:none;"></div>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🐛 Bug Squasher</span>
+                            <div class="game-score">Bugs Found: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Look at the code below and find the buggy line. The hint tells you what to look for. Click on the line with the bug!
+                        </div>
+                        <div class="code-display" id="code-display" style="min-height: 150px; max-width: 500px; margin: 0 auto;"></div>
+                        <div class="hint-box" id="hint-box" style="display:none; margin-top: 15px; max-width: 500px; margin-left: auto; margin-right: auto;"></div>
                     </div>
                 `;
 
@@ -425,11 +458,15 @@
 
                 container.innerHTML = `
                     <div class="mini-game algorithm-chef">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <h3 style="text-align:center;margin-bottom:15px;">${recipe.name}</h3>
-                        <p style="text-align:center;color:#666;margin-bottom:15px;">Drag steps into the correct order!</p>
-                        <div class="steps-container" id="steps-container"></div>
-                        <button id="check-order" style="display:block;margin:15px auto;padding:10px 30px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Check Order</button>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">👨‍🍳 Algorithm Chef: ${recipe.name}</span>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Drag and drop the steps to arrange them in the correct logical order. Think: What must happen FIRST?
+                        </div>
+                        <div class="steps-container" id="steps-container" style="max-width: 450px; margin: 0 auto;"></div>
+                        <button id="check-order" style="display:block;margin:20px auto;padding:14px 35px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">✅ Check Order</button>
                     </div>
                 `;
 
@@ -537,11 +574,17 @@
 
                 container.innerHTML = `
                     <div class="mini-game array-assembler">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Completed: <span id="score">0</span>/${state.total}</div>
-                        <div class="instruction" id="instruction" style="text-align:center;font-size:1.1em;margin:10px 0;"></div>
-                        <div class="array-visual" id="array-visual" style="display:flex;justify-content:center;gap:5px;margin:15px 0;"></div>
-                        <div class="items-panel" id="items-panel" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;"></div>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">📦 Array Assembler</span>
+                            <div class="game-score">Completed: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Click an item below, then click the array slot at the correct index. <strong>💡 Remember:</strong> Arrays start at index 0!
+                        </div>
+                        <div class="instruction" id="instruction" style="text-align:center;font-size:1.1em;margin:15px auto;padding:15px;background:#fff3cd;border-radius:10px;font-weight:600;max-width:400px;"></div>
+                        <div class="array-visual" id="array-visual" style="display:flex;justify-content:center;gap:10px;margin:20px 0;"></div>
+                        <div class="items-panel" id="items-panel" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;"></div>
                     </div>
                 `;
 
@@ -624,9 +667,15 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game object-detective">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Solved: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game object-detective" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Solved: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'Objects have properties that describe them. Read the clue about an object\'s properties and click the object that matches those characteristics.',
+                            'Match all 6 clues to the correct objects based on their properties.'
+                        )}
                         <div class="clue-box" id="clue-box" style="text-align:center;padding:15px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
                         <div class="options-grid" id="options-grid" style="display:flex;justify-content:center;gap:15px;flex-wrap:wrap;"></div>
                     </div>
@@ -686,15 +735,25 @@
 
                 container.innerHTML = `
                     <div class="mini-game stack-attack">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <p style="text-align:center;margin:10px 0;">Remove all RED cards without removing BLUE cards!</p>
-                        <div class="stack-container" style="display:flex;justify-content:center;gap:30px;">
-                            <div class="stack" id="main-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:80px;border:2px solid #333;border-radius:8px;padding:5px;"></div>
-                            <div class="removed" id="removed-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:80px;border:2px dashed #999;border-radius:8px;padding:5px;">
-                                <span style="color:#999;font-size:0.8em;">Removed</span>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">📚 Stack Attack</span>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Stacks use LIFO (Last In, First Out) - only the TOP card can be removed!
+                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Remove all RED cards while keeping BLUE cards.
+                        </div>
+                        <div style="display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
+                            <div style="text-align: center;">
+                                <p style="margin-bottom: 10px; font-weight: bold; color: #333;">Stack</p>
+                                <div class="stack" id="main-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px solid #333;border-radius:10px;padding:10px;background:#f8f9fa;"></div>
+                            </div>
+                            <div style="text-align: center;">
+                                <p style="margin-bottom: 10px; font-weight: bold; color: #999;">Removed</p>
+                                <div class="removed" id="removed-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px dashed #999;border-radius:10px;padding:10px;"></div>
                             </div>
                         </div>
-                        <button id="pop-btn" style="display:block;margin:15px auto;padding:10px 30px;background:#dc3545;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Pop Top Card</button>
+                        <button id="pop-btn" style="display:block;margin:20px auto;padding:14px 30px;background:#dc3545;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">⬆️ Pop Top Card</button>
                     </div>
                 `;
 
@@ -760,14 +819,22 @@
 
                 container.innerHTML = `
                     <div class="mini-game queue-quest">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Served: <span id="score">0</span>/${state.target}</div>
-                        <div class="queue-display" id="queue-display" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:60px;padding:10px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
-                        <div class="controls" style="display:flex;justify-content:center;gap:15px;margin-top:15px;">
-                            <button id="add-customer" style="padding:10px 20px;background:#28a745;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">+ New Customer</button>
-                            <button id="serve-customer" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Serve First</button>
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🎫 Queue Quest</span>
+                            <div class="game-score">Served: <span id="score">0</span>/${state.target}</div>
                         </div>
-                        <p id="status" style="text-align:center;margin-top:10px;color:#666;"></p>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Queues use FIFO (First In, First Out). The gold customer is first in line - serve them!
+                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Serve 8 customers.
+                        </div>
+                        <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Customer Queue (Gold = First in line):</p>
+                        <div class="queue-display" id="queue-display" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;min-height:80px;padding:15px;background:#f8f9fa;border-radius:12px;margin:15px auto;border:2px solid #ddd;max-width:500px;"></div>
+                        <div class="controls" style="display:flex;justify-content:center;gap:15px;margin-top:20px;">
+                            <button id="add-customer" style="padding:14px 24px;background:#28a745;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">➕ New Customer</button>
+                            <button id="serve-customer" style="padding:14px 24px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">✅ Serve First</button>
+                        </div>
+                        <p id="status" style="text-align:center;margin-top:15px;color:#666;min-height:24px;font-size:1em;"></p>
                     </div>
                 `;
 
@@ -848,9 +915,15 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game nested-navigator">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Found: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game nested-navigator" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Found: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'Navigate through nested data using dot notation (user.name) for objects or bracket notation (items[0]) for arrays. Read the path shown, look at the data structure, and type the value at that path.',
+                            'Find all 5 values by reading their paths in the nested data structures.'
+                        )}
                         <div class="path-display" id="path-display" style="text-align:center;font-family:monospace;font-size:1.1em;margin:10px 0;padding:10px;background:#1e1e1e;color:#ffd700;border-radius:8px;"></div>
                         <div class="data-display" id="data-display" style="font-family:monospace;padding:15px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
                         <input type="text" id="answer-input" placeholder="Enter the value..." style="width:100%;padding:12px;border:2px solid #667eea;border-radius:8px;font-size:1em;margin-top:10px;">
@@ -926,9 +999,15 @@
                 const shuffledIPs = [...devices].map(d => d.ip).sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
-                    <div class="mini-game ip-matcher">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game ip-matcher" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Matched: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'Every device on a network has a unique IP address. Click a device on the left to select it, then click its matching IP address on the right. Router typically ends in .1, servers in low numbers.',
+                            'Match all 5 devices to their correct IP addresses.'
+                        )}
                         <div class="match-container" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
                             <div class="devices-col" id="devices-col"></div>
                             <div class="ips-col" id="ips-col"></div>
@@ -1012,9 +1091,15 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game dns-speedrun">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Translated: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game dns-speedrun" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Translated: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'DNS (Domain Name System) translates human-readable domain names to IP addresses. For each domain shown, click the correct IP address from the options below.',
+                            'Match all 6 domain names to their correct IP addresses.'
+                        )}
                         <div class="domain-display" id="domain-display" style="text-align:center;font-size:1.3em;margin:15px 0;padding:15px;background:#1e1e1e;color:#00ff00;border-radius:10px;font-family:monospace;"></div>
                         <div class="ip-options" id="ip-options" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
                     </div>
@@ -1341,9 +1426,15 @@
                 ].sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
-                    <div class="mini-game password-smash">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game password-smash" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Correct: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'Weak: simple words, short, common. Medium: mix of letters/numbers, 6-10 chars. Strong: 12+ chars with uppercase, lowercase, numbers, and special characters like !@#$.',
+                            'Rate all 10 passwords correctly by clicking Weak, Medium, or Strong.'
+                        )}
                         <div class="password-display" id="password-display" style="text-align:center;padding:20px;background:#1e1e1e;border-radius:10px;margin:10px 0;">
                             <code id="current-password" style="font-size:1.4em;color:#00ff00;"></code>
                         </div>
@@ -1360,7 +1451,9 @@
                 function showPassword() {
                     if (currentIndex >= passwords.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.score / state.total) * 100));
+                        // Must get ALL passwords correct to pass
+                        const passed = state.score >= state.total;
+                        onComplete(passed, Math.floor((state.score / state.total) * 100));
                         return;
                     }
 
@@ -1403,9 +1496,15 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game caesar-cracker">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Decoded: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game caesar-cracker" style="max-width: 100%; overflow: hidden;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <div class="game-score" style="font-weight: bold;">Decoded: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        ${createInstructionBox(
+                            'The Caesar cipher shifts each letter by a number. To decode, shift letters BACKWARD. Example: with shift 3, D→A, E→B, K→H. So "KHOOR" becomes "HELLO".',
+                            'Decode all 5 encrypted messages by typing the original text.'
+                        )}
                         <div class="cipher-display" style="text-align:center;margin:15px 0;">
                             <p>Encrypted message (Shift: <span id="shift">3</span>):</p>
                             <code id="encrypted" style="font-size:1.5em;background:#1e1e1e;color:#ff6b6b;padding:10px 20px;border-radius:8px;display:inline-block;"></code>
@@ -1414,7 +1513,6 @@
                             <input type="text" id="decode-input" placeholder="Enter decoded message..." style="width:80%;padding:12px;border:2px solid #667eea;border-radius:8px;font-size:1.1em;text-transform:uppercase;">
                             <button id="decode-btn" style="display:block;margin:10px auto;padding:12px 30px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Decode</button>
                         </div>
-                        <p style="text-align:center;color:#666;font-size:0.9em;">Hint: Shift each letter backward by the shift amount</p>
                     </div>
                 `;
 
@@ -1492,7 +1590,8 @@
                 function showEmail() {
                     if (currentIndex >= emails.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.correct / state.total) * 100));
+                        const passed = state.correct >= state.total;
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -1567,7 +1666,8 @@
                 function showTraffic() {
                     if (currentIndex >= traffic.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.correct / state.total) * 100));
+                        const passed = state.correct >= state.total;
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -1729,7 +1829,8 @@
                 function showScenario() {
                     if (currentIndex >= scenarios.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.correct / state.total) * 100));
+                        const passed = state.correct >= state.total;
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -1794,7 +1895,8 @@
                 function showPermission() {
                     if (currentIndex >= permissions.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.correct / state.total) * 100));
+                        const passed = state.correct >= state.total;
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -1864,7 +1966,8 @@
                 function showChart() {
                     if (currentIndex >= trends.length) {
                         state.completed = true;
-                        onComplete(true, Math.floor((state.correct / state.total) * 100));
+                        const passed = state.correct >= state.total;
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -2035,6 +2138,43 @@
     // =====================================================
     // UTILITY FUNCTIONS
     // =====================================================
+
+    /**
+     * Create an instruction box for mini-games
+     * @param {string} howToPlay - Instructions on how to play
+     * @param {string} goal - The goal to complete the game
+     * @returns {string} HTML string for the instruction box
+     */
+    function createInstructionBox(howToPlay, goal) {
+        return `
+            <div class="game-instructions" style="background: linear-gradient(135deg, #e8f4fc 0%, #d4edda 100%); border-left: 4px solid #28a745; padding: 12px 15px; margin-bottom: 15px; border-radius: 8px; font-size: 0.9em;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="font-size: 1.2em;">📋</span>
+                    <div>
+                        <strong style="color: #155724; display: block; margin-bottom: 5px;">How to Play:</strong>
+                        <p style="margin: 0 0 8px 0; color: #333;">${howToPlay}</p>
+                        <strong style="color: #155724; display: block; margin-bottom: 5px;">Goal:</strong>
+                        <p style="margin: 0; color: #333;">${goal}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Create a two-column layout for games with code/controls
+     * @param {string} leftContent - HTML for the left column (game area)
+     * @param {string} rightContent - HTML for the right column (controls)
+     * @returns {string} HTML string for the layout
+     */
+    function createTwoColumnLayout(leftContent, rightContent) {
+        return `
+            <div class="game-layout-columns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+                <div class="game-left-column">${leftContent}</div>
+                <div class="game-right-column">${rightContent}</div>
+            </div>
+        `;
+    }
 
     function startTimer(timerElement, duration, onTimeout) {
         let remaining = Math.floor(duration / 1000);
