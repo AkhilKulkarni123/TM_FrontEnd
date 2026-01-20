@@ -212,14 +212,30 @@ function useExistingLogin() {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
 
-            // Check if user already has a character selected in the backend
-            // If they have a valid character (not 'default' or empty), skip character selection
-            if (gameState.character && gameState.character !== 'default' && gameState.character !== '') {
-                console.log('Returning user with character:', gameState.character);
-                // Store in localStorage for future auto-resume
+            // Check if user already has a CONFIRMED character selection
+            // Require BOTH: valid character in backend AND snakes_started flag in localStorage
+            // Also verify the localStorage belongs to this user
+            var wasStartedBefore = false;
+            var storedUserId = null;
+            try {
+                wasStartedBefore = (localStorage.getItem('snakes_started') === '1');
+                storedUserId = localStorage.getItem('snakes_user_id');
+            } catch (e) {}
+
+            // Only skip character selection if:
+            // 1. Backend has valid character
+            // 2. User has previously started the game
+            // 3. localStorage belongs to this user
+            var hasValidCharacter = gameState.character && gameState.character !== 'default' && gameState.character !== '';
+            var isSameUser = storedUserId === String(gameState.userId);
+
+            if (hasValidCharacter && wasStartedBefore && isSameUser) {
+                console.log('Returning user with confirmed character:', gameState.character);
+                // Store in localStorage for future auto-resume (include user ID for multi-account support)
                 try {
                     localStorage.setItem('snakes_selected_character', gameState.character);
                     localStorage.setItem('snakes_started', '1');
+                    localStorage.setItem('snakes_user_id', String(gameState.userId));
                 } catch (e) {}
 
                 // Skip character selection and go directly to game
@@ -232,7 +248,8 @@ function useExistingLogin() {
                 return;
             }
 
-            // New user - show character selection
+            // User needs to select character - show character selection
+            console.log('Showing character selection - hasValidCharacter:', hasValidCharacter, 'wasStartedBefore:', wasStartedBefore, 'isSameUser:', isSameUser);
             if (loginContainer) loginContainer.classList.add('hidden');
             if (characterSelection) characterSelection.classList.remove('hidden');
         })
@@ -390,8 +407,14 @@ function selectCharacter(card) {
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
-    try { localStorage.setItem('snakes_selected_character', gameState.character); } catch (e) {}
-    
+    // Save to localStorage with user ID for multi-account support
+    try {
+        localStorage.setItem('snakes_selected_character', gameState.character);
+        if (gameState.userId) {
+            localStorage.setItem('snakes_user_id', String(gameState.userId));
+        }
+    } catch (e) {}
+
     console.log('======================');
     console.log('CHARACTER SELECTED:', gameState.character);
     console.log('Card data-character:', card.getAttribute('data-character'));
@@ -494,7 +517,12 @@ function startGame() {
             if (gameContainer) gameContainer.classList.remove('hidden');
             if (loginContainer) loginContainer.classList.add('hidden');
 
-            try { localStorage.setItem('snakes_started', '1'); } catch (e) {}
+            try {
+                localStorage.setItem('snakes_started', '1');
+                if (gameState.userId) {
+                    localStorage.setItem('snakes_user_id', String(gameState.userId));
+                }
+            } catch (e) {}
 
             if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
 
@@ -517,8 +545,41 @@ function autoResumeIfReady() {
     var hasStarted = false;
     try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
 
-    // Only auto-resume if BOTH character is selected AND game was started
-    if (storedChar && hasStarted && gameState.userId) {
+    // IMPORTANT: Check if localStorage belongs to the CURRENT user
+    // If user ID changed OR localStorage has no user ID (old format), clear old data
+    var storedUserId = null;
+    try { storedUserId = localStorage.getItem('snakes_user_id'); } catch (e) {}
+
+    // Clear localStorage if:
+    // 1. There's stored data but no stored user ID (old format before user ID tracking)
+    // 2. User ID doesn't match current logged-in user
+    var shouldClearStorage = false;
+    if (gameState.userId && storedChar) {
+        if (!storedUserId) {
+            // Old format localStorage without user ID - clear it
+            console.log('Old localStorage format detected (no user ID), clearing data');
+            shouldClearStorage = true;
+        } else if (storedUserId !== String(gameState.userId)) {
+            // Different user logged in
+            console.log('Different user detected, clearing old localStorage data');
+            shouldClearStorage = true;
+        }
+    }
+
+    if (shouldClearStorage) {
+        try {
+            localStorage.removeItem('snakes_selected_character');
+            localStorage.removeItem('snakes_started');
+            localStorage.removeItem('snakes_user_id');
+            localStorage.removeItem('snakes_isGuest');
+        } catch (e) {}
+        storedChar = null;
+        hasStarted = false;
+        storedUserId = null;
+    }
+
+    // Only auto-resume if BOTH character is selected AND game was started AND same user
+    if (storedChar && hasStarted && gameState.userId && storedUserId === String(gameState.userId)) {
         gameState.character = storedChar;
         gameState.isGuest = (localStorage.getItem('snakes_isGuest') === '1');
 
@@ -535,8 +596,8 @@ function autoResumeIfReady() {
         }).catch(function () {});
     }
 
-    // If user is logged in but no localStorage, check if they have backend data with character
-    if (gameState.userId && !storedChar) {
+    // If user is logged in but no valid localStorage for this user, check backend
+    if (gameState.userId && (!storedChar || storedUserId !== String(gameState.userId))) {
         // First, just check if game data exists WITHOUT creating it
         return fetch(API_URL + '/snakes/', {
             method: 'GET',
@@ -560,10 +621,19 @@ function autoResumeIfReady() {
         .then(function (data) {
             if (!data) return; // Already handled (new user)
 
-            // Existing user - check if they have a valid character
+            // Existing user - check if they have CONFIRMED character selection
+            // We require BOTH: valid character in backend AND snakes_started flag in localStorage
+            // This ensures user explicitly selected and started the game before
             var serverCharacter = data.selected_character;
-            if (serverCharacter && serverCharacter !== 'default' && serverCharacter !== '') {
-                // Valid character exists - auto-resume
+            var wasStartedBefore = false;
+            try { wasStartedBefore = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
+
+            // Only auto-resume if:
+            // 1. Server has valid character (not 'default' or empty)
+            // 2. User has previously started the game (snakes_started flag)
+            // This prevents auto-resuming for users who have backend data but never confirmed their selection
+            if (serverCharacter && serverCharacter !== 'default' && serverCharacter !== '' && wasStartedBefore) {
+                // Valid character exists AND user previously started - auto-resume
                 console.log('Auto-resuming with backend character:', serverCharacter);
                 gameState.character = serverCharacter;
                 gameState.bullets = Number(data.total_bullets || 0);
@@ -577,10 +647,11 @@ function autoResumeIfReady() {
                 gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
                 gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
 
-                // Store in localStorage for future
+                // Store in localStorage for future (include user ID for multi-account support)
                 try {
                     localStorage.setItem('snakes_selected_character', serverCharacter);
                     localStorage.setItem('snakes_started', '1');
+                    localStorage.setItem('snakes_user_id', String(gameState.userId));
                 } catch (e) {}
 
                 return loadProgress().then(function () {
@@ -595,8 +666,10 @@ function autoResumeIfReady() {
                     startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
                 });
             } else {
-                // User has game data but no valid character - show character selection
-                console.log('Existing user without valid character - showing character selection');
+                // User needs to select character - either:
+                // - No valid character in backend
+                // - Or never explicitly started the game before
+                console.log('Showing character selection - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
                 var characterSelection = document.getElementById('character-selection');
                 var loginContainer = document.getElementById('login-container');
                 if (loginContainer) loginContainer.classList.add('hidden');
