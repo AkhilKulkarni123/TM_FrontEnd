@@ -77,7 +77,7 @@
 /* When arcade-grid contains a mini-game, make it wider */
 .arcade-grid:has(.mini-game),
 .arcade-grid.mini-game-container {
-  max-width: 700px;
+  max-width: 900px;
   width: 100%;
   background: transparent;
   padding: 0;

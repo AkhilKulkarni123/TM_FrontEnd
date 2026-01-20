@@ -976,7 +976,7 @@
     overflow: visible;
     padding: 20px;
     width: 100%;
-    max-width: 680px;
+    max-width: 850px;
     margin: 0 auto;
 }
 
@@ -987,7 +987,7 @@
 
 .arcade-zone .arcade-grid {
     min-height: 420px;
-    max-width: 720px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
@@ -1000,7 +1000,7 @@
     background: white;
     border-radius: 12px;
     padding: 20px;
-    max-width: 680px;
+    max-width: 850px;
     width: 100%;
     position: relative;
     box-sizing: border-box;

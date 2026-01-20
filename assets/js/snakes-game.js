@@ -743,34 +743,86 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     var container = document.createElement('div');
     container.className = 'other-players-container';
 
-    var maxVisible = 3;
-    var visiblePlayers = playersHere.slice(0, maxVisible);
-    var hiddenCount = playersHere.length - maxVisible;
+    // Create a button that shows the number of players on this square
+    var playersBtn = document.createElement('button');
+    playersBtn.className = 'square-players-btn';
+    playersBtn.textContent = playersHere.length;
+    playersBtn.title = playersHere.length + ' player' + (playersHere.length > 1 ? 's' : '') + ' on this square';
 
-    visiblePlayers.forEach(function(player, index) {
-        var marker = document.createElement('div');
-        marker.className = 'other-player-marker';
-        marker.setAttribute('data-player-id', player.user_id);
-        marker.setAttribute('data-player-name', player.username);
-        marker.textContent = getCharacterIcon(player.selected_character);
-        marker.style.transform = 'translate(' + (index * 8) + 'px, ' + (index * -4) + 'px)';
+    playersBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showSquarePlayersPopup(squareNum, playersHere);
+    });
 
-        marker.addEventListener('click', function(e) {
+    container.appendChild(playersBtn);
+    square.appendChild(container);
+}
+
+function showSquarePlayersPopup(squareNum, players) {
+    // Remove any existing popup
+    var existingPopup = document.getElementById('square-players-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    // Create the popup modal
+    var popup = document.createElement('div');
+    popup.id = 'square-players-popup';
+    popup.className = 'square-players-popup';
+
+    var content = document.createElement('div');
+    content.className = 'square-players-content';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'square-players-header';
+    header.innerHTML = '<h3>Players on Square ' + squareNum + '</h3><button class="square-players-close">&times;</button>';
+    content.appendChild(header);
+
+    // Players list
+    var list = document.createElement('div');
+    list.className = 'square-players-list';
+
+    players.forEach(function(player) {
+        var playerItem = document.createElement('div');
+        playerItem.className = 'square-player-item';
+        playerItem.innerHTML =
+            '<span class="square-player-icon">' + getCharacterIcon(player.selected_character) + '</span>' +
+            '<div class="square-player-info">' +
+                '<div class="square-player-name">' + (player.username || 'Unknown') + '</div>' +
+                '<div class="square-player-stats">' + (player.total_bullets || 0) + ' bullets</div>' +
+            '</div>' +
+            '<span class="square-player-arrow">›</span>';
+
+        playerItem.addEventListener('click', function(e) {
             e.stopPropagation();
+            popup.remove();
             showPlayerInfoPopup(player);
         });
 
-        container.appendChild(marker);
+        list.appendChild(playerItem);
     });
 
-    if (hiddenCount > 0) {
-        var badge = document.createElement('div');
-        badge.className = 'player-count-badge';
-        badge.textContent = '+' + hiddenCount;
-        container.appendChild(badge);
-    }
+    content.appendChild(list);
+    popup.appendChild(content);
+    document.body.appendChild(popup);
 
-    square.appendChild(container);
+    // Close handlers
+    var closeBtn = popup.querySelector('.square-players-close');
+    closeBtn.addEventListener('click', function() {
+        popup.remove();
+    });
+
+    popup.addEventListener('click', function(e) {
+        if (e.target === popup) {
+            popup.remove();
+        }
+    });
+
+    // Show the popup with animation
+    setTimeout(function() {
+        popup.classList.add('active');
+    }, 10);
 }
 
 function startMultiplayerRefresh() {
