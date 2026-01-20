@@ -266,16 +266,22 @@ function loadOrCreateGameData() {
     })
         .then(function (response) {
             if (response.status === 404) {
-                // Create new game with current character
-                console.log('Creating new game data with character:', gameState.character);
-                return fetch(API_URL + '/snakes/', {
-                    method: 'POST',
-                    mode: fetchOptions.mode,
-                    cache: fetchOptions.cache,
-                    credentials: fetchOptions.credentials,
-                    headers: fetchOptions.headers,
-                    body: JSON.stringify({ selected_character: gameState.character })
-                });
+                // Only create new game if character is already selected
+                if (gameState.character && gameState.character !== 'default' && gameState.character !== '') {
+                    console.log('Creating new game data with character:', gameState.character);
+                    return fetch(API_URL + '/snakes/', {
+                        method: 'POST',
+                        mode: fetchOptions.mode,
+                        cache: fetchOptions.cache,
+                        credentials: fetchOptions.credentials,
+                        headers: fetchOptions.headers,
+                        body: JSON.stringify({ selected_character: gameState.character })
+                    });
+                } else {
+                    // No character selected yet - don't create game data
+                    console.log('No character selected - skipping game data creation');
+                    return null;
+                }
             }
             return response;
         })
@@ -294,9 +300,10 @@ function loadOrCreateGameData() {
             gameState.lives = Number(data.lives || 3);
             gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
             gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
-            
+
             // IMPORTANT: Only load character from server if we don't have one selected yet
-            if (!gameState.character && data.selected_character) {
+            // AND only if it's a valid character (not 'default' or empty)
+            if (!gameState.character && data.selected_character && data.selected_character !== 'default' && data.selected_character !== '') {
                 console.log('Loading character from server:', data.selected_character);
                 gameState.character = data.selected_character;
             } else if (gameState.character) {
@@ -335,9 +342,10 @@ function loadProgress() {
             gameState.lives = Number(data.lives || gameState.lives);
             gameState.completedLessons = data.completed_lessons || [];
             gameState.unlockedSections = data.unlocked_sections || gameState.unlockedSections;
-            
+
             // IMPORTANT: Only load character from server if we don't have one selected yet
-            if (!gameState.character && data.selected_character) {
+            // AND only if it's a valid character (not 'default' or empty)
+            if (!gameState.character && data.selected_character && data.selected_character !== 'default' && data.selected_character !== '') {
                 console.log('Loading character from progress:', data.selected_character);
                 gameState.character = data.selected_character;
             } else if (gameState.character) {
@@ -529,27 +537,80 @@ function autoResumeIfReady() {
 
     // If user is logged in but no localStorage, check if they have backend data with character
     if (gameState.userId && !storedChar) {
-        return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
-            // If backend has a valid character, auto-resume
-            if (gameState.character && gameState.character !== 'default' && gameState.character !== '') {
-                console.log('Auto-resuming with backend character:', gameState.character);
+        // First, just check if game data exists WITHOUT creating it
+        return fetch(API_URL + '/snakes/', {
+            method: 'GET',
+            mode: fetchOptions.mode,
+            cache: fetchOptions.cache,
+            credentials: fetchOptions.credentials,
+            headers: fetchOptions.headers
+        })
+        .then(function (response) {
+            if (response.status === 404) {
+                // No game data exists - this is a NEW user, show character selection
+                console.log('New user detected - showing character selection');
+                var characterSelection = document.getElementById('character-selection');
+                var loginContainer = document.getElementById('login-container');
+                if (loginContainer) loginContainer.classList.add('hidden');
+                if (characterSelection) characterSelection.classList.remove('hidden');
+                return null;
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) return; // Already handled (new user)
+
+            // Existing user - check if they have a valid character
+            var serverCharacter = data.selected_character;
+            if (serverCharacter && serverCharacter !== 'default' && serverCharacter !== '') {
+                // Valid character exists - auto-resume
+                console.log('Auto-resuming with backend character:', serverCharacter);
+                gameState.character = serverCharacter;
+                gameState.bullets = Number(data.total_bullets || 0);
+                if (typeof data.current_square !== 'undefined' && data.current_square !== null) {
+                    gameState.currentSquare = Number(data.current_square) - 1;
+                }
+                if (Array.isArray(data.visited_squares)) {
+                    gameState.visitedSquares = data.visited_squares.map(function (s) { return Number(s) - 1; });
+                }
+                gameState.lives = Number(data.lives || 3);
+                gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
+                gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
+
                 // Store in localStorage for future
                 try {
-                    localStorage.setItem('snakes_selected_character', gameState.character);
+                    localStorage.setItem('snakes_selected_character', serverCharacter);
                     localStorage.setItem('snakes_started', '1');
                 } catch (e) {}
 
-                var characterSelection = document.getElementById('character-selection');
-                var gameContainer = document.getElementById('game-container');
-                var loginContainer = document.getElementById('login-container');
-                if (characterSelection) characterSelection.classList.add('hidden');
-                if (gameContainer) gameContainer.classList.remove('hidden');
-                if (loginContainer) loginContainer.classList.add('hidden');
+                return loadProgress().then(function () {
+                    var characterSelection = document.getElementById('character-selection');
+                    var gameContainer = document.getElementById('game-container');
+                    var loginContainer = document.getElementById('login-container');
+                    if (characterSelection) characterSelection.classList.add('hidden');
+                    if (gameContainer) gameContainer.classList.remove('hidden');
+                    if (loginContainer) loginContainer.classList.add('hidden');
 
-                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+                    if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+                    startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+                });
+            } else {
+                // User has game data but no valid character - show character selection
+                console.log('Existing user without valid character - showing character selection');
+                var characterSelection = document.getElementById('character-selection');
+                var loginContainer = document.getElementById('login-container');
+                if (loginContainer) loginContainer.classList.add('hidden');
+                if (characterSelection) characterSelection.classList.remove('hidden');
             }
-        }).catch(function () {});
+        })
+        .catch(function (error) {
+            console.error('Error checking game data:', error);
+            // On error, show character selection as fallback for logged-in users
+            var characterSelection = document.getElementById('character-selection');
+            var loginContainer = document.getElementById('login-container');
+            if (loginContainer) loginContainer.classList.add('hidden');
+            if (characterSelection) characterSelection.classList.remove('hidden');
+        });
     }
 
     // Otherwise, show the appropriate screen (login or character selection)
