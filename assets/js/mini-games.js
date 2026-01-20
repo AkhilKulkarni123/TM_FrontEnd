@@ -31,32 +31,34 @@
                 };
 
                 container.innerHTML = `
-                    <div class="mini-game loop-racer">
+                    <div class="mini-game loop-racer" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">🏎️ Loop Racer</span>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Use command buttons to program your path. Click Forward/Turn to add commands, use Repeat to loop them, then Run Code to move!
-                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Guide the arrow to the target (🎯).
+                        <div class="game-instructions" style="margin-bottom: 10px; font-size: 0.9em;">
+                            <strong>🎯 Goal:</strong> Guide the arrow to the target (🎯) using commands.
                         </div>
-                        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
-                            <div class="maze-grid" id="maze-grid" style="background: #1a1a2e; padding: 15px; border-radius: 10px; flex-shrink: 0;"></div>
-                            <div class="controls-area" style="flex: 1; min-width: 280px; max-width: 350px;">
-                                <div class="command-buttons" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
-                                    <button class="cmd-btn" data-cmd="forward" style="padding: 10px 18px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">⬆️ Forward</button>
-                                    <button class="cmd-btn" data-cmd="right" style="padding: 10px 18px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">➡️ Turn Right</button>
-                                    <button class="cmd-btn" data-cmd="left" style="padding: 10px 18px; background: #e67e22; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">⬅️ Turn Left</button>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; flex-wrap: nowrap; width: 100%;">
+                            <div class="game-visual-area" style="flex-shrink: 0;">
+                                <div class="maze-grid" id="maze-grid" style="background: #1a1a2e; padding: 20px; border-radius: 10px; min-width: 250px;"></div>
+                            </div>
+                            <div class="game-controls-area" style="flex: 1; min-width: 400px;">
+                                <div style="margin-bottom: 10px; font-weight: 600; color: #555; font-size: 1em;">Code Blocks:</div>
+                                <div class="command-buttons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                                    <button class="cmd-btn" data-cmd="forward" style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">⬆️ Forward</button>
+                                    <button class="cmd-btn" data-cmd="right" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">➡️ Right</button>
+                                    <button class="cmd-btn" data-cmd="left" style="padding: 12px 20px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">⬅️ Left</button>
+                                    <div style="display: flex; gap: 8px; align-items: center; margin-left: 10px;">
+                                        <label style="font-size: 1em; font-weight: 500;">Repeat: <input type="number" id="loop-count" min="1" max="5" value="1" style="width: 50px; padding: 8px; border-radius: 6px; border: 1px solid #ccc;"></label>
+                                        <button id="add-loop" style="padding: 12px 18px; background: #9b59b6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🔁 Loop</button>
+                                    </div>
                                 </div>
-                                <div class="loop-control" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                                    <label style="font-size: 0.95em;">Repeat: <input type="number" id="loop-count" min="1" max="5" value="1" style="width: 55px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;"></label>
-                                    <button id="add-loop" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer;">🔁 Add Loop</button>
-                                </div>
-                                <div style="margin-bottom: 8px; font-weight: 600; color: #333;">Your Code:</div>
-                                <div class="command-queue" id="cmd-queue" style="min-height: 50px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #e0e0e0; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button id="run-code" class="run-btn" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em;">▶️ Run Code</button>
-                                    <button id="clear-code" class="clear-btn" style="padding: 14px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">🗑️ Clear</button>
+                                <div style="margin-bottom: 8px; font-weight: 600; color: #555; font-size: 1em;">Your Code:</div>
+                                <div class="command-queue" id="cmd-queue" style="min-height: 50px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 2px solid #e0e0e0; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.95em;"></div>
+                                <div style="display: flex; gap: 15px;">
+                                    <button id="run-code" class="run-btn" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">▶️ Run Code</button>
+                                    <button id="clear-code" class="clear-btn" style="padding: 14px 24px; background: #dc3545; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">🗑️ Clear</button>
                                 </div>
                             </div>
                         </div>
@@ -71,12 +73,12 @@
                 // Create maze grid
                 function renderMaze() {
                     mazeGrid.innerHTML = '';
-                    mazeGrid.style.cssText = `display:grid;grid-template-columns:repeat(${state.grid},1fr);gap:2px;`;
+                    mazeGrid.style.cssText = `display:grid;grid-template-columns:repeat(${state.grid},50px);gap:4px;`;
                     for (let y = 0; y < state.grid; y++) {
                         for (let x = 0; x < state.grid; x++) {
                             const cell = document.createElement('div');
                             cell.className = 'maze-cell';
-                            cell.style.cssText = 'aspect-ratio:1;background:#2a2a4a;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.2em;';
+                            cell.style.cssText = 'width:50px;height:50px;background:#2a2a4a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.5em;';
                             if (x === state.position.x && y === state.position.y) {
                                 cell.textContent = ['↑', '→', '↓', '←'][direction];
                                 cell.style.background = '#ffd700';
@@ -182,7 +184,7 @@
                 const shuffledVals = [...variables].sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
-                    <div class="mini-game variable-vault">
+                    <div class="mini-game variable-vault" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">🔐 Variable Vault</span>
@@ -192,9 +194,9 @@
                             <strong>📋 Instructions:</strong> Click a variable name on the left, then click its matching value on the right.
                             <strong style="margin-left: 10px;">💡 Tip:</strong> Numbers have no quotes, strings have "quotes", booleans are true/false.
                         </div>
-                        <div class="vault-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div class="variables-col" id="vars-col" style="background: #f0f7ff; padding: 15px; border-radius: 10px;"></div>
-                            <div class="values-col" id="vals-col" style="background: #fff8f0; padding: 15px; border-radius: 10px;"></div>
+                        <div class="vault-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%;">
+                            <div class="variables-col" id="vars-col" style="background: #f0f7ff; padding: 20px; border-radius: 12px;"></div>
+                            <div class="values-col" id="vals-col" style="background: #fff8f0; padding: 20px; border-radius: 12px;"></div>
                         </div>
                     </div>
                 `;
@@ -277,19 +279,22 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game if-then-tower">
+                    <div class="mini-game if-then-tower" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">🏗️ If-Then Tower</span>
                             <div class="game-score">Height: <span id="score">0</span>/6</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Read the if-statement and check if it's TRUE or FALSE with the given value. Click the correct colored block.
-                            <strong style="margin-left: 10px;">💡 Example:</strong> if score > 10 with value 15 → TRUE!
+                        <div class="game-instructions" style="margin-bottom: 10px; font-size: 0.95em;">
+                            <strong>🎯 Goal:</strong> Evaluate if-statements. If TRUE, pick the first color; if FALSE, pick the second.
                         </div>
-                        <div style="display: flex; gap: 25px; align-items: flex-start; justify-content: center; flex-wrap: wrap;">
-                            <div class="tower" id="tower" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:220px;min-width:120px;border-bottom:4px solid #333;padding:15px;background:#f8f9fa;border-radius:10px;"></div>
-                            <div class="condition-panel" id="condition-panel" style="flex: 1; min-width: 280px; max-width: 400px;"></div>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 50px; align-items: flex-start; flex-wrap: nowrap; width: 100%;">
+                            <div class="game-visual-area" style="flex-shrink: 0;">
+                                <div class="tower" id="tower" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:220px;min-width:150px;border-bottom:4px solid #333;padding:15px;background:#f8f9fa;border-radius:12px;"></div>
+                            </div>
+                            <div class="game-controls-area" style="flex: 1; min-width: 450px;">
+                                <div class="condition-panel" id="condition-panel"></div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -361,7 +366,7 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game bug-squasher">
+                    <div class="mini-game bug-squasher" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">🐛 Bug Squasher</span>
@@ -370,8 +375,8 @@
                         <div class="game-instructions" style="margin-bottom: 15px;">
                             <strong>📋 Instructions:</strong> Look at the code below and find the buggy line. The hint tells you what to look for. Click on the line with the bug!
                         </div>
-                        <div class="code-display" id="code-display" style="min-height: 150px; max-width: 500px; margin: 0 auto;"></div>
-                        <div class="hint-box" id="hint-box" style="display:none; margin-top: 15px; max-width: 500px; margin-left: auto; margin-right: auto;"></div>
+                        <div class="code-display" id="code-display" style="min-height: 150px; width: 100%;"></div>
+                        <div class="hint-box" id="hint-box" style="display:none; margin-top: 15px; width: 100%;"></div>
                     </div>
                 `;
 
@@ -457,7 +462,7 @@
                 const shuffled = [...recipe.steps].sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
-                    <div class="mini-game algorithm-chef">
+                    <div class="mini-game algorithm-chef" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">👨‍🍳 Algorithm Chef: ${recipe.name}</span>
@@ -465,8 +470,8 @@
                         <div class="game-instructions" style="margin-bottom: 15px;">
                             <strong>📋 Instructions:</strong> Drag and drop the steps to arrange them in the correct logical order. Think: What must happen FIRST?
                         </div>
-                        <div class="steps-container" id="steps-container" style="max-width: 450px; margin: 0 auto;"></div>
-                        <button id="check-order" style="display:block;margin:20px auto;padding:14px 35px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">✅ Check Order</button>
+                        <div class="steps-container" id="steps-container" style="width: 100%; max-width: 700px; margin: 0 auto;"></div>
+                        <button id="check-order" style="display:block;margin:20px auto;padding:14px 50px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1.1em;">✅ Check Order</button>
                     </div>
                 `;
 
@@ -573,18 +578,25 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game array-assembler">
+                    <div class="mini-game array-assembler" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">📦 Array Assembler</span>
                             <div class="game-score">Completed: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Click an item below, then click the array slot at the correct index. <strong>💡 Remember:</strong> Arrays start at index 0!
+                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
+                            <strong>🎯 Goal:</strong> Click an item, then click the correct array slot. Arrays start at index 0!
                         </div>
-                        <div class="instruction" id="instruction" style="text-align:center;font-size:1.1em;margin:15px auto;padding:15px;background:#fff3cd;border-radius:10px;font-weight:600;max-width:400px;"></div>
-                        <div class="array-visual" id="array-visual" style="display:flex;justify-content:center;gap:10px;margin:20px 0;"></div>
-                        <div class="items-panel" id="items-panel" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;"></div>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 30px; align-items: center; width: 100%;">
+                            <div style="flex: 1;">
+                                <div class="instruction" id="instruction" style="font-size:1em;padding:12px;background:#fff3cd;border-radius:10px;font-weight:600;margin-bottom:12px;"></div>
+                                <div class="items-panel" id="items-panel" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                                <div style="font-weight: 600; margin-bottom: 10px; color: #555;">Array Slots:</div>
+                                <div class="array-visual" id="array-visual" style="display:flex;gap:12px;"></div>
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -667,17 +679,16 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game object-detective" style="max-width: 100%; overflow: hidden;">
-                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="mini-game object-detective" style="width: 100%;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🔍 Object Detective</span>
                             <div class="game-score" style="font-weight: bold;">Solved: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        ${createInstructionBox(
-                            'Objects have properties that describe them. Read the clue about an object\'s properties and click the object that matches those characteristics.',
-                            'Match all 6 clues to the correct objects based on their properties.'
-                        )}
-                        <div class="clue-box" id="clue-box" style="text-align:center;padding:15px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
-                        <div class="options-grid" id="options-grid" style="display:flex;justify-content:center;gap:15px;flex-wrap:wrap;"></div>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 30px; align-items: center; width: 100%;">
+                            <div class="clue-box" id="clue-box" style="flex: 1; padding:15px;background:#f8f9fa;border-radius:10px; min-width: 300px;"></div>
+                            <div class="options-grid" id="options-grid" style="display:flex;gap:12px;flex-wrap:wrap; flex: 1;"></div>
+                        </div>
                     </div>
                 `;
 
@@ -734,26 +745,33 @@
                 const state = { completed: false };
 
                 container.innerHTML = `
-                    <div class="mini-game stack-attack">
+                    <div class="mini-game stack-attack" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">📚 Stack Attack</span>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Stacks use LIFO (Last In, First Out) - only the TOP card can be removed!
-                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Remove all RED cards while keeping BLUE cards.
+                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
+                            <strong>🎯 Goal:</strong> Remove all RED cards using LIFO (Last In, First Out). Keep BLUE cards!
                         </div>
-                        <div style="display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap;">
-                            <div style="text-align: center;">
-                                <p style="margin-bottom: 10px; font-weight: bold; color: #333;">Stack</p>
-                                <div class="stack" id="main-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px solid #333;border-radius:10px;padding:10px;background:#f8f9fa;"></div>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; width: 100%;">
+                            <div class="game-visual-area" style="display: flex; gap: 25px; flex-shrink: 0;">
+                                <div style="text-align: center;">
+                                    <p style="margin-bottom: 8px; font-weight: bold; color: #333;">Stack</p>
+                                    <div class="stack" id="main-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px solid #333;border-radius:10px;padding:10px;background:#f8f9fa;"></div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <p style="margin-bottom: 8px; font-weight: bold; color: #999;">Removed</p>
+                                    <div class="removed" id="removed-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px dashed #999;border-radius:10px;padding:10px;"></div>
+                                </div>
                             </div>
-                            <div style="text-align: center;">
-                                <p style="margin-bottom: 10px; font-weight: bold; color: #999;">Removed</p>
-                                <div class="removed" id="removed-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px dashed #999;border-radius:10px;padding:10px;"></div>
+                            <div class="game-controls-area" style="flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 280px;">
+                                <div style="background: #f8f9fa; padding: 18px; border-radius: 10px; margin-bottom: 18px;">
+                                    <p style="margin: 0 0 10px 0; font-size: 1em;"><strong>LIFO Rule:</strong> Only the TOP card can be removed!</p>
+                                    <p style="margin: 0; font-size: 0.9em; color: #666;">Pop red cards first, before reaching blue ones.</p>
+                                </div>
+                                <button id="pop-btn" style="padding:16px 40px;background:#dc3545;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1.1em;">⬆️ Pop Top Card</button>
                             </div>
                         </div>
-                        <button id="pop-btn" style="display:block;margin:20px auto;padding:14px 30px;background:#dc3545;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">⬆️ Pop Top Card</button>
                     </div>
                 `;
 
@@ -818,23 +836,32 @@
                 let nextCustomer = 0;
 
                 container.innerHTML = `
-                    <div class="mini-game queue-quest">
+                    <div class="mini-game queue-quest" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
                             <span style="font-weight: bold; color: #667eea;">🎫 Queue Quest</span>
                             <div class="game-score">Served: <span id="score">0</span>/${state.target}</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Queues use FIFO (First In, First Out). The gold customer is first in line - serve them!
-                            <strong style="margin-left: 10px;">🎯 Goal:</strong> Serve 8 customers.
+                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
+                            <strong>🎯 Goal:</strong> Serve 8 customers using FIFO (First In, First Out). Gold = first in line.
                         </div>
-                        <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Customer Queue (Gold = First in line):</p>
-                        <div class="queue-display" id="queue-display" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;min-height:80px;padding:15px;background:#f8f9fa;border-radius:12px;margin:15px auto;border:2px solid #ddd;max-width:500px;"></div>
-                        <div class="controls" style="display:flex;justify-content:center;gap:15px;margin-top:20px;">
-                            <button id="add-customer" style="padding:14px 24px;background:#28a745;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">➕ New Customer</button>
-                            <button id="serve-customer" style="padding:14px 24px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">✅ Serve First</button>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; width: 100%;">
+                            <div class="game-visual-area" style="flex: 1; min-width: 350px;">
+                                <p style="font-weight: bold; margin-bottom: 10px; color: #555;">Customer Queue:</p>
+                                <div class="queue-display" id="queue-display" style="display:flex;gap:12px;flex-wrap:wrap;min-height:70px;padding:15px;background:#f8f9fa;border-radius:12px;border:2px solid #ddd;"></div>
+                                <p id="status" style="margin-top:12px;color:#666;min-height:24px;font-size:1em;"></p>
+                            </div>
+                            <div class="game-controls-area" style="flex-shrink: 0; min-width: 220px;">
+                                <div style="background: #f0f7ff; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                                    <p style="margin: 0; font-size: 1em;"><strong>FIFO:</strong> First In, First Out</p>
+                                    <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #666;">Always serve the gold customer first!</p>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:12px;">
+                                    <button id="add-customer" style="padding:14px 24px;background:#28a745;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1em;">➕ New Customer</button>
+                                    <button id="serve-customer" style="padding:14px 24px;background:#667eea;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1em;">✅ Serve First</button>
+                                </div>
+                            </div>
                         </div>
-                        <p id="status" style="text-align:center;margin-top:15px;color:#666;min-height:24px;font-size:1em;"></p>
                     </div>
                 `;
 
@@ -915,19 +942,23 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game nested-navigator" style="max-width: 100%; overflow: hidden;">
-                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="mini-game nested-navigator" style="width: 100%;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🧭 Nested Navigator</span>
                             <div class="game-score" style="font-weight: bold;">Found: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        ${createInstructionBox(
-                            'Navigate through nested data using dot notation (user.name) for objects or bracket notation (items[0]) for arrays. Read the path shown, look at the data structure, and type the value at that path.',
-                            'Find all 5 values by reading their paths in the nested data structures.'
-                        )}
-                        <div class="path-display" id="path-display" style="text-align:center;font-family:monospace;font-size:1.1em;margin:10px 0;padding:10px;background:#1e1e1e;color:#ffd700;border-radius:8px;"></div>
-                        <div class="data-display" id="data-display" style="font-family:monospace;padding:15px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
-                        <input type="text" id="answer-input" placeholder="Enter the value..." style="width:100%;padding:12px;border:2px solid #667eea;border-radius:8px;font-size:1em;margin-top:10px;">
-                        <button id="submit-btn" style="width:100%;margin-top:10px;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Submit Answer</button>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 30px; align-items: flex-start; width: 100%;">
+                            <div style="flex: 1; min-width: 300px;">
+                                <div class="path-display" id="path-display" style="font-family:monospace;font-size:1.1em;padding:10px;background:#1e1e1e;color:#ffd700;border-radius:8px;margin-bottom:10px;"></div>
+                                <div class="data-display" id="data-display" style="font-family:monospace;padding:12px;background:#f8f9fa;border-radius:10px;font-size:0.9em;"></div>
+                            </div>
+                            <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 10px;">
+                                <div style="font-weight: 600; color: #555;">Enter the value at this path:</div>
+                                <input type="text" id="answer-input" placeholder="Type your answer..." style="padding:12px;border:2px solid #667eea;border-radius:8px;font-size:1em;">
+                                <button id="submit-btn" style="padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">Submit Answer</button>
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -999,18 +1030,22 @@
                 const shuffledIPs = [...devices].map(d => d.ip).sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
-                    <div class="mini-game ip-matcher" style="max-width: 100%; overflow: hidden;">
-                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="mini-game ip-matcher" style="width: 100%;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🌐 IP Address Matcher</span>
                             <div class="game-score" style="font-weight: bold;">Matched: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        ${createInstructionBox(
-                            'Every device on a network has a unique IP address. Click a device on the left to select it, then click its matching IP address on the right. Router typically ends in .1, servers in low numbers.',
-                            'Match all 5 devices to their correct IP addresses.'
-                        )}
-                        <div class="match-container" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-                            <div class="devices-col" id="devices-col"></div>
-                            <div class="ips-col" id="ips-col"></div>
+                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
+                            <strong>🎯 Goal:</strong> Click a device, then click its matching IP address.
+                        </div>
+                        <div class="match-container" style="display:flex; gap:40px; justify-content: center; width: 100%;">
+                            <div class="devices-col" id="devices-col" style="flex: 1; max-width: 300px;">
+                                <div style="font-weight: bold; margin-bottom: 8px; color: #3498db; text-align: center;">📱 Devices</div>
+                            </div>
+                            <div class="ips-col" id="ips-col" style="flex: 1; max-width: 300px;">
+                                <div style="font-weight: bold; margin-bottom: 8px; color: #e67e22; text-align: center;">🔢 IP Addresses</div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1024,11 +1059,14 @@
                     div.className = 'device-box';
                     div.dataset.device = d.device;
                     div.dataset.ip = d.ip;
-                    div.innerHTML = `<span style="font-size:1.5em;">${d.device === 'Router' ? '📡' : d.device === 'Computer' ? '💻' : d.device === 'Printer' ? '🖨️' : d.device === 'Phone' ? '📱' : '🖥️'}</span> ${d.device}`;
-                    div.style.cssText = 'padding:10px;background:#e8f4fc;border:2px solid #3498db;border-radius:8px;margin:5px;cursor:pointer;display:flex;align-items:center;gap:10px;';
+                    div.innerHTML = `<span style="font-size:1.3em;">${d.device === 'Router' ? '📡' : d.device === 'Computer' ? '💻' : d.device === 'Printer' ? '🖨️' : d.device === 'Phone' ? '📱' : '🖥️'}</span> ${d.device}`;
+                    div.style.cssText = 'padding:8px 12px;background:#e8f4fc;border:2px solid #3498db;border-radius:8px;margin:4px 0;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.95em;';
                     div.addEventListener('click', () => {
                         if (div.classList.contains('matched')) return;
-                        devicesCol.querySelectorAll('.device-box').forEach(el => el.classList.remove('selected'));
+                        devicesCol.querySelectorAll('.device-box').forEach(el => {
+                            el.classList.remove('selected');
+                            if (!el.classList.contains('matched')) el.style.background = '#e8f4fc';
+                        });
                         div.classList.add('selected');
                         div.style.background = '#cce5ff';
                         selectedDevice = d;
@@ -1040,8 +1078,8 @@
                     const div = document.createElement('div');
                     div.className = 'ip-box';
                     div.dataset.ip = ip;
-                    div.innerHTML = `<code>${ip}</code>`;
-                    div.style.cssText = 'padding:10px;background:#fef3e2;border:2px solid #e67e22;border-radius:8px;margin:5px;cursor:pointer;font-family:monospace;';
+                    div.innerHTML = `<code style="font-size: 0.95em;">${ip}</code>`;
+                    div.style.cssText = 'padding:8px 12px;background:#fef3e2;border:2px solid #e67e22;border-radius:8px;margin:4px 0;cursor:pointer;font-family:monospace;';
                     div.addEventListener('click', () => {
                         if (div.classList.contains('matched') || !selectedDevice) return;
                         if (selectedDevice.ip === ip) {
@@ -1091,17 +1129,19 @@
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game dns-speedrun" style="max-width: 100%; overflow: hidden;">
-                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="mini-game dns-speedrun" style="width: 100%;">
+                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🌐 DNS Speed Run</span>
                             <div class="game-score" style="font-weight: bold;">Translated: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        ${createInstructionBox(
-                            'DNS (Domain Name System) translates human-readable domain names to IP addresses. For each domain shown, click the correct IP address from the options below.',
-                            'Match all 6 domain names to their correct IP addresses.'
-                        )}
-                        <div class="domain-display" id="domain-display" style="text-align:center;font-size:1.3em;margin:15px 0;padding:15px;background:#1e1e1e;color:#00ff00;border-radius:10px;font-family:monospace;"></div>
-                        <div class="ip-options" id="ip-options" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
+                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
+                            <strong>🎯 Goal:</strong> Click the correct IP address for each domain name.
+                        </div>
+                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: center; width: 100%;">
+                            <div class="domain-display" id="domain-display" style="flex: 1; text-align:center;font-size:1.2em;padding:15px;background:#1e1e1e;color:#00ff00;border-radius:10px;font-family:monospace;min-width:200px;"></div>
+                            <div class="ip-options" id="ip-options" style="flex: 2; display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
+                        </div>
                     </div>
                 `;
 

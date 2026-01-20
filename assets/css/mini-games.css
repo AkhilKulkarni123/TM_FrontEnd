@@ -74,12 +74,43 @@
 }
 
 /* =====================================================
+   HORIZONTAL GAME LAYOUT - Side by side structure
+   ===================================================== */
+
+.mini-game .game-layout-horizontal {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    justify-content: center;
+}
+
+.mini-game .game-visual-area {
+    flex-shrink: 0;
+    min-width: 200px;
+}
+
+.mini-game .game-controls-area {
+    flex: 1;
+    min-width: 300px;
+    max-width: 450px;
+}
+
+/* Prevent wrapping on larger screens */
+@media (min-width: 700px) {
+    .mini-game .game-layout-horizontal {
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* =====================================================
    LOOP RACER STYLES
    ===================================================== */
 
 .loop-racer .maze-grid {
     margin: 8px auto;
-    max-width: 180px;
+    max-width: 220px;
+    min-width: 180px;
 }
 
 .loop-racer .maze-cell {
@@ -89,7 +120,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1em;
+    font-size: 1.1em;
+    min-width: 35px;
+    min-height: 35px;
 }
 
 .loop-racer .command-panel {
@@ -976,18 +1009,20 @@
     overflow: visible;
     padding: 20px;
     width: 100%;
-    max-width: 850px;
+    max-width: 100%;
     margin: 0 auto;
 }
 
 /* Arcade zone expanded */
 .arcade-zone {
     min-height: 500px;
+    width: 100%;
 }
 
 .arcade-zone .arcade-grid {
     min-height: 420px;
-    max-width: 900px;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -1000,7 +1035,7 @@
     background: white;
     border-radius: 12px;
     padding: 20px;
-    max-width: 850px;
+    max-width: 100%;
     width: 100%;
     position: relative;
     box-sizing: border-box;

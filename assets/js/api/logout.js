@@ -2,7 +2,15 @@ import { pythonURI, javaURI, fetchOptions } from './config.js';
 
 // logout from both java and python backends
 export async function handleLogout() {
-    // import config dynamically since we can't use import in non-module script
+    // Clear all localStorage data first
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('pythonAuthenticated');
+    localStorage.removeItem('javaAuthenticated');
+
+    // Clear sessionStorage as well
+    sessionStorage.clear();
 
     // logout from python backend
     try {

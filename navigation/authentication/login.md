@@ -703,7 +703,7 @@ input:checked + .slider:before {
     };
 
     // Initialize password validation
-    window.addEventListener('load', function() {
+    window.addEventListener('load', async function() {
         const passwordField = document.getElementById('signupPassword');
         const confirmPasswordField = document.getElementById('confirmPassword');
 
@@ -712,9 +712,34 @@ input:checked + .slider:before {
             confirmPasswordField.addEventListener('input', validatePasswordsDebounced);
         }
 
-        // Check if already logged in
+        // Check if already logged in - verify with backend first
         if (localStorage.getItem('isAuthenticated') === 'true') {
-            window.location.href = '{{site.baseurl}}/profile';
+            try {
+                // Verify the session is still valid with the backend
+                const response = await fetch(`${pythonURI}/api/id`, {
+                    ...fetchOptions,
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    // Session is valid, redirect to profile
+                    window.location.href = '{{site.baseurl}}/profile';
+                } else {
+                    // Session expired or invalid - clear localStorage
+                    console.log('Session expired, clearing local storage');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isAuthenticated');
+                    localStorage.removeItem('pythonAuthenticated');
+                    localStorage.removeItem('javaAuthenticated');
+                }
+            } catch (error) {
+                // Network error or backend down - clear localStorage to be safe
+                console.log('Could not verify session:', error);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAuthenticated');
+            }
         }
     });
 </script>
