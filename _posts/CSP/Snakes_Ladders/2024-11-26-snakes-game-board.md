@@ -1,10 +1,11 @@
 ---
 layout: post
 title: Snakes and Ladders Game
-description: A multiplayer snakes and ladders game with mini-games and boss battle!
+description: A multiplayer snakes and ladders game with mini-games and a boss battle!
 categories: [Games]
 permalink: /snakes-game
 type: hacks
+microblog: True
 ---
 
 <style>
