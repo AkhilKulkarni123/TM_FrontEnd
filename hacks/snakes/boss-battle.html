@@ -448,8 +448,59 @@
             chatMessages: []
         };
 
-        // Load player data from server
+        // Check if in demo mode (from sessionStorage)
+        function isDemoMode() {
+            try {
+                return sessionStorage.getItem('snakes_demo_mode') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Load demo progress from sessionStorage
+        function loadDemoProgress() {
+            try {
+                const stored = sessionStorage.getItem('snakes_demo_progress');
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Error loading demo progress:', e);
+            }
+            return null;
+        }
+
+        // Load player data from server (or sessionStorage if in demo mode)
         function loadPlayerData() {
+            // Check for demo mode first
+            if (isDemoMode()) {
+                const demoData = loadDemoProgress();
+                if (demoData) {
+                    console.log('Loading player data from demo mode:', demoData);
+
+                    if (demoData.character) {
+                        gameState.player.character = demoData.character;
+                        const charConfig = CHARACTER_CONFIG[demoData.character];
+                        if (charConfig) {
+                            gameState.player.color = charConfig.color;
+                        }
+                    }
+
+                    if (typeof demoData.bullets !== 'undefined') {
+                        gameState.player.bullets = Number(demoData.bullets || 0);
+                        updateBulletsDisplay();
+                    }
+                    if (typeof demoData.lives !== 'undefined') {
+                        gameState.player.lives = Number(demoData.lives || 3);
+                        updateLives();
+                    }
+
+                    updatePlayersList();
+                    return Promise.resolve();
+                }
+            }
+
+            // Not in demo mode, fetch from server
             return fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
@@ -739,9 +790,27 @@
         }
 
         function savePlayerState(overrides) {
+            const bullets = Math.max(0, Math.floor(gameState.player.bullets));
+            const lives = Math.max(0, Math.floor(gameState.player.lives));
+
+            // If in demo mode, save to sessionStorage instead of server
+            if (isDemoMode()) {
+                try {
+                    const stored = sessionStorage.getItem('snakes_demo_progress');
+                    let demoData = stored ? JSON.parse(stored) : {};
+                    demoData.bullets = overrides?.total_bullets ?? bullets;
+                    demoData.lives = overrides?.lives ?? lives;
+                    sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
+                    console.log('Demo mode: saved player state to session', demoData);
+                } catch (e) {
+                    console.error('Error saving demo state:', e);
+                }
+                return Promise.resolve();
+            }
+
             const payload = Object.assign({
-                total_bullets: Math.max(0, Math.floor(gameState.player.bullets)),
-                lives: Math.max(0, Math.floor(gameState.player.lives))
+                total_bullets: bullets,
+                lives: lives
             }, overrides || {});
 
             return fetch(`${GAME_API_ROOT}/snakes/`, {
