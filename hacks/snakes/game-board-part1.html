@@ -16,6 +16,277 @@
             display: none !important;
         }
         
+        /* LOGIN CONTAINER STYLES */
+        #login-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .login-hero {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+            animation: fadeInDown 0.6s ease-out;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .login-title {
+            font-size: 2.5em;
+            color: white;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+        
+        .login-subtitle {
+            font-size: 1.15em;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .login-options {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 20px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .login-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .primary-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .primary-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.5);
+        }
+        
+        .guest-login {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        .guest-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(44, 62, 80, 0.4);
+        }
+        
+        .btn-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .btn-description {
+            font-size: 0.85em;
+            opacity: 0.9;
+            display: block;
+        }
+        
+        .login-divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #ddd, transparent);
+        }
+        
+        .login-divider::before {
+            left: 0;
+        }
+        
+        .login-divider::after {
+            right: 0;
+        }
+        
+        .login-divider span {
+            background: white;
+            padding: 0 16px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .login-footer {
+            margin-top: 30px;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.6s ease-out 0.4s backwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .login-notice {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 0.9em;
+            line-height: 1.6;
+            max-width: 480px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .notice-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 600px) {
+            .login-title {
+                font-size: 2em;
+            }
+            
+            .login-subtitle {
+                font-size: 1em;
+            }
+            
+            .login-options {
+                padding: 30px 24px;
+            }
+            
+            .login-btn {
+                padding: 16px 20px;
+            }
+            
+            .btn-icon {
+                font-size: 28px;
+            }
+            
+            .btn-title {
+                font-size: 1.1em;
+            }
+        }
+        
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
@@ -1225,11 +1496,41 @@
         </div>
     </div>
     
-    <div id="login-container">
-        <h2>Please log in to play and save your progress</h2>
-        <button id="use-existing-login">Use Website Login</button>
-        <button id="play-as-guest">Play as Guest</button>
-        <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
+   <div id="login-container">
+        <div class="login-hero">
+            <div class="login-icon">🐍</div>
+            <h1 class="login-title">Welcome to Snakes & Ladders!</h1>
+            <p class="login-subtitle">Choose how you'd like to start your adventure</p>
+        </div>
+        
+        <div class="login-options">
+            <button id="use-existing-login" class="login-btn primary-login">
+                <span class="btn-icon">🔐</span>
+                <div class="btn-content">
+                    <span class="btn-title">Use Website Login</span>
+                    <span class="btn-description">Save your progress and compete to earn the top spot on leaderboards</span>
+                </div>
+            </button>
+            
+            <div class="login-divider">
+                <span>or</span>
+            </div>
+            
+            <button id="play-as-guest" class="login-btn guest-login">
+                <span class="btn-icon">👤</span>
+                <div class="btn-content">
+                    <span class="btn-title">Play as Guest</span>
+                    <span class="btn-description">Quick play • Progress not saved</span>
+                </div>
+            </button>
+        </div>
+        
+        <div class="login-footer">
+            <p class="login-notice">
+                <span class="notice-icon">ℹ️</span>
+                Guest mode is perfect for trying out the game and having fun, but your progress won't be saved
+            </p>
+        </div>
     </div>
 
     <div id="character-selection" class="hidden">
