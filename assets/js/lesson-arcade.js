@@ -1,4 +1,526 @@
+/*
+ * Snakes and Ladders - Lesson Arcade System
+ * Complete file with all original features preserved + CSS FIX for mini-games
+ * Location: /assets/js/lesson-arcade.js
+ */
+
 (function () {
+    // ==========================================
+    // INJECT CSS STYLES - UPDATED WITH FIX
+    // ==========================================
+    var css = `
+/* ===================================
+   Main Arcade Zone Container
+   =================================== */
+
+.arcade-zone, .lesson-arcade {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.arcade-zone.compact, .lesson-arcade.compact {
+    padding: 1.2rem;
+}
+
+.arcade-zone.completed {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+/* ===================================
+   Arcade Header
+   =================================== */
+
+.arcade-header {
+    margin-bottom: 1rem;
+}
+
+.arcade-header h2 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.arcade-header h2::before {
+    content: '🎮';
+}
+
+.arcade-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* ===================================
+   Arcade Grid - FIXED FOR ALL GAMES
+   =================================== */
+
+.arcade-grid {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    min-height: 450px;
+    max-height: 650px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.arcade-grid * {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Custom scrollbar for arcade grid */
+.arcade-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.arcade-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.arcade-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.arcade-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* ===================================
+   Arcade Status Display
+   =================================== */
+
+.arcade-status {
+    color: white;
+    text-align: center;
+    font-size: 1rem;
+    margin-top: 1rem;
+    font-weight: 500;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.arcade-status.complete {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+    font-weight: bold;
+    animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* ===================================
+   Mini-Game Containers
+   =================================== */
+
+.arcade-grid .game-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.arcade-grid canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ===================================
+   Game UI Elements
+   =================================== */
+
+.arcade-grid .timer,
+.arcade-grid .score,
+.arcade-grid .lives {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ===================================
+   Game Buttons
+   =================================== */
+
+.arcade-grid button {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.arcade-grid button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.arcade-grid button:active {
+    transform: translateY(0);
+}
+
+.arcade-grid button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.arcade-retry-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: inline-block;
+}
+
+.arcade-retry-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #5dade2, #3498db);
+}
+
+/* ===================================
+   Legacy Game Modes
+   =================================== */
+
+.mode-orb .arcade-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--arcade-grid-size, 5), 1fr);
+    gap: 4px;
+    padding: 1rem;
+}
+
+.arcade-cell {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.arcade-cell.player {
+    background: rgba(52, 152, 219, 0.5);
+    animation: playerPulse 1s infinite;
+}
+
+.arcade-cell.orb {
+    background: radial-gradient(circle, rgba(241, 196, 15, 0.8) 0%, rgba(243, 156, 18, 0.4) 100%);
+    animation: orbGlow 1.5s infinite;
+}
+
+@keyframes playerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes orbGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(241, 196, 15, 1); }
+}
+
+.sequence-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.sequence-display {
+    font-size: 2rem;
+    color: white;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem 2rem;
+    border-radius: 8px;
+}
+
+.sequence-input {
+    font-size: 1.5rem;
+    color: white;
+    text-align: center;
+    min-height: 40px;
+}
+
+.sequence-btn {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sequence-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
+}
+
+.tic-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.tic-cell {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tic-cell:hover:not(:disabled):not(.taken) {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.tic-cell.taken {
+    cursor: not-allowed;
+    background: rgba(52, 152, 219, 0.3);
+}
+
+.tic-cell:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.arcade-quiz {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.quiz-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.quiz-card h3 {
+    color: white;
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+}
+
+.quiz-card button {
+    display: block;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.quiz-card button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+    transform: translateX(5px);
+}
+
+@keyframes celebrationBounce {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-10px); }
+    50% { transform: translateY(-5px); }
+    75% { transform: translateY(-15px); }
+}
+
+.arcade-zone.completed .arcade-grid {
+    animation: celebrationBounce 0.6s ease;
+}
+
+.arcade-grid.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arcade-grid.loading::after {
+    content: 'Loading game...';
+    color: white;
+    font-size: 1.2rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+@media (max-width: 768px) {
+    .arcade-zone, .lesson-arcade {
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .arcade-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .arcade-grid {
+        padding: 1rem;
+        min-height: 350px;
+        max-height: 550px;
+    }
+    
+    .arcade-cell {
+        font-size: 1.2rem;
+    }
+    
+    .tic-cell {
+        font-size: 1.5rem;
+    }
+    
+    .sequence-display {
+        font-size: 1.5rem;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .arcade-zone, .lesson-arcade {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+    }
+    
+    .arcade-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .arcade-grid {
+        padding: 0.75rem;
+        min-height: 300px;
+        max-height: 450px;
+    }
+    
+    .quiz-card {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+}
+
+.arcade-grid {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.arcade-zone {
+    position: relative;
+    z-index: 1;
+}
+
+.arcade-grid {
+    position: relative;
+    z-index: 2;
+}
+
+.arcade-zone * {
+    box-sizing: border-box;
+}
+
+.arcade-grid button:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+@media print {
+    .arcade-zone, .lesson-arcade {
+        display: none;
+    }
+}
+`;
+
+    // Inject CSS into page
+    var styleEl = document.createElement('style');
+    styleEl.id = 'lesson-arcade-styles';
+    styleEl.textContent = css;
+    
+    // Only inject if not already present
+    if (!document.getElementById('lesson-arcade-styles')) {
+        document.head.appendChild(styleEl);
+    }
+
+    // ==========================================
+    // JAVASCRIPT GAME LOGIC (ALL ORIGINAL FEATURES PRESERVED)
+    // ==========================================
+
     var ICONS = {
         knight: '🛡️',
         wizard: '🧙',
@@ -47,8 +569,15 @@
         var status = zone.querySelector('.arcade-status');
         if (!status) return;
         status.textContent = message;
-        if (complete) status.classList.add('complete');
-        else status.classList.remove('complete');
+        if (complete) {
+            status.classList.add('complete');
+            status.style.color = '#2ecc71';
+            status.style.fontWeight = 'bold';
+        } else {
+            status.classList.remove('complete');
+            status.style.color = '';
+            status.style.fontWeight = '';
+        }
     }
 
     function directionFromKey(key) {
@@ -131,6 +660,7 @@
                 state.collected++;
                 if (state.collected >= state.target) {
                     updateZoneStatus(zone, state.completeMessage, true);
+                    zone.dataset.arcadeCompleted = 'true';
                 } else {
                     updateZoneStatus(zone, 'Orb secured! ' + (state.target - state.collected) + ' left.');
                 }
@@ -246,6 +776,7 @@
                     state.accepting = false;
                     if (state.level >= state.target) {
                         updateZoneStatus(zone, state.completeMessage, true);
+                        zone.dataset.arcadeCompleted = 'true';
                         state.button.disabled = true;
                     } else {
                         updateZoneStatus(zone, 'Great memory! Click play for level ' + (state.level + 1) + '.');
@@ -348,6 +879,7 @@
             state.cells.forEach(function (cell) { cell.disabled = true; });
             if (result === 'player') {
                 updateZoneStatus(zone, state.completeMessage, true);
+                zone.dataset.arcadeCompleted = 'true';
             } else if (result === 'cpu') {
                 updateZoneStatus(zone, 'CPU wins! Study the board and try again next square.', true);
             } else {
@@ -456,14 +988,14 @@
     /* === MODE: Custom Mini-Game from MiniGames system === */
     function initCustomMiniGame(zone, lessonNumber, gameName, retryCount) {
         retryCount = retryCount || 0;
-        var maxRetries = 10;
+        var maxRetries = 30;
 
         if (!window.MiniGames) {
             if (retryCount < maxRetries) {
                 console.log('MiniGames not loaded yet, retrying... (' + (retryCount + 1) + '/' + maxRetries + ')');
                 setTimeout(function() {
                     initCustomMiniGame(zone, lessonNumber, gameName, retryCount + 1);
-                }, 200);
+                }, 400);
                 return null;
             }
             console.error('MiniGames failed to load after ' + maxRetries + ' retries');
@@ -472,8 +1004,13 @@
         }
 
         var grid = zone.querySelector('.arcade-grid');
-        if (!grid) return null;
+        if (!grid) {
+            console.error('No .arcade-grid found in zone');
+            updateZoneStatus(zone, 'Error: Game container missing. Please refresh.');
+            return null;
+        }
 
+        grid.innerHTML = '';
         zone.classList.add('mode-custom');
 
         var game;
@@ -489,7 +1026,8 @@
             return null;
         }
 
-        // Update header with game info
+        console.log('✓ Game found:', game.name, 'for lesson', lessonNumber);
+
         var header = zone.querySelector('.arcade-header');
         if (header) {
             var h2 = header.querySelector('h2');
@@ -507,42 +1045,86 @@
             completeMessage: zone.dataset.arcadeComplete || 'Challenge complete! Continue below.'
         };
 
-        // Initialize the game
-        game.init(grid, function(success, score) {
-            state.completed = success;
-            if (success) {
-                updateZoneStatus(zone, state.completeMessage, true);
-            } else {
-                updateZoneStatus(zone, 'Time\'s up! You can continue, but try to do better next time.');
-            }
-            // Store completion state
-            zone.dataset.arcadeCompleted = success ? 'true' : 'false';
-            zone.dataset.arcadeScore = score || 0;
-        });
+        try {
+            console.log('Initializing game in grid:', grid);
+            
+            game.init(grid, function(success, score) {
+                console.log('Game callback triggered:', success, score);
+                state.completed = success;
+                
+                zone.dataset.arcadeCompleted = success ? 'true' : 'false';
+                zone.dataset.arcadeScore = score || 0;
+                
+                if (success) {
+                    updateZoneStatus(zone, state.completeMessage, true);
+                    console.log('✓ Mini-game completed successfully!');
+                    
+                    zone.classList.add('completed');
+                    
+                    grid.style.transition = 'all 0.3s ease';
+                    grid.style.transform = 'scale(1.05)';
+                    setTimeout(function() {
+                        grid.style.transform = 'scale(1)';
+                    }, 300);
+                } else {
+                    updateZoneStatus(zone, 'Time\'s up! Try again to unlock the quiz.', false);
+                    
+                    var retryBtn = document.createElement('button');
+                    retryBtn.textContent = '🔄 Try Again';
+                    retryBtn.className = 'arcade-retry-btn';
+                    retryBtn.style.cssText = 'margin-top: 10px; padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;';
+                    
+                    retryBtn.addEventListener('click', function() {
+                        retryBtn.remove();
+                        grid.innerHTML = '';
+                        zone.dataset.arcadeCompleted = 'false';
+                        initCustomMiniGame(zone, lessonNumber, gameName, 0);
+                    });
+                    
+                    var existingRetry = zone.querySelector('.arcade-retry-btn');
+                    if (existingRetry) existingRetry.remove();
+                    
+                    var statusEl = zone.querySelector('.arcade-status');
+                    if (statusEl && statusEl.parentNode) {
+                        statusEl.parentNode.insertBefore(retryBtn, statusEl.nextSibling);
+                    }
+                }
+            });
+            
+            console.log('✓ Game initialized successfully');
+            updateZoneStatus(zone, 'Complete the challenge to unlock the content below.');
+            
+            grid.style.minHeight = '450px';
+            grid.style.width = '100%';
+            grid.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Failed to initialize game:', error);
+            updateZoneStatus(zone, 'Error initializing game. Please refresh.');
+            return null;
+        }
 
-        updateZoneStatus(zone, 'Complete the challenge to unlock the content below.');
         zone.__arcadeState = state;
         return state;
     }
 
     function initZone(zone) {
-        // Skip deferred zones - they will be initialized later by JavaScript
+        console.log('Initializing arcade zone...', zone);
+        
         if (zone.dataset.arcadeDefer === 'true') {
             console.log('Skipping deferred arcade zone');
             return null;
         }
 
-        // Check for custom mini-game mode (lesson-based games)
         var lessonNumber = parseInt(zone.dataset.arcadeLesson || zone.dataset.lesson || 0);
         var gameName = zone.dataset.arcadeGame || zone.dataset.game || '';
 
-        // If a lesson number is specified, ALWAYS use the MiniGames system
-        // This ensures the proper educational games are used with completion tracking
+        console.log('Lesson number:', lessonNumber, 'Game name:', gameName);
+
         if (lessonNumber > 0) {
             return initCustomMiniGame(zone, lessonNumber, gameName);
         }
 
-        // For zones without lesson number, show error - old modes are disabled
         console.warn('Arcade zone without lesson number found. Old modes are disabled.');
         updateZoneStatus(zone, 'Error: Game configuration missing. Please refresh.');
         return null;
@@ -591,18 +1173,70 @@
         return game;
     }
 
+    // Global keyboard handler
     document.addEventListener('keydown', function (event) {
         var state = Arcade.keyState;
         if (!state || typeof state.handleKey !== 'function') return;
         if (state.handleKey(event)) event.preventDefault();
     });
 
+    // Initialize all arcade zones on DOM ready
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.arcade-zone').forEach(initZone);
+        console.log('DOM loaded, initializing arcade zones...');
+        
+        var initAttempts = 0;
+        var maxAttempts = 50;
+        
+        function tryInit() {
+            initAttempts++;
+            
+            if (window.MiniGames) {
+                console.log('✓ MiniGames loaded, initializing zones');
+                
+                var zones = document.querySelectorAll('.arcade-zone, .lesson-arcade');
+                console.log('Found', zones.length, 'arcade zones');
+                
+                zones.forEach(function(zone, index) {
+                    console.log('Initializing zone', index + 1);
+                    
+                    setTimeout(function() {
+                        initZone(zone);
+                    }, index * 100);
+                });
+                
+                return;
+            }
+            
+            if (initAttempts < maxAttempts) {
+                console.log('Waiting for MiniGames... attempt', initAttempts);
+                setTimeout(tryInit, 100);
+            } else {
+                console.error('MiniGames failed to load after', maxAttempts, 'attempts');
+            }
+        }
+        
+        setTimeout(tryInit, 100);
     });
 
+    // Expose functions globally
     window.SnakesArcade = Arcade;
     window.initArcadeZone = initZone;
     window.initLessonMiniGame = initLessonMiniGame;
     window.getQuestionSquareGame = getQuestionSquareGame;
+    
+    // Manual reinit function for debugging
+    window.reinitializeAllArcades = function() {
+        console.log('🔄 Manually reinitializing all arcade zones...');
+        var zones = document.querySelectorAll('.arcade-zone, .lesson-arcade');
+        zones.forEach(function(zone, index) {
+            if (!zone.__arcadeState) {
+                console.log('Initializing zone', index + 1);
+                initZone(zone);
+            } else {
+                console.log('Zone', index + 1, 'already initialized');
+            }
+        });
+    };
+    
+    console.log('✓ Arcade system loaded and ready');
 })();

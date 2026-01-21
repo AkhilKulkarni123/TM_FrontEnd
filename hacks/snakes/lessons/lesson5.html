@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -198,9 +199,14 @@
             font-size: 0.9rem;
         }
 
-        .options label:hover {
+        .options label:hover:not(.disabled) {
             background: rgba(255, 255, 255, 0.3);
             transform: translateX(5px);
+        }
+
+        .options label.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .options input[type="radio"] {
@@ -234,13 +240,15 @@
             letter-spacing: 1px;
         }
 
-        #complete-btn:hover {
+        #complete-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(17, 153, 142, 0.5);
         }
 
-        #complete-btn:active {
-            transform: translateY(0);
+        #complete-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #95a5a6;
         }
 
         .icon {
@@ -248,7 +256,7 @@
             margin-right: 0.5rem;
         }
 
-@media (max-width: 768px) {
+        @media (max-width: 768px) {
             .lesson-body {
                 padding: 0.5rem;
             }
@@ -281,7 +289,7 @@
                 <p>Identify biased datasets and ethical concerns!</p>
             </div>
             <div class="arcade-grid"></div>
-            <div class="arcade-status">Complete the challenge to unlock the content.</div>
+            <div class="arcade-status">Loading mini-game...</div>
         </div>
 
         <div class="content">
@@ -326,29 +334,29 @@
 
             <div class="question">
                 <h3>💡 Interactive Quiz</h3>
-                <p>Test your understanding! Why is ethical consideration important when analyzing personal data?</p>
+                <p>Complete the mini-game above, then test your understanding! Why is ethical consideration important when analyzing personal data?</p>
                 <div class="options">
-                    <label>
-                        <input type="radio" name="q1" value="0">
+                    <label class="disabled">
+                        <input type="radio" name="q1" value="0" disabled>
                         <span>Ethics slow down analysis and should be avoided.</span>
                     </label>
-                    <label>
-                        <input type="radio" name="q1" value="1">
+                    <label class="disabled">
+                        <input type="radio" name="q1" value="1" disabled>
                         <span>To ensure fairness and protect privacy rights.</span>
                     </label>
-                    <label>
-                        <input type="radio" name="q1" value="2">
+                    <label class="disabled">
+                        <input type="radio" name="q1" value="2" disabled>
                         <span>Because algorithms always produce unbiased results.</span>
                     </label>
-                    <label>
-                        <input type="radio" name="q1" value="3">
+                    <label class="disabled">
+                        <input type="radio" name="q1" value="3" disabled>
                         <span>There is no need for ethics in data science.</span>
                     </label>
                 </div>
             </div>
 
-            <button id="complete-btn">
-                <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
+            <button id="complete-btn" disabled>
+                <span class="icon">🔒</span> Complete Mini-Game to Unlock
             </button>
         </div>
     </div>
@@ -363,58 +371,66 @@
             API_URL = "https://snakes.opencodingsociety.com/api";
         }
 
-        // Track mini-game completion
         let miniGameCompleted = false;
 
-        // Disable quiz and complete button initially
         function updateQuizState() {
             const quizOptions = document.querySelectorAll('.question input[type="radio"]');
+            const quizLabels = document.querySelectorAll('.question label');
             const completeBtn = document.getElementById('complete-btn');
 
             if (!miniGameCompleted) {
                 quizOptions.forEach(opt => opt.disabled = true);
-                completeBtn.disabled = true;
-                completeBtn.style.opacity = '0.5';
-                completeBtn.style.cursor = 'not-allowed';
+                quizLabels.forEach(label => label.classList.add('disabled'));
+                if (completeBtn) {
+                    completeBtn.disabled = true;
+                    completeBtn.innerHTML = '<span class="icon">🔒</span> Complete Mini-Game to Unlock';
+                }
             } else {
                 quizOptions.forEach(opt => opt.disabled = false);
-                completeBtn.disabled = false;
-                completeBtn.style.opacity = '1';
-                completeBtn.style.cursor = 'pointer';
+                quizLabels.forEach(label => label.classList.remove('disabled'));
+                if (completeBtn) {
+                    completeBtn.disabled = false;
+                    completeBtn.innerHTML = '<span class="icon">✓</span> Complete Lesson & Earn 5 Bullets';
+                }
             }
         }
 
-        // Check for mini-game completion periodically
-        // ONLY checks for arcadeCompleted='true' which is set by MiniGames system on successful completion
         function checkMiniGameCompletion() {
             const arcadeZone = document.querySelector('.arcade-zone');
-            // Only unlock if the game was successfully completed (not just finished/timed out)
-            if (arcadeZone && arcadeZone.dataset.arcadeCompleted === 'true') {
+            
+            if (!arcadeZone) {
+                console.error('Arcade zone not found!');
+                return;
+            }
+
+            const completed = arcadeZone.dataset.arcadeCompleted === 'true';
+            
+            if (completed && !miniGameCompleted) {
+                console.log('✓ Mini-game completed!');
                 miniGameCompleted = true;
                 updateQuizState();
                 return;
             }
-            // Keep checking if not completed
+            
             if (!miniGameCompleted) {
                 setTimeout(checkMiniGameCompletion, 500);
             }
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             updateQuizState();
-            checkMiniGameCompletion();
+            setTimeout(function() {
+                checkMiniGameCompletion();
+            }, 2000);
         });
 
-        document.getElementById('complete-btn').addEventListener('click', async () => {
-            // Check mini-game completion first
+        document.getElementById('complete-btn').addEventListener('click', async function() {
             if (!miniGameCompleted) {
                 alert('Please complete the mini-game challenge before answering the quiz!');
                 return;
             }
 
             const selected = document.querySelector('input[name="q1"]:checked');
-
             if (!selected) {
                 alert('Please select an answer before completing the lesson.');
                 return;
