@@ -608,12 +608,9 @@ function autoResumeIfReady() {
         })
         .then(function (response) {
             if (response.status === 404) {
-                // No game data exists - this is a NEW user, show character selection
-                console.log('New user detected - showing character selection');
-                var characterSelection = document.getElementById('character-selection');
-                var loginContainer = document.getElementById('login-container');
-                if (loginContainer) loginContainer.classList.add('hidden');
-                if (characterSelection) characterSelection.classList.remove('hidden');
+                // No game data exists - this is a NEW user
+                // Keep login container visible - let user choose "Use Website Login" or "Play as Guest"
+                console.log('New user detected - showing login options');
                 return null;
             }
             return response.json();
@@ -669,20 +666,14 @@ function autoResumeIfReady() {
                 // User needs to select character - either:
                 // - No valid character in backend
                 // - Or never explicitly started the game before
-                console.log('Showing character selection - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
-                var characterSelection = document.getElementById('character-selection');
-                var loginContainer = document.getElementById('login-container');
-                if (loginContainer) loginContainer.classList.add('hidden');
-                if (characterSelection) characterSelection.classList.remove('hidden');
+                // Keep login container visible - let user choose "Use Website Login" or "Play as Guest"
+                console.log('Showing login options - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
             }
         })
         .catch(function (error) {
             console.error('Error checking game data:', error);
-            // On error, show character selection as fallback for logged-in users
-            var characterSelection = document.getElementById('character-selection');
-            var loginContainer = document.getElementById('login-container');
-            if (loginContainer) loginContainer.classList.add('hidden');
-            if (characterSelection) characterSelection.classList.remove('hidden');
+            // On error, keep login container visible as fallback
+            console.log('Error occurred - showing login options');
         });
     }
 
