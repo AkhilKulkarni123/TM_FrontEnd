@@ -1048,7 +1048,30 @@ function startAutosave() {
     }, AUTOSAVE_EVERY_SECONDS * 1000);
 }
 
+// Check if a lesson or question modal is currently open
+function isLessonOrQuestionOpen() {
+    // Check inline lesson container (Section 1)
+    var inlineLesson = document.getElementById('inline-lesson-container');
+    if (inlineLesson && inlineLesson.classList.contains('active')) {
+        return true;
+    }
+
+    // Check question modal (Section 2)
+    var questionModal = document.getElementById('question-modal');
+    if (questionModal && questionModal.classList.contains('active')) {
+        return true;
+    }
+
+    return false;
+}
+
 function rollDice() {
+    // Block dice roll if a lesson or question is currently open
+    if (isLessonOrQuestionOpen()) {
+        alert('Please close the current lesson or question first before rolling the dice.\n\nYou can close it by clicking the X button to return to the game board.');
+        return;
+    }
+
     var diceBtn = document.getElementById('roll-dice-btn');
     if (diceBtn) diceBtn.disabled = true;
 
