@@ -392,8 +392,8 @@
         const ctx = canvas.getContext('2d');
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         // Flask runs on port 8306, Socket.IO on port 8500
-        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://flask.opencodingsociety.com';
-        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://flask.opencodingsociety.com:8500';
+        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://snakes.opencodingsociety.com';
         const GAME_API_ROOT = GAME_API_BASE + '/api';
 
         // Resize canvas
