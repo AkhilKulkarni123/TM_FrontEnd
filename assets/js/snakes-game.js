@@ -31,6 +31,7 @@ var AUTOSAVE_EVERY_SECONDS = 10;
 
 var gameState = {
     isGuest: false,
+    isDemoMode: false,  // Demo mode: data only saved in session, not to backend or leaderboard
     userId: null,
     username: '',
     character: '',
@@ -39,12 +40,88 @@ var gameState = {
     currentSquare: 0,
     visitedSquares: [0],
     completedLessons: [],
+    completedQuestions: [],  // Track completed question squares for demo mode
     unlockedSections: ['half1'],
     timeStarted: null,
     timeElapsed: 0,
     bossAttempts: 0,
     socket: null
 };
+
+// Demo mode: when enabled, progress is session-only and excluded from leaderboard
+function enableDemoMode() {
+    if (gameState.isDemoMode) return; // Already in demo mode
+
+    gameState.isDemoMode = true;
+
+    // Store demo mode flag in sessionStorage (cleared on browser close)
+    try {
+        sessionStorage.setItem('snakes_demo_mode', '1');
+    } catch (e) {}
+
+    console.log('Demo mode enabled - progress will not be saved to server or reflected in leaderboard');
+}
+
+// Save demo progress to sessionStorage
+function saveDemoProgress() {
+    if (!gameState.isDemoMode) return;
+
+    try {
+        var demoData = {
+            bullets: gameState.bullets,
+            currentSquare: gameState.currentSquare,
+            visitedSquares: gameState.visitedSquares,
+            completedLessons: gameState.completedLessons,
+            completedQuestions: gameState.completedQuestions,
+            unlockedSections: gameState.unlockedSections,
+            lives: gameState.lives,
+            timeElapsed: gameState.timeElapsed,
+            character: gameState.character
+        };
+        sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
+        console.log('Demo progress saved to session');
+    } catch (e) {
+        console.error('Error saving demo progress:', e);
+    }
+}
+
+// Load demo progress from sessionStorage
+function loadDemoProgress() {
+    try {
+        var stored = sessionStorage.getItem('snakes_demo_progress');
+        if (stored) {
+            var demoData = JSON.parse(stored);
+            gameState.bullets = demoData.bullets || 0;
+            gameState.currentSquare = demoData.currentSquare || 0;
+            gameState.visitedSquares = demoData.visitedSquares || [0];
+            gameState.completedLessons = demoData.completedLessons || [];
+            gameState.completedQuestions = demoData.completedQuestions || [];
+            gameState.unlockedSections = demoData.unlockedSections || ['half1'];
+            gameState.lives = demoData.lives || 3;
+            gameState.timeElapsed = demoData.timeElapsed || 0;
+            if (demoData.character) gameState.character = demoData.character;
+            console.log('Demo progress loaded from session:', demoData);
+            return true;
+        }
+    } catch (e) {
+        console.error('Error loading demo progress:', e);
+    }
+    return false;
+}
+
+// Check if demo mode was previously enabled this session
+function checkDemoModeSession() {
+    try {
+        if (sessionStorage.getItem('snakes_demo_mode') === '1') {
+            gameState.isDemoMode = true;
+            loadDemoProgress();
+            console.log('Demo mode restored from session');
+        }
+    } catch (e) {}
+}
+
+// Call on load to restore demo mode state
+checkDemoModeSession();
 
 var multiplayerState = {
     otherPlayers: [],
@@ -330,6 +407,11 @@ function loadOrCreateGameData() {
             if (gameState.timeStarted === null) {
                 gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
             }
+
+            // If in demo mode, override with demo progress from sessionStorage
+            if (gameState.isDemoMode) {
+                loadDemoProgress();
+            }
         })
         .catch(function (error) { console.error('Error loading game data:', error); });
 }
@@ -373,12 +455,17 @@ function loadProgress() {
                 gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
                 if (gameState.timeStarted !== null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
             }
+
+            // If in demo mode, override with demo progress from sessionStorage
+            if (gameState.isDemoMode) {
+                loadDemoProgress();
+            }
         })
         .catch(function (error) { console.error('Error loading progress:', error); });
 }
 
 function saveProgress() {
-    if (gameState.isGuest) return Promise.resolve();
+    if (gameState.isGuest || gameState.isDemoMode) return Promise.resolve();
 
     if (gameState.timeStarted !== null) gameState.timeElapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
 
@@ -1482,6 +1569,28 @@ function showQuestionModal(square, row, index) {
         var correct = (chosen === question.answer);
         var bullets = correct ? QUESTION_BULLETS : 0;
 
+        // If in demo mode, handle locally without API call
+        if (gameState.isDemoMode || gameState.isGuest) {
+            alert(correct ? 'Correct! You earned ' + QUESTION_BULLETS + ' bullets.' : 'Incorrect. No bullets awarded.');
+
+            if (correct) {
+                gameState.bullets += QUESTION_BULLETS;
+                if (gameState.completedQuestions.indexOf(square) === -1) {
+                    gameState.completedQuestions.push(square);
+                }
+                // Save demo progress to sessionStorage
+                if (gameState.isDemoMode) {
+                    saveDemoProgress();
+                }
+                updatePlayerInfo();
+            }
+
+            closeQuestionModal();
+            createGameBoard();
+            newBtn.disabled = false;
+            return;
+        }
+
         fetch(API_URL + '/snakes/answer-question', {
             method: 'POST',
             mode: fetchOptions.mode,
@@ -1523,6 +1632,18 @@ function showQuestionModal(square, row, index) {
             newBtn.disabled = false;
         });
     });
+
+    // Add autofill button handler for demo mode
+    var autofillBtn = document.getElementById('question-autofill');
+    if (autofillBtn) {
+        // Clone to remove any existing listeners
+        var newAutofillBtn = autofillBtn.cloneNode(true);
+        autofillBtn.parentNode.replaceChild(newAutofillBtn, autofillBtn);
+
+        newAutofillBtn.addEventListener('click', function() {
+            autofillCurrentQuestion(square, row, index);
+        });
+    }
 
     modal.classList.add('active');
 
@@ -1766,3 +1887,200 @@ function startBossBattle() {
         });
     }).catch(function () { alert('Unable to verify leaderboard status. Try again later.'); });
 }
+
+// ============================================
+// AUTOFILL / DEMO MODE FUNCTIONS
+// ============================================
+
+/**
+ * Autofill a single question square in Section 2
+ * Marks mini-game complete, awards bullets, and closes modal
+ */
+function autofillCurrentQuestion(square, row, index) {
+    enableDemoMode();
+
+    // Award bullets locally
+    gameState.bullets += QUESTION_BULLETS;
+
+    // Mark this question square as completed
+    if (gameState.completedQuestions.indexOf(square) === -1) {
+        gameState.completedQuestions.push(square);
+    }
+
+    // Save demo progress to sessionStorage
+    saveDemoProgress();
+
+    // Update UI
+    updatePlayerInfo();
+
+    // Close the modal
+    closeQuestionModal();
+
+    // Refresh the board
+    createGameBoard();
+
+    alert('Demo Mode: Question auto-completed! You earned ' + QUESTION_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.');
+}
+
+/**
+ * Autofill a single lesson in Section 1
+ * Marks mini-game and quiz complete, awards bullets, closes lesson
+ */
+function autofillCurrentLesson(lessonNum) {
+    enableDemoMode();
+
+    // Award bullets locally
+    gameState.bullets += LESSON_BULLETS;
+
+    // Mark this lesson as completed
+    if (gameState.completedLessons.indexOf(lessonNum) === -1) {
+        gameState.completedLessons.push(lessonNum);
+    }
+
+    // Check if all lessons are done to unlock Section 2
+    var allComplete = true;
+    for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
+        if (gameState.completedLessons.indexOf(i) === -1) {
+            allComplete = false;
+            break;
+        }
+    }
+    if (allComplete && gameState.unlockedSections.indexOf('half2') === -1) {
+        gameState.unlockedSections.push('half2');
+    }
+
+    // Save demo progress to sessionStorage
+    saveDemoProgress();
+
+    // Update UI
+    updatePlayerInfo();
+
+    // Close the inline lesson
+    if (typeof window.closeInlineLesson === 'function') {
+        window.closeInlineLesson();
+    }
+
+    // Refresh the board
+    createGameBoard();
+
+    alert('Demo Mode: Lesson ' + lessonNum + ' auto-completed! You earned ' + LESSON_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.');
+}
+
+/**
+ * Autofill all remaining lessons in Section 1
+ * Awards bullets for all incomplete lessons
+ */
+function autofillSection1() {
+    enableDemoMode();
+
+    var completedCount = 0;
+    var bulletsEarned = 0;
+
+    for (var i = 1; i <= FIRST_LESSON_COUNT; i++) {
+        if (gameState.completedLessons.indexOf(i) === -1) {
+            gameState.completedLessons.push(i);
+            gameState.bullets += LESSON_BULLETS;
+            bulletsEarned += LESSON_BULLETS;
+            completedCount++;
+
+            // Also mark square as visited
+            if (gameState.visitedSquares.indexOf(i) === -1) {
+                gameState.visitedSquares.push(i);
+            }
+        }
+    }
+
+    // Unlock Section 2
+    if (gameState.unlockedSections.indexOf('half2') === -1) {
+        gameState.unlockedSections.push('half2');
+    }
+
+    // Move player to last lesson square
+    gameState.currentSquare = FIRST_LESSON_COUNT;
+
+    // Save demo progress to sessionStorage
+    saveDemoProgress();
+
+    // Update UI
+    updatePlayerInfo();
+
+    // Close any open lesson modal
+    if (typeof window.closeInlineLesson === 'function') {
+        window.closeInlineLesson();
+    }
+
+    // Refresh the board
+    createGameBoard();
+
+    if (completedCount > 0) {
+        alert('Demo Mode: Section 1 auto-completed!\n\n' +
+            completedCount + ' lesson(s) completed\n' +
+            bulletsEarned + ' bullets earned\n' +
+            'Total bullets: ' + gameState.bullets + '\n\n' +
+            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.');
+    } else {
+        alert('All lessons in Section 1 are already complete!');
+    }
+}
+
+/**
+ * Autofill all remaining question squares in Section 2
+ * Awards bullets for all incomplete questions
+ */
+function autofillSection2() {
+    enableDemoMode();
+
+    var completedCount = 0;
+    var bulletsEarned = 0;
+    var sectionStart = FIRST_SECTION_SIZE;
+    var sectionEnd = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1;
+
+    for (var square = sectionStart; square <= sectionEnd; square++) {
+        if (gameState.completedQuestions.indexOf(square) === -1) {
+            gameState.completedQuestions.push(square);
+            gameState.bullets += QUESTION_BULLETS;
+            bulletsEarned += QUESTION_BULLETS;
+            completedCount++;
+
+            // Also mark square as visited
+            if (gameState.visitedSquares.indexOf(square) === -1) {
+                gameState.visitedSquares.push(square);
+            }
+        }
+    }
+
+    // Move player to last square
+    gameState.currentSquare = sectionEnd;
+
+    // Save demo progress to sessionStorage
+    saveDemoProgress();
+
+    // Update UI
+    updatePlayerInfo();
+
+    // Close any open question modal
+    closeQuestionModal();
+
+    // Refresh the board
+    createGameBoard();
+
+    if (completedCount > 0) {
+        alert('Demo Mode: Section 2 auto-completed!\n\n' +
+            completedCount + ' question(s) completed\n' +
+            bulletsEarned + ' bullets earned\n' +
+            'Total bullets: ' + gameState.bullets + '\n\n' +
+            'You now have enough bullets for the boss battle!\n\n' +
+            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.');
+    } else {
+        alert('All questions in Section 2 are already complete!');
+    }
+}
+
+// Expose autofill and demo mode functions globally
+window.autofillCurrentQuestion = autofillCurrentQuestion;
+window.autofillCurrentLesson = autofillCurrentLesson;
+window.autofillSection1 = autofillSection1;
+window.autofillSection2 = autofillSection2;
+window.enableDemoMode = enableDemoMode;
+window.saveDemoProgress = saveDemoProgress;
+window.loadDemoProgress = loadDemoProgress;

@@ -514,6 +514,9 @@
                     <p class="control-hint">Pass every challenge square to unlock the BOSS BATTLE.</p>
                     <button id="roll-dice-btn">Roll Dice</button>
                     <button id="view-leaderboard-btn">Leaderboard</button>
+                    <button id="autofill-section-btn" class="autofill-section-btn" onclick="if(typeof window.autofillSection2 === 'function') window.autofillSection2(); else alert('Autofill not available');">
+                        ⚡ Autofill Section (Demo)
+                    </button>
                 </div>
             </aside>
             <section class="board-main">
@@ -566,7 +569,11 @@
                 <div class="question-options" id="question-options"></div>
                 
                 <button class="question-submit" id="question-submit">Submit Answer</button>
-                
+
+                <button class="question-autofill autofill-btn" id="question-autofill">
+                    <span class="icon">⚡</span> Auto-Complete (Demo)
+                </button>
+
                 <div class="question-meta" id="question-meta"></div>
             </div>
         </div>

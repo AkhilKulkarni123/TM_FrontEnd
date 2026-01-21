@@ -1585,6 +1585,9 @@
                     <p class="control-hint">Roll the dice then tackle the highlighted lesson portal.</p>
                     <button id="roll-dice-btn">Roll Dice</button>
                     <button id="view-leaderboard-btn">Leaderboard</button>
+                    <button id="autofill-section-btn" class="autofill-section-btn" onclick="if(typeof window.autofillSection1 === 'function') window.autofillSection1(); else alert('Autofill not available');">
+                        ⚡ Autofill Section (Demo)
+                    </button>
                 </div>
             </aside>
             <section class="board-main">
@@ -2180,6 +2183,10 @@ console.log(student.name); // 'Ada'</code></pre>
                         <button id="inline-complete-btn" data-lesson="${lessonNum}" disabled style="opacity: 0.5; cursor: not-allowed;">
                             <span class="icon">✓</span> Complete Lesson & Earn 5 Bullets
                         </button>
+
+                        <button id="inline-autofill-btn" data-lesson="${lessonNum}" class="autofill-btn" title="Demo Mode: Skip mini-game and quiz">
+                            <span class="icon">⚡</span> Auto-Complete (Demo)
+                        </button>
                     </div>
                 </div>
             `;
@@ -2239,6 +2246,18 @@ console.log(student.name); // 'Ada'</code></pre>
                     handleInlineLessonComplete(lessonNum);
                 });
             }
+
+            // Add autofill button handler for demo mode
+            var autofillBtn = document.getElementById('inline-autofill-btn');
+            if (autofillBtn) {
+                autofillBtn.addEventListener('click', function() {
+                    if (typeof window.autofillCurrentLesson === 'function') {
+                        window.autofillCurrentLesson(lessonNum);
+                    } else {
+                        alert('Autofill function not available. Please refresh the page.');
+                    }
+                });
+            }
         }
 
         // Function to close the inline lesson
@@ -2276,7 +2295,50 @@ console.log(student.name); // 'Ada'</code></pre>
                 alert('Incorrect answer. Review the lesson and try again!');
                 return;
             }
-            
+
+            // Check if in demo mode or guest mode - handle locally without API call
+            if (typeof gameState !== 'undefined' && (gameState.isDemoMode || gameState.isGuest)) {
+                alert('Lesson completed! You earned 5 bullets.');
+
+                // Update game state locally
+                if (gameState.completedLessons.indexOf(lessonNum) === -1) {
+                    gameState.completedLessons.push(lessonNum);
+                }
+                gameState.bullets += 5;
+
+                // Check if all lessons are complete
+                var allComplete = true;
+                for (var i = 1; i <= 5; i++) {
+                    if (gameState.completedLessons.indexOf(i) === -1) {
+                        allComplete = false;
+                        break;
+                    }
+                }
+
+                if (allComplete && gameState.unlockedSections.indexOf('half2') === -1) {
+                    gameState.unlockedSections.push('half2');
+                }
+
+                // Save demo progress to sessionStorage
+                if (gameState.isDemoMode && typeof window.saveDemoProgress === 'function') {
+                    window.saveDemoProgress();
+                }
+
+                if (typeof updatePlayerInfo === 'function') updatePlayerInfo();
+
+                // Hide the lesson
+                var container = document.getElementById('inline-lesson-container');
+                if (container) {
+                    container.classList.remove('active');
+                }
+
+                // Refresh the board
+                if (typeof createGameBoard === 'function') {
+                    createGameBoard();
+                }
+                return;
+            }
+
             var API_URL;
             if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
                 API_URL = "http://localhost:8306/api";
@@ -2293,14 +2355,14 @@ console.log(student.name); // 'Ada'</code></pre>
             .then(function(res) {
                 if (res.ok) {
                     alert('Lesson completed! You earned 5 bullets.');
-                    
+
                     // Update game state
                     if (typeof gameState !== 'undefined') {
                         if (gameState.completedLessons.indexOf(lessonNum) === -1) {
                             gameState.completedLessons.push(lessonNum);
                         }
                         gameState.bullets += 5;
-                        
+
                         // Check if all lessons are complete
                         var allComplete = true;
                         for (var i = 1; i <= 5; i++) {
@@ -2309,21 +2371,21 @@ console.log(student.name); // 'Ada'</code></pre>
                                 break;
                             }
                         }
-                        
+
                         if (allComplete && gameState.unlockedSections.indexOf('half2') === -1) {
                             gameState.unlockedSections.push('half2');
                         }
-                        
+
                         if (typeof updatePlayerInfo === 'function') updatePlayerInfo();
                         if (typeof saveProgress === 'function') saveProgress();
                     }
-                    
+
                     // Hide the lesson
                     var container = document.getElementById('inline-lesson-container');
                     if (container) {
                         container.classList.remove('active');
                     }
-                    
+
                     // Refresh the board
                     if (typeof createGameBoard === 'function') {
                         createGameBoard();
