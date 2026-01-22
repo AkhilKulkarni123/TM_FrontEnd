@@ -346,7 +346,7 @@
 
             <div class="controls">
                 <div style="margin-bottom: 15px; font-size: 1.2em;">
-                    Use WASD or Arrow Keys to move | SPACE to shoot
+                    WASD/Arrows to move | Aim with mouse | SPACE or Click to shoot
                 </div>
                 <button class="btn" onclick="startBattle()" id="startBtn">Start Battle</button>
                 <button class="btn" onclick="leaveBattle()">Leave Arena</button>
@@ -439,13 +439,26 @@
                 moveDirection: 1,
                 moveSpeed: 2,
                 verticalDirection: 1,
-                verticalSpeed: 0.5
+                verticalSpeed: 0.5,
+                // Unpredictable movement properties
+                baseSpeed: 2,
+                targetX: null,
+                targetY: null,
+                dashCooldown: 0,
+                patternTimer: 0,
+                currentPattern: 'normal', // 'normal', 'dash', 'zigzag', 'chase', 'circle'
+                circleAngle: 0,
+                erraticTimer: 0
             },
             playerBullets: [],
             bossProjectiles: [],
             keys: {},
             otherPlayers: {},  // { odfsid: {x, y, character, username, lives, bullets} }
-            chatMessages: []
+            chatMessages: [],
+            // Mouse aiming
+            mouseX: 0,
+            mouseY: 0,
+            aimAngle: -Math.PI / 2 // Default aim up
         };
 
         // Check if in demo mode (from sessionStorage)
@@ -553,6 +566,62 @@
             }
         });
 
+        // Mouse aiming - track mouse position on canvas
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouseX = e.clientX - rect.left;
+            gameState.mouseY = e.clientY - rect.top;
+
+            // Calculate aim angle from player to mouse
+            const dx = gameState.mouseX - gameState.player.x;
+            const dy = gameState.mouseY - gameState.player.y;
+            gameState.aimAngle = Math.atan2(dy, dx);
+        });
+
+        // Click to shoot in aimed direction
+        canvas.addEventListener('click', (e) => {
+            if (gameActive) {
+                e.preventDefault();
+                shoot();
+            }
+        });
+
+        // Prevent context menu on right-click
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Tab visibility change detection - notify room when user leaves/returns
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && gameActive && socket && socket.connected && roomId) {
+                // User switched away from tab - notify other players
+                socket.emit('boss_player_away', {
+                    room_id: roomId,
+                    username: gameState.player.username
+                });
+                addSystemMessage('You switched tabs - other players have been notified');
+            } else if (!document.hidden && gameActive && socket && socket.connected && roomId) {
+                // User returned to tab
+                socket.emit('boss_player_returned', {
+                    room_id: roomId,
+                    username: gameState.player.username
+                });
+            }
+        });
+
+        // Handle page unload/close - ensure proper cleanup
+        window.addEventListener('beforeunload', () => {
+            if (gameActive && socket && socket.connected && roomId) {
+                // Emit leave room event before page closes
+                socket.emit('boss_leave_room', { room_id: roomId });
+            }
+        });
+
+        // Handle page hide (mobile tab switching, etc.)
+        window.addEventListener('pagehide', () => {
+            if (gameActive && socket && socket.connected && roomId) {
+                socket.emit('boss_leave_room', { room_id: roomId });
+            }
+        });
+
         // Chat input enter key
         document.getElementById('chatInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -654,7 +723,7 @@
             // Room full notification
             socket.on('boss_room_full', (data) => {
                 console.log('Room full:', data);
-                addSystemMessage('Room is full (max 5 players). Try again later.');
+                addSystemMessage('Room is full (max 7 players). Try again later.');
                 showMessage('Room is full!');
             });
 
@@ -691,6 +760,25 @@
             // Chat message
             socket.on('boss_chat_message', (data) => {
                 addChatMessage(data);
+            });
+
+            // Player away (switched tabs)
+            socket.on('boss_player_away', (data) => {
+                addSystemMessage(`${data.username} switched away from the game`);
+                // Update player status in list if tracking
+                if (data.sid && gameState.otherPlayers[data.sid]) {
+                    gameState.otherPlayers[data.sid].isAway = true;
+                    updatePlayersList();
+                }
+            });
+
+            // Player returned
+            socket.on('boss_player_returned', (data) => {
+                addSystemMessage(`${data.username} is back!`);
+                if (data.sid && gameState.otherPlayers[data.sid]) {
+                    gameState.otherPlayers[data.sid].isAway = false;
+                    updatePlayersList();
+                }
             });
         }
 
@@ -854,11 +942,23 @@
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                // Calculate bullet direction based on aim angle
+                const bulletSpeed = 10;
+                const dx = Math.cos(gameState.aimAngle) * bulletSpeed;
+                const dy = Math.sin(gameState.aimAngle) * bulletSpeed;
+
+                // Spawn bullet slightly ahead of player in the aim direction
+                const spawnOffset = gameState.player.size + 5;
+                const spawnX = gameState.player.x + Math.cos(gameState.aimAngle) * spawnOffset;
+                const spawnY = gameState.player.y + Math.sin(gameState.aimAngle) * spawnOffset;
+
                 gameState.playerBullets.push({
-                    x: gameState.player.x,
-                    y: gameState.player.y - gameState.player.size,
+                    x: spawnX,
+                    y: spawnY,
                     size: 8,
-                    speed: 8
+                    speed: bulletSpeed,
+                    dx: dx,
+                    dy: dy
                 });
                 gameState.player.bullets--;
                 updateBulletsDisplay();
@@ -876,8 +976,16 @@
 
         function moveBullets() {
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
-                bullet.y -= bullet.speed;
-                return bullet.y > 0;
+                // Use directional movement if available, otherwise move upward
+                if (bullet.dx !== undefined && bullet.dy !== undefined) {
+                    bullet.x += bullet.dx;
+                    bullet.y += bullet.dy;
+                } else {
+                    bullet.y -= bullet.speed;
+                }
+                // Remove bullets that go off-screen (any edge)
+                return bullet.y > 0 && bullet.y < canvas.height &&
+                       bullet.x > 0 && bullet.x < canvas.width;
             });
         }
 
@@ -916,15 +1024,114 @@
 
         function moveBoss() {
             const boss = gameState.boss;
-            const margin = 100;
+            const margin = 80;
+            const minY = 60;
+            const maxY = 220;
 
-            boss.x += boss.moveSpeed * boss.moveDirection;
-            if (boss.x >= canvas.width - margin) boss.moveDirection = -1;
-            else if (boss.x <= margin) boss.moveDirection = 1;
+            // Update timers
+            boss.patternTimer++;
+            boss.erraticTimer++;
+            if (boss.dashCooldown > 0) boss.dashCooldown--;
 
-            boss.y += boss.verticalSpeed * boss.verticalDirection;
-            if (boss.y >= 180) boss.verticalDirection = -1;
-            else if (boss.y <= 80) boss.verticalDirection = 1;
+            // Randomly switch movement patterns every 120-300 frames
+            if (boss.patternTimer > 120 + Math.random() * 180) {
+                boss.patternTimer = 0;
+                const patterns = ['normal', 'dash', 'zigzag', 'chase', 'circle', 'erratic'];
+                boss.currentPattern = patterns[Math.floor(Math.random() * patterns.length)];
+                boss.moveSpeed = boss.baseSpeed + Math.random() * 2; // Vary speed
+            }
+
+            // Random direction changes (5% chance per frame)
+            if (Math.random() < 0.05) {
+                boss.moveDirection *= -1;
+            }
+            if (Math.random() < 0.03) {
+                boss.verticalDirection *= -1;
+            }
+
+            // Execute current movement pattern
+            switch (boss.currentPattern) {
+                case 'dash':
+                    // Quick dash to random position
+                    if (!boss.targetX || Math.abs(boss.x - boss.targetX) < 20) {
+                        boss.targetX = margin + Math.random() * (canvas.width - margin * 2);
+                        boss.targetY = minY + Math.random() * (maxY - minY);
+                    }
+                    const dashSpeed = 6;
+                    boss.x += (boss.targetX - boss.x) > 0 ? dashSpeed : -dashSpeed;
+                    boss.y += (boss.targetY - boss.y) > 0 ? dashSpeed * 0.5 : -dashSpeed * 0.5;
+                    break;
+
+                case 'zigzag':
+                    // Fast zigzag movement
+                    boss.x += boss.moveSpeed * 1.5 * boss.moveDirection;
+                    boss.y += Math.sin(boss.patternTimer * 0.2) * 4;
+                    if (boss.patternTimer % 30 === 0) boss.moveDirection *= -1;
+                    break;
+
+                case 'chase':
+                    // Chase the nearest player
+                    let targetPlayerX = gameState.player.x;
+                    let targetPlayerY = gameState.player.y;
+                    const chaseSpeed = 2.5;
+
+                    // Move towards player but stay in upper area
+                    if (boss.x < targetPlayerX - 20) boss.x += chaseSpeed;
+                    else if (boss.x > targetPlayerX + 20) boss.x -= chaseSpeed;
+
+                    // Slight vertical movement when chasing
+                    boss.y += Math.sin(boss.patternTimer * 0.1) * 1.5;
+                    break;
+
+                case 'circle':
+                    // Circular movement pattern
+                    boss.circleAngle += 0.03;
+                    const circleRadius = 150;
+                    const centerX = canvas.width / 2;
+                    const centerY = 140;
+                    boss.x = centerX + Math.cos(boss.circleAngle) * circleRadius;
+                    boss.y = centerY + Math.sin(boss.circleAngle) * (circleRadius * 0.4);
+                    break;
+
+                case 'erratic':
+                    // Completely random, jerky movement
+                    if (boss.erraticTimer % 10 === 0) {
+                        boss.x += (Math.random() - 0.5) * 40;
+                        boss.y += (Math.random() - 0.5) * 20;
+                    }
+                    boss.x += boss.moveSpeed * boss.moveDirection * 0.5;
+                    break;
+
+                default: // 'normal'
+                    // Standard movement with slight variations
+                    boss.x += boss.moveSpeed * boss.moveDirection;
+                    boss.y += boss.verticalSpeed * boss.verticalDirection;
+
+                    // Add slight wobble
+                    boss.x += Math.sin(boss.patternTimer * 0.1) * 0.5;
+            }
+
+            // Keep boss within bounds
+            if (boss.x >= canvas.width - margin) {
+                boss.x = canvas.width - margin;
+                boss.moveDirection = -1;
+            } else if (boss.x <= margin) {
+                boss.x = margin;
+                boss.moveDirection = 1;
+            }
+
+            if (boss.y >= maxY) {
+                boss.y = maxY;
+                boss.verticalDirection = -1;
+            } else if (boss.y <= minY) {
+                boss.y = minY;
+                boss.verticalDirection = 1;
+            }
+
+            // Random speed bursts (3% chance)
+            if (Math.random() < 0.03) {
+                boss.moveSpeed = boss.baseSpeed + Math.random() * 3;
+            }
         }
 
         function checkCollisions() {
@@ -1036,6 +1243,39 @@
             ctx.arc(gameState.player.x, gameState.player.y, gameState.player.size, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1.0;
+
+            // Draw aiming indicator (line from player to aim direction)
+            if (gameActive) {
+                const aimLength = 60;
+                const aimEndX = gameState.player.x + Math.cos(gameState.aimAngle) * aimLength;
+                const aimEndY = gameState.player.y + Math.sin(gameState.aimAngle) * aimLength;
+
+                // Draw aim line
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(gameState.player.x, gameState.player.y);
+                ctx.lineTo(aimEndX, aimEndY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw crosshair at aim point
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+                ctx.lineWidth = 2;
+                const crossSize = 8;
+                ctx.beginPath();
+                ctx.moveTo(aimEndX - crossSize, aimEndY);
+                ctx.lineTo(aimEndX + crossSize, aimEndY);
+                ctx.moveTo(aimEndX, aimEndY - crossSize);
+                ctx.lineTo(aimEndX, aimEndY + crossSize);
+                ctx.stroke();
+
+                // Draw circle around crosshair
+                ctx.beginPath();
+                ctx.arc(aimEndX, aimEndY, crossSize + 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
 
             ctx.shadowBlur = 15;
             ctx.font = 'bold 50px Arial';

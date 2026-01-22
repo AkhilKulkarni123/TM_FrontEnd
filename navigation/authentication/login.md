@@ -316,7 +316,7 @@ input:checked + .slider:before {
         <hr>
         <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
-                <input type="text" id="uid" placeholder="GitHub ID" required>
+                <input type="text" id="uid" placeholder="Username" required>
             </div>
             <div class="form-group">
                 <input type="password" id="password" placeholder="Password" required>
@@ -337,7 +337,7 @@ input:checked + .slider:before {
                 <input type="text" id="signupName" placeholder="Name" required>
             </div>
             <div class="form-group">
-                <input type="text" id="signupUid" placeholder="GitHub ID" required>
+                <input type="text" id="signupUid" placeholder="Username" required>
             </div>
             <div class="form-group">
                 <input type="text" id="signupSid" placeholder="Student ID" required>
@@ -365,15 +365,6 @@ input:checked + .slider:before {
                 <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
                 <div id="password-validation-message" class="validation-message"></div>
             </div>
-            <p>
-                <label class="switch">
-                    <span class="toggle">
-                        <input type="checkbox" id="kasmNeeded">
-                        <span class="slider"></span>
-                    </span>
-                    <span class="label-text">Kasm Server Needed</span>
-                </label>
-            </p>
             <p>
                 <button type="button" onclick="handleSignup()" class="submit-button" id="signupButton">Sign Up</button>
             </p>
@@ -602,7 +593,7 @@ input:checked + .slider:before {
             school: document.getElementById('signupSchool').value,
             email: document.getElementById('signupEmail').value.trim(),
             password: document.getElementById('signupPassword').value,
-            kasm_server_needed: document.getElementById('kasmNeeded').checked
+            kasm_server_needed: false  // Disabled - no longer asking users
         };
 
         // Validate all fields
@@ -628,7 +619,7 @@ input:checked + .slider:before {
             dob: "2000-01-01",
             name: formData.name,
             password: formData.password,
-            kasmServerNeeded: formData.kasm_server_needed
+            kasmServerNeeded: false  // Disabled - no longer asking users
         };
 
         // Flask signup
