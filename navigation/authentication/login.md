@@ -211,63 +211,6 @@ body {
     display: none;
 }
 
-.switch {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 20px 0;
-}
-
-.toggle {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #555;
-    transition: .4s;
-    border-radius: 24px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked + .slider {
-    background-color: #4CAF50;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-
-.label-text {
-    color: #ccc;
-    font-size: 14px;
-}
-
 .validation-message {
     font-size: 12px;
     margin-top: 8px;
@@ -316,7 +259,7 @@ input:checked + .slider:before {
         <hr>
         <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
-                <input type="text" id="uid" placeholder="Username" required>
+                <input type="text" id="uid" placeholder="GitHub ID" required>
             </div>
             <div class="form-group">
                 <input type="password" id="password" placeholder="Password" required>
@@ -337,25 +280,10 @@ input:checked + .slider:before {
                 <input type="text" id="signupName" placeholder="Name" required>
             </div>
             <div class="form-group">
-                <input type="text" id="signupUid" placeholder="Username" required>
+                <input type="text" id="signupUid" placeholder="GitHub ID" required>
             </div>
             <div class="form-group">
-                <input type="text" id="signupSid" placeholder="Student ID" required>
-            </div>
-            <div class="form-group">
-                <select id="signupSchool" required>
-                    <option value="" disabled selected>Select Your High School</option>
-                    <option value="Abraxas High School">Abraxas</option>
-                    <option value="Del Norte High School">Del Norte</option>
-                    <option value="Mt Carmel High School">Mt Carmel</option>
-                    <option value="Poway High School">Poway</option>
-                    <option value="Poway to Palomar">Poway to Palomar</option>
-                    <option value="Rancho Bernardo High School">Rancho Bernardo</option>
-                    <option value="Westview High School">Westview</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <input type="email" id="signupEmail" placeholder="Personal (not school) Email" required>
+                <input type="email" id="signupEmail" placeholder="Email" required>
             </div>
             <div class="form-group">
                 <input type="password" id="signupPassword" placeholder="Password" required minlength="8">
@@ -589,15 +517,12 @@ input:checked + .slider:before {
         const formData = {
             name: document.getElementById('signupName').value.trim(),
             uid: document.getElementById('signupUid').value.trim(),
-            sid: document.getElementById('signupSid').value.trim(),
-            school: document.getElementById('signupSchool').value,
             email: document.getElementById('signupEmail').value.trim(),
-            password: document.getElementById('signupPassword').value,
-            kasm_server_needed: false  // Disabled - no longer asking users
+            password: document.getElementById('signupPassword').value
         };
 
         // Validate all fields
-        if (!formData.name || !formData.uid || !formData.sid || !formData.school || !formData.email || !formData.password) {
+        if (!formData.name || !formData.uid || !formData.email || !formData.password) {
             alert('Please fill in all required fields');
             return;
         }
@@ -614,12 +539,10 @@ input:checked + .slider:before {
         // Prepare Spring data
         const springData = {
             uid: formData.uid,
-            sid: formData.sid,
             email: formData.email,
             dob: "2000-01-01",
             name: formData.name,
-            password: formData.password,
-            kasmServerNeeded: false  // Disabled - no longer asking users
+            password: formData.password
         };
 
         // Flask signup
