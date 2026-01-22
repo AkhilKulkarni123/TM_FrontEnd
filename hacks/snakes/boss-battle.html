@@ -542,7 +542,55 @@
             mouseY: 0,
             aimAngle: -Math.PI / 2, // Current aim angle (smoothed)
             targetAimAngle: -Math.PI / 2, // Target aim angle (where mouse is)
-            aimSmoothness: 0.15 // Higher = snappier, lower = smoother (0.1-0.3 recommended)
+            aimSmoothness: 0.15, // Higher = snappier, lower = smoother (0.1-0.3 recommended)
+            // Powerups
+            powerups: [], // Active powerups on the field
+            playerBuffs: {
+                damageMultiplier: 1,
+                speedMultiplier: 1,
+                damageBuffExpiry: 0,
+                speedBuffExpiry: 0
+            }
+        };
+
+        // Powerup Configuration
+        const POWERUP_TYPES = {
+            damage: {
+                icon: '⚔️',
+                color: '#e74c3c',
+                glowColor: 'rgba(231, 76, 60, 0.6)',
+                name: 'Damage Boost',
+                effect: 'damageMultiplier',
+                multiplier: 2,
+                duration: 8000 // 8 seconds
+            },
+            speed: {
+                icon: '⚡',
+                color: '#f39c12',
+                glowColor: 'rgba(243, 156, 18, 0.6)',
+                name: 'Speed Boost',
+                effect: 'speedMultiplier',
+                multiplier: 1.5,
+                duration: 10000 // 10 seconds
+            },
+            rapidfire: {
+                icon: '🔥',
+                color: '#9b59b6',
+                glowColor: 'rgba(155, 89, 182, 0.6)',
+                name: 'Rapid Fire',
+                effect: 'rapidFire',
+                multiplier: 1,
+                duration: 6000 // 6 seconds
+            },
+            heal: {
+                icon: '💚',
+                color: '#27ae60',
+                glowColor: 'rgba(39, 174, 96, 0.6)',
+                name: 'Health Restore',
+                effect: 'heal',
+                healAmount: 1,
+                duration: 0 // Instant
+            }
         };
 
         // Check if in demo mode (from sessionStorage)
@@ -766,6 +814,11 @@
                     updatePlayersList();
                     document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
                 }
+                // Sync powerups from room state
+                if (data.powerups && Array.isArray(data.powerups)) {
+                    gameState.powerups = data.powerups;
+                    console.log('Synced powerups:', gameState.powerups.length);
+                }
             });
 
             // Player joined
@@ -869,6 +922,41 @@
                     updatePlayersList();
                 }
             });
+
+            // ==================== POWERUP SOCKET EVENTS ====================
+
+            // New powerup spawned (from server)
+            socket.on('boss_powerup_spawned', (data) => {
+                console.log('Powerup spawned:', data);
+                addPowerup({
+                    id: data.id,
+                    type: data.type,
+                    x: data.x,
+                    y: data.y
+                });
+                const config = POWERUP_TYPES[data.type];
+                if (config) {
+                    addSystemMessage(`A ${config.name} powerup appeared!`);
+                }
+            });
+
+            // Powerup collected by another player
+            socket.on('boss_powerup_collected', (data) => {
+                console.log('Powerup collected:', data);
+                removePowerup(data.powerup_id);
+                const config = POWERUP_TYPES[data.type];
+                if (data.username !== gameState.player.username) {
+                    addSystemMessage(`${data.username} collected ${config ? config.name : 'a powerup'}!`);
+                }
+            });
+
+            // Sync all current powerups (when joining room)
+            socket.on('boss_powerups_sync', (data) => {
+                console.log('Powerups sync:', data);
+                if (data.powerups) {
+                    gameState.powerups = data.powerups;
+                }
+            });
         }
 
         async function startBattle() {
@@ -931,6 +1019,9 @@
                     // Start position broadcasting
                     startPositionBroadcast();
 
+                    // Start powerup spawn requests
+                    startPowerupSpawnRequests();
+
                     gameActive = true;
                     activateBattleMode();
                     addSystemMessage('Battle started! Work together to defeat the boss!');
@@ -942,7 +1033,37 @@
                 gameActive = true;
                 activateBattleMode();
                 addSystemMessage('Playing in offline mode');
+                // Start local powerup spawning for offline mode
+                startOfflinePowerupSpawner();
                 gameLoop();
+            }
+        }
+
+        // Offline mode powerup spawner (local only)
+        let offlinePowerupInterval = null;
+        function startOfflinePowerupSpawner() {
+            if (offlinePowerupInterval) clearInterval(offlinePowerupInterval);
+            offlinePowerupInterval = setInterval(() => {
+                if (gameActive && Math.random() < 0.3) {
+                    const types = Object.keys(POWERUP_TYPES);
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    const powerup = {
+                        id: 'local_' + Date.now(),
+                        type: type,
+                        x: 100 + Math.random() * 600,
+                        y: 300 + Math.random() * 250
+                    };
+                    addPowerup(powerup);
+                    const config = POWERUP_TYPES[type];
+                    addSystemMessage(`A ${config.name} powerup appeared!`);
+                }
+            }, 12000); // Every 12 seconds
+        }
+
+        function stopOfflinePowerupSpawner() {
+            if (offlinePowerupInterval) {
+                clearInterval(offlinePowerupInterval);
+                offlinePowerupInterval = null;
             }
         }
 
@@ -1000,6 +1121,27 @@
             if (positionBroadcastInterval) {
                 clearInterval(positionBroadcastInterval);
                 positionBroadcastInterval = null;
+            }
+        }
+
+        // Powerup spawn request interval
+        let powerupSpawnInterval = null;
+
+        function startPowerupSpawnRequests() {
+            if (powerupSpawnInterval) clearInterval(powerupSpawnInterval);
+            powerupSpawnInterval = setInterval(() => {
+                if (socket && socket.connected && roomId && gameActive) {
+                    socket.emit('boss_request_powerup_spawn', {
+                        room_id: roomId
+                    });
+                }
+            }, 5000); // Request every 5 seconds (server rate-limits actual spawns)
+        }
+
+        function stopPowerupSpawnRequests() {
+            if (powerupSpawnInterval) {
+                clearInterval(powerupSpawnInterval);
+                powerupSpawnInterval = null;
             }
         }
 
@@ -1064,6 +1206,8 @@
             moveBullets();
             moveBossProjectiles();
             spawnBossProjectiles();
+            checkPowerupCollisions();
+            updateBuffs();
             drawGame();
             checkCollisions();
             updateProgressBar();
@@ -1285,7 +1429,9 @@
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                 const distance = Math.hypot(bullet.x - gameState.boss.x, bullet.y - gameState.boss.y);
                 if (distance < gameState.boss.size) {
-                    const damage = 10;
+                    // Apply damage multiplier from powerups
+                    const baseDamage = 10;
+                    const damage = Math.round(baseDamage * gameState.playerBuffs.damageMultiplier);
                     gameState.boss.health = Math.max(0, gameState.boss.health - damage);
                     updateBossHealthBar();
 
@@ -1458,7 +1604,62 @@
                 ctx.fill();
             });
 
+            // Draw powerups
+            gameState.powerups.forEach(powerup => {
+                const config = POWERUP_TYPES[powerup.type];
+                if (!config) return;
+
+                // Pulsing glow effect
+                const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.2;
+                const glowSize = 25 * pulse;
+
+                // Outer glow
+                ctx.shadowBlur = glowSize;
+                ctx.shadowColor = config.glowColor;
+                ctx.fillStyle = config.color;
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, 22, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner circle
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, 18, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Icon
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(config.icon, powerup.x, powerup.y);
+            });
+
+            // Draw active buff indicators on player
+            const now = Date.now();
+            if (gameState.playerBuffs.damageBuffExpiry > now) {
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 3]);
+                ctx.beginPath();
+                ctx.arc(gameState.player.x, gameState.player.y, gameState.player.size + 8, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            if (gameState.playerBuffs.speedBuffExpiry > now) {
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.arc(gameState.player.x, gameState.player.y, gameState.player.size + 12, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
             ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
         }
 
         function updateBossHealthBar() {
@@ -1472,6 +1673,109 @@
 
         function updateBulletsDisplay() {
             document.getElementById('bulletsCount').textContent = gameState.player.bullets;
+        }
+
+        // ============================================
+        // POWERUP FUNCTIONS
+        // ============================================
+
+        function checkPowerupCollisions() {
+            const playerX = gameState.player.x;
+            const playerY = gameState.player.y;
+            const playerSize = gameState.player.size;
+
+            gameState.powerups = gameState.powerups.filter(powerup => {
+                const distance = Math.hypot(powerup.x - playerX, powerup.y - playerY);
+
+                if (distance < playerSize + 18) {
+                    // Collected the powerup!
+                    applyPowerup(powerup.type);
+
+                    // Notify server about collection
+                    if (socket && socket.connected && roomId) {
+                        socket.emit('boss_powerup_collected', {
+                            room_id: roomId,
+                            powerup_id: powerup.id,
+                            username: gameState.player.username
+                        });
+                    }
+
+                    return false; // Remove from array
+                }
+                return true;
+            });
+        }
+
+        function applyPowerup(type) {
+            const config = POWERUP_TYPES[type];
+            if (!config) return;
+
+            const now = Date.now();
+
+            switch (config.effect) {
+                case 'damageMultiplier':
+                    gameState.playerBuffs.damageMultiplier = config.multiplier;
+                    gameState.playerBuffs.damageBuffExpiry = now + config.duration;
+                    addSystemMessage(`You got ${config.name}! 2x damage for ${config.duration / 1000}s`);
+                    break;
+
+                case 'speedMultiplier':
+                    gameState.playerBuffs.speedMultiplier = config.multiplier;
+                    gameState.playerBuffs.speedBuffExpiry = now + config.duration;
+                    // Apply speed to player
+                    gameState.player.speed = 6 * config.multiplier;
+                    addSystemMessage(`You got ${config.name}! 1.5x speed for ${config.duration / 1000}s`);
+                    break;
+
+                case 'rapidFire':
+                    // Give extra bullets
+                    gameState.player.bullets += 15;
+                    updateBulletsDisplay();
+                    addSystemMessage(`You got ${config.name}! +15 bullets`);
+                    break;
+
+                case 'heal':
+                    if (gameState.player.lives < 3) {
+                        gameState.player.lives += config.healAmount;
+                        updateLives();
+                        addSystemMessage(`You got ${config.name}! +1 life`);
+                    } else {
+                        // Already full, give bullets instead
+                        gameState.player.bullets += 10;
+                        updateBulletsDisplay();
+                        addSystemMessage(`Already full health! +10 bullets instead`);
+                    }
+                    break;
+            }
+        }
+
+        function updateBuffs() {
+            const now = Date.now();
+
+            // Check damage buff expiry
+            if (gameState.playerBuffs.damageBuffExpiry > 0 && now > gameState.playerBuffs.damageBuffExpiry) {
+                gameState.playerBuffs.damageMultiplier = 1;
+                gameState.playerBuffs.damageBuffExpiry = 0;
+            }
+
+            // Check speed buff expiry
+            if (gameState.playerBuffs.speedBuffExpiry > 0 && now > gameState.playerBuffs.speedBuffExpiry) {
+                gameState.playerBuffs.speedMultiplier = 1;
+                gameState.playerBuffs.speedBuffExpiry = 0;
+                gameState.player.speed = 6; // Reset to default speed
+            }
+        }
+
+        function addPowerup(powerupData) {
+            // Check if powerup already exists
+            const exists = gameState.powerups.find(p => p.id === powerupData.id);
+            if (!exists) {
+                gameState.powerups.push(powerupData);
+            }
+        }
+
+        function removePowerup(powerupId) {
+            gameState.powerups = gameState.powerups.filter(p => p.id !== powerupId);
         }
 
         function updatePlayersList() {
@@ -1572,6 +1876,11 @@
         function endGame(victory) {
             gameActive = false;
             stopPositionBroadcast();
+            stopPowerupSpawnRequests();
+            stopOfflinePowerupSpawner();
+
+            // Clear any remaining powerups
+            gameState.powerups = [];
 
             // Hide battle UI elements
             document.getElementById('ingameLeaveBtn').style.display = 'none';
@@ -1633,6 +1942,9 @@
             if (confirm('Are you sure you want to leave the battle?')) {
                 gameActive = false;
                 stopPositionBroadcast();
+                stopPowerupSpawnRequests();
+                stopOfflinePowerupSpawner();
+                gameState.powerups = [];
                 deactivateBattleMode();
 
                 if (roomId && socket) {

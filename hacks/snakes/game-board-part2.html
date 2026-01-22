@@ -481,6 +481,56 @@
             color: #999;
             padding: 20px;
         }
+
+        /* Player Identity Styles */
+        .player-identity {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(52, 152, 219, 0.15);
+            border-radius: 8px;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .player-name-label {
+            font-size: 1em;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .player-rank-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 6px rgba(243, 156, 18, 0.4);
+        }
+
+        .player-rank-badge.rank-gold {
+            background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+        }
+
+        .player-rank-badge.rank-silver {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+        }
+
+        .player-rank-badge.rank-bronze {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        }
+
+        .rank-icon {
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
@@ -502,7 +552,14 @@
         <div class="board-shell">
             <aside class="board-sidebar">
                 <div id="player-info" class="info-card">
-                    <h3>Player</h3>
+                    <h3>Player Dashboard</h3>
+                    <div class="player-identity">
+                        <span id="player-name-display" class="player-name-label">Loading...</span>
+                        <div class="player-rank-badge" id="player-rank-badge">
+                            <span class="rank-icon">🏆</span>
+                            <span id="player-rank">--</span>
+                        </div>
+                    </div>
                     <p>Character: <span id="player-character"></span></p>
                     <p>Bullets: <span id="player-bullets">0</span></p>
                     <p>Lives: <span id="player-lives">3</span></p>
@@ -838,6 +895,120 @@
 
             // Refresh every 10 seconds
             setInterval(fetchActivePlayers, 10000);
+        })();
+
+        // ============================================
+        // PLAYER NAME AND RANK DISPLAY
+        // ============================================
+        (function() {
+            var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            var API_BASE_RANK = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+
+            // Fetch player's name from user API
+            function fetchPlayerName() {
+                return fetch(API_BASE_RANK + '/api/id', { credentials: 'include' })
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        if (data && data.name) {
+                            var nameEl = document.getElementById('player-name-display');
+                            if (nameEl) nameEl.textContent = data.name;
+                            return data.name;
+                        }
+                        return null;
+                    })
+                    .catch(function(err) {
+                        console.error('Error fetching player name:', err);
+                        return null;
+                    });
+            }
+
+            // Fetch player's rank from leaderboard
+            function fetchPlayerRank() {
+                return fetch(API_BASE_RANK + '/api/snakes/leaderboard?limit=100', { credentials: 'include' })
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        if (!data || !data.leaderboard) return null;
+
+                        var leaderboard = data.leaderboard;
+                        var currentUserId = null;
+
+                        // Try to get user ID from gameState or fetch it
+                        if (typeof gameState !== 'undefined' && gameState.userId) {
+                            currentUserId = gameState.userId;
+                        }
+
+                        // Find user's rank
+                        for (var i = 0; i < leaderboard.length; i++) {
+                            if (leaderboard[i].user_id === currentUserId ||
+                                (typeof gameState !== 'undefined' && leaderboard[i].username === gameState.username)) {
+                                updateRankDisplay(i + 1, leaderboard.length);
+                                return i + 1;
+                            }
+                        }
+
+                        // User not in leaderboard yet - show unranked
+                        updateRankDisplay(null, leaderboard.length);
+                        return null;
+                    })
+                    .catch(function(err) {
+                        console.error('Error fetching player rank:', err);
+                        return null;
+                    });
+            }
+
+            // Update the rank display in the UI
+            function updateRankDisplay(rank, totalPlayers) {
+                var rankEl = document.getElementById('player-rank');
+                var badgeEl = document.getElementById('player-rank-badge');
+
+                if (!rankEl || !badgeEl) return;
+
+                if (rank === null) {
+                    rankEl.textContent = 'Unranked';
+                    badgeEl.className = 'player-rank-badge';
+                } else {
+                    rankEl.textContent = '#' + rank + ' of ' + totalPlayers;
+
+                    // Update badge color based on rank
+                    badgeEl.classList.remove('rank-gold', 'rank-silver', 'rank-bronze');
+                    if (rank === 1) {
+                        badgeEl.classList.add('rank-gold');
+                    } else if (rank === 2) {
+                        badgeEl.classList.add('rank-silver');
+                    } else if (rank === 3) {
+                        badgeEl.classList.add('rank-bronze');
+                    }
+                }
+            }
+
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                // Delay to let gameState load
+                setTimeout(function() {
+                    fetchPlayerName();
+                    fetchPlayerRank();
+                }, 1000);
+            });
+
+            // Also update when game container becomes visible
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.target.id === 'game-container' &&
+                        !mutation.target.classList.contains('hidden')) {
+                        fetchPlayerName();
+                        fetchPlayerRank();
+                    }
+                });
+            });
+
+            var gameContainer = document.getElementById('game-container');
+            if (gameContainer) {
+                observer.observe(gameContainer, { attributes: true, attributeFilter: ['class'] });
+            }
+
+            // Expose functions globally for manual refresh
+            window.refreshPlayerRank = fetchPlayerRank;
+            window.refreshPlayerName = fetchPlayerName;
         })();
     </script>
 </body>
