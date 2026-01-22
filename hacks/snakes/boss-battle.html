@@ -316,6 +316,77 @@
             background: #e94560;
             border-radius: 3px;
         }
+
+        /* Progress bar at top */
+        .battle-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 300px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 60;
+            display: none;
+        }
+
+        .battle-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b6b, #ffd93d);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 215, 61, 0.7);
+        }
+
+        .battle-progress-text {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #ffd93d;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            z-index: 61;
+            display: none;
+        }
+
+        /* In-game leave button (corner) */
+        .ingame-leave-btn {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            padding: 8px 16px;
+            background: rgba(233, 69, 96, 0.8);
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 55;
+            display: none;
+        }
+
+        .ingame-leave-btn:hover {
+            background: rgba(233, 69, 96, 1);
+            transform: scale(1.05);
+        }
+
+        .ingame-leave-btn .key-hint {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        /* Hide controls when battle active */
+        .controls.hidden {
+            display: none !important;
+        }
+
+        /* Fullscreen canvas during battle */
+        #gameCanvas.battle-active {
+            height: calc(100vh - 8px) !important;
+        }
     </style>
 </head>
 <body>
@@ -342,9 +413,20 @@
                 Room: <span id="roomCode">---</span> | Players: <span id="playerCount">0</span>
             </div>
 
+            <!-- Battle Progress Bar -->
+            <div class="battle-progress" id="battleProgress">
+                <div class="battle-progress-fill" id="battleProgressFill" style="width: 0%"></div>
+            </div>
+            <div class="battle-progress-text" id="battleProgressText">Boss Damage: 0%</div>
+
             <canvas id="gameCanvas"></canvas>
 
-            <div class="controls">
+            <!-- In-game leave button (shown during battle) -->
+            <button class="ingame-leave-btn" id="ingameLeaveBtn" onclick="leaveBattle()">
+                Leave Arena <span class="key-hint">[X]</span>
+            </button>
+
+            <div class="controls" id="controlsPanel">
                 <div style="margin-bottom: 15px; font-size: 1.2em;">
                     WASD/Arrows to move | Aim with mouse | SPACE or Click to shoot
                 </div>
@@ -419,8 +501,8 @@
 
         const gameState = {
             player: {
-                x: canvas.width / 2,
-                y: canvas.height - 100,
+                x: 80,  // Start in bottom-left corner (safe from boss)
+                y: canvas.height - 80,
                 size: 35,
                 speed: 6,
                 lives: 3,
@@ -455,10 +537,12 @@
             keys: {},
             otherPlayers: {},  // { odfsid: {x, y, character, username, lives, bullets} }
             chatMessages: [],
-            // Mouse aiming
+            // Mouse aiming with smooth interpolation
             mouseX: 0,
             mouseY: 0,
-            aimAngle: -Math.PI / 2 // Default aim up
+            aimAngle: -Math.PI / 2, // Current aim angle (smoothed)
+            targetAimAngle: -Math.PI / 2, // Target aim angle (where mouse is)
+            aimSmoothness: 0.15 // Higher = snappier, lower = smoother (0.1-0.3 recommended)
         };
 
         // Check if in demo mode (from sessionStorage)
@@ -564,6 +648,11 @@
                 e.preventDefault();
                 shoot();
             }
+            // X key to leave arena during battle
+            if (e.key.toLowerCase() === 'x' && gameActive) {
+                e.preventDefault();
+                leaveBattle();
+            }
         });
 
         // Mouse aiming - track mouse position on canvas
@@ -572,10 +661,10 @@
             gameState.mouseX = e.clientX - rect.left;
             gameState.mouseY = e.clientY - rect.top;
 
-            // Calculate aim angle from player to mouse
+            // Calculate TARGET aim angle from player to mouse (smoothing applied in game loop)
             const dx = gameState.mouseX - gameState.player.x;
             const dy = gameState.mouseY - gameState.player.y;
-            gameState.aimAngle = Math.atan2(dy, dx);
+            gameState.targetAimAngle = Math.atan2(dy, dx);
         });
 
         // Click to shoot in aimed direction
@@ -843,7 +932,7 @@
                     startPositionBroadcast();
 
                     gameActive = true;
-                    document.getElementById('startBtn').disabled = true;
+                    activateBattleMode();
                     addSystemMessage('Battle started! Work together to defeat the boss!');
                     gameLoop();
                 }
@@ -851,10 +940,47 @@
                 console.error('Join battle error:', error);
                 // Fallback to single player mode
                 gameActive = true;
-                document.getElementById('startBtn').disabled = true;
+                activateBattleMode();
                 addSystemMessage('Playing in offline mode');
                 gameLoop();
             }
+        }
+
+        // Activate battle mode - hide controls, show battle UI
+        function activateBattleMode() {
+            // Hide the main controls panel
+            document.getElementById('controlsPanel').classList.add('hidden');
+
+            // Show progress bar
+            document.getElementById('battleProgress').style.display = 'block';
+            document.getElementById('battleProgressText').style.display = 'block';
+
+            // Show in-game leave button
+            document.getElementById('ingameLeaveBtn').style.display = 'block';
+
+            // Make canvas take more space
+            canvas.classList.add('battle-active');
+            resizeCanvas();
+        }
+
+        // Deactivate battle mode - show controls, hide battle UI
+        function deactivateBattleMode() {
+            // Show the main controls panel
+            document.getElementById('controlsPanel').classList.remove('hidden');
+
+            // Hide progress bar
+            document.getElementById('battleProgress').style.display = 'none';
+            document.getElementById('battleProgressText').style.display = 'none';
+
+            // Hide in-game leave button
+            document.getElementById('ingameLeaveBtn').style.display = 'none';
+
+            // Reset canvas
+            canvas.classList.remove('battle-active');
+            resizeCanvas();
+
+            // Re-enable start button
+            document.getElementById('startBtn').disabled = false;
         }
 
         function startPositionBroadcast() {
@@ -909,10 +1035,29 @@
             }).catch(err => console.error('Failed to save player state', err));
         }
 
+        // Smooth angle interpolation (handles wraparound)
+        function lerpAngle(current, target, factor) {
+            let diff = target - current;
+            // Handle angle wraparound (-PI to PI)
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            return current + diff * factor;
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            const damagePercent = ((gameState.boss.maxHealth - gameState.boss.health) / gameState.boss.maxHealth) * 100;
+            document.getElementById('battleProgressFill').style.width = damagePercent + '%';
+            document.getElementById('battleProgressText').textContent = `Boss Damage: ${Math.round(damagePercent)}%`;
+        }
+
         function gameLoop() {
             if (!gameActive) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Smooth aim interpolation
+            gameState.aimAngle = lerpAngle(gameState.aimAngle, gameState.targetAimAngle, gameState.aimSmoothness);
 
             movePlayer();
             moveBoss();
@@ -921,6 +1066,7 @@
             spawnBossProjectiles();
             drawGame();
             checkCollisions();
+            updateProgressBar();
 
             requestAnimationFrame(gameLoop);
         }
@@ -1427,6 +1573,11 @@
             gameActive = false;
             stopPositionBroadcast();
 
+            // Hide battle UI elements
+            document.getElementById('ingameLeaveBtn').style.display = 'none';
+            document.getElementById('battleProgress').style.display = 'none';
+            document.getElementById('battleProgressText').style.display = 'none';
+
             const gameOver = document.getElementById('gameOver');
             const title = document.getElementById('gameOverTitle');
             const text = document.getElementById('gameOverText');
@@ -1480,7 +1631,10 @@
 
         function leaveBattle() {
             if (confirm('Are you sure you want to leave the battle?')) {
+                gameActive = false;
                 stopPositionBroadcast();
+                deactivateBattleMode();
+
                 if (roomId && socket) {
                     socket.emit('boss_leave_room', { room_id: roomId });
                     fetch(`${GAME_API_ROOT}/boss/leave`, {
