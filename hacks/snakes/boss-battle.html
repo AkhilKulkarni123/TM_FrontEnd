@@ -1326,13 +1326,18 @@
 
         function startPowerupSpawnRequests() {
             if (powerupSpawnInterval) clearInterval(powerupSpawnInterval);
+            // Fire immediately so first powerup spawns right away
+            if (socket && socket.connected && roomId) {
+                socket.emit('boss_request_powerup_spawn', { room_id: roomId });
+            }
+            // Poll every 2 seconds; server enforces the 5-second spawn interval
             powerupSpawnInterval = setInterval(() => {
                 if (socket && socket.connected && roomId && gameActive) {
                     socket.emit('boss_request_powerup_spawn', {
                         room_id: roomId
                     });
                 }
-            }, 5000); // Request every 5 seconds (server rate-limits actual spawns)
+            }, 2000);
         }
 
         function stopPowerupSpawnRequests() {
