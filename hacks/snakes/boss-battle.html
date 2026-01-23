@@ -491,12 +491,116 @@
         let roomPollInterval = null;
         let positionBroadcastInterval = null;
         const DEFAULT_LIVES = 3;
+        const MAX_BULLETS = 50;
 
         const CHARACTER_CONFIG = {
             knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
             wizard: { icon: '🧙', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard' },
             archer: { icon: '🏹', color: '#2ecc71', glow: '#27ae60', name: 'Archer' },
             warrior: { icon: '⚔️', color: '#f39c12', glow: '#f1c40f', name: 'Warrior' }
+        };
+
+        const PLAYER_SPRITES = {
+            knight: {
+                colors: { m: '#c7cdd4', d: '#6b7785', b: '#2e5caa', r: '#b23b3b', s: '#f5cdaa', h: '#eef2f6', k: '#3b3b3b', y: '#f1c40f', o: '#4a4a4a' },
+                pattern: [
+                    "........rrrr........",
+                    ".......rrrrrr.......",
+                    "......rmmhhmmr......",
+                    "......mmmhmmmmd.....",
+                    "......msskkssmd.....",
+                    "......mmhkmmdm......",
+                    ".......mmddmm..o....",
+                    "......bbmmddbb.o....",
+                    ".....bbbmmddbb.o....",
+                    ".....bbmmmmmbb.o....",
+                    ".....bbmmhmmmb.o....",
+                    ".....bbmmmmmbb.o....",
+                    "....rbbbdd..ddbr....",
+                    "....rbbbdd..ddbr....",
+                    "....rbbbb..bbbbr....",
+                    "....rr........rr....",
+                    "....dd........dd....",
+                    "...ddd........ddd...",
+                    "....d..........d....",
+                    "...................."
+                ]
+            },
+            wizard: {
+                colors: { p: '#7d3c98', v: '#9b59b6', s: '#f5cdaa', g: '#f1c40f', b: '#4e342e', l: '#c39bd3', k: '#3b3b3b', t: '#a569bd', w: '#e6e6e6' },
+                pattern: [
+                    "........ggg.........",
+                    ".......gpppg........",
+                    "......gpppppg.......",
+                    ".....gpppppppg......",
+                    ".....ppplppppp......",
+                    "......pskksp..t.....",
+                    "......pskksp..t.....",
+                    ".....ppvvvlpp.t.....",
+                    ".....ppvvvvpp.t.....",
+                    ".....ppvvvvpp.t.....",
+                    "......vv..vv..t.....",
+                    ".....wvv..vvw.t.....",
+                    ".....wwwwwwww.t.....",
+                    ".....vvv..vvv.t.....",
+                    "......v....v..g.....",
+                    "......v....v..g.....",
+                    "......v....v..g.....",
+                    "......v....v........",
+                    ".....vv....vv.......",
+                    "...................."
+                ]
+            },
+            archer: {
+                colors: { g: '#2ecc71', d: '#1e9e5a', s: '#f5cdaa', b: '#8e6b3e', k: '#3d3d3d', l: '#7bdca3', t: '#2c3e50', q: '#9b7653', h: '#1b5e3a' },
+                pattern: [
+                    "........hhhh........",
+                    ".......hggggh.......",
+                    "......hggggggh......",
+                    "......hggssggh......",
+                    "......hgskkggh......",
+                    ".......hddldh..q....",
+                    "......hddddddh.q....",
+                    "......hddddddh.q....",
+                    "......hdd..ddh.q....",
+                    ".......dd..dd..q....",
+                    "......tdd..ddt.q....",
+                    "......tddddddt.q....",
+                    "......tdd..ddt.q....",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    "......bb....bb......",
+                    ".....bbb....bbb.....",
+                    "....................",
+                    "...................."
+                ]
+            },
+            warrior: {
+                colors: { o: '#e67e22', d: '#b05b16', s: '#f5cdaa', k: '#5d6d7e', r: '#7f8c8d', h: '#f2a460', t: '#3b3b3b', a: '#95a5a6' },
+                pattern: [
+                    "........oooo........",
+                    ".......oooooo.......",
+                    "......oooshhoo......",
+                    "......ooosksoo......",
+                    "......ooosksso......",
+                    ".......odhddo..a....",
+                    "......oddddddo.a....",
+                    "......oddddddo.a....",
+                    "......odr..rdo.a....",
+                    ".......dr..rd..a....",
+                    "......tdr..rdt.a....",
+                    "......tdddddddt.a...",
+                    "......tdd..dddt.a...",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    "......rr....rr......",
+                    ".....rrr....rrr.....",
+                    "....................",
+                    "...................."
+                ]
+            }
         };
 
         const gameState = {
@@ -514,23 +618,28 @@
             boss: {
                 x: canvas.width / 2,
                 y: 100,
-                size: 90,
+                size: 70,
                 health: 1000,
                 maxHealth: 1000,
                 angle: 0,
+                heading: 0,
+                turnRate: 0.03,
+                slitherPhase: 0,
+                slitherAmplitude: 5,
                 moveDirection: 1,
                 moveSpeed: 2,
                 verticalDirection: 1,
                 verticalSpeed: 0.5,
                 // Unpredictable movement properties
-                baseSpeed: 2,
+                baseSpeed: 1.8,
                 targetX: null,
                 targetY: null,
                 dashCooldown: 0,
                 patternTimer: 0,
                 currentPattern: 'normal', // 'normal', 'dash', 'zigzag', 'chase', 'circle'
                 circleAngle: 0,
-                erraticTimer: 0
+                erraticTimer: 0,
+                lastShotFrame: 0
             },
             playerBullets: [],
             bossProjectiles: [],
@@ -542,7 +651,7 @@
             mouseY: 0,
             aimAngle: -Math.PI / 2, // Current aim angle (smoothed)
             targetAimAngle: -Math.PI / 2, // Target aim angle (where mouse is)
-            aimSmoothness: 0.15, // Higher = snappier, lower = smoother (0.1-0.3 recommended)
+            aimSmoothness: 1.0, // 1.0 = instant aim
             // Powerups
             powerups: [], // Active powerups on the field
             playerBuffs: {
@@ -961,6 +1070,7 @@
 
         async function startBattle() {
             try {
+                ensureBattleAmmo();
                 // Join room via REST API
                 const response = await fetch(`${GAME_API_ROOT}/boss/join`, {
                     method: 'POST',
@@ -1030,6 +1140,7 @@
             } catch (error) {
                 console.error('Join battle error:', error);
                 // Fallback to single player mode
+                ensureBattleAmmo();
                 gameActive = true;
                 activateBattleMode();
                 addSystemMessage('Playing in offline mode');
@@ -1281,146 +1392,86 @@
 
         function moveBossProjectiles() {
             gameState.bossProjectiles = gameState.bossProjectiles.filter(proj => {
-                proj.y += proj.speed;
+                proj.y += proj.dy !== undefined ? proj.dy : proj.speed;
                 proj.x += proj.dx;
                 return proj.y < canvas.height;
             });
         }
 
         function spawnBossProjectiles() {
-            if (Math.random() < 0.06) {
-                const angle = Math.random() * Math.PI / 2 + Math.PI / 4;
+            const boss = gameState.boss;
+            if (Math.random() < 0.04) {
+                if (boss.patternTimer - boss.lastShotFrame < 28) return;
+                const angle = Math.atan2(gameState.player.y - boss.y, gameState.player.x - boss.x);
+                const spawnOffset = boss.size * 0.6;
+                const spawnX = boss.x + Math.cos(angle) * spawnOffset;
+                const spawnY = boss.y + Math.sin(angle) * spawnOffset;
+
+                const last = gameState.bossProjectiles[gameState.bossProjectiles.length - 1];
+                if (last && Math.hypot(last.x - spawnX, last.y - spawnY) < last.size * 2) return;
+
                 gameState.bossProjectiles.push({
-                    x: gameState.boss.x,
-                    y: gameState.boss.y + gameState.boss.size,
+                    x: spawnX,
+                    y: spawnY,
                     size: 12,
-                    speed: 5,
-                    dx: Math.cos(angle) * 2.5 - 1.25
+                    speed: 3,
+                    dx: Math.cos(angle) * 1.8,
+                    dy: Math.sin(angle) * 1.8
                 });
+                boss.lastShotFrame = boss.patternTimer;
             }
-            if (Math.random() < 0.01) {
-                for (let i = 0; i < 3; i++) {
-                    const burstAngle = (Math.PI / 4) + (i * Math.PI / 4);
-                    gameState.bossProjectiles.push({
-                        x: gameState.boss.x,
-                        y: gameState.boss.y + gameState.boss.size,
-                        size: 10,
-                        speed: 4,
-                        dx: Math.cos(burstAngle) * 2 - 1
-                    });
-                }
-            }
+            // No burst pattern; only aimed shots.
         }
 
         function moveBoss() {
             const boss = gameState.boss;
-            const margin = 80;
+            const margin = 90;
             const minY = 60;
             const maxY = 220;
 
-            // Update timers
             boss.patternTimer++;
-            boss.erraticTimer++;
-            if (boss.dashCooldown > 0) boss.dashCooldown--;
+            boss.slitherPhase += 0.12;
 
-            // Randomly switch movement patterns every 120-300 frames
-            if (boss.patternTimer > 120 + Math.random() * 180) {
-                boss.patternTimer = 0;
-                const patterns = ['normal', 'dash', 'zigzag', 'chase', 'circle', 'erratic'];
-                boss.currentPattern = patterns[Math.floor(Math.random() * patterns.length)];
-                boss.moveSpeed = boss.baseSpeed + Math.random() * 2; // Vary speed
+            // Pick a smooth target point, occasionally bias toward the player
+            const shouldRetarget = !boss.targetX || Math.hypot(boss.targetX - boss.x, boss.targetY - boss.y) < 30;
+            if (shouldRetarget || boss.patternTimer % 240 === 0) {
+                const biasToPlayer = Math.random() < 0.35;
+                const targetX = biasToPlayer ? gameState.player.x : margin + Math.random() * (canvas.width - margin * 2);
+                const targetY = biasToPlayer
+                    ? Math.min(maxY, Math.max(minY, gameState.player.y * 0.35))
+                    : minY + Math.random() * (maxY - minY);
+                boss.targetX = targetX;
+                boss.targetY = targetY;
             }
 
-            // Random direction changes (5% chance per frame)
-            if (Math.random() < 0.05) {
-                boss.moveDirection *= -1;
-            }
-            if (Math.random() < 0.03) {
-                boss.verticalDirection *= -1;
-            }
+            // Smooth turning toward target
+            const desiredAngle = Math.atan2(boss.targetY - boss.y, boss.targetX - boss.x);
+            let angleDiff = desiredAngle - boss.heading;
+            angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+            boss.heading += Math.max(-boss.turnRate, Math.min(boss.turnRate, angleDiff));
 
-            // Execute current movement pattern
-            switch (boss.currentPattern) {
-                case 'dash':
-                    // Quick dash to random position
-                    if (!boss.targetX || Math.abs(boss.x - boss.targetX) < 20) {
-                        boss.targetX = margin + Math.random() * (canvas.width - margin * 2);
-                        boss.targetY = minY + Math.random() * (maxY - minY);
-                    }
-                    const dashSpeed = 6;
-                    boss.x += (boss.targetX - boss.x) > 0 ? dashSpeed : -dashSpeed;
-                    boss.y += (boss.targetY - boss.y) > 0 ? dashSpeed * 0.5 : -dashSpeed * 0.5;
-                    break;
+            // Slither with slight speed variation
+            const speed = boss.baseSpeed + Math.sin(boss.slitherPhase) * 0.35;
+            const lateral = Math.sin(boss.slitherPhase * 1.2) * boss.slitherAmplitude;
 
-                case 'zigzag':
-                    // Fast zigzag movement
-                    boss.x += boss.moveSpeed * 1.5 * boss.moveDirection;
-                    boss.y += Math.sin(boss.patternTimer * 0.2) * 4;
-                    if (boss.patternTimer % 30 === 0) boss.moveDirection *= -1;
-                    break;
+            boss.x += Math.cos(boss.heading) * speed - Math.sin(boss.heading) * (lateral * 0.05);
+            boss.y += Math.sin(boss.heading) * speed * 0.5 + Math.cos(boss.heading) * (lateral * 0.05);
 
-                case 'chase':
-                    // Chase the nearest player
-                    let targetPlayerX = gameState.player.x;
-                    let targetPlayerY = gameState.player.y;
-                    const chaseSpeed = 2.5;
-
-                    // Move towards player but stay in upper area
-                    if (boss.x < targetPlayerX - 20) boss.x += chaseSpeed;
-                    else if (boss.x > targetPlayerX + 20) boss.x -= chaseSpeed;
-
-                    // Slight vertical movement when chasing
-                    boss.y += Math.sin(boss.patternTimer * 0.1) * 1.5;
-                    break;
-
-                case 'circle':
-                    // Circular movement pattern
-                    boss.circleAngle += 0.03;
-                    const circleRadius = 150;
-                    const centerX = canvas.width / 2;
-                    const centerY = 140;
-                    boss.x = centerX + Math.cos(boss.circleAngle) * circleRadius;
-                    boss.y = centerY + Math.sin(boss.circleAngle) * (circleRadius * 0.4);
-                    break;
-
-                case 'erratic':
-                    // Completely random, jerky movement
-                    if (boss.erraticTimer % 10 === 0) {
-                        boss.x += (Math.random() - 0.5) * 40;
-                        boss.y += (Math.random() - 0.5) * 20;
-                    }
-                    boss.x += boss.moveSpeed * boss.moveDirection * 0.5;
-                    break;
-
-                default: // 'normal'
-                    // Standard movement with slight variations
-                    boss.x += boss.moveSpeed * boss.moveDirection;
-                    boss.y += boss.verticalSpeed * boss.verticalDirection;
-
-                    // Add slight wobble
-                    boss.x += Math.sin(boss.patternTimer * 0.1) * 0.5;
-            }
-
-            // Keep boss within bounds
+            // Keep boss within bounds with gentle correction
             if (boss.x >= canvas.width - margin) {
                 boss.x = canvas.width - margin;
-                boss.moveDirection = -1;
+                boss.heading = Math.PI;
             } else if (boss.x <= margin) {
                 boss.x = margin;
-                boss.moveDirection = 1;
+                boss.heading = 0;
             }
 
             if (boss.y >= maxY) {
                 boss.y = maxY;
-                boss.verticalDirection = -1;
+                boss.heading = -Math.abs(boss.heading);
             } else if (boss.y <= minY) {
                 boss.y = minY;
-                boss.verticalDirection = 1;
-            }
-
-            // Random speed bursts (3% chance)
-            if (Math.random() < 0.03) {
-                boss.moveSpeed = boss.baseSpeed + Math.random() * 3;
+                boss.heading = Math.abs(boss.heading);
             }
         }
 
@@ -1475,24 +1526,183 @@
             });
         }
 
-        function drawGame() {
-            // Draw boss
-            gameState.boss.angle += 0.01;
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = '#e94560';
-            ctx.fillStyle = '#ff4757';
-            ctx.beginPath();
-            ctx.arc(gameState.boss.x, gameState.boss.y, gameState.boss.size, 0, Math.PI * 2);
-            ctx.fill();
+        function drawPixelSprite(ctx, x, y, size, sprite) {
+            const rows = sprite.pattern.length;
+            const cols = sprite.pattern[0].length;
+            const pixel = Math.max(3, Math.round(size / cols));
+            const startX = Math.round(x - (cols * pixel) / 2);
+            const startY = Math.round(y - (rows * pixel) / 2);
 
             ctx.save();
-            ctx.translate(gameState.boss.x, gameState.boss.y);
-            ctx.rotate(gameState.boss.angle);
-            ctx.font = '60px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🐲', 0, 0);
+            ctx.imageSmoothingEnabled = false;
+            const outline = '#1c1c1c';
+
+            // Outline pass for more definition
+            for (let row = 0; row < rows; row++) {
+                const line = sprite.pattern[row];
+                for (let col = 0; col < cols; col++) {
+                    const code = line[col];
+                    if (code === '.') continue;
+                    const neighbors = [
+                        [row - 1, col],
+                        [row + 1, col],
+                        [row, col - 1],
+                        [row, col + 1]
+                    ];
+                    for (const [nr, nc] of neighbors) {
+                        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || sprite.pattern[nr][nc] === '.') {
+                            ctx.fillStyle = outline;
+                            ctx.fillRect(startX + nc * pixel, startY + nr * pixel, pixel, pixel);
+                        }
+                    }
+                }
+            }
+            for (let row = 0; row < rows; row++) {
+                const line = sprite.pattern[row];
+                for (let col = 0; col < cols; col++) {
+                    const code = line[col];
+                    if (code === '.') continue;
+                    const color = sprite.colors[code];
+                    if (!color) continue;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(startX + col * pixel, startY + row * pixel, pixel, pixel);
+                }
+            }
             ctx.restore();
+        }
+
+        function drawSnakeBoss(ctx, boss) {
+            const bodyLength = boss.size * 2.8;
+            const bodyWidth = boss.size * 0.34;
+            const wiggle = Math.sin(boss.slitherPhase) * (boss.size * 0.18);
+
+            ctx.save();
+            ctx.translate(boss.x, boss.y);
+            ctx.rotate(boss.heading);
+
+            // Main body with tapering
+            ctx.shadowBlur = 3;
+            ctx.shadowColor = 'rgba(12, 50, 30, 0.35)';
+            ctx.strokeStyle = '#2a7a44';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            const points = [];
+            for (let i = 0; i <= 22; i++) {
+                const t = i / 22;
+                const x = -bodyLength * 0.55 + t * bodyLength;
+                const y = Math.sin(t * Math.PI * 2) * wiggle * (1 - t * 0.25);
+                points.push({ x, y, t });
+            }
+            for (let i = 0; i < points.length - 1; i++) {
+                const p0 = points[i];
+                const p1 = points[i + 1];
+                ctx.lineWidth = bodyWidth * (1 - p0.t * 0.45);
+                ctx.beginPath();
+                ctx.moveTo(p0.x, p0.y);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.stroke();
+            }
+
+            // Scale hints
+            ctx.strokeStyle = '#1f5e34';
+            ctx.lineWidth = 1.2;
+            for (let i = 3; i <= 18; i++) {
+                const t = i / 20;
+                const x = -bodyLength * 0.55 + t * bodyLength;
+                const y = Math.sin(t * Math.PI * 2) * wiggle * (1 - t * 0.25);
+                ctx.beginPath();
+                ctx.moveTo(x, y - bodyWidth * 0.18);
+                ctx.lineTo(x + bodyWidth * 0.12, y);
+                ctx.lineTo(x, y + bodyWidth * 0.18);
+                ctx.stroke();
+            }
+
+            // Head (more like the reference)
+            const headX = bodyLength * 0.56;
+            const headY = wiggle * 0.26;
+            const headScale = 1.18;
+            const headW = bodyWidth * 1.05 * headScale;
+            const headH = bodyWidth * 0.85 * headScale;
+            ctx.fillStyle = '#2f8f53';
+            ctx.beginPath();
+            ctx.moveTo(headX - headW * 0.75, headY - headH * 0.32);
+            ctx.quadraticCurveTo(headX - headW * 0.1, headY - headH * 0.6, headX + headW * 0.55, headY - headH * 0.16);
+            ctx.quadraticCurveTo(headX + headW * 0.9, headY, headX + headW * 0.55, headY + headH * 0.16);
+            ctx.quadraticCurveTo(headX - headW * 0.1, headY + headH * 0.6, headX - headW * 0.75, headY + headH * 0.32);
+            ctx.quadraticCurveTo(headX - headW * 0.9, headY, headX - headW * 0.75, headY - headH * 0.32);
+            ctx.closePath();
+            ctx.fill();
+
+            // Snout taper (non-circular)
+            ctx.fillStyle = '#2a7a44';
+            ctx.beginPath();
+            ctx.moveTo(headX + headW * 0.35, headY - headH * 0.22);
+            ctx.quadraticCurveTo(headX + headW * 0.8, headY, headX + headW * 0.35, headY + headH * 0.22);
+            ctx.closePath();
+            ctx.fill();
+
+            // Neck blend to attach head to body
+            ctx.fillStyle = '#2a7a44';
+            ctx.beginPath();
+            ctx.moveTo(headX - headW * 0.75, headY - bodyWidth * 0.22);
+            ctx.quadraticCurveTo(headX - headW * 0.95, headY, headX - headW * 0.75, headY + bodyWidth * 0.22);
+            ctx.lineTo(headX - headW * 0.6, headY + bodyWidth * 0.18);
+            ctx.lineTo(headX - headW * 0.6, headY - bodyWidth * 0.18);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#0b1f0f';
+            ctx.beginPath();
+            ctx.arc(headX + headW * 0.05, headY - headH * 0.35, bodyWidth * 0.065, 0, Math.PI * 2);
+            ctx.arc(headX + headW * 0.05, headY + headH * 0.35, bodyWidth * 0.065, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye highlights
+            ctx.fillStyle = '#e8f5e9';
+            ctx.beginPath();
+            ctx.arc(headX + headW * 0.1, headY - headH * 0.38, bodyWidth * 0.02, 0, Math.PI * 2);
+            ctx.arc(headX + headW * 0.1, headY + headH * 0.3, bodyWidth * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nostrils
+            ctx.fillStyle = '#155a2f';
+            ctx.beginPath();
+            ctx.arc(headX + headW * 0.5, headY - headH * 0.1, bodyWidth * 0.03, 0, Math.PI * 2);
+            ctx.arc(headX + headW * 0.5, headY + headH * 0.1, bodyWidth * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dorsal ridge
+            ctx.strokeStyle = '#1a4f2b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(headX - bodyWidth * 0.3, headY - bodyWidth * 0.3);
+            ctx.lineTo(headX + bodyWidth * 0.35, headY - bodyWidth * 0.2);
+            ctx.stroke();
+
+            // Nostrils
+            ctx.fillStyle = '#166b3b';
+            ctx.beginPath();
+            ctx.arc(headX + bodyWidth * 0.42, headY - bodyWidth * 0.05, bodyWidth * 0.04, 0, Math.PI * 2);
+            ctx.arc(headX + bodyWidth * 0.42, headY + bodyWidth * 0.05, bodyWidth * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tongue
+            ctx.fillStyle = '#ff3b3b';
+            ctx.beginPath();
+            ctx.moveTo(headX + headW * 0.45, headY);
+            ctx.lineTo(headX + headW * 0.75, headY - headH * 0.12);
+            ctx.lineTo(headX + headW * 0.9, headY);
+            ctx.lineTo(headX + headW * 0.75, headY + headH * 0.12);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawGame() {
+            // Draw boss
+            drawSnakeBoss(ctx, gameState.boss);
 
             // Draw other players
             Object.values(gameState.otherPlayers).forEach(player => {
@@ -1510,13 +1720,10 @@
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
 
-                // Character icon
-                ctx.shadowBlur = 10;
-                ctx.font = 'bold 40px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(charConfig.icon, player.x, player.y);
+                // Pixel character
+                const sprite = PLAYER_SPRITES[player.character] || PLAYER_SPRITES.knight;
+                ctx.shadowBlur = 0;
+                drawPixelSprite(ctx, player.x, player.y, 52, sprite);
 
                 // Player name
                 ctx.shadowBlur = 0;
@@ -1569,12 +1776,9 @@
                 ctx.stroke();
             }
 
-            ctx.shadowBlur = 15;
-            ctx.font = 'bold 50px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(charConfig.icon, gameState.player.x, gameState.player.y);
+            const playerSprite = PLAYER_SPRITES[gameState.player.character] || PLAYER_SPRITES.knight;
+            ctx.shadowBlur = 0;
+            drawPixelSprite(ctx, gameState.player.x, gameState.player.y, gameState.player.size * 1.7, playerSprite);
 
             // "You" label
             ctx.shadowBlur = 0;
@@ -1596,8 +1800,8 @@
 
             // Draw boss projectiles
             ctx.shadowBlur = 15;
-            ctx.shadowColor = '#e94560';
-            ctx.fillStyle = '#e94560';
+            ctx.shadowColor = '#8a2be2';
+            ctx.fillStyle = '#8a2be2';
             gameState.bossProjectiles.forEach(proj => {
                 ctx.beginPath();
                 ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI * 2);
@@ -1673,6 +1877,13 @@
 
         function updateBulletsDisplay() {
             document.getElementById('bulletsCount').textContent = gameState.player.bullets;
+        }
+
+        function ensureBattleAmmo() {
+            if (gameState.player.bullets <= 0) {
+                gameState.player.bullets = MAX_BULLETS;
+                updateBulletsDisplay();
+            }
         }
 
         // ============================================
