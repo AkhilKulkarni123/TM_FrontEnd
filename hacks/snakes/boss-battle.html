@@ -1087,11 +1087,9 @@
                 }
             });
 
-            // Chat message (skip own messages since we display locally on send)
+            // Chat message from other players (server excludes sender)
             socket.on('boss_chat_message', (data) => {
-                if (data.sid !== socket.id) {
-                    addChatMessage(data);
-                }
+                addChatMessage(data);
             });
 
             // Player away (switched tabs)
