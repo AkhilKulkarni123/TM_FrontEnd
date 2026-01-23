@@ -387,9 +387,72 @@
         #gameCanvas.battle-active {
             height: calc(100vh - 8px) !important;
         }
+
+        /* Notification Toasts */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            max-width: 300px;
+        }
+
+        .notification-toast {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: white;
+            opacity: 0;
+            transform: translateX(100%);
+            animation: notifSlideIn 0.3s ease forwards;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            pointer-events: auto;
+        }
+
+        .notification-toast.fade-out {
+            animation: notifSlideOut 0.3s ease forwards;
+        }
+
+        .notification-toast.join {
+            background: rgba(79, 172, 254, 0.9);
+            border-left: 4px solid #2196F3;
+        }
+
+        .notification-toast.leave {
+            background: rgba(233, 69, 96, 0.9);
+            border-left: 4px solid #e94560;
+        }
+
+        .notification-toast.powerup {
+            background: rgba(155, 89, 182, 0.9);
+            border-left: 4px solid #9b59b6;
+        }
+
+        .notification-toast.death {
+            background: rgba(231, 76, 60, 0.9);
+            border-left: 4px solid #c0392b;
+        }
+
+        @keyframes notifSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes notifSlideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100%); }
+        }
     </style>
 </head>
 <body>
+    <!-- Notification toasts for battle events -->
+    <div class="notification-container" id="notificationContainer"></div>
+
     <div class="game-wrapper">
         <div class="game-area">
             <div class="hud">
@@ -795,20 +858,20 @@
 
         // Initialize
         loadPlayerData();
-        loadUserInfo().then(() => {
-            // Connect socket early so chat works before battle starts
-            connectSocket();
-            // Join lobby for pre-battle chat after socket connects
-            const waitForSocket = setInterval(() => {
-                if (socket && socket.connected) {
-                    clearInterval(waitForSocket);
-                    socket.emit('boss_join_lobby', {
-                        username: gameState.player.username,
-                        character: gameState.player.character
-                    });
-                }
-            }, 200);
-        });
+        loadUserInfo();
+
+        // Connect socket immediately so chat works before battle starts
+        connectSocket();
+        // Join lobby for pre-battle chat once socket connects
+        const waitForSocket = setInterval(() => {
+            if (socket && socket.connected) {
+                clearInterval(waitForSocket);
+                socket.emit('boss_join_lobby', {
+                    username: gameState.player.username,
+                    character: gameState.player.character
+                });
+            }
+        }, 200);
 
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
@@ -950,6 +1013,7 @@
                     gameState.otherPlayers[data.player.sid] = data.player;
                     updatePlayersList();
                     addSystemMessage(`${data.player.username} joined the battle!`);
+                    showNotification(`${data.player.username} joined the battle!`, 'join');
                 }
                 document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
             });
@@ -961,6 +1025,7 @@
                     delete gameState.otherPlayers[data.player.sid];
                     updatePlayersList();
                     addSystemMessage(`${data.player.username} left the battle`);
+                    showNotification(`${data.player.username} left the battle`, 'leave');
                 }
                 document.getElementById('playerCount').textContent = data.playerCount || Object.keys(gameState.otherPlayers).length + 1;
             });
@@ -1015,6 +1080,7 @@
 
             socket.on('boss_player_died', (data) => {
                 addSystemMessage(data.message);
+                showNotification(data.message || 'A player has fallen!', 'death');
                 if (data.player && gameState.otherPlayers[data.player.sid]) {
                     gameState.otherPlayers[data.player.sid].lives = 0;
                     updatePlayersList();
@@ -1069,6 +1135,9 @@
                 const config = POWERUP_TYPES[data.type];
                 if (data.username !== gameState.player.username) {
                     addSystemMessage(`${data.username} collected ${config ? config.name : 'a powerup'}!`);
+                    showNotification(`${data.username} picked up ${config ? config.name : 'a powerup'}!`, 'powerup');
+                } else {
+                    showNotification(`You picked up ${config ? config.name : 'a powerup'}!`, 'powerup');
                 }
             });
 
@@ -2097,6 +2166,29 @@
             box.textContent = msg;
             box.classList.add('show');
             setTimeout(() => box.classList.remove('show'), 3000);
+        }
+
+        // Show a notification toast in the top-right corner during battle
+        function showNotification(message, type) {
+            if (!gameActive) return; // Only show during battle
+            const container = document.getElementById('notificationContainer');
+            const toast = document.createElement('div');
+            toast.className = `notification-toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            // Remove after 4 seconds with fade-out
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }, 4000);
+
+            // Limit to 5 visible notifications
+            while (container.children.length > 5) {
+                container.removeChild(container.firstChild);
+            }
         }
 
         function endGame(victory) {
