@@ -321,7 +321,7 @@ function useExistingLogin() {
                 if (gameContainer) gameContainer.classList.remove('hidden');
 
                 if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
                 return;
             }
 
@@ -619,6 +619,7 @@ function startGame() {
             updatePlayerInfo();
             checkSectionLock();
             startMultiplayerRefresh();
+            startBulletRefresh();
 
             console.log('Game started successfully with character:', gameState.character);
         });
@@ -679,7 +680,7 @@ function autoResumeIfReady() {
             if (loginContainer) loginContainer.classList.add('hidden');
 
             if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
         }).catch(function () {});
     }
 
@@ -747,7 +748,7 @@ function autoResumeIfReady() {
                     if (loginContainer) loginContainer.classList.add('hidden');
 
                     if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                    startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh();
+                    startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
                 });
             } else {
                 // User needs to select character - either:
@@ -2075,6 +2076,70 @@ function autofillSection2() {
         alert('All questions in Section 2 are already complete!');
     }
 }
+// ============================================
+// BULLET COUNT REFRESH - ADD THIS TO snakes-game.js
+// ============================================
+
+/**
+ * Fetch fresh bullet count from server
+ * This ensures admin changes are reflected in the game
+ */
+function refreshBulletCount() {
+    if (gameState.isGuest || gameState.isDemoMode) return Promise.resolve();
+
+    return fetch(API_URL + '/snakes/', {
+        method: 'GET',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers
+    })
+    .then(function (response) { 
+        if (!response.ok) return null; 
+        return response.json(); 
+    })
+    .then(function (data) {
+        if (!data) return;
+        
+        // Update bullets from server
+        var serverBullets = Number(data.total_bullets || 0);
+        
+        // Only update if changed to avoid unnecessary UI updates
+        if (gameState.bullets !== serverBullets) {
+            console.log('Bullet count updated from server:', gameState.bullets, '->', serverBullets);
+            gameState.bullets = serverBullets;
+            updatePlayerInfo();
+            
+            // Also update boss battle display if it's open
+            var bossBullets = document.getElementById('boss-player-bullets');
+            if (bossBullets) {
+                bossBullets.textContent = gameState.bullets;
+            }
+        }
+    })
+    .catch(function (error) { 
+        console.error('Error refreshing bullet count:', error); 
+    });
+}
+
+/**
+ * Start periodic bullet count refresh
+ * Refreshes every 5 seconds to catch admin changes
+ */
+function startBulletRefresh() {
+    // Do initial refresh
+    refreshBulletCount();
+    
+    // Then refresh every 5 seconds
+    setInterval(function() {
+        refreshBulletCount();
+    }, 5000);
+}
+
+// ============================================
+// EXPOSE FUNCTION GLOBALLY FOR MANUAL REFRESH
+// ============================================
+window.refreshBulletCount = refreshBulletCount;
 
 // Expose autofill and demo mode functions globally
 window.autofillCurrentQuestion = autofillCurrentQuestion;
