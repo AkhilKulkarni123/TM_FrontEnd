@@ -1087,9 +1087,11 @@
                 }
             });
 
-            // Chat message
+            // Chat message (skip own messages since we display locally on send)
             socket.on('boss_chat_message', (data) => {
-                addChatMessage(data);
+                if (data.sid !== socket.id) {
+                    addChatMessage(data);
+                }
             });
 
             // Player away (switched tabs)
@@ -2136,19 +2138,20 @@
             const content = input.value.trim();
             if (!content) return;
 
+            // Always show own message locally immediately
+            addChatMessage({
+                username: gameState.player.username,
+                character: gameState.player.character,
+                content: content
+            });
+
+            // Send to server for other players to see
             if (socket && socket.connected) {
                 socket.emit('boss_chat_send', {
                     room_id: roomId || 'boss_lobby',
                     content: content,
                     username: gameState.player.username,
                     character: gameState.player.character
-                });
-            } else {
-                // Offline mode - just show locally
-                addChatMessage({
-                    username: gameState.player.username,
-                    character: gameState.player.character,
-                    content: content
                 });
             }
 
