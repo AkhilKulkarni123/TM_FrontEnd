@@ -795,7 +795,20 @@
 
         // Initialize
         loadPlayerData();
-        loadUserInfo();
+        loadUserInfo().then(() => {
+            // Connect socket early so chat works before battle starts
+            connectSocket();
+            // Join lobby for pre-battle chat after socket connects
+            const waitForSocket = setInterval(() => {
+                if (socket && socket.connected) {
+                    clearInterval(waitForSocket);
+                    socket.emit('boss_join_lobby', {
+                        username: gameState.player.username,
+                        character: gameState.player.character
+                    });
+                }
+            }, 200);
+        });
 
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
@@ -1105,10 +1118,12 @@
                     // which provides proper socket session IDs for position syncing
                     console.log('Players in room from REST API:', data.players?.length || 0);
 
-                    // Connect socket and join room
+                    // Leave lobby and join battle room
                     connectSocket();
                     setTimeout(() => {
                         if (socket && socket.connected) {
+                            // Leave the pre-battle lobby
+                            socket.emit('boss_leave_lobby', {});
                             socket.emit('boss_join_room', {
                                 room_id: roomId,
                                 boss_health: gameState.boss.health,
@@ -1155,7 +1170,7 @@
         function startOfflinePowerupSpawner() {
             if (offlinePowerupInterval) clearInterval(offlinePowerupInterval);
             offlinePowerupInterval = setInterval(() => {
-                if (gameActive && Math.random() < 0.3) {
+                if (gameActive) {
                     const types = Object.keys(POWERUP_TYPES);
                     const type = types[Math.floor(Math.random() * types.length)];
                     const powerup = {
@@ -1168,7 +1183,7 @@
                     const config = POWERUP_TYPES[type];
                     addSystemMessage(`A ${config.name} powerup appeared!`);
                 }
-            }, 12000); // Every 12 seconds
+            }, 5000); // Every 5 seconds
         }
 
         function stopOfflinePowerupSpawner() {
@@ -2052,9 +2067,9 @@
             const content = input.value.trim();
             if (!content) return;
 
-            if (socket && socket.connected && roomId) {
+            if (socket && socket.connected) {
                 socket.emit('boss_chat_send', {
-                    room_id: roomId,
+                    room_id: roomId || 'boss_lobby',
                     content: content,
                     username: gameState.player.username,
                     character: gameState.player.character
