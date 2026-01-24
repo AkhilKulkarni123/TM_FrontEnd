@@ -861,17 +861,8 @@
         loadUserInfo();
 
         // Connect socket immediately so chat works before battle starts
+        // (lobby join happens automatically in the connect handler)
         connectSocket();
-        // Join lobby for pre-battle chat once socket connects
-        const waitForSocket = setInterval(() => {
-            if (socket && socket.connected) {
-                clearInterval(waitForSocket);
-                socket.emit('boss_join_lobby', {
-                    username: gameState.player.username,
-                    character: gameState.player.character
-                });
-            }
-        }, 200);
 
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
@@ -967,6 +958,28 @@
             socket.on('connect', () => {
                 console.log('Socket connected:', socket.id);
                 addSystemMessage('Connected to server!');
+                if (roomId) {
+                    // Re-join battle room on reconnection
+                    socket.emit('boss_join_room', {
+                        room_id: roomId,
+                        boss_health: gameState.boss.health,
+                        max_boss_health: gameState.boss.maxHealth,
+                        player: {
+                            username: gameState.player.username,
+                            character: gameState.player.character,
+                            x: gameState.player.x,
+                            y: gameState.player.y,
+                            bullets: gameState.player.bullets,
+                            lives: gameState.player.lives
+                        }
+                    });
+                } else {
+                    // Join lobby for pre-battle chat
+                    socket.emit('boss_join_lobby', {
+                        username: gameState.player.username,
+                        character: gameState.player.character
+                    });
+                }
             });
 
             socket.on('disconnect', () => {
