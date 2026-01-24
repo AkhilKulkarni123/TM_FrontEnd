@@ -1365,7 +1365,7 @@ function handleSquareEvent() {
                     saveProgress();
                     alert('You reached the end of the section! As a top player, you may now proceed to the boss.');
                 } else {
-                    alert('You reached the end of the questions, but only the top 5 players can proceed to the boss. Check the leaderboard and try to earn more bullets!');
+                    alert('You reached the end of the questions, but only the top 10 players can proceed to the boss. Check the leaderboard and try to earn more bullets!');
                 }
             }).catch(function () { alert('Unable to check leaderboard at this time. Try again later.'); });
             return;
@@ -1764,7 +1764,7 @@ function navigateNext() {
             checkPlayerTopFive().then(function (isTopFive) {
                 if (!isTopFive) {
                     if (overlay) overlay.style.display = 'flex';
-                    alert('Only the top 5 players on the leaderboard can enter the boss battle. Climb the ranks!');
+                    alert('Only the top 10 players on the leaderboard can enter the boss battle. Climb the ranks!');
                     return;
                 }
                 if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
@@ -1788,7 +1788,7 @@ function checkPlayerTopFive() {
         .then(function (res) { if (!res.ok) throw new Error('Leaderboard fetch failed'); return res.json(); })
         .then(function (data) {
             var lb = data.leaderboard || [];
-            for (var i = 0; i < lb.length && i < 5; i++) {
+            for (var i = 0; i < lb.length && i < 10; i++) {
                 if (lb[i].user_id === gameState.userId) return true;
             }
             return false;
@@ -1874,7 +1874,7 @@ function viewLeaderboard() {
 function startBossBattle() {
     checkPlayerTopFive().then(function (isTopFive) {
         if (!isTopFive) {
-            alert('Only the top 5 players can participate in the boss battle. Check the leaderboard to see where you stand.');
+            alert('Only the top 10 players can participate in the boss battle. Check the leaderboard to see where you stand.');
             return;
         }
         loadProgress().then(function () {
