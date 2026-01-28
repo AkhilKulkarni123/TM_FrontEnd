@@ -621,9 +621,75 @@ function startGame() {
             startMultiplayerRefresh();
             startBulletRefresh();
 
+            // ADD THIS: Show roll prompt for Section 1 only on first load
+            var section = window.snakesGameSection || 1;
+            var hasSeenPrompt = false;
+            try {
+                hasSeenPrompt = localStorage.getItem('snakes_seen_roll_prompt') === '1';
+            } catch (e) {}
+
+            if (section === 1 && !hasSeenPrompt && gameState.currentSquare === 0) {
+                setTimeout(function() {
+                    showRollPrompt();
+                }, 500);
+            }
+
             console.log('Game started successfully with character:', gameState.character);
         });
 }
+
+// ADD THIS NEW FUNCTION at the end of snakes-game.js:
+
+/**
+ * Show the "Roll Dice to Begin" overlay
+ * Automatically dismisses when user clicks Roll Dice or after 8 seconds
+ */
+function showRollPrompt() {
+    var overlay = document.getElementById('roll-prompt-overlay');
+    if (!overlay) return;
+
+    overlay.classList.add('active');
+
+    // Store that user has seen the prompt
+    try {
+        localStorage.setItem('snakes_seen_roll_prompt', '1');
+    } catch (e) {}
+
+    // Auto-dismiss after 8 seconds
+    var autoDismissTimer = setTimeout(function() {
+        dismissRollPrompt();
+    }, 8000);
+
+    // Dismiss when Roll Dice button is clicked
+    var rollBtn = document.getElementById('roll-dice-btn');
+    if (rollBtn) {
+        var dismissOnRoll = function() {
+            clearTimeout(autoDismissTimer);
+            dismissRollPrompt();
+            rollBtn.removeEventListener('click', dismissOnRoll);
+        };
+        rollBtn.addEventListener('click', dismissOnRoll);
+    }
+
+    // Also allow clicking the overlay to dismiss
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            clearTimeout(autoDismissTimer);
+            dismissRollPrompt();
+        }
+    });
+}
+
+function dismissRollPrompt() {
+    var overlay = document.getElementById('roll-prompt-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
+// Expose globally for manual control if needed
+window.showRollPrompt = showRollPrompt;
+window.dismissRollPrompt = dismissRollPrompt;
 
 function autoResumeIfReady() {
     // Check if user has previously selected a character AND started the game
