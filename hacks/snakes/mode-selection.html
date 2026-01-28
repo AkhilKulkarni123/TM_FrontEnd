@@ -418,15 +418,19 @@
                 console.error('Error loading player data from server:', err);
             }
 
-            // Fall back to demo mode if server load failed
-            if (!loadedFromServer && isDemoMode()) {
+            // If demo mode is active, use demo bullets (from autofill) for the session
+            // This allows autofilled bullets to be used in PvP without saving to database
+            if (isDemoMode()) {
                 const demoData = loadDemoProgress();
                 if (demoData) {
-                    playerData.character = demoData.character || 'knight';
-                    playerData.bullets = demoData.bullets || 0;
-                    playerData.lives = demoData.lives || 3;
+                    playerData.character = demoData.character || playerData.character;
+                    playerData.bullets = demoData.bullets || playerData.bullets;
+                    playerData.lives = demoData.lives || playerData.lives;
                 }
-                playerData.username = 'Guest_' + Math.floor(Math.random() * 1000);
+                // Set guest username if not loaded from server
+                if (!loadedFromServer) {
+                    playerData.username = 'Guest_' + Math.floor(Math.random() * 1000);
+                }
             }
 
             updateUI();

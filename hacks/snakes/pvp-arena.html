@@ -731,8 +731,9 @@
                 console.error('Could not load player progress from server:', err);
             }
 
-            // Fall back to demo mode if server load failed
-            if (!loadedFromServer && isDemoMode()) {
+            // If demo mode is active, use demo bullets (from autofill) for the session
+            // This allows autofilled bullets to be used in PvP without saving to database
+            if (isDemoMode()) {
                 const demoData = loadDemoProgress();
                 if (demoData) {
                     if (demoData.character) {
@@ -750,7 +751,7 @@
                     }
                 }
                 // Only set Guest username if we don't have one from server
-                if (gameState.player.username === 'Player') {
+                if (!loadedFromServer && gameState.player.username === 'Player') {
                     gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
                 }
             }
