@@ -1427,6 +1427,11 @@
                 gameState.player.lives = DEFAULT_LIVES;
                 updateLives();
                 savePlayerState();
+
+                // Store win mode for victory page
+                try {
+                    localStorage.setItem('snakes_win_mode', 'pvp');
+                } catch (e) {}
             } else {
                 title.textContent = 'DEFEAT';
                 gameOver.className = 'game-over defeat';
@@ -1434,6 +1439,9 @@
 
             text.textContent = message || (victory ? 'You won the duel!' : 'You lost the duel.');
             gameOver.style.display = 'block';
+
+            // Store victory status for redirect
+            gameOver.dataset.victory = victory ? 'true' : 'false';
 
             if (socket) {
                 socket.emit('pvp_leave', {});
@@ -1457,7 +1465,14 @@
 
         function returnToBoard() {
             stopPositionBroadcast();
-            window.location.href = 'game-board-part2.html';
+
+            // Check if this was a victory - redirect to victory page
+            const gameOver = document.getElementById('gameOver');
+            if (gameOver && gameOver.dataset.victory === 'true') {
+                window.location.href = 'victory.html?mode=pvp';
+            } else {
+                window.location.href = 'game-board-part2.html';
+            }
         }
 
         window.addEventListener('resize', () => resizeCanvas());
