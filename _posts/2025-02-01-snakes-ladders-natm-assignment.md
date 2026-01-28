@@ -313,48 +313,51 @@ saveProgress();
 
 <div class="individual-card">
 <h3>Aneesh</h3>
-<div class="role">Multiplayer & Social Features Developer</div>
+<div class="role">Leaderboard & UI Features Developer</div>
 
 <div class="skill-section">
-<h4>Skill A: Task — Real-time Multiplayer Sync & Chat <span class="time-badge">1 MIN</span></h4>
+<h4>Skill A: Task — Leaderboard & Player Stats Display <span class="time-badge">1 MIN</span></h4>
 
-**Problem Solved:** Enable 10 players to cooperate in real-time with position sync and communication.
+**Problem Solved:** Players need to see rankings and compare progress with others.
 
 **Demo Flow:**
-1. Join lobby → see player count update
-2. Start battle → other players appear on screen
-3. Type message → appears for all players instantly
-4. Player leaves → count decreases, notification shown
+1. Click leaderboard button → modal opens
+2. Top 10 players displayed with rank badges (gold/silver/bronze)
+3. Current user highlighted → shows their position
+4. Stats include bullets, time played, character
 
 </div>
 
 <div class="skill-section">
 <h4>Skill B: Code Reference (PPR)</h4>
 
-**Input:** Player movement, chat message
-**Output:** Broadcast to all players in room
+**Input:** Leaderboard request (GET /api/snakes/leaderboard)
+**Output:** Sorted list of top players by bullets
 
 <div class="code-ref">
-# socket/boss_battle.py
-@socketio.on('boss_player_move')
-def handle_player_move(data):
-    boss_battles[room_id]['players'][sid]['x'] = data.get('x')
-    boss_battles[room_id]['players'][sid]['y'] = data.get('y')
-    emit('boss_player_position', {...}, room=room_id, include_self=False)
+# api/snakes_extended.py
+@snakes_bp.route('/leaderboard', methods=['GET'])
+def leaderboard():
+    players = SnakesGameData.get_leaderboard(limit=10)
+    result = [{'username': p.username,
+               'total_bullets': p.total_bullets,
+               'time_played': p.time_played} for p in players]
 </div>
 
-**List Used:** `boss_battles[room_id]['players']` — dict of all players in room
+**List Used:** `leaderboardData[]` — array of player objects sorted by bullets
 
 <div class="code-ref">
-# Chat broadcast to all OTHER players
-for player_sid in list(boss_battles[room_id]['players'].keys()):
-    if player_sid != sid:  # Exclude sender
-        socketio.emit('boss_chat_message', message_data, to=player_sid)
+// snakes-game.js - viewLeaderboard()
+for (var i = 0; i < leaderboardData.length; i++) {
+    var entry = leaderboardData[i];
+    if (entry.user_id === gameState.userId)
+        tr.className = 'current-user-row';
+}
 </div>
 
-**Procedure:** `handle_chat_message(data)` — validates sender, broadcasts to room members
+**Procedure:** `viewLeaderboard()` — fetches rankings, renders table with rank badges
 
-**Files:** `socket/boss_battle.py`, `boss-battle.html` (socket handlers)
+**Files:** `snakes-game.js`, `api/snakes_extended.py`, `model/snakes_game.py`
 </div>
 </div>
 
@@ -485,15 +488,15 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 ### Aneesh's Script (1 minute)
 
 <div class="script-box">
-<h4>Topic: Multiplayer & Chat</h4>
+<h4>Topic: Leaderboard & UI</h4>
 
-<p><strong>[0:00-0:15]</strong> "I built the real-time multiplayer system using Flask-SocketIO. When you join, the server adds you to `boss_battles[room_id]['players']` and broadcasts your arrival."</p>
+<p><strong>[0:00-0:15]</strong> "I built the leaderboard system. When you click the leaderboard button, JavaScript fetches `/api/snakes/leaderboard` which returns the top 10 players sorted by bullets."</p>
 
-<p><strong>[0:15-0:30]</strong> "Position sync runs every 50ms — your x,y coordinates emit to the server, which broadcasts to all other players in the room. That's how you see everyone moving."</p>
+<p><strong>[0:15-0:30]</strong> "The backend uses `SnakesGameData.get_leaderboard()` which runs a SQLAlchemy query ordering by `total_bullets` descending. Simple but effective ranking."</p>
 
-<p><strong>[0:30-0:45]</strong> "The chat iterates through all player session IDs in the room and emits the message to each one. I exclude the sender since they already see their own message locally."</p>
+<p><strong>[0:30-0:45]</strong> "The frontend iterates through the results and adds rank badges — gold for first, silver for second, bronze for third. If your user ID matches, your row gets highlighted."</p>
 
-<p><strong>[0:45-0:60]</strong> "When someone dies or disconnects, they're removed from the players dict and everyone gets a `boss_player_left` event. The player count updates automatically."</p>
+<p><strong>[0:45-0:60]</strong> "I also added the online players display showing who's currently playing, with their character icons and current square positions."</p>
 </div>
 
 ---
@@ -507,19 +510,19 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 | **Samarth** | "Completing all 5 lessons and watching the boss section unlock automatically. The progression system worked!" |
 | **Arnav** | "Writing question #50 and seeing the entire bank render correctly. 50 unique CS questions in one file." |
 | **Ethan** | "When the 3D dice animation finally synced perfectly with the square highlighting — the game felt *real*." |
-| **Aneesh** | "Two browsers open, two players moving independently, chat working between them. Real multiplayer in our game!" |
+| **Aneesh** | "Seeing my name highlighted on the leaderboard with a gold badge after testing. The ranking system actually worked!" |
 
 ---
 
-## Feature Lifecycle Example: Multiplayer Chat
+## Feature Lifecycle Example: Leaderboard
 
 | Stage | Description |
 |-------|-------------|
-| **Origin** | Players couldn't coordinate in boss battle — needed communication |
-| **Early Visual** | Simple text input box in sidebar mockup |
-| **Early Code** | Basic `socket.emit('chat', message)` with no validation |
-| **Polish** | Added username from server (anti-spoofing), character icons, system messages |
-| **Recent** | Fixed duplicate messages by excluding sender from server broadcast |
+| **Origin** | Players wanted to compare progress and see rankings |
+| **Early Visual** | Simple table with names and bullet counts |
+| **Early Code** | Basic `SELECT * ORDER BY bullets DESC LIMIT 10` query |
+| **Polish** | Added rank badges (gold/silver/bronze), character icons, time played |
+| **Recent** | Highlighted current user's row, added online players count display |
 
 ---
 
@@ -532,7 +535,7 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 | Questions | Arnav | `questions/questions_bank.js` | `api/snakes_extended.py` |
 | Boss Battle | Akhil | `boss-battle.html` | `api/boss_battle.py`, `socket/boss_battle.py` |
 | Auth | Moiz | — | `api/jwt_authorize.py`, `api/authenticate.py` |
-| Multiplayer | Aneesh | — | `socket/boss_battle.py` |
+| Leaderboard & UI | Aneesh | `snakes-game.js` | `api/snakes_extended.py` |
 | Models | — | — | `model/snakes_game.py`, `model/boss_room.py` |
 
 ## Deployment Info
@@ -540,4 +543,4 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 | Service | Local Port | Production URL |
 |---------|-----------|----------------|
 | Flask Backend | 8306 | `https://snakes.opencodingsociety.com` |
-| WebSocket (Multiplayer) | 8500 | `wss://snakes.opencodingsociety.com` |
+| WebSocket (Multiplayer) | 8500 | — |
