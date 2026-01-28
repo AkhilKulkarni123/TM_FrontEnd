@@ -705,6 +705,7 @@
                 lastShotFrame: 0
             },
             playerBullets: [],
+            otherPlayerBullets: [], // Bullets shot by other players
             bossProjectiles: [],
             keys: {},
             otherPlayers: {},  // { odfsid: {x, y, character, username, lives, bullets} }
@@ -1061,6 +1062,20 @@
                     gameState.otherPlayers[data.sid].x = data.x;
                     gameState.otherPlayers[data.sid].y = data.y;
                 }
+            });
+
+            // Other player shot a bullet
+            socket.on('boss_player_bullet', (data) => {
+                const charConfig = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+                gameState.otherPlayerBullets.push({
+                    x: data.bulletX,
+                    y: data.bulletY,
+                    dx: data.dx,
+                    dy: data.dy,
+                    size: 8,
+                    color: charConfig.color,
+                    glow: charConfig.glow
+                });
             });
 
             // Boss health update
@@ -1498,10 +1513,15 @@
                 updateBulletsDisplay();
                 savePlayerState();
 
-                // Broadcast stats
+                // Broadcast bullet shot to other players
                 if (socket && socket.connected && roomId) {
-                    socket.emit('boss_player_stats', {
+                    socket.emit('boss_player_shoot', {
                         room_id: roomId,
+                        bulletX: spawnX,
+                        bulletY: spawnY,
+                        dx: dx,
+                        dy: dy,
+                        character: gameState.player.character,
                         bullets: gameState.player.bullets
                     });
                 }
@@ -1518,6 +1538,18 @@
                     bullet.y -= bullet.speed;
                 }
                 // Remove bullets that go off-screen (any edge)
+                return bullet.y > 0 && bullet.y < canvas.height &&
+                       bullet.x > 0 && bullet.x < canvas.width;
+            });
+
+            // Move other players' bullets
+            gameState.otherPlayerBullets = gameState.otherPlayerBullets.filter(bullet => {
+                if (bullet.dx !== undefined && bullet.dy !== undefined) {
+                    bullet.x += bullet.dx;
+                    bullet.y += bullet.dy;
+                } else {
+                    bullet.y -= 10; // default speed
+                }
                 return bullet.y > 0 && bullet.y < canvas.height &&
                        bullet.x > 0 && bullet.x < canvas.width;
             });
@@ -1630,6 +1662,16 @@
                     if (gameState.boss.health <= 0) {
                         endGame(true);
                     }
+                    return false;
+                }
+                return true;
+            });
+
+            // Other players' bullets hitting boss (visual only - damage handled by their client)
+            gameState.otherPlayerBullets = gameState.otherPlayerBullets.filter(bullet => {
+                const distance = Math.hypot(bullet.x - gameState.boss.x, bullet.y - gameState.boss.y);
+                if (distance < gameState.boss.size) {
+                    // Just remove the bullet visually
                     return false;
                 }
                 return true;
@@ -1926,6 +1968,16 @@
             ctx.shadowColor = '#FFD700';
             ctx.fillStyle = '#FFD700';
             gameState.playerBullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw other players' bullets with their character colors
+            gameState.otherPlayerBullets.forEach(bullet => {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = bullet.glow || '#4facfe';
+                ctx.fillStyle = bullet.color || '#4facfe';
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
                 ctx.fill();
