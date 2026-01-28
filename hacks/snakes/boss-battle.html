@@ -1152,6 +1152,21 @@
             socket.on('boss_lobby_state', (data) => {
                 console.log('Lobby state received:', data);
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
+                // Update players list if members were included
+                if (data.players && !roomId) {
+                    gameState.otherPlayers = {};
+                    data.players.forEach(member => {
+                        if (member.sid && member.sid !== socket.id) {
+                            gameState.otherPlayers[member.sid] = {
+                                username: member.username,
+                                character: member.character,
+                                lives: '?',
+                                bullets: '?'
+                            };
+                        }
+                    });
+                    updatePlayersList();
+                }
             });
 
             // Lobby player count update
@@ -1159,6 +1174,27 @@
                 console.log('Lobby player count update:', data);
                 if (!roomId) {  // Only update if we're still in lobby (not in a battle room)
                     document.getElementById('playerCount').textContent = data.playerCount || 1;
+                }
+            });
+
+            // Lobby members list update
+            socket.on('boss_lobby_members', (data) => {
+                console.log('Lobby members received:', data);
+                if (!roomId && data.members) {  // Only update if we're still in lobby
+                    // Update other players list from lobby members
+                    gameState.otherPlayers = {};
+                    data.members.forEach(member => {
+                        if (member.sid && member.sid !== socket.id) {
+                            gameState.otherPlayers[member.sid] = {
+                                username: member.username,
+                                character: member.character,
+                                lives: '?',
+                                bullets: '?'
+                            };
+                        }
+                    });
+                    updatePlayersList();
+                    document.getElementById('playerCount').textContent = data.members.length || 1;
                 }
             });
 

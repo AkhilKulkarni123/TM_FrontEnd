@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Battle - Choose Your Mode</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .page-subtitle {
+            font-size: 1.2em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 50px;
+        }
+
+        .mode-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+        }
+
+        .mode-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mode-card:hover::before {
+            opacity: 1;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-card.boss-mode {
+            border-color: #e94560;
+        }
+
+        .mode-card.boss-mode:hover {
+            border-color: #ff6b6b;
+            box-shadow: 0 20px 40px rgba(233, 69, 96, 0.3);
+        }
+
+        .mode-card.pvp-mode {
+            border-color: #4facfe;
+        }
+
+        .mode-card.pvp-mode:hover {
+            border-color: #00f2fe;
+            box-shadow: 0 20px 40px rgba(79, 172, 254, 0.3);
+        }
+
+        .mode-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .mode-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .mode-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+            text-align: center;
+        }
+
+        .mode-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .boss-mode .mode-title {
+            color: #e94560;
+        }
+
+        .pvp-mode .mode-title {
+            color: #4facfe;
+        }
+
+        .mode-description {
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .mode-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .mode-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .mode-features li:last-child {
+            border-bottom: none;
+        }
+
+        .mode-features li::before {
+            content: '>';
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .boss-mode .mode-features li::before {
+            color: #e94560;
+        }
+
+        .pvp-mode .mode-features li::before {
+            color: #4facfe;
+        }
+
+        .mode-status {
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .boss-mode .mode-status {
+            background: rgba(233, 69, 96, 0.2);
+            color: #ff8fa3;
+        }
+
+        .pvp-mode .mode-status {
+            background: rgba(79, 172, 254, 0.2);
+            color: #7fc8ff;
+        }
+
+        .mode-status.full {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff8080;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .player-stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .player-stats .stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .player-stats .stat:last-child {
+            margin-bottom: 0;
+        }
+
+        .player-stats .stat-icon {
+            font-size: 1.2em;
+        }
+
+        .player-stats .stat-value {
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .mode-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .mode-card {
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .page-title {
+                font-size: 2em;
+            }
+        }
+
+        /* Loading spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <button class="back-btn" onclick="goBack()">< Back to Board</button>
+
+    <div class="player-stats">
+        <div class="stat">
+            <span class="stat-icon" id="characterIcon"></span>
+            <span class="stat-value" id="username">Player</span>
+        </div>
+        <div class="stat">
+            <span class="stat-icon"></span>
+            <span class="stat-value" id="bullets">0</span> bullets
+        </div>
+        <div class="stat">
+            <span class="stat-icon"></span>
+            <span class="stat-value" id="lives">3</span> lives
+        </div>
+    </div>
+
+    <h1 class="page-title">Final Battle Arena</h1>
+    <p class="page-subtitle">Choose your challenge wisely...</p>
+
+    <div class="mode-container">
+        <!-- Boss Battle Mode -->
+        <div class="mode-card boss-mode" onclick="selectMode('boss')">
+            <span class="mode-icon"></span>
+            <h2 class="mode-title">Boss Battle</h2>
+            <p class="mode-description">Team up with other players to defeat the mighty dragon boss!</p>
+            <ul class="mode-features">
+                <li>Cooperative multiplayer (up to 10 players)</li>
+                <li>Shared boss health pool</li>
+                <li>Collect powerups during battle</li>
+                <li>Everyone wins when boss is defeated</li>
+            </ul>
+            <div class="mode-status" id="bossStatus">Ready to battle!</div>
+        </div>
+
+        <!-- PVP Mode -->
+        <div class="mode-card pvp-mode" onclick="selectMode('pvp')" id="pvpCard">
+            <span class="mode-icon"></span>
+            <h2 class="mode-title">PVP Arena</h2>
+            <p class="mode-description">Go head-to-head against another player in an intense duel!</p>
+            <ul class="mode-features">
+                <li>1v1 player battle</li>
+                <li>Use your earned bullets as ammo</li>
+                <li>Move, aim, and shoot to win</li>
+                <li>Last player standing wins</li>
+            </ul>
+            <div class="mode-status" id="pvpStatus">
+                <span id="pvpPlayerCount">0</span>/2 players in arena
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://snakes.opencodingsociety.com';
+        const GAME_API_ROOT = GAME_API_BASE + '/api';
+
+        const CHARACTER_CONFIG = {
+            knight: { icon: '', color: '#4facfe' },
+            wizard: { icon: '', color: '#8e44ad' },
+            archer: { icon: '', color: '#2ecc71' },
+            warrior: { icon: '', color: '#f39c12' }
+        };
+
+        let socket = null;
+        let playerData = {
+            username: 'Player',
+            character: 'knight',
+            bullets: 0,
+            lives: 3
+        };
+        let pvpPlayerCount = 0;
+
+        // Check for demo mode
+        function isDemoMode() {
+            try {
+                return sessionStorage.getItem('snakes_demo_mode') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Load demo progress
+        function loadDemoProgress() {
+            try {
+                const stored = sessionStorage.getItem('snakes_demo_progress');
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+            return null;
+        }
+
+        // Load player data
+        async function loadPlayerData() {
+            // Check demo mode first
+            if (isDemoMode()) {
+                const demoData = loadDemoProgress();
+                if (demoData) {
+                    playerData.character = demoData.character || 'knight';
+                    playerData.bullets = demoData.bullets || 0;
+                    playerData.lives = demoData.lives || 3;
+                    playerData.username = 'Guest_' + Math.floor(Math.random() * 1000);
+                    updateUI();
+                    return;
+                }
+            }
+
+            // Load from server
+            try {
+                const userRes = await fetch(GAME_API_ROOT.replace('/api', '') + '/api/id', { credentials: 'include' });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    playerData.username = userData.name || 'Player';
+                }
+
+                const gameRes = await fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' });
+                if (gameRes.ok) {
+                    const gameData = await gameRes.json();
+                    playerData.character = gameData.selected_character || 'knight';
+                    playerData.bullets = gameData.total_bullets || 0;
+                    playerData.lives = gameData.lives || 3;
+                }
+            } catch (err) {
+                console.error('Error loading player data:', err);
+            }
+
+            updateUI();
+        }
+
+        // Update UI with player data
+        function updateUI() {
+            const config = CHARACTER_CONFIG[playerData.character] || CHARACTER_CONFIG.knight;
+            document.getElementById('characterIcon').textContent = config.icon;
+            document.getElementById('username').textContent = playerData.username;
+            document.getElementById('bullets').textContent = playerData.bullets;
+            document.getElementById('lives').textContent = playerData.lives;
+        }
+
+        // Connect to socket for PVP player count
+        function connectSocket() {
+            socket = io(SOCKET_URL, {
+                transports: ['polling', 'websocket'],
+                upgrade: true
+            });
+
+            socket.on('connect', () => {
+                console.log('Socket connected for mode selection');
+                // Request PVP room status
+                socket.emit('pvp_get_status', {});
+            });
+
+            socket.on('pvp_status', (data) => {
+                pvpPlayerCount = data.playerCount || 0;
+                updatePVPStatus();
+            });
+
+            socket.on('pvp_player_count_update', (data) => {
+                pvpPlayerCount = data.playerCount || 0;
+                updatePVPStatus();
+            });
+        }
+
+        // Update PVP status display
+        function updatePVPStatus() {
+            const pvpCard = document.getElementById('pvpCard');
+            const pvpStatus = document.getElementById('pvpStatus');
+            const pvpCount = document.getElementById('pvpPlayerCount');
+
+            pvpCount.textContent = pvpPlayerCount;
+
+            if (pvpPlayerCount >= 2) {
+                pvpCard.classList.add('disabled');
+                pvpStatus.classList.add('full');
+                pvpStatus.innerHTML = '<span id="pvpPlayerCount">2</span>/2 players - ARENA FULL';
+            } else {
+                pvpCard.classList.remove('disabled');
+                pvpStatus.classList.remove('full');
+                pvpStatus.innerHTML = '<span id="pvpPlayerCount">' + pvpPlayerCount + '</span>/2 players in arena';
+            }
+        }
+
+        // Select game mode
+        function selectMode(mode) {
+            if (mode === 'pvp') {
+                const pvpCard = document.getElementById('pvpCard');
+                if (pvpCard.classList.contains('disabled')) {
+                    alert('The PVP arena is full! Please wait for a spot to open.');
+                    return;
+                }
+            }
+
+            // Show loading
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            // Navigate to appropriate page
+            if (mode === 'boss') {
+                window.location.href = 'boss-battle.html';
+            } else if (mode === 'pvp') {
+                window.location.href = 'pvp-arena.html';
+            }
+        }
+
+        // Go back to game board
+        function goBack() {
+            window.location.href = 'game-board-part2.html';
+        }
+
+        // Initialize
+        loadPlayerData();
+        connectSocket();
+
+        // Poll for PVP status updates
+        setInterval(() => {
+            if (socket && socket.connected) {
+                socket.emit('pvp_get_status', {});
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

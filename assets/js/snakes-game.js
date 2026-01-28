@@ -289,25 +289,12 @@ function useExistingLogin() {
             var characterSelection = document.getElementById('character-selection');
             var gameContainer = document.getElementById('game-container');
 
-            // Check if user already has a CONFIRMED character selection
-            // Require BOTH: valid character in backend AND snakes_started flag in localStorage
-            // Also verify the localStorage belongs to this user
-            var wasStartedBefore = false;
-            var storedUserId = null;
-            try {
-                wasStartedBefore = (localStorage.getItem('snakes_started') === '1');
-                storedUserId = localStorage.getItem('snakes_user_id');
-            } catch (e) {}
-
-            // Only skip character selection if:
-            // 1. Backend has valid character
-            // 2. User has previously started the game
-            // 3. localStorage belongs to this user
+            // Check if user already has a valid character from the backend
+            // Backend is the source of truth - if they have a character stored, they're a returning user
             var hasValidCharacter = gameState.character && gameState.character !== 'default' && gameState.character !== '';
-            var isSameUser = storedUserId === String(gameState.userId);
 
-            if (hasValidCharacter && wasStartedBefore && isSameUser) {
-                console.log('Returning user with confirmed character:', gameState.character);
+            if (hasValidCharacter) {
+                console.log('Returning user with character from backend:', gameState.character);
                 // Store in localStorage for future auto-resume (include user ID for multi-account support)
                 try {
                     localStorage.setItem('snakes_selected_character', gameState.character);
@@ -326,7 +313,7 @@ function useExistingLogin() {
             }
 
             // User needs to select character - show character selection
-            console.log('Showing character selection - hasValidCharacter:', hasValidCharacter, 'wasStartedBefore:', wasStartedBefore, 'isSameUser:', isSameUser);
+            console.log('New user - showing character selection');
             if (loginContainer) loginContainer.classList.add('hidden');
             if (characterSelection) characterSelection.classList.remove('hidden');
         })
@@ -1835,11 +1822,11 @@ function navigateNext() {
                 }
                 if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
                 saveProgress();
-                window.location.href = 'boss-battle.html';
+                window.location.href = 'mode-selection.html';
             }).catch(function () { if (overlay) overlay.style.display = 'flex'; });
             return;
         }
-        window.location.href = 'boss-battle.html';
+        window.location.href = 'mode-selection.html';
     }
 }
 

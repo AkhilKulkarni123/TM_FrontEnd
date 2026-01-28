@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Arena - 1v1 Battle</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            color: white;
+        }
+
+        .game-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: radial-gradient(circle, #0f3460 0%, #1a1a2e 100%);
+            border: 3px solid #4facfe;
+        }
+
+        /* HUD Styles */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 320px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .player-hud {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat-box {
+            background: rgba(79, 172, 254, 0.9);
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            min-width: 120px;
+        }
+
+        .stat-box.opponent {
+            background: rgba(233, 69, 96, 0.9);
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        /* Right Sidebar - Players & Chat */
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #4facfe;
+        }
+
+        .sidebar-section {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Players List */
+        .players-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .player-item.you {
+            border-left: 3px solid #4facfe;
+        }
+
+        .player-item.opponent {
+            border-left: 3px solid #e94560;
+        }
+
+        .player-icon {
+            font-size: 1.8em;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .player-stats {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-message {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .chat-message .sender {
+            font-weight: bold;
+            color: #4facfe;
+            margin-right: 5px;
+        }
+
+        .chat-message .sender-icon {
+            margin-right: 3px;
+        }
+
+        .chat-message.system {
+            background: rgba(79, 172, 254, 0.2);
+            font-style: italic;
+            text-align: center;
+        }
+
+        .chat-input-wrapper {
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .chat-send-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #4facfe;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .chat-send-btn:hover {
+            background: #00f2fe;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        .game-over h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .game-over.victory h1 {
+            color: #4facfe;
+        }
+
+        .game-over.defeat h1 {
+            color: #e94560;
+        }
+
+        .message-box {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(79, 172, 254, 0.95);
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: none;
+            z-index: 50;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .message-box.show {
+            display: block;
+            animation: bounce 0.5s ease;
+        }
+
+        /* Room info badge */
+        .room-badge {
+            position: absolute;
+            top: 20px;
+            right: 320px;
+            background: rgba(79, 172, 254, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        /* Waiting overlay */
+        .waiting-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .waiting-overlay.hidden {
+            display: none;
+        }
+
+        .waiting-text {
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+
+        .waiting-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .waiting-tip {
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1em;
+        }
+
+        .leave-waiting-btn {
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: rgba(233, 69, 96, 0.8);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .leave-waiting-btn:hover {
+            background: #e94560;
+        }
+
+        /* In-game leave button */
+        .ingame-leave-btn {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            padding: 8px 16px;
+            background: rgba(233, 69, 96, 0.8);
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 55;
+            display: none;
+        }
+
+        .ingame-leave-btn:hover {
+            background: rgba(233, 69, 96, 1);
+            transform: scale(1.05);
+        }
+
+        .controls.hidden {
+            display: none !important;
+        }
+
+        #gameCanvas.battle-active {
+            height: calc(100vh - 8px) !important;
+            cursor: crosshair;
+        }
+
+        /* Health bars above players */
+        .health-bar-container {
+            position: absolute;
+            width: 60px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b6b);
+            transition: width 0.3s ease;
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar,
+        .players-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track,
+        .players-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb,
+        .players-list::-webkit-scrollbar-thumb {
+            background: #4facfe;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Waiting for opponent overlay -->
+    <div class="waiting-overlay" id="waitingOverlay">
+        <div class="waiting-text">Waiting for opponent...</div>
+        <div class="waiting-spinner"></div>
+        <div class="waiting-tip">The battle will begin when another player joins</div>
+        <button class="leave-waiting-btn" onclick="leaveArena()">Leave Arena</button>
+    </div>
+
+    <div class="game-wrapper">
+        <div class="game-area">
+            <div class="hud">
+                <div class="player-hud">
+                    <div class="stat-box">
+                        <div class="stat-label">Your Lives</div>
+                        <div class="stat-value" id="playerLives">3</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Your Bullets</div>
+                        <div class="stat-value" id="bulletsCount">50</div>
+                    </div>
+                </div>
+                <div class="player-hud">
+                    <div class="stat-box opponent">
+                        <div class="stat-label">Opponent Lives</div>
+                        <div class="stat-value" id="opponentLives">3</div>
+                    </div>
+                    <div class="stat-box opponent">
+                        <div class="stat-label">Opponent Bullets</div>
+                        <div class="stat-value" id="opponentBullets">?</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="room-badge" id="roomBadge" style="display: none;">
+                PVP Arena | Players: <span id="playerCount">0</span>/2
+            </div>
+
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- In-game leave button -->
+            <button class="ingame-leave-btn" id="ingameLeaveBtn" onclick="leaveArena()">
+                Leave Arena <span class="key-hint">[X]</span>
+            </button>
+
+            <div class="controls" id="controlsPanel">
+                <div style="margin-bottom: 15px; font-size: 1.2em;">
+                    WASD/Arrows to move | Aim with mouse | SPACE or Click to shoot
+                </div>
+                <button class="btn" onclick="readyUp()" id="readyBtn">Ready!</button>
+                <button class="btn danger" onclick="leaveArena()">Leave Arena</button>
+            </div>
+
+            <div class="message-box" id="messageBox"></div>
+
+            <div class="game-over" id="gameOver">
+                <h1 id="gameOverTitle">Victory!</h1>
+                <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+                <button class="btn" onclick="returnToBoard()">Return to Board</button>
+            </div>
+        </div>
+
+        <!-- Sidebar: Players & Chat -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Players in Arena</div>
+                <div class="players-list" id="playersList">
+                    <div class="player-item" style="opacity: 0.5;">
+                        <span>Waiting for players...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section chat-section">
+                <div class="sidebar-title">Arena Chat</div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message system">
+                        Welcome to the PVP Arena! May the best player win!
+                    </div>
+                </div>
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="280">
+                    <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://snakes.opencodingsociety.com';
+        const GAME_API_ROOT = GAME_API_BASE + '/api';
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth - 300;
+            canvas.height = window.innerHeight - 200;
+        }
+        resizeCanvas();
+
+        let gameActive = false;
+        let socket = null;
+        let positionBroadcastInterval = null;
+        const DEFAULT_LIVES = 3;
+
+        const CHARACTER_CONFIG = {
+            knight: { icon: '', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
+            wizard: { icon: '', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard' },
+            archer: { icon: '', color: '#2ecc71', glow: '#27ae60', name: 'Archer' },
+            warrior: { icon: '', color: '#f39c12', glow: '#f1c40f', name: 'Warrior' }
+        };
+
+        const PLAYER_SPRITES = {
+            knight: {
+                colors: { m: '#c7cdd4', d: '#6b7785', b: '#2e5caa', r: '#b23b3b', s: '#f5cdaa', h: '#eef2f6', k: '#3b3b3b', y: '#f1c40f', o: '#4a4a4a' },
+                pattern: [
+                    "........rrrr........",
+                    ".......rrrrrr.......",
+                    "......rmmhhmmr......",
+                    "......mmmhmmmmd.....",
+                    "......msskkssmd.....",
+                    "......mmhkmmdm......",
+                    ".......mmddmm.......",
+                    "......bbmmddb.......",
+                    ".....bbbmmddbb......",
+                    ".....bbmmmmmbb......",
+                    ".....bbmmhmmmb......",
+                    ".....bbmmmmmbb......",
+                    "....rbbbdd..ddbr....",
+                    "....rbbbdd..ddbr....",
+                    "....rbbbb..bbbbr....",
+                    "....rr........rr....",
+                    "....dd........dd....",
+                    "...ddd........ddd...",
+                    "....d..........d....",
+                    "...................."
+                ]
+            },
+            wizard: {
+                colors: { p: '#7d3c98', v: '#9b59b6', s: '#f5cdaa', g: '#f1c40f', b: '#4e342e', l: '#c39bd3', k: '#3b3b3b', t: '#a569bd', w: '#e6e6e6' },
+                pattern: [
+                    "........ggg.........",
+                    ".......gpppg........",
+                    "......gpppppg.......",
+                    ".....gpppppppg......",
+                    ".....ppplppppp......",
+                    "......pskksp........",
+                    "......pskksp........",
+                    ".....ppvvvlpp.......",
+                    ".....ppvvvvpp.......",
+                    ".....ppvvvvpp.......",
+                    "......vv..vv........",
+                    ".....wvv..vvw.......",
+                    ".....wwwwwwww.......",
+                    ".....vvv..vvv.......",
+                    "......v....v........",
+                    "......v....v........",
+                    "......v....v........",
+                    "......v....v........",
+                    ".....vv....vv.......",
+                    "...................."
+                ]
+            },
+            archer: {
+                colors: { g: '#2ecc71', d: '#1e9e5a', s: '#f5cdaa', b: '#8e6b3e', k: '#3d3d3d', l: '#7bdca3', t: '#2c3e50', q: '#9b7653', h: '#1b5e3a' },
+                pattern: [
+                    "........hhhh........",
+                    ".......hggggh.......",
+                    "......hggggggh......",
+                    "......hggssggh......",
+                    "......hgskkggh......",
+                    ".......hddldh.......",
+                    "......hddddddh......",
+                    "......hddddddh......",
+                    "......hdd..ddh......",
+                    ".......dd..dd.......",
+                    "......tdd..ddt......",
+                    "......tddddddt......",
+                    "......tdd..ddt......",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    "......bb....bb......",
+                    ".....bbb....bbb.....",
+                    "....................",
+                    "...................."
+                ]
+            },
+            warrior: {
+                colors: { o: '#e67e22', d: '#b05b16', s: '#f5cdaa', k: '#5d6d7e', r: '#7f8c8d', h: '#f2a460', t: '#3b3b3b', a: '#95a5a6' },
+                pattern: [
+                    "........oooo........",
+                    ".......oooooo.......",
+                    "......oooshhoo......",
+                    "......ooosksoo......",
+                    "......ooosksso......",
+                    ".......odhddo.......",
+                    "......oddddddo......",
+                    "......oddddddo......",
+                    "......odr..rdo......",
+                    ".......dr..rd.......",
+                    "......tdr..rdt......",
+                    "......tdddddddt.....",
+                    "......tdd..dddt.....",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    ".......d....d.......",
+                    "......rr....rr......",
+                    ".....rrr....rrr.....",
+                    "....................",
+                    "...................."
+                ]
+            }
+        };
+
+        const gameState = {
+            player: {
+                x: 100,
+                y: canvas.height / 2,
+                size: 35,
+                speed: 6,
+                lives: 3,
+                bullets: 50,
+                character: 'knight',
+                color: '#4facfe',
+                username: 'Player',
+                isReady: false
+            },
+            opponent: null,
+            playerBullets: [],
+            opponentBullets: [],
+            keys: {},
+            mouseX: 0,
+            mouseY: 0,
+            mouseInCanvas: false,
+            aimAngle: 0,
+            targetAimAngle: 0,
+            aimSmoothness: 1.0
+        };
+
+        // Check demo mode
+        function isDemoMode() {
+            try {
+                return sessionStorage.getItem('snakes_demo_mode') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Load demo progress
+        function loadDemoProgress() {
+            try {
+                const stored = sessionStorage.getItem('snakes_demo_progress');
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+            return null;
+        }
+
+        // Load player data
+        function loadPlayerData() {
+            if (isDemoMode()) {
+                const demoData = loadDemoProgress();
+                if (demoData) {
+                    if (demoData.character) {
+                        gameState.player.character = demoData.character;
+                        const charConfig = CHARACTER_CONFIG[demoData.character];
+                        if (charConfig) gameState.player.color = charConfig.color;
+                    }
+                    if (typeof demoData.bullets !== 'undefined') {
+                        gameState.player.bullets = Number(demoData.bullets || 0);
+                        updateBulletsDisplay();
+                    }
+                    if (typeof demoData.lives !== 'undefined') {
+                        gameState.player.lives = Number(demoData.lives || 3);
+                        updateLives();
+                    }
+                    gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
+                    updatePlayersList();
+                    return Promise.resolve();
+                }
+            }
+
+            return fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    if (data.selected_character) {
+                        gameState.player.character = data.selected_character;
+                        const charConfig = CHARACTER_CONFIG[data.selected_character];
+                        if (charConfig) gameState.player.color = charConfig.color;
+                    }
+                    if (typeof data.total_bullets !== 'undefined') {
+                        gameState.player.bullets = Number(data.total_bullets || 0);
+                        updateBulletsDisplay();
+                    }
+                    if (typeof data.lives !== 'undefined') {
+                        gameState.player.lives = Number(data.lives || 3);
+                        updateLives();
+                    }
+                })
+                .catch(err => console.error('Could not load player progress', err));
+        }
+
+        // Get username
+        function loadUserInfo() {
+            return fetch(GAME_API_ROOT.replace('/api', '') + '/api/id', { credentials: 'include' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.name) {
+                        gameState.player.username = data.name;
+                    }
+                })
+                .catch(err => console.error('Could not load user info', err));
+        }
+
+        // Initialize
+        loadPlayerData();
+        loadUserInfo();
+        connectSocket();
+
+        // Key handlers
+        window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameActive) {
+                e.preventDefault();
+                shoot();
+            }
+            if (e.key.toLowerCase() === 'x' && gameActive) {
+                e.preventDefault();
+                leaveArena();
+            }
+        });
+
+        // Mouse aiming
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            gameState.mouseX = (e.clientX - rect.left) * scaleX;
+            gameState.mouseY = (e.clientY - rect.top) * scaleY;
+            gameState.mouseInCanvas = true;
+            const dx = gameState.mouseX - gameState.player.x;
+            const dy = gameState.mouseY - gameState.player.y;
+            gameState.targetAimAngle = Math.atan2(dy, dx);
+        });
+
+        canvas.addEventListener('mouseleave', () => gameState.mouseInCanvas = false);
+        canvas.addEventListener('click', (e) => {
+            if (gameActive) {
+                e.preventDefault();
+                shoot();
+            }
+        });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Tab visibility
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && gameActive && socket && socket.connected) {
+                socket.emit('pvp_player_away', { username: gameState.player.username });
+            } else if (!document.hidden && gameActive && socket && socket.connected) {
+                socket.emit('pvp_player_returned', { username: gameState.player.username });
+            }
+        });
+
+        // Page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket && socket.connected) {
+                socket.emit('pvp_leave', {});
+            }
+        });
+
+        // Chat input
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        // Connect to Socket.IO
+        function connectSocket() {
+            if (socket) return;
+
+            socket = io(SOCKET_URL, {
+                transports: ['polling', 'websocket'],
+                upgrade: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            });
+
+            socket.on('connect', () => {
+                console.log('Socket connected:', socket.id);
+                addSystemMessage('Connected to PVP server!');
+
+                // Join PVP room
+                socket.emit('pvp_join', {
+                    username: gameState.player.username,
+                    character: gameState.player.character,
+                    bullets: gameState.player.bullets,
+                    lives: gameState.player.lives
+                });
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Socket disconnected');
+                addSystemMessage('Disconnected from server');
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error);
+                addSystemMessage('Connection error - retrying...');
+            });
+
+            // PVP room full
+            socket.on('pvp_room_full', (data) => {
+                alert('The PVP arena is full! Please try again later.');
+                window.location.href = 'mode-selection.html';
+            });
+
+            // Room state when joining
+            socket.on('pvp_room_state', (data) => {
+                console.log('PVP Room state:', data);
+                document.getElementById('roomBadge').style.display = 'block';
+                document.getElementById('playerCount').textContent = data.playerCount || 1;
+
+                // Set player position based on player number
+                if (data.playerNumber === 1) {
+                    gameState.player.x = 100;
+                    gameState.player.y = canvas.height / 2;
+                } else {
+                    gameState.player.x = canvas.width - 100;
+                    gameState.player.y = canvas.height / 2;
+                }
+
+                // Check if opponent already in room
+                if (data.opponent) {
+                    gameState.opponent = {
+                        ...data.opponent,
+                        x: data.playerNumber === 1 ? canvas.width - 100 : 100,
+                        y: canvas.height / 2
+                    };
+                    hideWaitingOverlay();
+                }
+
+                updatePlayersList();
+            });
+
+            // Opponent joined
+            socket.on('pvp_opponent_joined', (data) => {
+                console.log('Opponent joined:', data);
+                gameState.opponent = {
+                    ...data.opponent,
+                    x: canvas.width - gameState.player.x,
+                    y: canvas.height / 2
+                };
+                hideWaitingOverlay();
+                addSystemMessage(`${data.opponent.username} has entered the arena!`);
+                updatePlayersList();
+                document.getElementById('playerCount').textContent = 2;
+            });
+
+            // Opponent left
+            socket.on('pvp_opponent_left', (data) => {
+                console.log('Opponent left:', data);
+                if (gameActive) {
+                    // Player wins by forfeit
+                    endGame(true, 'Your opponent left the arena!');
+                } else {
+                    gameState.opponent = null;
+                    showWaitingOverlay();
+                    addSystemMessage(`${data.username || 'Opponent'} left the arena`);
+                    updatePlayersList();
+                    document.getElementById('playerCount').textContent = 1;
+                }
+            });
+
+            // Battle start
+            socket.on('pvp_battle_start', (data) => {
+                console.log('Battle starting!');
+                addSystemMessage('BATTLE START!');
+                startBattle();
+            });
+
+            // Opponent position update
+            socket.on('pvp_opponent_position', (data) => {
+                if (gameState.opponent) {
+                    gameState.opponent.x = data.x;
+                    gameState.opponent.y = data.y;
+                }
+            });
+
+            // Opponent shot
+            socket.on('pvp_opponent_shot', (data) => {
+                const charConfig = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+                gameState.opponentBullets.push({
+                    x: data.bulletX,
+                    y: data.bulletY,
+                    dx: data.dx,
+                    dy: data.dy,
+                    size: 8,
+                    color: '#e94560',
+                    glow: '#ff6b6b'
+                });
+            });
+
+            // Player hit
+            socket.on('pvp_player_hit', (data) => {
+                if (data.target === socket.id) {
+                    gameState.player.lives = data.lives;
+                    updateLives();
+                    if (data.lives <= 0) {
+                        endGame(false, 'You have been defeated!');
+                    }
+                } else if (gameState.opponent) {
+                    gameState.opponent.lives = data.lives;
+                    document.getElementById('opponentLives').textContent = data.lives;
+                    if (data.lives <= 0) {
+                        endGame(true, 'You defeated your opponent!');
+                    }
+                }
+            });
+
+            // Opponent stats update
+            socket.on('pvp_opponent_stats', (data) => {
+                if (gameState.opponent) {
+                    gameState.opponent.bullets = data.bullets;
+                    gameState.opponent.lives = data.lives;
+                    document.getElementById('opponentLives').textContent = data.lives;
+                    document.getElementById('opponentBullets').textContent = data.bullets;
+                }
+                updatePlayersList();
+            });
+
+            // Chat message
+            socket.on('pvp_chat_message', (data) => {
+                addChatMessage(data);
+            });
+
+            // Player away/returned
+            socket.on('pvp_player_away', (data) => {
+                addSystemMessage(`${data.username} switched away from the game`);
+            });
+
+            socket.on('pvp_player_returned', (data) => {
+                addSystemMessage(`${data.username} is back!`);
+            });
+
+            // PVP status (for mode selection page polling)
+            socket.on('pvp_status', (data) => {
+                // Handled by mode selection page
+            });
+        }
+
+        function showWaitingOverlay() {
+            document.getElementById('waitingOverlay').classList.remove('hidden');
+        }
+
+        function hideWaitingOverlay() {
+            document.getElementById('waitingOverlay').classList.add('hidden');
+        }
+
+        function readyUp() {
+            if (!gameState.opponent) {
+                showMessage('Waiting for an opponent...');
+                return;
+            }
+
+            gameState.player.isReady = true;
+            socket.emit('pvp_ready', {});
+            document.getElementById('readyBtn').disabled = true;
+            document.getElementById('readyBtn').textContent = 'Ready!';
+            addSystemMessage('You are ready! Waiting for opponent...');
+        }
+
+        function startBattle() {
+            gameActive = true;
+            document.getElementById('controlsPanel').classList.add('hidden');
+            document.getElementById('ingameLeaveBtn').style.display = 'block';
+            canvas.classList.add('battle-active');
+            resizeCanvas();
+
+            // Start position broadcasting
+            startPositionBroadcast();
+            gameLoop();
+        }
+
+        function startPositionBroadcast() {
+            if (positionBroadcastInterval) clearInterval(positionBroadcastInterval);
+            positionBroadcastInterval = setInterval(() => {
+                if (socket && socket.connected) {
+                    socket.emit('pvp_move', {
+                        x: gameState.player.x,
+                        y: gameState.player.y
+                    });
+                }
+            }, 50);
+        }
+
+        function stopPositionBroadcast() {
+            if (positionBroadcastInterval) {
+                clearInterval(positionBroadcastInterval);
+                positionBroadcastInterval = null;
+            }
+        }
+
+        function lerpAngle(current, target, factor) {
+            let diff = target - current;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            return current + diff * factor;
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            gameState.aimAngle = lerpAngle(gameState.aimAngle, gameState.targetAimAngle, gameState.aimSmoothness);
+
+            movePlayer();
+            moveBullets();
+            checkCollisions();
+            drawGame();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function movePlayer() {
+            const speed = gameState.player.speed;
+            if (gameState.keys['a'] || gameState.keys['arrowleft']) {
+                gameState.player.x = Math.max(gameState.player.size, gameState.player.x - speed);
+            }
+            if (gameState.keys['d'] || gameState.keys['arrowright']) {
+                gameState.player.x = Math.min(canvas.width - gameState.player.size, gameState.player.x + speed);
+            }
+            if (gameState.keys['w'] || gameState.keys['arrowup']) {
+                gameState.player.y = Math.max(gameState.player.size, gameState.player.y - speed);
+            }
+            if (gameState.keys['s'] || gameState.keys['arrowdown']) {
+                gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + speed);
+            }
+        }
+
+        function shoot() {
+            if (gameState.player.bullets > 0) {
+                const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
+                const bulletSpeed = 12;
+                const dx = Math.cos(shotAngle) * bulletSpeed;
+                const dy = Math.sin(shotAngle) * bulletSpeed;
+                const spawnOffset = gameState.player.size + 5;
+                const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
+                const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
+
+                gameState.playerBullets.push({
+                    x: spawnX,
+                    y: spawnY,
+                    size: 8,
+                    speed: bulletSpeed,
+                    dx: dx,
+                    dy: dy,
+                    color: gameState.player.color,
+                    glow: CHARACTER_CONFIG[gameState.player.character]?.glow || '#4facfe'
+                });
+
+                gameState.player.bullets--;
+                updateBulletsDisplay();
+                savePlayerState();
+
+                // Broadcast shot
+                if (socket && socket.connected) {
+                    socket.emit('pvp_shoot', {
+                        bulletX: spawnX,
+                        bulletY: spawnY,
+                        dx: dx,
+                        dy: dy,
+                        character: gameState.player.character
+                    });
+                }
+            }
+        }
+
+        function moveBullets() {
+            // Player bullets
+            gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+                return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
+            });
+
+            // Opponent bullets
+            gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+                return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
+            });
+        }
+
+        function checkCollisions() {
+            // Player bullets hitting opponent
+            if (gameState.opponent) {
+                gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                    const distance = Math.hypot(bullet.x - gameState.opponent.x, bullet.y - gameState.opponent.y);
+                    if (distance < gameState.opponent.size || distance < 35) {
+                        // Hit opponent - notify server
+                        socket.emit('pvp_hit_opponent', {});
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            // Opponent bullets hitting player
+            gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
+                const distance = Math.hypot(bullet.x - gameState.player.x, bullet.y - gameState.player.y);
+                if (distance < gameState.player.size) {
+                    // Already handled by server
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function drawGame() {
+            // Draw arena bounds
+            ctx.strokeStyle = 'rgba(79, 172, 254, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+            // Draw center line
+            ctx.beginPath();
+            ctx.setLineDash([10, 10]);
+            ctx.moveTo(canvas.width / 2, 10);
+            ctx.lineTo(canvas.width / 2, canvas.height - 10);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw player
+            drawPlayer(gameState.player, true);
+
+            // Draw opponent
+            if (gameState.opponent) {
+                drawPlayer(gameState.opponent, false);
+            }
+
+            // Draw player bullets
+            gameState.playerBullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.fillStyle = bullet.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = bullet.glow;
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw opponent bullets
+            gameState.opponentBullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.fillStyle = bullet.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = bullet.glow;
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw aim indicator for player
+            if (gameActive) {
+                const aimLength = 50;
+                const aimX = gameState.player.x + Math.cos(gameState.aimAngle) * aimLength;
+                const aimY = gameState.player.y + Math.sin(gameState.aimAngle) * aimLength;
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(79, 172, 254, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.moveTo(gameState.player.x, gameState.player.y);
+                ctx.lineTo(aimX, aimY);
+                ctx.stroke();
+
+                // Crosshair at aim point
+                ctx.beginPath();
+                ctx.arc(aimX, aimY, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawPlayer(player, isLocalPlayer) {
+            const sprite = PLAYER_SPRITES[player.character] || PLAYER_SPRITES.knight;
+            drawPixelSprite(ctx, player.x, player.y, player.size || 35, sprite);
+
+            // Draw health bar above player
+            const barWidth = 60;
+            const barHeight = 8;
+            const barX = player.x - barWidth / 2;
+            const barY = player.y - (player.size || 35) - 15;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+
+            const healthPercent = (player.lives || 0) / DEFAULT_LIVES;
+            const healthColor = isLocalPlayer ? '#4facfe' : '#e94560';
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+            // Draw username
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(player.username || 'Player', player.x, barY - 5);
+        }
+
+        function drawPixelSprite(ctx, x, y, size, sprite) {
+            const rows = sprite.pattern.length;
+            const cols = sprite.pattern[0].length;
+            const pixel = Math.max(3, Math.round(size / cols));
+            const startX = Math.round(x - (cols * pixel) / 2);
+            const startY = Math.round(y - (rows * pixel) / 2);
+
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+
+            for (let row = 0; row < rows; row++) {
+                const line = sprite.pattern[row];
+                for (let col = 0; col < cols; col++) {
+                    const code = line[col];
+                    if (code === '.') continue;
+                    const color = sprite.colors[code];
+                    if (!color) continue;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(startX + col * pixel, startY + row * pixel, pixel, pixel);
+                }
+            }
+            ctx.restore();
+        }
+
+        function updateLives() {
+            document.getElementById('playerLives').textContent = gameState.player.lives;
+        }
+
+        function updateBulletsDisplay() {
+            document.getElementById('bulletsCount').textContent = gameState.player.bullets;
+        }
+
+        function updatePlayersList() {
+            const list = document.getElementById('playersList');
+            let html = '';
+
+            // Current player
+            const myConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            html += `
+                <div class="player-item you">
+                    <span class="player-icon">${myConfig.icon}</span>
+                    <div class="player-info">
+                        <div class="player-name">${gameState.player.username} (You)</div>
+                        <div class="player-stats">Lives: ${gameState.player.lives} | Bullets: ${gameState.player.bullets}</div>
+                    </div>
+                </div>
+            `;
+
+            // Opponent
+            if (gameState.opponent) {
+                const oppConfig = CHARACTER_CONFIG[gameState.opponent.character] || CHARACTER_CONFIG.knight;
+                html += `
+                    <div class="player-item opponent">
+                        <span class="player-icon">${oppConfig.icon}</span>
+                        <div class="player-info">
+                            <div class="player-name">${gameState.opponent.username || 'Opponent'}</div>
+                            <div class="player-stats">Lives: ${gameState.opponent.lives || '?'} | Bullets: ${gameState.opponent.bullets || '?'}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="player-item" style="opacity: 0.5;">
+                        <span>Waiting for opponent...</span>
+                    </div>
+                `;
+            }
+
+            list.innerHTML = html;
+        }
+
+        function addChatMessage(data) {
+            const container = document.getElementById('chatMessages');
+            const config = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <span class="sender-icon">${config.icon}</span>
+                <span class="sender">${data.username}:</span>
+                ${escapeHtml(data.content)}
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-message system';
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return;
+
+            addChatMessage({
+                username: gameState.player.username,
+                character: gameState.player.character,
+                content: content
+            });
+
+            if (socket && socket.connected) {
+                socket.emit('pvp_chat_send', {
+                    content: content,
+                    username: gameState.player.username,
+                    character: gameState.player.character
+                });
+            }
+
+            input.value = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showMessage(msg) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 3000);
+        }
+
+        function savePlayerState() {
+            if (isDemoMode()) {
+                try {
+                    const stored = sessionStorage.getItem('snakes_demo_progress');
+                    let demoData = stored ? JSON.parse(stored) : {};
+                    demoData.bullets = gameState.player.bullets;
+                    demoData.lives = gameState.player.lives;
+                    sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
+                } catch (e) {}
+                return Promise.resolve();
+            }
+
+            return fetch(`${GAME_API_ROOT}/snakes/`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    total_bullets: Math.max(0, gameState.player.bullets),
+                    lives: Math.max(0, gameState.player.lives)
+                })
+            }).catch(err => console.error('Failed to save player state', err));
+        }
+
+        function endGame(victory, message) {
+            gameActive = false;
+            stopPositionBroadcast();
+
+            document.getElementById('ingameLeaveBtn').style.display = 'none';
+
+            const gameOver = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const text = document.getElementById('gameOverText');
+
+            if (victory) {
+                title.textContent = 'VICTORY!';
+                gameOver.className = 'game-over victory';
+                gameState.player.lives = DEFAULT_LIVES;
+                updateLives();
+                savePlayerState();
+            } else {
+                title.textContent = 'DEFEAT';
+                gameOver.className = 'game-over defeat';
+            }
+
+            text.textContent = message || (victory ? 'You won the duel!' : 'You lost the duel.');
+            gameOver.style.display = 'block';
+
+            if (socket) {
+                socket.emit('pvp_leave', {});
+            }
+        }
+
+        function leaveArena() {
+            if (gameActive && !confirm('Are you sure you want to leave? You will forfeit the match!')) {
+                return;
+            }
+
+            gameActive = false;
+            stopPositionBroadcast();
+
+            if (socket) {
+                socket.emit('pvp_leave', {});
+            }
+
+            window.location.href = 'mode-selection.html';
+        }
+
+        function returnToBoard() {
+            stopPositionBroadcast();
+            window.location.href = 'game-board-part2.html';
+        }
+
+        window.addEventListener('resize', () => resizeCanvas());
+
+        // Initialize players list
+        updatePlayersList();
+    </script>
+</body>
+</html>
