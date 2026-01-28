@@ -43,7 +43,7 @@ categories: ['Game Development', 'N@tM']
 <div class="feature-box"><strong>10-Player</strong>Multiplayer Boss</div>
 <div class="feature-box"><strong>Real-time</strong>WebSocket Sync</div>
 <div class="feature-box"><strong>4 Characters</strong>Pixel Art Sprites</div>
-<div class="feature-box"><strong>4 Powerups</strong>Damage/Speed/Heal</div>
+<div class="feature-box"><strong>4 Powerups</strong>Damage/Speed/Rapidfire/Heal</div>
 </div>
 </div>
 
@@ -74,43 +74,51 @@ categories: ['Game Development', 'N@tM']
 <div class="role">Scrum Master — Game Board UI & Navigation</div>
 
 <div class="skill-section">
-<h4>Skill A: Task — Dice Rolling & Board Navigation <span class="time-badge">1 MIN</span></h4>
+<h4>Skill A: Task — Boss Battle & Combat System <span class="time-badge">1 MIN</span></h4>
 
-**Problem Solved:** Players need intuitive way to move across 56 squares with visual feedback.
+**Problem Solved:** Create engaging final challenge with smooth boss movement and powerup mechanics.
 
 **Demo Flow:**
-1. Click dice → animated roll → land on square
-2. Square highlights → question modal opens
-3. Answer correctly → bullets awarded → next square unlocks
+1. Enter arena → boss spawns with 1000 HP
+2. WASD move, click to shoot → bullets reduce boss HP
+3. Collect powerups → damage boost/speed/rapidfire/heal
+4. Boss defeated → victory screen
 
 </div>
 
 <div class="skill-section">
 <h4>Skill B: Code Reference (PPR)</h4>
 
-**Input:** Dice click event
-**Output:** New square position + question display
+**Input:** Player position, shoot command
+**Output:** Boss damage, powerup effects, game state
 
 <div class="code-ref">
-// game-board-part2.html:rollDice()
-const roll = Math.floor(Math.random() * 6) + 1;
-gameState.player.currentSquare += roll;
-showQuestionForSquare(gameState.player.currentSquare);
-</div>
-
-**List Used:** `visited_squares[]` — tracks answered questions
-
-<div class="code-ref">
-// snakes-game.js
-if (!gameState.visitedSquares.includes(square)) {
-    gameState.visitedSquares.push(square);
-    savePlayerState();
+// boss-battle.html - Boss Movement
+function moveBoss() {
+    boss.patternTimer++;
+    boss.slitherPhase += 0.12;
+    // Smooth targeting with bias toward player
+    const biasToPlayer = Math.random() < 0.35;
+    boss.targetX = biasToPlayer ? player.x : randomX;
 }
 </div>
 
-**Procedure:** `showQuestionForSquare(squareNum)` — retrieves question from bank, displays modal
+**List Used:** `powerups[]` — spawned powerups tracked, removed on collection
 
-**Files:** `game-board-part1.html`, `game-board-part2.html`, `snakes-game.js`
+<div class="code-ref">
+// Powerup collection algorithm
+gameState.powerups = gameState.powerups.filter(p => {
+    if (distance(player, p) < 30) {
+        applyPowerup(p.type); // Selection: damage/speed/rapidfire/heal
+        return false;
+    }
+    return true;
+});
+</div>
+
+**Procedure:** `applyPowerup(type)` — uses selection to apply correct buff based on type parameter
+
+**Files:** `boss-battle.html`, `api/boss_battle.py`, `model/boss_room.py`
 </div>
 </div>
 
@@ -182,12 +190,12 @@ def token_required():
 
 <div class="code-ref">
 # api/snakes_extended.py
-@snakes_extended_api.route('/complete-lesson', methods=['POST'])
+@snakes_bp.route('/complete-lesson', methods=['POST'])
 def complete_lesson():
-    lesson_num = data.get('lesson_number')
-    if lesson_num not in game.completed_lessons:
-        game.completed_lessons.append(lesson_num)
-        game.total_bullets += data.get('bullets_earned', 5)
+    lesson_number = data.get('lesson_number')
+    if lesson_number not in record.completed_lessons:
+        record.completed_lessons.append(lesson_number)
+        record.total_bullets += bullets_earned
 </div>
 
 **List Used:** `completed_lessons[]` — prevents re-completing same lesson
@@ -224,21 +232,23 @@ def complete_lesson():
 
 <div class="code-ref">
 // questions/questions_bank.js
-const questions = [
-    { square: 7, question: "What is a variable?",
-      answers: ["Storage location", "Loop", "Function", "Class"],
-      correct: 0, topic: "Programming Basics" },
-    // ... 49 more questions
-];
+const QUESTIONS = {
+    1: [ // Row 1: Programming Basics
+      { prompt: "Which keyword declares a constant?",
+        options: ["var", "const", "let", "static"], answer: 1 },
+      // ... 9 more per row, 5 rows total
+    ],
+};
 </div>
 
 <div class="code-ref">
 # api/snakes_extended.py
-@snakes_extended_api.route('/answer-question', methods=['POST'])
+@snakes_bp.route('/answer-question', methods=['POST'])
 def answer_question():
-    if data.get('correct'):
-        game.total_bullets += data.get('bullets_earned', 5)
-    game.visited_squares.append(data.get('square'))
+    if correct:
+        record.total_bullets += bullets_earned
+    if square not in record.visited_squares:
+        record.visited_squares.append(square)
 </div>
 
 **List Used:** `questions[]` array — iterated to find question by square number
@@ -256,52 +266,46 @@ def answer_question():
 <div class="role">Boss Battle Developer</div>
 
 <div class="skill-section">
-<h4>Skill A: Task — Boss AI & Combat System <span class="time-badge">1 MIN</span></h4>
+<h4>Skill A: Task — Dice Rolling & Board Navigation <span class="time-badge">1 MIN</span></h4>
 
-**Problem Solved:** Create engaging final challenge with complex boss behavior and powerup mechanics.
+**Problem Solved:** Players need intuitive way to move across 56 squares with visual feedback.
 
 **Demo Flow:**
-1. Enter arena → boss spawns with 1000 HP
-2. WASD move, Space shoot → bullets reduce boss HP
-3. Collect powerups → damage boost/speed/heal
-4. Boss defeated → victory screen
+1. Click dice → animated roll → land on square
+2. Square highlights → question modal opens
+3. Answer correctly → bullets awarded → next square unlocks
 
 </div>
 
 <div class="skill-section">
 <h4>Skill B: Code Reference (PPR)</h4>
 
-**Input:** Player position, shoot command
-**Output:** Boss damage, powerup effects, game state
+**Input:** Dice click event
+**Output:** New square position + question display
 
 <div class="code-ref">
-// boss-battle.html - Boss AI Pattern Selection
-function updateBossAI() {
-    if (bossPatternTimer > PATTERN_DURATION) {
-        bossPattern = ['normal','dash','zigzag','chase','circle']
-            [Math.floor(Math.random() * 5)];
-        bossPatternTimer = 0;
-    }
-    // Execute selected pattern...
-}
-</div>
-
-**List Used:** `powerups[]` — spawned powerups tracked, removed on collection
-
-<div class="code-ref">
-// Powerup collection algorithm
-gameState.powerups = gameState.powerups.filter(p => {
-    if (distance(player, p) < 30) {
-        applyPowerup(p.type); // Selection: damage/speed/heal/rapidfire
-        return false;
-    }
-    return true;
+// snakes-game.js:rollDice()
+var roll = Math.floor(Math.random() * 6) + 1;
+showDiceAnimation(roll).then(function() {
+    movePlayer(roll);
 });
 </div>
 
-**Procedure:** `applyPowerup(type)` — uses selection to apply correct buff based on type parameter
+**List Used:** `visitedSquares[]` — tracks answered questions
 
-**Files:** `boss-battle.html`, `api/boss_battle.py`, `model/boss_room.py`
+<div class="code-ref">
+// snakes-game.js - movePlayer()
+if (gameState.visitedSquares.indexOf(newSquare) === -1) {
+    gameState.visitedSquares.push(newSquare);
+}
+createGameBoard();
+updatePlayerInfo();
+saveProgress();
+</div>
+
+**Procedure:** `showQuestionModal(square, row, index)` — retrieves question from bank, displays modal
+
+**Files:** `game-board-part1.html`, `game-board-part2.html`, `snakes-game.js`
 </div>
 </div>
 
@@ -401,15 +405,15 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 ### Akhil's Script (1 minute)
 
 <div class="script-box">
-<h4>Topic: Game Board UI & Dice Rolling</h4>
+<h4>Topic: Boss Battle & Combat</h4>
 
-<p><strong>[0:00-0:15]</strong> "I built the main game board interface. Watch as I click the dice — it animates and lands on a random 1-6. My character moves to that square."</p>
+<p><strong>[0:00-0:15]</strong> "I built the boss battle arena with canvas rendering. The boss has 1000 HP and moves with smooth snake-like slithering, occasionally targeting the player."</p>
 
-<p><strong>[0:15-0:30]</strong> "Each square triggers a question modal. The `showQuestionForSquare()` function retrieves the question from our 50-question bank and displays it."</p>
+<p><strong>[0:15-0:30]</strong> "The boss smoothly targets points on the screen, sometimes biasing toward the nearest player. The slither animation uses sine waves for realistic movement."</p>
 
-<p><strong>[0:30-0:45]</strong> "When I answer correctly, the backend adds 5 bullets to my total. The `visited_squares` array tracks which questions I've answered so I can't farm the same one."</p>
+<p><strong>[0:30-0:45]</strong> "Powerups spawn every 5 seconds. The `applyPowerup(type)` function uses selection logic — 'damage' doubles your damage, 'speed' increases movement, 'rapidfire' adds bullets, 'heal' restores a life."</p>
 
-<p><strong>[0:45-0:60]</strong> "This iteration through the board teaches CS concepts progressively. By square 56, players have enough bullets and knowledge to challenge the boss."</p>
+<p><strong>[0:45-0:60]</strong> "When boss HP hits zero, victory triggers. The server resets the room for the next group. All player stats get saved to BossBattleStats."</p>
 </div>
 
 ---
@@ -423,7 +427,7 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 
 <p><strong>[0:15-0:30]</strong> "Every API call passes through the `@token_required()` decorator. It decodes the JWT, extracts your user ID, and loads your specific game data from the database."</p>
 
-<p><strong>[0:30-0:45]</strong> "For deployment, I configured Docker containers, Nginx reverse proxy, and environment variables. The backend runs on port 8086, WebSocket on 8500."</p>
+<p><strong>[0:30-0:45]</strong> "For deployment, I configured Docker containers, Nginx reverse proxy, and environment variables. The backend runs on port 8306, WebSocket on 8500."</p>
 
 <p><strong>[0:45-0:60]</strong> "Guest mode bypasses auth using sessionStorage — no server calls, perfect for quick demos, but progress doesn't persist across sessions."</p>
 </div>
@@ -465,15 +469,15 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 ### Ethan's Script (1 minute)
 
 <div class="script-box">
-<h4>Topic: Boss Battle & AI</h4>
+<h4>Topic: Game Board UI & Dice Rolling</h4>
 
-<p><strong>[0:00-0:15]</strong> "I built the boss battle arena with canvas rendering. The boss has 1000 HP and cycles through 5 movement patterns: normal, dash, zigzag, chase, and circle."</p>
+<p><strong>[0:00-0:15]</strong> "I built the main game board interface. Watch as I click the dice — it animates with a 3D roll and lands on a random 1-6. My character moves to that square."</p>
 
-<p><strong>[0:15-0:30]</strong> "The AI uses a pattern timer — every few seconds, it randomly selects a new behavior. Chase mode calculates the angle to the nearest player and moves toward them."</p>
+<p><strong>[0:15-0:30]</strong> "Each square triggers a question modal. The `showQuestionModal()` function retrieves the question from our 50-question bank and displays it with a mini-game challenge first."</p>
 
-<p><strong>[0:30-0:45]</strong> "Powerups spawn every 5 seconds. The `applyPowerup(type)` function uses selection logic — 'damage' doubles your damage, 'speed' increases movement, 'heal' restores a life."</p>
+<p><strong>[0:30-0:45]</strong> "When I answer correctly, the backend adds 5 bullets to my total. The `visitedSquares` array tracks which questions I've answered so I can't farm the same one."</p>
 
-<p><strong>[0:45-0:60]</strong> "When boss HP hits zero, victory triggers. The server resets the room for the next group. All player stats get saved to BossBattleStats."</p>
+<p><strong>[0:45-0:60]</strong> "This iteration through the board teaches CS concepts progressively. By square 56, players have enough bullets and knowledge to challenge the boss."</p>
 </div>
 
 ---
@@ -498,11 +502,11 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 
 | Team Member | Eureka Moment |
 |-------------|---------------|
-| **Akhil** | "When the dice animation finally synced perfectly with the square highlighting — the game felt *real*." |
+| **Akhil** | "The boss slithering movement looked so realistic. Watching it smoothly track players across the arena was terrifying and awesome." |
 | **Moiz** | "First successful authenticated request after fighting CORS for hours. Seeing my user data load was magic." |
 | **Samarth** | "Completing all 5 lessons and watching the boss section unlock automatically. The progression system worked!" |
 | **Arnav** | "Writing question #50 and seeing the entire bank render correctly. 50 unique CS questions in one file." |
-| **Ethan** | "The boss chase pattern worked on first try. Watching it hunt players across the arena was terrifying and awesome." |
+| **Ethan** | "When the 3D dice animation finally synced perfectly with the square highlighting — the game felt *real*." |
 | **Aneesh** | "Two browsers open, two players moving independently, chat working between them. Real multiplayer in our game!" |
 
 ---
@@ -521,11 +525,19 @@ for player_sid in list(boss_battles[room_id]['players'].keys()):
 
 ## Quick Reference: Key Files
 
-| Component | Frontend | Backend |
-|-----------|----------|---------|
-| Game Board | `game-board-part1.html`, `game-board-part2.html` | `api/snakes_game.py` |
-| Lessons | `lessons/lesson1-5.html` | `api/snakes_extended.py` |
-| Questions | `questions/questions_bank.js` | `api/snakes_extended.py` |
-| Boss Battle | `boss-battle.html` | `api/boss_battle.py`, `socket/boss_battle.py` |
-| Auth | — | `api/jwt_authorize.py`, `api/authenticate.py` |
-| Models | — | `model/snakes_game.py`, `model/boss_room.py` |
+| Component | Owner | Frontend | Backend |
+|-----------|-------|----------|---------|
+| Game Board | Ethan | `game-board-part1.html`, `game-board-part2.html` | `api/snakes_game.py` |
+| Lessons | Samarth | `lessons/lesson1-5.html` | `api/snakes_extended.py` |
+| Questions | Arnav | `questions/questions_bank.js` | `api/snakes_extended.py` |
+| Boss Battle | Akhil | `boss-battle.html` | `api/boss_battle.py`, `socket/boss_battle.py` |
+| Auth | Moiz | — | `api/jwt_authorize.py`, `api/authenticate.py` |
+| Multiplayer | Aneesh | — | `socket/boss_battle.py` |
+| Models | — | — | `model/snakes_game.py`, `model/boss_room.py` |
+
+## Deployment Info
+
+| Service | Local Port | Production URL |
+|---------|-----------|----------------|
+| Flask Backend | 8306 | `https://snakes.opencodingsociety.com` |
+| WebSocket (Multiplayer) | 8500 | `wss://snakes.opencodingsociety.com` |
