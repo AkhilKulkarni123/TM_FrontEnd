@@ -702,8 +702,37 @@
         }
 
         // Load player data
-        function loadPlayerData() {
-            if (isDemoMode()) {
+        async function loadPlayerData() {
+            let loadedFromServer = false;
+
+            // Try to load from server first (prioritize logged-in users)
+            try {
+                const res = await fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        if (data.selected_character) {
+                            gameState.player.character = data.selected_character;
+                            const charConfig = CHARACTER_CONFIG[data.selected_character];
+                            if (charConfig) gameState.player.color = charConfig.color;
+                        }
+                        if (typeof data.total_bullets !== 'undefined') {
+                            gameState.player.bullets = Number(data.total_bullets || 0);
+                            updateBulletsDisplay();
+                        }
+                        if (typeof data.lives !== 'undefined') {
+                            gameState.player.lives = Number(data.lives || 3);
+                            updateLives();
+                        }
+                        loadedFromServer = true;
+                    }
+                }
+            } catch (err) {
+                console.error('Could not load player progress from server:', err);
+            }
+
+            // Fall back to demo mode if server load failed
+            if (!loadedFromServer && isDemoMode()) {
                 const demoData = loadDemoProgress();
                 if (demoData) {
                     if (demoData.character) {
@@ -719,31 +748,14 @@
                         gameState.player.lives = Number(demoData.lives || 3);
                         updateLives();
                     }
+                }
+                // Only set Guest username if we don't have one from server
+                if (gameState.player.username === 'Player') {
                     gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
-                    updatePlayersList();
-                    return Promise.resolve();
                 }
             }
 
-            return fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                    if (!data) return;
-                    if (data.selected_character) {
-                        gameState.player.character = data.selected_character;
-                        const charConfig = CHARACTER_CONFIG[data.selected_character];
-                        if (charConfig) gameState.player.color = charConfig.color;
-                    }
-                    if (typeof data.total_bullets !== 'undefined') {
-                        gameState.player.bullets = Number(data.total_bullets || 0);
-                        updateBulletsDisplay();
-                    }
-                    if (typeof data.lives !== 'undefined') {
-                        gameState.player.lives = Number(data.lives || 3);
-                        updateLives();
-                    }
-                })
-                .catch(err => console.error('Could not load player progress', err));
+            updatePlayersList();
         }
 
         // Get username
@@ -758,10 +770,26 @@
                 .catch(err => console.error('Could not load user info', err));
         }
 
-        // Initialize
-        loadPlayerData();
-        loadUserInfo();
-        connectSocket();
+        // Initialize - wait for data to load before connecting
+        async function initialize() {
+            try {
+                // Load user info first to get the username
+                await loadUserInfo();
+                // Then load player data (character, bullets, lives)
+                await loadPlayerData();
+                console.log('Player data loaded:', {
+                    username: gameState.player.username,
+                    character: gameState.player.character,
+                    bullets: gameState.player.bullets,
+                    lives: gameState.player.lives
+                });
+            } catch (err) {
+                console.error('Error initializing:', err);
+            }
+            // Now connect to socket with the loaded data
+            connectSocket();
+        }
+        initialize();
 
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
@@ -839,13 +867,16 @@
                 console.log('Socket connected:', socket.id);
                 addSystemMessage('Connected to PVP server!');
 
-                // Join PVP room
-                socket.emit('pvp_join', {
+                // Join PVP room with player data
+                const joinData = {
                     username: gameState.player.username,
                     character: gameState.player.character,
                     bullets: gameState.player.bullets,
                     lives: gameState.player.lives
-                });
+                };
+                console.log('=== JOINING PVP ===');
+                console.log('Sending join data:', joinData);
+                socket.emit('pvp_join', joinData);
             });
 
             socket.on('disconnect', () => {
@@ -866,7 +897,8 @@
 
             // Room state when joining
             socket.on('pvp_room_state', (data) => {
-                console.log('PVP Room state:', data);
+                console.log('=== PVP ROOM STATE ===');
+                console.log('Received data:', data);
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
 
@@ -881,12 +913,17 @@
 
                 // Check if opponent already in room
                 if (data.opponent) {
+                    console.log('Opponent already in room:', data.opponent);
                     gameState.opponent = {
                         ...data.opponent,
                         x: data.playerNumber === 1 ? canvas.width - 100 : 100,
-                        y: canvas.height / 2
+                        y: canvas.height / 2,
+                        size: 35
                     };
                     hideWaitingOverlay();
+                    addSystemMessage(`${data.opponent.username} is already in the arena!`);
+                } else {
+                    console.log('No opponent yet - waiting...');
                 }
 
                 updatePlayersList();
@@ -894,12 +931,19 @@
 
             // Opponent joined
             socket.on('pvp_opponent_joined', (data) => {
-                console.log('Opponent joined:', data);
+                console.log('=== OPPONENT JOINED ===');
+                console.log('Received data:', data);
+                if (!data.opponent) {
+                    console.error('No opponent data in event!');
+                    return;
+                }
                 gameState.opponent = {
                     ...data.opponent,
                     x: canvas.width - gameState.player.x,
-                    y: canvas.height / 2
+                    y: canvas.height / 2,
+                    size: 35
                 };
+                console.log('Set opponent:', gameState.opponent);
                 hideWaitingOverlay();
                 addSystemMessage(`${data.opponent.username} has entered the arena!`);
                 updatePlayersList();

@@ -391,36 +391,42 @@
 
         // Load player data
         async function loadPlayerData() {
-            // Check demo mode first
-            if (isDemoMode()) {
-                const demoData = loadDemoProgress();
-                if (demoData) {
-                    playerData.character = demoData.character || 'knight';
-                    playerData.bullets = demoData.bullets || 0;
-                    playerData.lives = demoData.lives || 3;
-                    playerData.username = 'Guest_' + Math.floor(Math.random() * 1000);
-                    updateUI();
-                    return;
-                }
-            }
+            let loadedFromServer = false;
 
-            // Load from server
+            // Try to load from server first (prioritize logged-in users)
             try {
                 const userRes = await fetch(GAME_API_ROOT.replace('/api', '') + '/api/id', { credentials: 'include' });
                 if (userRes.ok) {
                     const userData = await userRes.json();
-                    playerData.username = userData.name || 'Player';
+                    if (userData && userData.name) {
+                        playerData.username = userData.name;
+                        loadedFromServer = true;
+                    }
                 }
 
                 const gameRes = await fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' });
                 if (gameRes.ok) {
                     const gameData = await gameRes.json();
-                    playerData.character = gameData.selected_character || 'knight';
-                    playerData.bullets = gameData.total_bullets || 0;
-                    playerData.lives = gameData.lives || 3;
+                    if (gameData) {
+                        playerData.character = gameData.selected_character || 'knight';
+                        playerData.bullets = gameData.total_bullets || 0;
+                        playerData.lives = gameData.lives || 3;
+                        loadedFromServer = true;
+                    }
                 }
             } catch (err) {
-                console.error('Error loading player data:', err);
+                console.error('Error loading player data from server:', err);
+            }
+
+            // Fall back to demo mode if server load failed
+            if (!loadedFromServer && isDemoMode()) {
+                const demoData = loadDemoProgress();
+                if (demoData) {
+                    playerData.character = demoData.character || 'knight';
+                    playerData.bullets = demoData.bullets || 0;
+                    playerData.lives = demoData.lives || 3;
+                }
+                playerData.username = 'Guest_' + Math.floor(Math.random() * 1000);
             }
 
             updateUI();
@@ -504,9 +510,12 @@
             window.location.href = 'game-board-part2.html';
         }
 
-        // Initialize
-        loadPlayerData();
-        connectSocket();
+        // Initialize - wait for data to load before connecting
+        async function initialize() {
+            await loadPlayerData();
+            connectSocket();
+        }
+        initialize();
 
         // Poll for PVP status updates
         setInterval(() => {
