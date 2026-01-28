@@ -922,16 +922,25 @@
 
         // Handle page unload/close - ensure proper cleanup
         window.addEventListener('beforeunload', () => {
-            if (gameActive && socket && socket.connected && roomId) {
-                // Emit leave room event before page closes
-                socket.emit('boss_leave_room', { room_id: roomId });
+            if (socket && socket.connected) {
+                if (gameActive && roomId) {
+                    // Leave battle room
+                    socket.emit('boss_leave_room', { room_id: roomId });
+                } else {
+                    // Leave lobby if we were in pre-battle lobby
+                    socket.emit('boss_leave_lobby', {});
+                }
             }
         });
 
         // Handle page hide (mobile tab switching, etc.)
         window.addEventListener('pagehide', () => {
-            if (gameActive && socket && socket.connected && roomId) {
-                socket.emit('boss_leave_room', { room_id: roomId });
+            if (socket && socket.connected) {
+                if (gameActive && roomId) {
+                    socket.emit('boss_leave_room', { room_id: roomId });
+                } else {
+                    socket.emit('boss_leave_lobby', {});
+                }
             }
         });
 
@@ -979,6 +988,9 @@
                         username: gameState.player.username,
                         character: gameState.player.character
                     });
+                    // Show room badge for lobby
+                    document.getElementById('roomBadge').style.display = 'block';
+                    document.getElementById('roomCode').textContent = 'Lobby';
                 }
             });
 
@@ -1065,7 +1077,7 @@
             // Room full notification
             socket.on('boss_room_full', (data) => {
                 console.log('Room full:', data);
-                addSystemMessage('Room is full (max 7 players). Try again later.');
+                addSystemMessage('Room is full (max 10 players). Try again later.');
                 showMessage('Room is full!');
             });
 
@@ -1095,12 +1107,31 @@
                 addSystemMessage(data.message);
                 showNotification(data.message || 'A player has fallen!', 'death');
                 if (data.player && gameState.otherPlayers[data.player.sid]) {
-                    gameState.otherPlayers[data.player.sid].lives = 0;
+                    // Remove dead player from the list
+                    delete gameState.otherPlayers[data.player.sid];
                     updatePlayersList();
+                }
+                // Update player count if provided
+                if (data.playerCount !== undefined) {
+                    document.getElementById('playerCount').textContent = data.playerCount;
                 }
             });
 
-            // Chat message from other players (server excludes sender)
+            // Lobby state when joining lobby (before battle)
+            socket.on('boss_lobby_state', (data) => {
+                console.log('Lobby state received:', data);
+                document.getElementById('playerCount').textContent = data.playerCount || 1;
+            });
+
+            // Lobby player count update
+            socket.on('boss_lobby_player_count', (data) => {
+                console.log('Lobby player count update:', data);
+                if (!roomId) {  // Only update if we're still in lobby (not in a battle room)
+                    document.getElementById('playerCount').textContent = data.playerCount || 1;
+                }
+            });
+
+            // Chat message from other players (server excludes sender to avoid duplicates)
             socket.on('boss_chat_message', (data) => {
                 addChatMessage(data);
             });
