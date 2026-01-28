@@ -125,7 +125,7 @@ gameState.powerups = gameState.powerups.filter(p => {
 ---
 
 <div class="individual-card">
-<h3>Moiz</h3>
+<h3>Aneesh</h3>
 <div class="role">DevOps — Authentication & Deployment</div>
 
 <div class="skill-section">
@@ -312,7 +312,7 @@ saveProgress();
 ---
 
 <div class="individual-card">
-<h3>Aneesh</h3>
+<h3>Moiz</h3>
 <div class="role">Leaderboard & UI Features Developer</div>
 
 <div class="skill-section">
@@ -421,7 +421,7 @@ for (var i = 0; i < leaderboardData.length; i++) {
 
 ---
 
-### Moiz's Script (1 minute)
+### Aneesh's Script (1 minute)
 
 <div class="script-box">
 <h4>Topic: Authentication & Deployment</h4>
@@ -485,7 +485,7 @@ for (var i = 0; i < leaderboardData.length; i++) {
 
 ---
 
-### Aneesh's Script (1 minute)
+### Moiz's Script (1 minute)
 
 <div class="script-box">
 <h4>Topic: Leaderboard & UI</h4>
@@ -506,11 +506,11 @@ for (var i = 0; i < leaderboardData.length; i++) {
 | Team Member | Eureka Moment |
 |-------------|---------------|
 | **Akhil** | "The boss slithering movement looked so realistic. Watching it smoothly track players across the arena was terrifying and awesome." |
-| **Moiz** | "First successful authenticated request after fighting CORS for hours. Seeing my user data load was magic." |
+| **Aneesh** | "First successful authenticated request after fighting CORS for hours. Seeing my user data load was magic." |
 | **Samarth** | "Completing all 5 lessons and watching the boss section unlock automatically. The progression system worked!" |
 | **Arnav** | "Writing question #50 and seeing the entire bank render correctly. 50 unique CS questions in one file." |
 | **Ethan** | "When the 3D dice animation finally synced perfectly with the square highlighting — the game felt *real*." |
-| **Aneesh** | "Seeing my name highlighted on the leaderboard with a gold badge after testing. The ranking system actually worked!" |
+| **Moiz** | "When I saw the leaderboard rank by bullets and no player was missing from the leaderboard, I was so happy!" |
 
 ---
 
@@ -534,8 +534,8 @@ for (var i = 0; i < leaderboardData.length; i++) {
 | Lessons | Samarth | `lessons/lesson1-5.html` | `api/snakes_extended.py` |
 | Questions | Arnav | `questions/questions_bank.js` | `api/snakes_extended.py` |
 | Boss Battle | Akhil | `boss-battle.html` | `api/boss_battle.py`, `socket/boss_battle.py` |
-| Auth | Moiz | — | `api/jwt_authorize.py`, `api/authenticate.py` |
-| Leaderboard & UI | Aneesh | `snakes-game.js` | `api/snakes_extended.py` |
+| Auth | Aneesh | — | `api/jwt_authorize.py`, `api/authenticate.py` |
+| Leaderboard & UI | Moiz | `snakes-game.js` | `api/snakes_extended.py` |
 | Models | — | — | `model/snakes_game.py`, `model/boss_room.py` |
 
 ## Deployment Info
