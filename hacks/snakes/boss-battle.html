@@ -386,6 +386,7 @@
         /* Fullscreen canvas during battle */
         #gameCanvas.battle-active {
             height: calc(100vh - 8px) !important;
+            cursor: none;
         }
 
         /* Notification Toasts */
@@ -713,6 +714,7 @@
             // Mouse aiming with smooth interpolation
             mouseX: 0,
             mouseY: 0,
+            mouseInCanvas: false,
             aimAngle: -Math.PI / 2, // Current aim angle (smoothed)
             targetAimAngle: -Math.PI / 2, // Target aim angle (where mouse is)
             aimSmoothness: 1.0, // 1.0 = instant aim
@@ -883,13 +885,27 @@
         // Mouse aiming - track mouse position on canvas
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
-            gameState.mouseX = e.clientX - rect.left;
-            gameState.mouseY = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            gameState.mouseX = (e.clientX - rect.left) * scaleX;
+            gameState.mouseY = (e.clientY - rect.top) * scaleY;
+            gameState.mouseInCanvas = true;
 
             // Calculate TARGET aim angle from player to mouse (smoothing applied in game loop)
             const dx = gameState.mouseX - gameState.player.x;
             const dy = gameState.mouseY - gameState.player.y;
             gameState.targetAimAngle = Math.atan2(dy, dx);
+        });
+        canvas.addEventListener('mouseleave', () => {
+            gameState.mouseInCanvas = false;
+        });
+        canvas.addEventListener('mouseenter', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            gameState.mouseX = (e.clientX - rect.left) * scaleX;
+            gameState.mouseY = (e.clientY - rect.top) * scaleY;
+            gameState.mouseInCanvas = true;
         });
 
         // Click to shoot in aimed direction
@@ -1336,6 +1352,10 @@
             // Make canvas take more space
             canvas.classList.add('battle-active');
             resizeCanvas();
+
+            // Initialize aim position to player so we don't snap to (0,0)
+            gameState.mouseX = gameState.player.x;
+            gameState.mouseY = gameState.player.y;
         }
 
         // Deactivate battle mode - show controls, hide battle UI
@@ -1491,15 +1511,16 @@
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
                 // Calculate bullet direction based on aim angle
                 const bulletSpeed = 10;
-                const dx = Math.cos(gameState.aimAngle) * bulletSpeed;
-                const dy = Math.sin(gameState.aimAngle) * bulletSpeed;
+                const dx = Math.cos(shotAngle) * bulletSpeed;
+                const dy = Math.sin(shotAngle) * bulletSpeed;
 
                 // Spawn bullet slightly ahead of player in the aim direction
                 const spawnOffset = gameState.player.size + 5;
-                const spawnX = gameState.player.x + Math.cos(gameState.aimAngle) * spawnOffset;
-                const spawnY = gameState.player.y + Math.sin(gameState.aimAngle) * spawnOffset;
+                const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
+                const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
 
                 gameState.playerBullets.push({
                     x: spawnX,
@@ -1918,11 +1939,15 @@
             ctx.fill();
             ctx.globalAlpha = 1.0;
 
-            // Draw aiming indicator (line from player to aim direction)
+            // Draw aiming indicator (line from player to mouse)
             if (gameActive) {
-                const aimLength = 60;
-                const aimEndX = gameState.player.x + Math.cos(gameState.aimAngle) * aimLength;
-                const aimEndY = gameState.player.y + Math.sin(gameState.aimAngle) * aimLength;
+                const hasMouse = gameState.mouseInCanvas;
+                const aimEndX = hasMouse
+                    ? gameState.mouseX
+                    : gameState.player.x + Math.cos(gameState.aimAngle) * 60;
+                const aimEndY = hasMouse
+                    ? gameState.mouseY
+                    : gameState.player.y + Math.sin(gameState.aimAngle) * 60;
 
                 // Draw aim line
                 ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
