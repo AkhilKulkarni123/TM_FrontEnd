@@ -547,6 +547,8 @@
         let socket = null;
         let positionBroadcastInterval = null;
         const DEFAULT_LIVES = 3;
+        let lastJoinData = null;
+        let lastResyncAt = 0;
 
         const CHARACTER_CONFIG = {
             knight: { icon: '', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
@@ -875,6 +877,7 @@
                     bullets: gameState.player.bullets,
                     lives: gameState.player.lives
                 };
+                lastJoinData = joinData;
                 console.log('=== JOINING PVP ===');
                 console.log('Sending join data:', joinData);
                 socket.emit('pvp_join', joinData);
@@ -1039,7 +1042,15 @@
 
             // PVP status (for mode selection page polling)
             socket.on('pvp_status', (data) => {
-                // Handled by mode selection page
+                if (!data) return;
+                if (typeof data.playerCount !== 'undefined') {
+                    document.getElementById('roomBadge').style.display = 'block';
+                    document.getElementById('playerCount').textContent = data.playerCount;
+                }
+                // If server reports 2 players but we don't have opponent info, resync state
+                if (data.playerCount >= 2 && !gameState.opponent) {
+                    requestPvpResync('status');
+                }
             });
         }
 
@@ -1431,6 +1442,16 @@
             box.textContent = msg;
             box.classList.add('show');
             setTimeout(() => box.classList.remove('show'), 3000);
+        }
+
+        function requestPvpResync(source) {
+            const now = Date.now();
+            if (!socket || !socket.connected || !lastJoinData) return;
+            // Avoid spamming the server; allow a resync every 2 seconds
+            if (now - lastResyncAt < 2000) return;
+            lastResyncAt = now;
+            console.log(`Requesting PVP resync (${source})`);
+            socket.emit('pvp_join', lastJoinData);
         }
 
         function savePlayerState() {
