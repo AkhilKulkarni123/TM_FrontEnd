@@ -540,10 +540,15 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        // Flask runs on port 8306, Socket.IO on port 8500
+        // Flask runs on port 8306 with integrated Socket.IO
         const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
-        const SOCKET_URL = IS_LOCAL ? 'http://localhost:8500' : 'https://snakes.opencodingsociety.com';
+        // Socket.IO now runs on the same server as the API
+        const SOCKET_URL = GAME_API_BASE;
         const GAME_API_ROOT = GAME_API_BASE + '/api';
+
+        console.log('Boss Battle - API Base:', GAME_API_BASE);
+        console.log('Boss Battle - Socket URL:', SOCKET_URL);
+        console.log('Boss Battle - Is Local:', IS_LOCAL);
 
         // Resize canvas
         function resizeCanvas() {
@@ -1128,7 +1133,22 @@
             // Boss defeated
             socket.on('boss_defeated', (data) => {
                 addSystemMessage('The boss has been defeated!');
-                endGame(true);
+                console.log('Boss defeated data:', data);
+
+                // Report our final stats to the server
+                if (socket && socket.connected && roomId) {
+                    socket.emit('boss_report_stats', {
+                        room_id: roomId,
+                        bullets_fired: gameState.battleStats.bulletsFired,
+                        bullets_hit: gameState.battleStats.bulletsHit,
+                        damage_dealt: gameState.battleStats.damageDealt,
+                        lives_lost: gameState.battleStats.livesLost,
+                        powerups_collected: gameState.battleStats.powerupsCollected.map(p => p.type)
+                    });
+                }
+
+                // Pass all player stats to endGame
+                endGame(true, data.all_player_stats || []);
             });
 
             // Player stats update
@@ -2408,7 +2428,7 @@
             }
         }
 
-        function endGame(victory) {
+        function endGame(victory, allPlayerStats = []) {
             gameActive = false;
             stopPositionBroadcast();
             stopPowerupSpawnRequests();
@@ -2429,7 +2449,7 @@
             if (victory) {
                 title.textContent = 'VICTORY!';
 
-                // Calculate battle stats
+                // Calculate local battle stats
                 const stats = gameState.battleStats;
                 const accuracy = stats.bulletsFired > 0
                     ? Math.round((stats.bulletsHit / stats.bulletsFired) * 100)
@@ -2447,24 +2467,79 @@
                     .map(([name, count]) => `${name} x${count}`)
                     .join(', ') || 'None';
 
-                // Build stats HTML
+                // Build all players stats HTML
+                let allPlayersHTML = '';
+                if (allPlayerStats && allPlayerStats.length > 0) {
+                    // Sort by damage dealt (highest first)
+                    const sortedStats = [...allPlayerStats].sort((a, b) => (b.damage_dealt || 0) - (a.damage_dealt || 0));
+
+                    allPlayersHTML = `
+                        <h3 style="color: #4facfe; margin: 15px 0 10px; text-align: center;">Team Battle Stats</h3>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                    `;
+
+                    sortedStats.forEach((player, index) => {
+                        const charConfig = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
+                        const playerAccuracy = player.bullets_fired > 0
+                            ? Math.round((player.bullets_hit || 0) / player.bullets_fired * 100)
+                            : 0;
+                        const isYou = player.username === gameState.player.username;
+                        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+
+                        // Format player's powerups
+                        const playerPowerups = {};
+                        if (player.powerups_collected && Array.isArray(player.powerups_collected)) {
+                            player.powerups_collected.forEach(type => {
+                                playerPowerups[type] = (playerPowerups[type] || 0) + 1;
+                            });
+                        }
+                        const playerPowerupStr = Object.entries(playerPowerups)
+                            .map(([type, count]) => `${type} x${count}`)
+                            .join(', ') || 'None';
+
+                        allPlayersHTML += `
+                            <div style="background: ${isYou ? 'rgba(79,172,254,0.2)' : 'rgba(255,255,255,0.05)'};
+                                        padding: 10px; margin: 5px 0; border-radius: 8px;
+                                        border-left: 3px solid ${isYou ? '#4facfe' : charConfig.color};">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-size: 1.2em;">${medal}${charConfig.icon}</span>
+                                    <span style="font-weight: bold; color: ${isYou ? '#4facfe' : '#fff'};">
+                                        ${player.username}${isYou ? ' (You)' : ''}
+                                    </span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-size: 0.75em;">
+                                    <div>DMG: <span style="color: #f39c12; font-weight: bold;">${player.damage_dealt || 0}</span></div>
+                                    <div>Hits: <span style="color: #4facfe;">${player.bullets_hit || 0}</span></div>
+                                    <div>Acc: <span style="color: ${playerAccuracy >= 50 ? '#2ecc71' : '#e74c3c'};">${playerAccuracy}%</span></div>
+                                    <div>Lives Lost: <span style="color: #e74c3c;">${player.lives_lost || 0}</span></div>
+                                </div>
+                                <div style="font-size: 0.7em; color: #aaa; margin-top: 3px;">
+                                    Powerups: ${playerPowerupStr}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    allPlayersHTML += '</div>';
+                }
+
+                // Build stats HTML - Your personal stats first, then all players
                 text.innerHTML = `
-                    <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3 style="color: #ffd93d; margin-bottom: 15px; text-align: center;">Battle Statistics</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
-                            <div>Bullets Fired:</div><div style="color: #4facfe; font-weight: bold;">${stats.bulletsFired}</div>
-                            <div>Bullets Hit:</div><div style="color: #4facfe; font-weight: bold;">${stats.bulletsHit}</div>
-                            <div>Accuracy:</div><div style="color: ${accuracy >= 50 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${accuracy}%</div>
-                            <div>Damage Dealt:</div><div style="color: #f39c12; font-weight: bold;">${stats.damageDealt}</div>
-                            <div>Lives Lost:</div><div style="color: #e74c3c; font-weight: bold;">${stats.livesLost}</div>
-                            <div>Battle Time:</div><div style="color: #9b59b6; font-weight: bold;">${battleTime}s</div>
+                    <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h3 style="color: #ffd93d; margin-bottom: 10px; text-align: center;">Your Stats</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 0.85em;">
+                            <div>Bullets: <span style="color: #4facfe; font-weight: bold;">${stats.bulletsFired}</span></div>
+                            <div>Hits: <span style="color: #4facfe; font-weight: bold;">${stats.bulletsHit}</span></div>
+                            <div>Accuracy: <span style="color: ${accuracy >= 50 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${accuracy}%</span></div>
+                            <div>Damage: <span style="color: #f39c12; font-weight: bold;">${stats.damageDealt}</span></div>
+                            <div>Lives Lost: <span style="color: #e74c3c; font-weight: bold;">${stats.livesLost}</span></div>
+                            <div>Time: <span style="color: #9b59b6; font-weight: bold;">${battleTime}s</span></div>
                         </div>
-                        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
-                            <div style="color: #aaa;">Powerups Collected:</div>
-                            <div style="color: #2ecc71; font-weight: bold;">${powerupList}</div>
+                        <div style="font-size: 0.8em; margin-top: 8px; color: #aaa;">
+                            Powerups: <span style="color: #2ecc71;">${powerupList}</span>
                         </div>
                     </div>
-                    <p style="margin-bottom: 15px;">You and your team defeated the boss!</p>
+                    ${allPlayersHTML}
+                    <p style="margin-top: 15px; font-size: 1.1em;">You and your team defeated the boss!</p>
                 `;
 
                 gameState.player.lives = DEFAULT_LIVES;
@@ -2482,7 +2557,8 @@
                         damageDealt: stats.damageDealt,
                         livesLost: stats.livesLost,
                         battleTime: battleTime,
-                        powerupsCollected: powerupCounts
+                        powerupsCollected: powerupCounts,
+                        allPlayerStats: allPlayerStats
                     }));
                 } catch (e) {}
 

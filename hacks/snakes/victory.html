@@ -740,13 +740,17 @@
                 const res = await fetch(url, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({
                         completed: true
                     })
                 });
 
                 console.log('Complete game response status:', res.status);
+                console.log('Complete game response headers:', [...res.headers.entries()]);
 
                 if (res.ok) {
                     const data = await res.json();
@@ -763,13 +767,21 @@
                     alert('Congratulations! Your victory has been recorded in the Hall of Champions!');
                     window.location.href = 'game-board-part1.html';
                 } else {
-                    const errorData = await res.json().catch(() => ({}));
-                    console.error('Complete game error:', res.status, errorData);
-                    alert(`Error completing game (${res.status}): ${errorData.message || errorData.error || 'Please try again.'}`);
+                    let errorMsg = `HTTP ${res.status}`;
+                    try {
+                        const errorData = await res.json();
+                        errorMsg = errorData.message || errorData.error || errorMsg;
+                        console.error('Complete game error data:', errorData);
+                    } catch (e) {
+                        const textError = await res.text().catch(() => '');
+                        console.error('Complete game error text:', textError);
+                    }
+                    alert(`Error completing game: ${errorMsg}`);
                 }
             } catch (err) {
                 console.error('Error completing game:', err);
-                alert('Network error completing game. Please check your connection and try again.');
+                console.error('Error details:', err.message, err.stack);
+                alert(`Network error completing game: ${err.message}. Please check your connection and try again.`);
             }
         }
 
@@ -782,10 +794,14 @@
                 const res = await fetch(url, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
                 });
 
                 console.log('Reset progress response status:', res.status);
+                console.log('Reset progress response headers:', [...res.headers.entries()]);
 
                 if (res.ok) {
                     const data = await res.json();
@@ -804,13 +820,21 @@
                     alert('Progress reset! Starting a new adventure...');
                     window.location.href = 'game-board-part1.html';
                 } else {
-                    const errorData = await res.json().catch(() => ({}));
-                    console.error('Reset progress error:', res.status, errorData);
-                    alert(`Error resetting progress (${res.status}): ${errorData.message || errorData.error || 'Please try again.'}`);
+                    let errorMsg = `HTTP ${res.status}`;
+                    try {
+                        const errorData = await res.json();
+                        errorMsg = errorData.message || errorData.error || errorMsg;
+                        console.error('Reset progress error data:', errorData);
+                    } catch (e) {
+                        const textError = await res.text().catch(() => '');
+                        console.error('Reset progress error text:', textError);
+                    }
+                    alert(`Error resetting progress: ${errorMsg}`);
                 }
             } catch (err) {
                 console.error('Error resetting progress:', err);
-                alert('Network error resetting progress. Please check your connection and try again.');
+                console.error('Error details:', err.message, err.stack);
+                alert(`Network error resetting progress: ${err.message}. Please check your connection and try again.`);
             }
         }
 
