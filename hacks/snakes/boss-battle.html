@@ -502,7 +502,10 @@
 
             <div class="game-over" id="gameOver">
                 <h1 id="gameOverTitle">Victory!</h1>
-                <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+                <div id="gameOverText" style="font-size: 1.2em; margin-bottom: 20px;"></div>
+                <button class="btn" id="victoryPageBtn" onclick="goToVictoryPage()" style="display: none; background: linear-gradient(135deg, #ffd93d 0%, #f39c12 100%); margin-bottom: 10px;">
+                    To Victory Page
+                </button>
                 <button class="btn" onclick="returnToBoard()">Return to Board</button>
             </div>
         </div>
@@ -725,6 +728,16 @@
                 speedMultiplier: 1,
                 damageBuffExpiry: 0,
                 speedBuffExpiry: 0
+            },
+            // Battle stats tracking
+            battleStats: {
+                bulletsFired: 0,
+                bulletsHit: 0,
+                damageDealt: 0,
+                livesLost: 0,
+                startLives: 3,
+                powerupsCollected: [],
+                battleStartTime: null
             }
         };
 
@@ -1328,6 +1341,18 @@
                     startPowerupSpawnRequests();
 
                     gameActive = true;
+
+                    // Initialize battle stats
+                    gameState.battleStats = {
+                        bulletsFired: 0,
+                        bulletsHit: 0,
+                        damageDealt: 0,
+                        livesLost: 0,
+                        startLives: gameState.player.lives,
+                        powerupsCollected: [],
+                        battleStartTime: Date.now()
+                    };
+
                     activateBattleMode();
                     addSystemMessage('Battle started! Work together to defeat the boss!');
                     gameLoop();
@@ -1337,6 +1362,18 @@
                 // Fallback to single player mode
                 ensureBattleAmmo();
                 gameActive = true;
+
+                // Initialize battle stats for offline mode
+                gameState.battleStats = {
+                    bulletsFired: 0,
+                    bulletsHit: 0,
+                    damageDealt: 0,
+                    livesLost: 0,
+                    startLives: gameState.player.lives,
+                    powerupsCollected: [],
+                    battleStartTime: Date.now()
+                };
+
                 activateBattleMode();
                 addSystemMessage('Playing in offline mode');
                 // Start local powerup spawning for offline mode
@@ -1570,6 +1607,9 @@
                 updateBulletsDisplay();
                 savePlayerState();
 
+                // Track stats
+                gameState.battleStats.bulletsFired++;
+
                 // Broadcast bullet shot to other players
                 if (socket && socket.connected && roomId) {
                     socket.emit('boss_player_shoot', {
@@ -1708,6 +1748,10 @@
                     gameState.boss.health = Math.max(0, gameState.boss.health - damage);
                     updateBossHealthBar();
 
+                    // Track stats
+                    gameState.battleStats.bulletsHit++;
+                    gameState.battleStats.damageDealt += damage;
+
                     // Broadcast damage
                     if (socket && socket.connected && roomId) {
                         socket.emit('boss_damage', {
@@ -1742,6 +1786,9 @@
                     updateLives();
                     savePlayerState();
                     proj.y = canvas.height + 100;
+
+                    // Track stats
+                    gameState.battleStats.livesLost++;
 
                     // Broadcast hit
                     if (socket && socket.connected && roomId) {
@@ -2169,6 +2216,13 @@
 
             const now = Date.now();
 
+            // Track powerup collection in stats
+            gameState.battleStats.powerupsCollected.push({
+                type: type,
+                name: config.name,
+                time: now
+            });
+
             switch (config.effect) {
                 case 'damageMultiplier':
                     gameState.playerBuffs.damageMultiplier = config.multiplier;
@@ -2374,19 +2428,70 @@
 
             if (victory) {
                 title.textContent = 'VICTORY!';
-                text.textContent = 'You and your team defeated the boss!';
+
+                // Calculate battle stats
+                const stats = gameState.battleStats;
+                const accuracy = stats.bulletsFired > 0
+                    ? Math.round((stats.bulletsHit / stats.bulletsFired) * 100)
+                    : 0;
+                const battleTime = stats.battleStartTime
+                    ? Math.round((Date.now() - stats.battleStartTime) / 1000)
+                    : 0;
+
+                // Format powerups collected
+                const powerupCounts = {};
+                stats.powerupsCollected.forEach(p => {
+                    powerupCounts[p.name] = (powerupCounts[p.name] || 0) + 1;
+                });
+                const powerupList = Object.entries(powerupCounts)
+                    .map(([name, count]) => `${name} x${count}`)
+                    .join(', ') || 'None';
+
+                // Build stats HTML
+                text.innerHTML = `
+                    <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3 style="color: #ffd93d; margin-bottom: 15px; text-align: center;">Battle Statistics</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
+                            <div>Bullets Fired:</div><div style="color: #4facfe; font-weight: bold;">${stats.bulletsFired}</div>
+                            <div>Bullets Hit:</div><div style="color: #4facfe; font-weight: bold;">${stats.bulletsHit}</div>
+                            <div>Accuracy:</div><div style="color: ${accuracy >= 50 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${accuracy}%</div>
+                            <div>Damage Dealt:</div><div style="color: #f39c12; font-weight: bold;">${stats.damageDealt}</div>
+                            <div>Lives Lost:</div><div style="color: #e74c3c; font-weight: bold;">${stats.livesLost}</div>
+                            <div>Battle Time:</div><div style="color: #9b59b6; font-weight: bold;">${battleTime}s</div>
+                        </div>
+                        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                            <div style="color: #aaa;">Powerups Collected:</div>
+                            <div style="color: #2ecc71; font-weight: bold;">${powerupList}</div>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 15px;">You and your team defeated the boss!</p>
+                `;
+
                 gameState.player.lives = DEFAULT_LIVES;
                 updateLives();
                 savePlayerState({ lives: DEFAULT_LIVES });
                 showVictoryAnimation();
 
-                // Store win mode for victory page
+                // Store win mode and stats for victory page
                 try {
                     localStorage.setItem('snakes_win_mode', 'boss');
+                    localStorage.setItem('snakes_boss_stats', JSON.stringify({
+                        bulletsFired: stats.bulletsFired,
+                        bulletsHit: stats.bulletsHit,
+                        accuracy: accuracy,
+                        damageDealt: stats.damageDealt,
+                        livesLost: stats.livesLost,
+                        battleTime: battleTime,
+                        powerupsCollected: powerupCounts
+                    }));
                 } catch (e) {}
+
+                // Show victory page button
+                document.getElementById('victoryPageBtn').style.display = 'inline-block';
             } else {
                 title.textContent = 'GAME OVER';
                 text.textContent = 'The boss was too powerful...';
+                document.getElementById('victoryPageBtn').style.display = 'none';
             }
 
             gameOver.style.display = 'block';
@@ -2447,6 +2552,12 @@
                 }
                 returnToBoard();
             }
+        }
+
+        function goToVictoryPage() {
+            stopPositionBroadcast();
+            roomId = null;
+            window.location.href = 'victory.html?mode=boss';
         }
 
         function returnToBoard() {

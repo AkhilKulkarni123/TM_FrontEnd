@@ -498,6 +498,9 @@
             <div class="game-over" id="gameOver">
                 <h1 id="gameOverTitle">Victory!</h1>
                 <p id="gameOverText" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+                <button class="btn" id="victoryPageBtn" onclick="goToVictoryPage()" style="display: none; background: linear-gradient(135deg, #ffd93d 0%, #f39c12 100%); margin-bottom: 10px;">
+                    To Victory Page
+                </button>
                 <button class="btn" onclick="returnToBoard()">Return to Board</button>
             </div>
         </div>
@@ -1052,6 +1055,21 @@
                     requestPvpResync('status');
                 }
             });
+
+            // Match ready - both players in arena
+            socket.on('pvp_match_ready', (data) => {
+                console.log('=== MATCH READY ===');
+                console.log('Received data:', data);
+                addSystemMessage(data.message || 'Match is ready!');
+                document.getElementById('playerCount').textContent = data.playerCount || 2;
+                hideWaitingOverlay();
+
+                // If we still don't have opponent, request resync
+                if (!gameState.opponent) {
+                    console.log('Match ready but no opponent set - requesting resync');
+                    requestPvpResync('match_ready');
+                }
+            });
         }
 
         function showWaitingOverlay() {
@@ -1498,9 +1516,13 @@
                 try {
                     localStorage.setItem('snakes_win_mode', 'pvp');
                 } catch (e) {}
+
+                // Show victory page button
+                document.getElementById('victoryPageBtn').style.display = 'inline-block';
             } else {
                 title.textContent = 'DEFEAT';
                 gameOver.className = 'game-over defeat';
+                document.getElementById('victoryPageBtn').style.display = 'none';
             }
 
             text.textContent = message || (victory ? 'You won the duel!' : 'You lost the duel.');
@@ -1512,6 +1534,11 @@
             if (socket) {
                 socket.emit('pvp_leave', {});
             }
+        }
+
+        function goToVictoryPage() {
+            stopPositionBroadcast();
+            window.location.href = 'victory.html?mode=pvp';
         }
 
         function leaveArena() {
