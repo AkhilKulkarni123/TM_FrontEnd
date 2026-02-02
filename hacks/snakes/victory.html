@@ -679,6 +679,7 @@
 
         // Show modal
         function showModal(icon, title, text, confirmClass, confirmText) {
+            console.log('showModal() called:', { icon, title, text, confirmClass, confirmText });
             document.getElementById('modalIcon').textContent = icon;
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalText').textContent = text;
@@ -688,6 +689,7 @@
             confirmBtn.textContent = confirmText;
 
             document.getElementById('confirmModal').classList.add('active');
+            console.log('Modal should now be visible');
         }
 
         // Close modal
@@ -698,11 +700,14 @@
 
         // Confirm action
         async function confirmAction() {
+            console.log('confirmAction() called, pendingAction:', pendingAction);
             closeModal();
 
             if (pendingAction === 'restart') {
+                console.log('Calling resetProgress()');
                 await resetProgress();
             } else if (pendingAction === 'finish') {
+                console.log('Calling completeGame()');
                 await completeGame();
             }
         }
@@ -721,9 +726,10 @@
 
         // Finish game
         async function finishGame() {
+            console.log('finishGame() called');
             pendingAction = 'finish';
             showModal(
-                '',
+                '🏆',
                 'Complete Your Victory?',
                 'This will mark your game as completed and add you to the Hall of Champions. You can always start a new game later!',
                 'confirm-green',
