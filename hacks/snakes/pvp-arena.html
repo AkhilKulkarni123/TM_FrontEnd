@@ -1544,6 +1544,14 @@
 
         function goToVictoryPage() {
             stopPositionBroadcast();
+            
+            // Mark that player just won so victory page can auto-complete
+            try {
+                sessionStorage.setItem('snakes_just_won', 'true');
+            } catch (e) {
+                console.error('Error setting victory flag:', e);
+            }
+            
             window.location.href = 'victory.html?mode=pvp';
         }
 
@@ -1568,6 +1576,13 @@
             // Check if this was a victory - redirect to victory page
             const gameOver = document.getElementById('gameOver');
             if (gameOver && gameOver.dataset.victory === 'true') {
+                // Mark that player just won so victory page can auto-complete
+                try {
+                    sessionStorage.setItem('snakes_just_won', 'true');
+                } catch (e) {
+                    console.error('Error setting victory flag:', e);
+                }
+                
                 window.location.href = 'victory.html?mode=pvp';
             } else {
                 window.location.href = 'game-board-part2.html';

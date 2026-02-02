@@ -732,7 +732,7 @@
         }
 
         // Complete game API call
-        async function completeGame() {
+        async function completeGame(silent = false) {
             const url = GAME_API_ROOT + '/snakes/complete';
             console.log('Attempting to complete game at:', url);
 
@@ -756,16 +756,28 @@
                     const data = await res.json();
                     console.log('Complete game response:', data);
 
-                    // Clear localStorage flags
+                    // Mark as completed so we don't auto-complete again
                     try {
-                        localStorage.removeItem('snakes_started');
-                        localStorage.removeItem('snakes_win_mode');
-                        localStorage.removeItem('snakes_boss_stats');
+                        sessionStorage.removeItem('snakes_just_won');
+                        localStorage.setItem('snakes_victory_recorded', 'true');
                     } catch (e) {}
 
-                    // Show success and redirect
-                    alert('Congratulations! Your victory has been recorded in the Hall of Champions!');
-                    window.location.href = 'game-board-part1.html';
+                    if (!silent) {
+                        // Clear localStorage flags
+                        try {
+                            localStorage.removeItem('snakes_started');
+                            localStorage.removeItem('snakes_win_mode');
+                            localStorage.removeItem('snakes_boss_stats');
+                        } catch (e) {}
+
+                        // Show success and redirect
+                        alert('Congratulations! Your victory has been recorded in the Hall of Champions!');
+                        window.location.href = 'game-board-part1.html';
+                    } else {
+                        console.log('✅ Victory automatically recorded in Hall of Champions');
+                        // Reload champions list to show new entry
+                        loadChampions();
+                    }
                 } else {
                     let errorMsg = `HTTP ${res.status}`;
                     try {
@@ -776,12 +788,18 @@
                         const textError = await res.text().catch(() => '');
                         console.error('Complete game error text:', textError);
                     }
-                    alert(`Error completing game: ${errorMsg}`);
+                    if (!silent) {
+                        alert(`Error completing game: ${errorMsg}`);
+                    } else {
+                        console.error('Auto-complete failed:', errorMsg);
+                    }
                 }
             } catch (err) {
                 console.error('Error completing game:', err);
                 console.error('Error details:', err.message, err.stack);
-                alert(`Network error completing game: ${err.message}. Please check your connection and try again.`);
+                if (!silent) {
+                    alert(`Network error completing game: ${err.message}. Please check your connection and try again.`);
+                }
             }
         }
 
@@ -838,10 +856,29 @@
             }
         }
 
-        // Initialize
-        createConfetti();
-        loadPlayerData();
-        loadChampions();
+        // Initialize - with auto-complete for first-time winners
+        async function initVictoryPage() {
+            createConfetti();
+            
+            // Check if this is a fresh victory (just won the game)
+            const justWon = sessionStorage.getItem('snakes_just_won');
+            const alreadyRecorded = localStorage.getItem('snakes_victory_recorded');
+            
+            console.log('Victory page init - justWon:', justWon, 'alreadyRecorded:', alreadyRecorded);
+            
+            // Auto-complete if they just won and haven't recorded yet
+            if (justWon === 'true' && alreadyRecorded !== 'true') {
+                console.log('🎉 Auto-completing game for first-time victor');
+                await completeGame(true); // Silent auto-complete
+            }
+            
+            // Load data
+            loadPlayerData();
+            loadChampions();
+        }
+        
+        // Run initialization
+        initVictoryPage();
     </script>
 </body>
 </html>
