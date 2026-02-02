@@ -75,12 +75,35 @@
             border-radius: 15px;
             overflow: hidden;
             border: 2px solid #fff;
+            position: relative;
         }
 
         .health-fill {
             height: 100%;
             background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
             transition: width 0.3s ease;
+        }
+
+        .health-bar.small {
+            width: 180px;
+            height: 22px;
+            border-radius: 11px;
+        }
+
+        .health-fill.player {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .health-bar-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+            pointer-events: none;
         }
 
         /* Right Sidebar - Players & Chat */
@@ -464,8 +487,11 @@
                     </div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Your Lives</div>
-                    <div class="stat-value" id="playerLives">3</div>
+                    <div class="stat-label">Your HP</div>
+                    <div class="health-bar small">
+                        <div class="health-fill player" id="playerHealthFill" style="width: 100%"></div>
+                        <div class="health-bar-text" id="playerHealthText">3 / 3</div>
+                    </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Bullets</div>
@@ -2185,7 +2211,11 @@
         }
 
         function updateLives() {
-            document.getElementById('playerLives').textContent = gameState.player.lives;
+            const maxLives = DEFAULT_LIVES;
+            const lives = Math.max(0, Math.floor(gameState.player.lives));
+            const percentage = Math.min(100, (lives / maxLives) * 100);
+            document.getElementById('playerHealthFill').style.width = percentage + '%';
+            document.getElementById('playerHealthText').textContent = `${lives} / ${maxLives}`;
         }
 
         function updateBulletsDisplay() {

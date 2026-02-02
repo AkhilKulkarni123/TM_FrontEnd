@@ -78,6 +78,38 @@
             font-weight: bold;
         }
 
+        .hud-hp-bar {
+            width: 160px;
+            height: 18px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.8);
+            position: relative;
+        }
+
+        .hud-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s ease;
+        }
+
+        .hud-hp-fill.opponent {
+            background: linear-gradient(90deg, #ff4757 0%, #ff6b6b 100%);
+        }
+
+        .hud-hp-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+            pointer-events: none;
+        }
+
         /* Right Sidebar - Players & Chat */
         .sidebar {
             width: 300px;
@@ -454,8 +486,11 @@
             <div class="hud">
                 <div class="player-hud">
                     <div class="stat-box">
-                        <div class="stat-label">Your Lives</div>
-                        <div class="stat-value" id="playerLives">3</div>
+                        <div class="stat-label">Your HP</div>
+                        <div class="hud-hp-bar">
+                            <div class="hud-hp-fill" id="playerHpFill" style="width: 100%"></div>
+                            <div class="hud-hp-text" id="playerHpText">3 / 3</div>
+                        </div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">Your Bullets</div>
@@ -464,8 +499,11 @@
                 </div>
                 <div class="player-hud">
                     <div class="stat-box opponent">
-                        <div class="stat-label">Opponent Lives</div>
-                        <div class="stat-value" id="opponentLives">3</div>
+                        <div class="stat-label">Opponent HP</div>
+                        <div class="hud-hp-bar">
+                            <div class="hud-hp-fill opponent" id="opponentHpFill" style="width: 100%"></div>
+                            <div class="hud-hp-text" id="opponentHpText">3 / 3</div>
+                        </div>
                     </div>
                     <div class="stat-box opponent">
                         <div class="stat-label">Opponent Bullets</div>
@@ -682,6 +720,7 @@
                 username: 'Player',
                 isReady: false
             },
+            playerNumber: 1,
             opponent: null,
             playerBullets: [],
             opponentBullets: [],
@@ -914,6 +953,7 @@
                 console.log('Received data:', data);
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
+                gameState.playerNumber = data.playerNumber || 1;
 
                 // Set player position based on player number
                 if (data.playerNumber === 1) {
@@ -935,6 +975,7 @@
                     };
                     hideWaitingOverlay();
                     addSystemMessage(`${data.opponent.username} is already in the arena!`);
+                    updateOpponentLives();
                 } else {
                     console.log('No opponent yet - waiting...');
                 }
@@ -959,6 +1000,7 @@
                 console.log('Set opponent:', gameState.opponent);
                 hideWaitingOverlay();
                 addSystemMessage(`${data.opponent.username} has entered the arena!`);
+                updateOpponentLives();
                 updatePlayersList();
                 document.getElementById('playerCount').textContent = 2;
             });
@@ -1017,7 +1059,7 @@
                     }
                 } else if (gameState.opponent) {
                     gameState.opponent.lives = data.lives;
-                    document.getElementById('opponentLives').textContent = data.lives;
+                    updateOpponentLives();
                     if (data.lives <= 0) {
                         endGame(true, 'You defeated your opponent!');
                     }
@@ -1029,7 +1071,7 @@
                 if (gameState.opponent) {
                     gameState.opponent.bullets = data.bullets;
                     gameState.opponent.lives = data.lives;
-                    document.getElementById('opponentLives').textContent = data.lives;
+                    updateOpponentLives();
                     document.getElementById('opponentBullets').textContent = data.bullets;
                 }
                 updatePlayersList();
@@ -1165,6 +1207,16 @@
             }
             if (gameState.keys['s'] || gameState.keys['arrowdown']) {
                 gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + speed);
+            }
+
+            const midX = canvas.width / 2;
+            const boundaryGap = 6;
+            if (gameState.playerNumber === 1) {
+                const maxX = midX - gameState.player.size - boundaryGap;
+                gameState.player.x = Math.min(gameState.player.x, maxX);
+            } else if (gameState.playerNumber === 2) {
+                const minX = midX + gameState.player.size + boundaryGap;
+                gameState.player.x = Math.max(gameState.player.x, minX);
             }
         }
 
@@ -1364,7 +1416,19 @@
         }
 
         function updateLives() {
-            document.getElementById('playerLives').textContent = gameState.player.lives;
+            const maxLives = DEFAULT_LIVES;
+            const lives = Math.max(0, Math.floor(gameState.player.lives));
+            const percentage = Math.min(100, (lives / maxLives) * 100);
+            document.getElementById('playerHpFill').style.width = percentage + '%';
+            document.getElementById('playerHpText').textContent = `${lives} / ${maxLives}`;
+        }
+
+        function updateOpponentLives() {
+            const maxLives = DEFAULT_LIVES;
+            const lives = Math.max(0, Math.floor(gameState.opponent?.lives ?? maxLives));
+            const percentage = Math.min(100, (lives / maxLives) * 100);
+            document.getElementById('opponentHpFill').style.width = percentage + '%';
+            document.getElementById('opponentHpText').textContent = `${lives} / ${maxLives}`;
         }
 
         function updateBulletsDisplay() {
