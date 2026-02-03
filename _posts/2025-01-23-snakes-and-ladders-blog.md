@@ -118,7 +118,7 @@ categories: ['Game Development']
 
 ## How the Game Works
 
-Our Snakes and Ladders game is a **gamified educational platform** that teaches AP Computer Science Principles through an interactive board game. Players learn CS concepts by progressing through the board — and the knowledge they gain directly translates into firepower for the final boss battle.
+Our Snakes and Ladders game is a **gamified educational platform** that teaches AP Computer Science Principles through an interactive board game. Players learn CS concepts by progressing through the board — and the knowledge they gain directly translates into firepower for the final battles.
 
 ### Game Flow
 
@@ -127,13 +127,17 @@ Our Snakes and Ladders game is a **gamified educational platform** that teaches 
     <span class="flow-arrow">→</span>
     <div class="flow-step">Character Select</div>
     <span class="flow-arrow">→</span>
-    <div class="flow-step">Lessons (1-6)</div>
+    <div class="flow-step">Lessons (1-5)</div>
     <span class="flow-arrow">→</span>
     <div class="flow-step">Questions (7-56)</div>
     <span class="flow-arrow">→</span>
-    <div class="flow-step">Boss Battle</div>
+    <div class="flow-step">Mode Selection</div>
     <span class="flow-arrow">→</span>
-    <div class="flow-step">Leaderboard</div>
+    <div class="flow-step">Boss Battle / PvP Arena</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">Victory Page</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">Hall of Champions</div>
 </div>
 
 ### Three Sections of the Board
@@ -149,8 +153,23 @@ Players roll a dice to advance across 50 squares, each containing a multiple-cho
 </div>
 
 <div class="section-card">
-<h4>Section 3 — Boss Battle (Multiplayer Arena)</h4>
-Up to 7 players cooperate in real-time via WebSockets to defeat a dragon boss. The boss has complex AI with multiple movement patterns (dash, zigzag, chase, circle). Powerups spawn every 5 seconds, and a group chat allows coordination. Notifications appear on-screen for player joins, powerup pickups, and defeats.
+<h4>Section 3 — Mode Selection Hub</h4>
+After completing enough questions, players reach the <strong>Mode Selection</strong> page (<code>mode-selection.html</code>) where they choose between cooperative Boss Battle or competitive PvP Arena. Real-time Socket.IO updates show current player counts in each mode.
+</div>
+
+<div class="section-card">
+<h4>Section 4 — Boss Battle (Co-op Multiplayer)</h4>
+Up to 10 players cooperate in real-time via WebSockets to defeat a dragon boss. The boss has complex AI with multiple movement patterns (dash, zigzag, chase, circle). Powerups spawn every 5 seconds, and a group chat allows coordination. Notifications appear on-screen for player joins, powerup pickups, and defeats.
+</div>
+
+<div class="section-card">
+<h4>Section 5 — PvP Arena (1v1 Competitive)</h4>
+Two players battle head-to-head in a real-time duel. Players are separated by a center wall barrier, using earned bullets as ammo. Movement via WASD/arrows, mouse aiming, and click/spacebar to shoot. Lives tracked with health bars, chat system for communication, and auto-matchmaking when opponents join.
+</div>
+
+<div class="section-card">
+<h4>Section 6 — Victory Page & Hall of Champions</h4>
+Winners are directed to <code>victory.html</code> with animated confetti, player stats summary (bullets earned, time played, win mode), and the <strong>Hall of Champions</strong> leaderboard showing all game completers. Players can cement their victory or reset progress to play again.
 </div>
 
 ### Characters & Powerups
@@ -180,15 +199,18 @@ The system uses a **Jekyll static frontend** communicating with a **Flask (Pytho
 
 <table class="tech-table">
 <tr><th>Layer</th><th>File</th><th>Purpose</th></tr>
-<tr><td rowspan="3">Frontend</td><td><code>game-board-part1.html</code></td><td>Lessons, character selection, login</td></tr>
+<tr><td rowspan="6">Frontend</td><td><code>game-board-part1.html</code></td><td>Lessons, character selection, login</td></tr>
 <tr><td><code>game-board-part2.html</code></td><td>Question board with dice rolling</td></tr>
-<tr><td><code>boss-battle.html</code></td><td>Multiplayer boss arena with canvas rendering</td></tr>
+<tr><td><code>mode-selection.html</code></td><td>Battle mode hub (Boss vs PvP)</td></tr>
+<tr><td><code>boss-battle.html</code></td><td>Co-op boss arena with canvas rendering</td></tr>
+<tr><td><code>pvp-arena.html</code></td><td>1v1 competitive arena with center wall</td></tr>
+<tr><td><code>victory.html</code></td><td>Victory celebration, Hall of Champions</td></tr>
 <tr><td rowspan="2">Shared JS</td><td><code>snakes-game.js</code></td><td>Core game logic, API calls, autosave</td></tr>
 <tr><td><code>questions_bank.js</code></td><td>50 questions across 5 CS topics</td></tr>
-<tr><td rowspan="3">Backend API</td><td><code>api/snakes_game.py</code></td><td>CRUD endpoints for game progress</td></tr>
-<tr><td><code>api/snakes_extended.py</code></td><td>Lessons, questions, leaderboard endpoints</td></tr>
+<tr><td rowspan="3">Backend API</td><td><code>api/snakes_game.py</code></td><td>CRUD, leaderboard, champions, reset</td></tr>
+<tr><td><code>api/snakes_extended.py</code></td><td>Lessons, questions, unlock endpoints</td></tr>
 <tr><td><code>api/boss_battle.py</code></td><td>Battle room creation/joining</td></tr>
-<tr><td>WebSocket</td><td><code>socket/boss_battle.py</code></td><td>Real-time multiplayer sync, chat, powerups</td></tr>
+<tr><td>WebSocket</td><td><code>socketio_handlers/boss_battle.py</code></td><td>Boss + PvP sync, chat, powerups</td></tr>
 <tr><td rowspan="2">Models</td><td><code>model/snakes_game.py</code></td><td>SnakesGameData (progress, bullets, lives)</td></tr>
 <tr><td><code>model/boss_room.py</code></td><td>BossRoom, BossPlayer, BossBattleStats</td></tr>
 </table>
@@ -261,26 +283,60 @@ All API calls are secured with **JWT tokens** stored in HttpOnly cookies. The `@
 
 <div class="team-card">
 <h4>Akhil</h4>
-<div class="role">Scrum Master</div>
+<div class="role">Scrum Master / Game Board Lead</div>
 <ul>
 <li>Project coordination, sprint planning, and stand-ups</li>
 <li>Main game board UI and dice-rolling mechanics</li>
-<li>Character selection carousel</li>
+<li>Character selection carousel with pixel-art sprites</li>
+<li>Mode Selection hub page (<code>mode-selection.html</code>)</li>
 <li>Frontend navigation flow between all game pages</li>
 <li><code>game-board-part1.html</code>, <code>game-board-part2.html</code></li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```javascript
+// Dice roll animation (game-board-part2.html)
+function rollDice() {
+    const roll = Math.floor(Math.random() * 6) + 1;
+    diceElement.classList.add('rolling');
+    setTimeout(() => {
+        diceElement.textContent = roll;
+        movePlayer(currentSquare + roll);
+    }, 800);
+}
+```
+</details>
 </div>
 
 <div class="team-card">
 <h4>Moiz</h4>
-<div class="role">Assistant Scrum Master / DevOps</div>
+<div class="role">DevOps / Authentication Lead</div>
 <ul>
 <li>Backend deployment: Dockerfile, docker-compose, Nginx</li>
 <li>Production environment variables and CORS config</li>
-<li>JWT authentication system (<code>api/authenticate.py</code>)</li>
+<li>JWT authentication system (<code>api/jwt_authorize.py</code>)</li>
 <li>Cookie management and <code>@token_required()</code> decorator</li>
+<li>Demo/Guest mode with sessionStorage fallback</li>
 <li>Flask application factory and server configuration</li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```python
+# JWT token validation (api/jwt_authorize.py)
+def token_required():
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            token = request.cookies.get('jwt')
+            if not token:
+                return {"message": "Token missing"}, 401
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            g.current_user = User.query.get(data['user_id'])
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+```
+</details>
 </div>
 
 <div class="team-card">
@@ -288,11 +344,27 @@ All API calls are secured with **JWT tokens** stored in HttpOnly cookies. The `@
 <div class="role">Lesson System Developer</div>
 <ul>
 <li>Five interactive lesson pages (<code>lessons/lesson1-5.html</code>)</li>
-<li>Arcade-style lesson CSS and UI</li>
+<li>Arcade-style lesson CSS and UI animations</li>
 <li><code>POST /api/snakes/complete-lesson</code> endpoint</li>
 <li>Section unlocking logic (half1 → half2 → boss)</li>
 <li>Lesson completion tracking and bullet rewards</li>
+<li>Progress persistence across sessions</li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```javascript
+// Lesson completion (lessons/lesson1.html)
+async function completeLesson(lessonNum) {
+    const res = await fetch(API + '/snakes/complete-lesson', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({lesson_number: lessonNum, bullets_earned: 10})
+    });
+    if (res.ok) unlockNextSection();
+}
+```
+</details>
 </div>
 
 <div class="team-card">
@@ -304,31 +376,77 @@ All API calls are secured with **JWT tokens** stored in HttpOnly cookies. The `@
 <li><code>POST /api/snakes/answer-question</code> endpoint</li>
 <li>Bullet-awarding logic for correct answers</li>
 <li>Square visit tracking to prevent re-answering</li>
+<li>Visual feedback for correct/incorrect answers</li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```javascript
+// Question bank structure (questions_bank.js)
+const QUESTIONS = [
+  {square: 7, topic: "Programming Basics",
+   question: "What keyword declares a variable in Python?",
+   options: ["var", "let", "def", "None of these"],
+   correct: 3, bullets: 5},
+  // ... 49 more questions
+];
+```
+</details>
 </div>
 
 <div class="team-card">
 <h4>Ethan</h4>
-<div class="role">Boss Battle Developer</div>
+<div class="role">Boss Battle & PvP Developer</div>
 <ul>
 <li>Full <code>boss-battle.html</code> with canvas-based rendering</li>
-<li>Pixel-art character sprites and boss AI patterns</li>
-<li>Bullet physics and powerup spawning/collection</li>
-<li><code>api/boss_battle.py</code> REST endpoints for room management</li>
+<li>Pixel-art character sprites and boss AI movement patterns</li>
+<li>Bullet physics and collision detection (<code>Math.hypot</code>)</li>
+<li><code>pvp-arena.html</code> with center wall and 1v1 mechanics</li>
+<li>Powerup spawning/collection system (damage, speed, heal)</li>
 <li>Database models: BossRoom, BossPlayer, BossBattleStats</li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```javascript
+// Boss AI movement patterns (boss-battle.html)
+function updateBossPosition() {
+    if (pattern === 'chase') {
+        const dx = targetPlayer.x - boss.x;
+        const dy = targetPlayer.y - boss.y;
+        boss.x += dx * 0.02;
+        boss.y += dy * 0.02;
+    } else if (pattern === 'zigzag') {
+        boss.x += Math.sin(Date.now() / 200) * 5;
+        boss.y += bossSpeed;
+    }
+}
+```
+</details>
 </div>
 
 <div class="team-card">
 <h4>Aneesh</h4>
-<div class="role">Multiplayer & Social Features Developer</div>
+<div class="role">Multiplayer & Victory System Developer</div>
 <ul>
-<li>WebSocket handler (<code>socket/boss_battle.py</code>)</li>
-<li>Real-time player synchronization and position broadcast</li>
+<li>WebSocket handler (<code>socketio_handlers/boss_battle.py</code>)</li>
+<li>Real-time player sync for both Boss Battle and PvP</li>
 <li>Group chat system (lobby + in-battle messaging)</li>
-<li>Leaderboard API and frontend display</li>
-<li>Autosave mechanism and demo/guest mode</li>
+<li><code>victory.html</code> with confetti animation and Hall of Champions</li>
+<li>Leaderboard API, Champions API, game completion endpoints</li>
+<li>Autosave mechanism (10s interval) and demo/guest mode</li>
 </ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```python
+# WebSocket player sync (socketio_handlers/boss_battle.py)
+@socketio.on('boss_player_move')
+def handle_player_move(data):
+    room_id = data.get('room_id')
+    boss_battles[room_id]['players'][request.sid]['x'] = data['x']
+    boss_battles[room_id]['players'][request.sid]['y'] = data['y']
+    emit('boss_player_position', {'sid': request.sid, 'x': data['x'], 'y': data['y']},
+         room=room_id, include_self=False)
+```
+</details>
 </div>
 
 </div>
@@ -393,11 +511,95 @@ Our game directly addresses multiple College Board AP CSP requirements through i
 
 </div>
 
+---
+
+## Individual AP CSP Requirements by Team Member
+
+Each team member's contribution demonstrates specific College Board requirements:
+
+<div class="team-grid">
+
+<div class="team-card">
+<h4>Akhil — AP CSP Alignment</h4>
+<div class="role">Game Board & Navigation</div>
+<ul>
+<li><strong>Input:</strong> Click handlers for dice rolls, character selection buttons, navigation links</li>
+<li><strong>Selection:</strong> <code>if (roll + currentSquare > 56)</code> redirects to mode selection</li>
+<li><strong>Iteration:</strong> <code>for</code> loop renders 56 board squares with dynamic CSS classes</li>
+<li><strong>Procedure:</strong> <code>rollDice()</code> function with animation timing and state updates</li>
+<li><strong>List:</strong> Character array <code>['knight','wizard','archer','warrior']</code> for carousel</li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Moiz — AP CSP Alignment</h4>
+<div class="role">Authentication & DevOps</div>
+<ul>
+<li><strong>The Internet:</strong> JWT tokens over HTTPS, CORS configuration, cookie security flags</li>
+<li><strong>Selection:</strong> <code>if not token</code> returns 401, <code>if token_expired</code> returns 403</li>
+<li><strong>Procedure:</strong> <code>@token_required()</code> decorator with nested function and return</li>
+<li><strong>Data Storage:</strong> User credentials hashed with bcrypt, stored in SQLAlchemy</li>
+<li><strong>Impact:</strong> Guest mode protects privacy; no data stored without authentication</li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Samarth — AP CSP Alignment</h4>
+<div class="role">Lesson System</div>
+<ul>
+<li><strong>Sequencing:</strong> Lessons 1-5 must complete in order; each unlocks the next section</li>
+<li><strong>Selection:</strong> <code>if (lessonCompleted)</code> awards bullets and updates <code>unlocked_sections</code></li>
+<li><strong>List:</strong> <code>completed_lessons[]</code> array tracks which lessons are done</li>
+<li><strong>Procedure:</strong> <code>completeLesson(num)</code> with parameter and async API call</li>
+<li><strong>Data Storage:</strong> Lesson progress persists via PUT to <code>/api/snakes/</code></li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Arnav — AP CSP Alignment</h4>
+<div class="role">Question System</div>
+<ul>
+<li><strong>List:</strong> <code>QUESTIONS[]</code> array of 50 objects with topic, options, correct index</li>
+<li><strong>Iteration:</strong> <code>forEach</code> to render answer options; filter to find unvisited squares</li>
+<li><strong>Selection:</strong> <code>if (selectedAnswer === correct)</code> awards bullets</li>
+<li><strong>Procedure:</strong> <code>checkAnswer(square, answer)</code> validates and updates state</li>
+<li><strong>Algorithm:</strong> Binary search through <code>visited_squares</code> to check completion</li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Ethan — AP CSP Alignment</h4>
+<div class="role">Boss Battle & PvP</div>
+<ul>
+<li><strong>Algorithm:</strong> Boss AI uses distance formula <code>Math.hypot(dx,dy)</code> for chase pattern</li>
+<li><strong>Iteration:</strong> <code>requestAnimationFrame</code> game loop at 60fps; bullet array updates</li>
+<li><strong>Selection:</strong> <code>if (pattern === 'zigzag')</code> changes movement; <code>if (collision)</code> damages</li>
+<li><strong>List:</strong> <code>playerBullets[]</code>, <code>opponentBullets[]</code>, <code>powerups[]</code> arrays</li>
+<li><strong>Procedure:</strong> <code>checkCollisions()</code> iterates bullets, uses selection for hit detection</li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Aneesh — AP CSP Alignment</h4>
+<div class="role">Multiplayer & Victory</div>
+<ul>
+<li><strong>The Internet:</strong> WebSocket events (<code>emit</code>/<code>on</code>) for real-time sync across clients</li>
+<li><strong>Iteration:</strong> <code>setInterval</code> broadcasts position every 50ms; autosave every 10s</li>
+<li><strong>List:</strong> <code>boss_battles[room_id]['players']</code> dict; <code>champions[]</code> for leaderboard</li>
+<li><strong>Procedure:</strong> <code>handle_player_move(data)</code> with room_id parameter and broadcast</li>
+<li><strong>Data Storage:</strong> <code>ChampionsAPI</code> queries completed games; <code>ResetProgressAPI</code> clears state</li>
+</ul>
+</div>
+
+</div>
+
+---
+
 ### Create Performance Task Alignment
 
 The project structure maps directly to the CPT requirements:
 - **Program Purpose:** Educate users on AP CSP concepts through gamified learning
-- **Program Function:** Interactive game board with progression, questions, and multiplayer boss battle
+- **Program Function:** Interactive game board with progression, questions, multiplayer boss battle, and PvP arena
 - **Input → Output:** User answers (input) → bullet rewards and progression (output); keyboard/mouse (input) → character movement and shooting (output)
 - **List Usage:** `visited_squares` array stores/retrieves which questions have been answered, iterated to show progress
 - **Procedure with Parameter:** `applyPowerup(type)` takes a powerup type, applies the corresponding buff using selection logic, and modifies game state
