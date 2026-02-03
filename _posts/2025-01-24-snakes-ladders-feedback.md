@@ -344,7 +344,7 @@ Our **Snakes and Ladders** game is a gamified educational platform designed to t
 </div>
 
 <div class="feedback-card">
-<h4>Nita</h4>
+<h4>Nitya</h4>
 <div class="reviewer">AP CSP Crossover Review <span class="rating-badge">Overall: 4/5</span></div>
 
 <div class="glow-section">
@@ -524,4 +524,4 @@ We received overwhelmingly positive feedback on our Snakes and Ladders education
 
 The constructive feedback centered around UI polish, thematic cohesion, and onboarding clarity — all actionable improvements that we plan to address in our next sprint. We're grateful to all reviewers for their thoughtful input and detailed suggestions.
 
-**Thank you to:** Anika, Avantika, Lilian, Virginia, Vivian, Nita, Aditya, Perry, Darshan, Hope, Cyrus, and Rishabh for their valuable feedback!
+**Thank you to:** Anika, Avantika, Lilian, Virginia, Vivian, Nitya, Aditya, Perry, Darshan, Hope, Cyrus, and Rishabh for their valuable feedback!
