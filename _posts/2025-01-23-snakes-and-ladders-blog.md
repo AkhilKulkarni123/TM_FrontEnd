@@ -369,32 +369,6 @@ async function completeLesson(lessonNum) {
 
 <div class="team-card">
 <h4>Arnav</h4>
-<div class="role">Question System Developer</div>
-<ul>
-<li>50-question bank across 5 CS topics (<code>questions_bank.js</code>)</li>
-<li>Question modal template and answer validation</li>
-<li><code>POST /api/snakes/answer-question</code> endpoint</li>
-<li>Bullet-awarding logic for correct answers</li>
-<li>Square visit tracking to prevent re-answering</li>
-<li>Visual feedback for correct/incorrect answers</li>
-</ul>
-<details><summary><strong>Code Snippet</strong></summary>
-
-```javascript
-// Question bank structure (questions_bank.js)
-const QUESTIONS = [
-  {square: 7, topic: "Programming Basics",
-   question: "What keyword declares a variable in Python?",
-   options: ["var", "let", "def", "None of these"],
-   correct: 3, bullets: 5},
-  // ... 49 more questions
-];
-```
-</details>
-</div>
-
-<div class="team-card">
-<h4>Ethan</h4>
 <div class="role">Boss Battle & PvP Developer</div>
 <ul>
 <li>Full <code>boss-battle.html</code> with canvas-based rendering</li>
@@ -419,6 +393,32 @@ function updateBossPosition() {
         boss.y += bossSpeed;
     }
 }
+```
+</details>
+</div>
+
+<div class="team-card">
+<h4>Ethan</h4>
+<div class="role">Question System Developer</div>
+<ul>
+<li>50-question bank across 5 CS topics (<code>questions_bank.js</code>)</li>
+<li>Question modal template and answer validation</li>
+<li><code>POST /api/snakes/answer-question</code> endpoint</li>
+<li>Bullet-awarding logic for correct answers</li>
+<li>Square visit tracking to prevent re-answering</li>
+<li>Visual feedback for correct/incorrect answers</li>
+</ul>
+<details><summary><strong>Code Snippet</strong></summary>
+
+```javascript
+// Question bank structure (questions_bank.js)
+const QUESTIONS = [
+  {square: 7, topic: "Programming Basics",
+   question: "What keyword declares a variable in Python?",
+   options: ["var", "let", "def", "None of these"],
+   correct: 3, bullets: 5},
+  // ... 49 more questions
+];
 ```
 </details>
 </div>
@@ -558,18 +558,6 @@ Each team member's contribution demonstrates specific College Board requirements
 
 <div class="team-card">
 <h4>Arnav — AP CSP Alignment</h4>
-<div class="role">Question System</div>
-<ul>
-<li><strong>List:</strong> <code>QUESTIONS[]</code> array of 50 objects with topic, options, correct index</li>
-<li><strong>Iteration:</strong> <code>forEach</code> to render answer options; filter to find unvisited squares</li>
-<li><strong>Selection:</strong> <code>if (selectedAnswer === correct)</code> awards bullets</li>
-<li><strong>Procedure:</strong> <code>checkAnswer(square, answer)</code> validates and updates state</li>
-<li><strong>Algorithm:</strong> Binary search through <code>visited_squares</code> to check completion</li>
-</ul>
-</div>
-
-<div class="team-card">
-<h4>Ethan — AP CSP Alignment</h4>
 <div class="role">Boss Battle & PvP</div>
 <ul>
 <li><strong>Algorithm:</strong> Boss AI uses distance formula <code>Math.hypot(dx,dy)</code> for chase pattern</li>
@@ -577,6 +565,18 @@ Each team member's contribution demonstrates specific College Board requirements
 <li><strong>Selection:</strong> <code>if (pattern === 'zigzag')</code> changes movement; <code>if (collision)</code> damages</li>
 <li><strong>List:</strong> <code>playerBullets[]</code>, <code>opponentBullets[]</code>, <code>powerups[]</code> arrays</li>
 <li><strong>Procedure:</strong> <code>checkCollisions()</code> iterates bullets, uses selection for hit detection</li>
+</ul>
+</div>
+
+<div class="team-card">
+<h4>Ethan — AP CSP Alignment</h4>
+<div class="role">Question System</div>
+<ul>
+<li><strong>List:</strong> <code>QUESTIONS[]</code> array of 50 objects with topic, options, correct index</li>
+<li><strong>Iteration:</strong> <code>forEach</code> to render answer options; filter to find unvisited squares</li>
+<li><strong>Selection:</strong> <code>if (selectedAnswer === correct)</code> awards bullets</li>
+<li><strong>Procedure:</strong> <code>checkAnswer(square, answer)</code> validates and updates state</li>
+<li><strong>Algorithm:</strong> Binary search through <code>visited_squares</code> to check completion</li>
 </ul>
 </div>
 

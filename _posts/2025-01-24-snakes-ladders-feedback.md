@@ -122,11 +122,11 @@ Our **Snakes and Ladders** game is a gamified educational platform designed to t
 </div>
 <div class="team-member">
 <h5>Arnav</h5>
-<p>Question System Developer</p>
+<p>Boss Battle & PvP Developer</p>
 </div>
 <div class="team-member">
 <h5>Ethan</h5>
-<p>Boss Battle & PvP Developer</p>
+<p>Question System Developer</p>
 </div>
 <div class="team-member">
 <h5>Aneesh</h5>
