@@ -501,7 +501,7 @@
                         <div class="stat-label">Your HP</div>
                         <div class="hud-hp-bar">
                             <div class="hud-hp-fill" id="playerHpFill" style="width: 100%"></div>
-                            <div class="hud-hp-text" id="playerHpText">3 / 3</div>
+                            <div class="hud-hp-text" id="playerHpText">100%</div>
                         </div>
                     </div>
                     <div class="stat-box">
@@ -514,7 +514,7 @@
                         <div class="stat-label">Opponent HP</div>
                         <div class="hud-hp-bar">
                             <div class="hud-hp-fill opponent" id="opponentHpFill" style="width: 100%"></div>
-                            <div class="hud-hp-text" id="opponentHpText">3 / 3</div>
+                            <div class="hud-hp-text" id="opponentHpText">100%</div>
                         </div>
                     </div>
                     <div class="stat-box opponent">
@@ -605,7 +605,7 @@
         let gameActive = false;
         let socket = null;
         let positionBroadcastInterval = null;
-        const DEFAULT_LIVES = 3;
+        const DEFAULT_LIVES = 5;
         let lastJoinData = null;
         let lastResyncAt = 0;
 
@@ -742,7 +742,7 @@
                 y: canvas.height / 2,
                 size: 35,
                 speed: 6,
-                lives: 3,
+                lives: DEFAULT_LIVES,
                 bullets: 50,
                 character: 'knight',
                 color: '#4facfe',
@@ -800,7 +800,7 @@
                             updateBulletsDisplay();
                         }
                         if (typeof data.lives !== 'undefined') {
-                            gameState.player.lives = Number(data.lives || 3);
+                            gameState.player.lives = Number(data.lives || DEFAULT_LIVES);
                             updateLives();
                         }
                         loadedFromServer = true;
@@ -824,7 +824,7 @@
                         updateBulletsDisplay();
                     }
                     if (typeof demoData.lives !== 'undefined') {
-                        gameState.player.lives = Number(demoData.lives || 3);
+                        gameState.player.lives = Number(demoData.lives || DEFAULT_LIVES);
                         updateLives();
                     }
                 }
@@ -1465,17 +1465,17 @@
         function updateLives() {
             const maxLives = DEFAULT_LIVES;
             const lives = Math.max(0, Math.floor(gameState.player.lives));
-            const percentage = Math.min(100, (lives / maxLives) * 100);
+            const percentage = Math.min(100, Math.round((lives / maxLives) * 100));
             document.getElementById('playerHpFill').style.width = percentage + '%';
-            document.getElementById('playerHpText').textContent = `${lives} / ${maxLives}`;
+            document.getElementById('playerHpText').textContent = `${percentage}%`;
         }
 
         function updateOpponentLives() {
             const maxLives = DEFAULT_LIVES;
             const lives = Math.max(0, Math.floor(gameState.opponent?.lives ?? maxLives));
-            const percentage = Math.min(100, (lives / maxLives) * 100);
+            const percentage = Math.min(100, Math.round((lives / maxLives) * 100));
             document.getElementById('opponentHpFill').style.width = percentage + '%';
-            document.getElementById('opponentHpText').textContent = `${lives} / ${maxLives}`;
+            document.getElementById('opponentHpText').textContent = `${percentage}%`;
         }
 
         function updateBulletsDisplay() {
