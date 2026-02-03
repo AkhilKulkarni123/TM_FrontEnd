@@ -741,7 +741,7 @@
                 x: 100,
                 y: canvas.height / 2,
                 size: 35,
-                speed: 6,
+                speed: 7.5,
                 lives: DEFAULT_LIVES,
                 bullets: 50,
                 character: 'knight',
@@ -989,28 +989,36 @@
                 gameState.playerNumber = Number(data.playerNumber) || 1;
 
                 if (gameState.playerNumber === 1) {
+                gameState.player.x = 100;
+                gameState.player.y = canvas.height / 2;
+            } else {
+                gameState.player.x = canvas.width - 100;
+                gameState.player.y = canvas.height / 2;
+            }
+
+            if (data.opponent) {
+                console.log('Opponent already in room:', data.opponent);
+                const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
+                gameState.opponent = {
+                    ...data.opponent,
+                    x: opponentNumber === 1 ? 100 : canvas.width - 100,
+                    y: canvas.height / 2,
+                    size: 35
+                };
+                // Keep both players on their correct sides of the boundary.
+                if (gameState.playerNumber === 1) {
                     gameState.player.x = 100;
-                    gameState.player.y = canvas.height / 2;
+                    gameState.opponent.x = canvas.width - 100;
                 } else {
                     gameState.player.x = canvas.width - 100;
-                    gameState.player.y = canvas.height / 2;
+                    gameState.opponent.x = 100;
                 }
-
-                if (data.opponent) {
-                    console.log('Opponent already in room:', data.opponent);
-                    const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
-                    gameState.opponent = {
-                        ...data.opponent,
-                        x: opponentNumber === 1 ? 100 : canvas.width - 100,
-                        y: canvas.height / 2,
-                        size: 35
-                    };
-                    hideWaitingOverlay();
-                    addSystemMessage(`${data.opponent.username} is already in the arena!`);
-                    updateOpponentLives();
-                } else {
-                    console.log('No opponent yet - waiting...');
-                }
+                hideWaitingOverlay();
+                addSystemMessage(`${data.opponent.username} is already in the arena!`);
+                updateOpponentLives();
+            } else {
+                console.log('No opponent yet - waiting...');
+            }
 
                 updatePlayersList();
             });
@@ -1030,6 +1038,13 @@
                     y: canvas.height / 2,
                     size: 35
                 };
+                if (gameState.playerNumber === 1) {
+                    gameState.player.x = 100;
+                    gameState.opponent.x = canvas.width - 100;
+                } else {
+                    gameState.player.x = canvas.width - 100;
+                    gameState.opponent.x = 100;
+                }
                 console.log('Set opponent:', gameState.opponent);
                 hideWaitingOverlay();
                 addSystemMessage(`${data.opponent.username} has entered the arena!`);
