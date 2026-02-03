@@ -100,14 +100,26 @@
 
         .hud-hp-text {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7em;
+            font-size: 0.75em;
             font-weight: bold;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+            color: #ffffff;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 3px #000,
+                0 0 5px rgba(0,0,0,0.8);
             pointer-events: none;
+            z-index: 2;
+            letter-spacing: 0.5px;
         }
 
         /* Right Sidebar - Players & Chat */
@@ -597,6 +609,12 @@
         let lastJoinData = null;
         let lastResyncAt = 0;
 
+        // --- Center wall geometry (shared by drawing + collision) ---
+        // The wall is a vertical strip at the exact center of the canvas.
+        // WALL_HALF_WIDTH is half its visible thickness; players are kept
+        // outside the full strip [midX - WALL_HALF_WIDTH, midX + WALL_HALF_WIDTH].
+        const WALL_HALF_WIDTH = 6; // pixels each side of center → 12 px total strip
+
         const CHARACTER_CONFIG = {
             knight: { icon: '', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
             wizard: { icon: '', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard' },
@@ -707,6 +725,17 @@
             }
         };
 
+        // ---------------------------------------------------------------------------
+        // Compute the actual pixel half-width of a sprite so the boundary clamp
+        // uses the real visual edge, not the abstract "size" value.
+        // ---------------------------------------------------------------------------
+        function getSpriteHalfWidth(character) {
+            const sprite = PLAYER_SPRITES[character] || PLAYER_SPRITES.knight;
+            const cols = sprite.pattern[0].length;          // 20 for all current sprites
+            const pixel = Math.max(3, Math.round(35 / cols)); // mirror the logic in drawPixelSprite
+            return (cols * pixel) / 2;                       // half the rendered width
+        }
+
         const gameState = {
             player: {
                 x: 100,
@@ -782,7 +811,6 @@
             }
 
             // If demo mode is active, use demo bullets (from autofill) for the session
-            // This allows autofilled bullets to be used in PvP without saving to database
             if (isDemoMode()) {
                 const demoData = loadDemoProgress();
                 if (demoData) {
@@ -800,7 +828,6 @@
                         updateLives();
                     }
                 }
-                // Only set Guest username if we don't have one from server
                 if (!loadedFromServer && gameState.player.username === 'Player') {
                     gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
                 }
@@ -824,9 +851,7 @@
         // Initialize - wait for data to load before connecting
         async function initialize() {
             try {
-                // Load user info first to get the username
                 await loadUserInfo();
-                // Then load player data (character, bullets, lives)
                 await loadPlayerData();
                 console.log('Player data loaded:', {
                     username: gameState.player.username,
@@ -837,7 +862,6 @@
             } catch (err) {
                 console.error('Error initializing:', err);
             }
-            // Now connect to socket with the loaded data
             connectSocket();
         }
         initialize();
@@ -918,7 +942,6 @@
                 console.log('Socket connected:', socket.id);
                 addSystemMessage('Connected to PVP server!');
 
-                // Join PVP room with player data
                 const joinData = {
                     username: gameState.player.username,
                     character: gameState.player.character,
@@ -955,7 +978,6 @@
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
                 gameState.playerNumber = data.playerNumber || 1;
 
-                // Set player position based on player number
                 if (data.playerNumber === 1) {
                     gameState.player.x = 100;
                     gameState.player.y = canvas.height / 2;
@@ -964,7 +986,6 @@
                     gameState.player.y = canvas.height / 2;
                 }
 
-                // Check if opponent already in room
                 if (data.opponent) {
                     console.log('Opponent already in room:', data.opponent);
                     gameState.opponent = {
@@ -1009,7 +1030,6 @@
             socket.on('pvp_opponent_left', (data) => {
                 console.log('Opponent left:', data);
                 if (gameActive) {
-                    // Player wins by forfeit
                     endGame(true, 'Your opponent left the arena!');
                 } else {
                     gameState.opponent = null;
@@ -1091,20 +1111,19 @@
                 addSystemMessage(`${data.username} is back!`);
             });
 
-            // PVP status (for mode selection page polling)
+            // PVP status
             socket.on('pvp_status', (data) => {
                 if (!data) return;
                 if (typeof data.playerCount !== 'undefined') {
                     document.getElementById('roomBadge').style.display = 'block';
                     document.getElementById('playerCount').textContent = data.playerCount;
                 }
-                // If server reports 2 players but we don't have opponent info, resync state
                 if (data.playerCount >= 2 && !gameState.opponent) {
                     requestPvpResync('status');
                 }
             });
 
-            // Match ready - both players in arena
+            // Match ready
             socket.on('pvp_match_ready', (data) => {
                 console.log('=== MATCH READY ===');
                 console.log('Received data:', data);
@@ -1112,7 +1131,6 @@
                 document.getElementById('playerCount').textContent = data.playerCount || 2;
                 hideWaitingOverlay();
 
-                // If we still don't have opponent, request resync
                 if (!gameState.opponent) {
                     console.log('Match ready but no opponent set - requesting resync');
                     requestPvpResync('match_ready');
@@ -1148,7 +1166,6 @@
             canvas.classList.add('battle-active');
             resizeCanvas();
 
-            // Start position broadcasting
             startPositionBroadcast();
             gameLoop();
         }
@@ -1209,13 +1226,20 @@
                 gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + speed);
             }
 
-            const midX = canvas.width / 2;
-            const boundaryGap = 6;
+            // ---------------------------------------------------------------------------
+            // Center-wall collision: keep the player's visual edge out of the wall strip.
+            // We use the real rendered half-width so the sprite never overlaps the wall.
+            // ---------------------------------------------------------------------------
+            const midX        = canvas.width / 2;
+            const spriteHalf  = getSpriteHalfWidth(gameState.player.character);
+
             if (gameState.playerNumber === 1) {
-                const maxX = midX - gameState.player.size - boundaryGap;
+                // Player 1 is on the LEFT  → their right edge must stay left of the wall
+                const maxX = midX - WALL_HALF_WIDTH - spriteHalf;
                 gameState.player.x = Math.min(gameState.player.x, maxX);
-            } else if (gameState.playerNumber === 2) {
-                const minX = midX + gameState.player.size + boundaryGap;
+            } else {
+                // Player 2 is on the RIGHT → their left edge must stay right of the wall
+                const minX = midX + WALL_HALF_WIDTH + spriteHalf;
                 gameState.player.x = Math.max(gameState.player.x, minX);
             }
         }
@@ -1245,7 +1269,6 @@
                 updateBulletsDisplay();
                 savePlayerState();
 
-                // Broadcast shot
                 if (socket && socket.connected) {
                     socket.emit('pvp_shoot', {
                         bulletX: spawnX,
@@ -1259,14 +1282,12 @@
         }
 
         function moveBullets() {
-            // Player bullets
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                 bullet.x += bullet.dx;
                 bullet.y += bullet.dy;
                 return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
             });
 
-            // Opponent bullets
             gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
                 bullet.x += bullet.dx;
                 bullet.y += bullet.dy;
@@ -1275,12 +1296,10 @@
         }
 
         function checkCollisions() {
-            // Player bullets hitting opponent
             if (gameState.opponent) {
                 gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                     const distance = Math.hypot(bullet.x - gameState.opponent.x, bullet.y - gameState.opponent.y);
                     if (distance < gameState.opponent.size || distance < 35) {
-                        // Hit opponent - notify server
                         socket.emit('pvp_hit_opponent', {});
                         return false;
                     }
@@ -1288,11 +1307,9 @@
                 });
             }
 
-            // Opponent bullets hitting player
             gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
                 const distance = Math.hypot(bullet.x - gameState.player.x, bullet.y - gameState.player.y);
                 if (distance < gameState.player.size) {
-                    // Already handled by server
                     return false;
                 }
                 return true;
@@ -1300,23 +1317,54 @@
         }
 
         function drawGame() {
-            // Draw arena bounds
+            // Draw arena outer bounds
             ctx.strokeStyle = 'rgba(79, 172, 254, 0.3)';
             ctx.lineWidth = 2;
             ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-            // Draw center line
+            // ---------------------------------------------------------------------------
+            // Draw the center wall as a solid glowing barrier strip
+            // ---------------------------------------------------------------------------
+            const midX = canvas.width / 2;
+
+            // Dark core of the wall
+            ctx.fillStyle = 'rgba(20, 20, 40, 0.85)';
+            ctx.fillRect(midX - WALL_HALF_WIDTH, 10, WALL_HALF_WIDTH * 2, canvas.height - 20);
+
+            // Bright centre line
             ctx.beginPath();
-            ctx.setLineDash([10, 10]);
-            ctx.moveTo(canvas.width / 2, 10);
-            ctx.lineTo(canvas.width / 2, canvas.height - 10);
+            ctx.strokeStyle = '#4facfe';
+            ctx.lineWidth = 2;
+            ctx.moveTo(midX, 10);
+            ctx.lineTo(midX, canvas.height - 10);
             ctx.stroke();
-            ctx.setLineDash([]);
 
-            // Draw player
+            // Outer glow edges (left & right of the strip)
+            const glowGrad = ctx.createLinearGradient(midX - WALL_HALF_WIDTH - 8, 0, midX - WALL_HALF_WIDTH, 0);
+            glowGrad.addColorStop(0, 'rgba(79, 172, 254, 0)');
+            glowGrad.addColorStop(1, 'rgba(79, 172, 254, 0.45)');
+            ctx.fillStyle = glowGrad;
+            ctx.fillRect(midX - WALL_HALF_WIDTH - 8, 10, 8, canvas.height - 20);
+
+            const glowGradR = ctx.createLinearGradient(midX + WALL_HALF_WIDTH, 0, midX + WALL_HALF_WIDTH + 8, 0);
+            glowGradR.addColorStop(0, 'rgba(79, 172, 254, 0.45)');
+            glowGradR.addColorStop(1, 'rgba(79, 172, 254, 0)');
+            ctx.fillStyle = glowGradR;
+            ctx.fillRect(midX + WALL_HALF_WIDTH, 10, 8, canvas.height - 20);
+
+            // Small "DANGER" / divider labels at top and bottom of the wall
+            ctx.save();
+            ctx.fillStyle = 'rgba(79, 172, 254, 0.7)';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('◆', midX, 28);
+            ctx.fillText('◆', midX, canvas.height - 28);
+            ctx.restore();
+            // ---------------------------------------------------------------------------
+
+            // Draw players
             drawPlayer(gameState.player, true);
-
-            // Draw opponent
             if (gameState.opponent) {
                 drawPlayer(gameState.opponent, false);
             }
@@ -1343,7 +1391,7 @@
                 ctx.shadowBlur = 0;
             });
 
-            // Draw aim indicator for player
+            // Draw aim indicator
             if (gameActive) {
                 const aimLength = 50;
                 const aimX = gameState.player.x + Math.cos(gameState.aimAngle) * aimLength;
@@ -1356,7 +1404,6 @@
                 ctx.lineTo(aimX, aimY);
                 ctx.stroke();
 
-                // Crosshair at aim point
                 ctx.beginPath();
                 ctx.arc(aimX, aimY, 5, 0, Math.PI * 2);
                 ctx.stroke();
@@ -1367,7 +1414,7 @@
             const sprite = PLAYER_SPRITES[player.character] || PLAYER_SPRITES.knight;
             drawPixelSprite(ctx, player.x, player.y, player.size || 35, sprite);
 
-            // Draw health bar above player
+            // Health bar above player
             const barWidth = 60;
             const barHeight = 8;
             const barX = player.x - barWidth / 2;
@@ -1384,7 +1431,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-            // Draw username
+            // Username
             ctx.fillStyle = 'white';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
@@ -1439,7 +1486,6 @@
             const list = document.getElementById('playersList');
             let html = '';
 
-            // Current player
             const myConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
             html += `
                 <div class="player-item you">
@@ -1451,7 +1497,6 @@
                 </div>
             `;
 
-            // Opponent
             if (gameState.opponent) {
                 const oppConfig = CHARACTER_CONFIG[gameState.opponent.character] || CHARACTER_CONFIG.knight;
                 html += `
@@ -1535,7 +1580,6 @@
         function requestPvpResync(source) {
             const now = Date.now();
             if (!socket || !socket.connected || !lastJoinData) return;
-            // Avoid spamming the server; allow a resync every 2 seconds
             if (now - lastResyncAt < 2000) return;
             lastResyncAt = now;
             console.log(`Requesting PVP resync (${source})`);
@@ -1582,12 +1626,10 @@
                 updateLives();
                 savePlayerState();
 
-                // Store win mode for victory page
                 try {
                     localStorage.setItem('snakes_win_mode', 'pvp');
                 } catch (e) {}
 
-                // Show victory page button
                 document.getElementById('victoryPageBtn').style.display = 'inline-block';
             } else {
                 title.textContent = 'DEFEAT';
@@ -1598,7 +1640,6 @@
             text.textContent = message || (victory ? 'You won the duel!' : 'You lost the duel.');
             gameOver.style.display = 'block';
 
-            // Store victory status for redirect
             gameOver.dataset.victory = victory ? 'true' : 'false';
 
             if (socket) {
@@ -1609,7 +1650,6 @@
         function goToVictoryPage() {
             stopPositionBroadcast();
             
-            // Mark that player just won so victory page can auto-complete
             try {
                 sessionStorage.setItem('snakes_just_won', 'true');
             } catch (e) {
@@ -1637,10 +1677,8 @@
         function returnToBoard() {
             stopPositionBroadcast();
 
-            // Check if this was a victory - redirect to victory page
             const gameOver = document.getElementById('gameOver');
             if (gameOver && gameOver.dataset.victory === 'true') {
-                // Mark that player just won so victory page can auto-complete
                 try {
                     sessionStorage.setItem('snakes_just_won', 'true');
                 } catch (e) {
@@ -1655,7 +1693,6 @@
 
         window.addEventListener('resize', () => resizeCanvas());
 
-        // Initialize players list
         updatePlayersList();
     </script>
 </body>
