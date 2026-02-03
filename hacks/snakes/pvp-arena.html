@@ -986,9 +986,9 @@
                 console.log('Received data:', data);
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
-                gameState.playerNumber = data.playerNumber || 1;
+                gameState.playerNumber = Number(data.playerNumber) || 1;
 
-                if (data.playerNumber === 1) {
+                if (gameState.playerNumber === 1) {
                     gameState.player.x = 100;
                     gameState.player.y = canvas.height / 2;
                 } else {
@@ -998,7 +998,7 @@
 
                 if (data.opponent) {
                     console.log('Opponent already in room:', data.opponent);
-                    const opponentNumber = data.opponent.player_number || (data.playerNumber === 1 ? 2 : 1);
+                    const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
                     gameState.opponent = {
                         ...data.opponent,
                         x: opponentNumber === 1 ? 100 : canvas.width - 100,
@@ -1023,7 +1023,7 @@
                     console.error('No opponent data in event!');
                     return;
                 }
-                const opponentNumber = data.opponent.player_number || (gameState.playerNumber === 1 ? 2 : 1);
+                const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
                 gameState.opponent = {
                     ...data.opponent,
                     x: opponentNumber === 1 ? 100 : canvas.width - 100,

@@ -741,7 +741,7 @@
                 verticalDirection: 1,
                 verticalSpeed: 0.5,
                 // Unpredictable movement properties
-                baseSpeed: 1.8,
+                baseSpeed: 2.1,
                 targetX: null,
                 targetY: null,
                 dashCooldown: 0,
@@ -1754,7 +1754,7 @@
             const maxY = 220;
 
             boss.patternTimer++;
-            boss.slitherPhase += 0.12;
+            boss.slitherPhase += 0.14;
 
             // Pick a smooth target point, occasionally bias toward the player
             const shouldRetarget = !boss.targetX || Math.hypot(boss.targetX - boss.x, boss.targetY - boss.y) < 30;
