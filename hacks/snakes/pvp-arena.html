@@ -757,8 +757,8 @@
             mouseX: 0,
             mouseY: 0,
             mouseInCanvas: false,
-            aimAngle: 0,
-            targetAimAngle: 0,
+            aimAngle: -Math.PI / 2,
+            targetAimAngle: -Math.PI / 2,
             aimSmoothness: 1.0
         };
 
@@ -862,6 +862,8 @@
             } catch (err) {
                 console.error('Error initializing:', err);
             }
+            updateLives();
+            updateOpponentLives();
             connectSocket();
         }
         initialize();
@@ -894,6 +896,14 @@
         });
 
         canvas.addEventListener('mouseleave', () => gameState.mouseInCanvas = false);
+        canvas.addEventListener('mouseenter', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            gameState.mouseX = (e.clientX - rect.left) * scaleX;
+            gameState.mouseY = (e.clientY - rect.top) * scaleY;
+            gameState.mouseInCanvas = true;
+        });
         canvas.addEventListener('click', (e) => {
             if (gameActive) {
                 e.preventDefault();
@@ -988,9 +998,10 @@
 
                 if (data.opponent) {
                     console.log('Opponent already in room:', data.opponent);
+                    const opponentNumber = data.opponent.player_number || (data.playerNumber === 1 ? 2 : 1);
                     gameState.opponent = {
                         ...data.opponent,
-                        x: data.playerNumber === 1 ? canvas.width - 100 : 100,
+                        x: opponentNumber === 1 ? 100 : canvas.width - 100,
                         y: canvas.height / 2,
                         size: 35
                     };
@@ -1012,9 +1023,10 @@
                     console.error('No opponent data in event!');
                     return;
                 }
+                const opponentNumber = data.opponent.player_number || (gameState.playerNumber === 1 ? 2 : 1);
                 gameState.opponent = {
                     ...data.opponent,
-                    x: canvas.width - gameState.player.x,
+                    x: opponentNumber === 1 ? 100 : canvas.width - 100,
                     y: canvas.height / 2,
                     size: 35
                 };
@@ -1160,6 +1172,8 @@
         }
 
         function startBattle() {
+            gameState.player.lives = DEFAULT_LIVES;
+            updateLives();
             gameActive = true;
             document.getElementById('controlsPanel').classList.add('hidden');
             document.getElementById('ingameLeaveBtn').style.display = 'block';
@@ -1391,21 +1405,37 @@
                 ctx.shadowBlur = 0;
             });
 
-            // Draw aim indicator
+            // Draw aim indicator (match boss-battle)
             if (gameActive) {
-                const aimLength = 50;
-                const aimX = gameState.player.x + Math.cos(gameState.aimAngle) * aimLength;
-                const aimY = gameState.player.y + Math.sin(gameState.aimAngle) * aimLength;
+                const hasMouse = gameState.mouseInCanvas;
+                const aimEndX = hasMouse
+                    ? gameState.mouseX
+                    : gameState.player.x + Math.cos(gameState.aimAngle) * 60;
+                const aimEndY = hasMouse
+                    ? gameState.mouseY
+                    : gameState.player.y + Math.sin(gameState.aimAngle) * 60;
 
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
                 ctx.beginPath();
-                ctx.strokeStyle = 'rgba(79, 172, 254, 0.5)';
-                ctx.lineWidth = 2;
                 ctx.moveTo(gameState.player.x, gameState.player.y);
-                ctx.lineTo(aimX, aimY);
+                ctx.lineTo(aimEndX, aimEndY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+                ctx.lineWidth = 2;
+                const crossSize = 8;
+                ctx.beginPath();
+                ctx.moveTo(aimEndX - crossSize, aimEndY);
+                ctx.lineTo(aimEndX + crossSize, aimEndY);
+                ctx.moveTo(aimEndX, aimEndY - crossSize);
+                ctx.lineTo(aimEndX, aimEndY + crossSize);
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.arc(aimX, aimY, 5, 0, Math.PI * 2);
+                ctx.arc(aimEndX, aimEndY, crossSize + 4, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
@@ -1464,7 +1494,9 @@
 
         function updateLives() {
             const maxLives = DEFAULT_LIVES;
-            const lives = Math.max(0, Math.floor(gameState.player.lives));
+            const lives = gameActive
+                ? Math.max(0, Math.floor(gameState.player.lives))
+                : maxLives;
             const percentage = Math.min(100, Math.round((lives / maxLives) * 100));
             document.getElementById('playerHpFill').style.width = percentage + '%';
             document.getElementById('playerHpText').textContent = `${percentage}%`;
@@ -1472,7 +1504,9 @@
 
         function updateOpponentLives() {
             const maxLives = DEFAULT_LIVES;
-            const lives = Math.max(0, Math.floor(gameState.opponent?.lives ?? maxLives));
+            const lives = gameActive
+                ? Math.max(0, Math.floor(gameState.opponent?.lives ?? maxLives))
+                : maxLives;
             const percentage = Math.min(100, Math.round((lives / maxLives) * 100));
             document.getElementById('opponentHpFill').style.width = percentage + '%';
             document.getElementById('opponentHpText').textContent = `${percentage}%`;
