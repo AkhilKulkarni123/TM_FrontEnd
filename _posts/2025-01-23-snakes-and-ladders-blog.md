@@ -140,7 +140,7 @@ Our Snakes and Ladders game is a **gamified educational platform** that teaches 
     <div class="flow-step">Hall of Champions</div>
 </div>
 
-### Three Sections of the Board
+### Six Sections of the Board
 
 <div class="section-card">
 <h4>Section 1 — Lessons (Squares 1–6)</h4>
