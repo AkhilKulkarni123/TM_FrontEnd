@@ -1335,6 +1335,10 @@
         async function startBattle() {
             try {
                 ensureBattleAmmo();
+                // Ensure full health before battle starts
+                gameState.player.lives = DEFAULT_LIVES;
+                updateLives();
+                savePlayerState({ lives: DEFAULT_LIVES });
                 // Join room via REST API
                 const response = await fetch(`${GAME_API_ROOT}/boss/join`, {
                     method: 'POST',
@@ -2224,7 +2228,9 @@
 
         function updateLives() {
             const maxLives = DEFAULT_LIVES;
-            const lives = Math.max(0, Math.floor(gameState.player.lives));
+            const lives = gameActive
+                ? Math.max(0, Math.floor(gameState.player.lives))
+                : maxLives;
             const percentage = Math.min(100, Math.round((lives / maxLives) * 100));
             document.getElementById('playerHealthFill').style.width = percentage + '%';
             document.getElementById('playerHealthText').textContent = `${percentage}%`;
