@@ -110,7 +110,7 @@ Our **Snakes and Ladders** game is a gamified educational platform designed to t
 <div class="team-overview">
 <div class="team-member">
 <h5>Akhil</h5>
-<p>Scrum Master / Game Board Lead</p>
+<p>Scrum Master / Multiplayer & Victory</p>
 </div>
 <div class="team-member">
 <h5>Moiz</h5>
@@ -130,7 +130,7 @@ Our **Snakes and Ladders** game is a gamified educational platform designed to t
 </div>
 <div class="team-member">
 <h5>Aneesh</h5>
-<p>Multiplayer & Victory System</p>
+<p>Game Board Lead</p>
 </div>
 </div>
 

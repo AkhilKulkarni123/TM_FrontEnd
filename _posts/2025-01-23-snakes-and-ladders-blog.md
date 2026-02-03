@@ -283,27 +283,27 @@ All API calls are secured with **JWT tokens** stored in HttpOnly cookies. The `@
 
 <div class="team-card">
 <h4>Akhil</h4>
-<div class="role">Scrum Master / Game Board Lead</div>
+<div class="role">Scrum Master / Multiplayer & Victory System Developer</div>
 <ul>
 <li>Project coordination, sprint planning, and stand-ups</li>
-<li>Main game board UI and dice-rolling mechanics</li>
-<li>Character selection carousel with pixel-art sprites</li>
-<li>Mode Selection hub page (<code>mode-selection.html</code>)</li>
-<li>Frontend navigation flow between all game pages</li>
-<li><code>game-board-part1.html</code>, <code>game-board-part2.html</code></li>
+<li>WebSocket handler (<code>socketio_handlers/boss_battle.py</code>)</li>
+<li>Real-time player sync for both Boss Battle and PvP</li>
+<li>Group chat system (lobby + in-battle messaging)</li>
+<li><code>victory.html</code> with confetti animation and Hall of Champions</li>
+<li>Leaderboard API, Champions API, game completion endpoints</li>
+<li>Autosave mechanism (10s interval) and demo/guest mode</li>
 </ul>
 <details><summary><strong>Code Snippet</strong></summary>
 
-```javascript
-// Dice roll animation (game-board-part2.html)
-function rollDice() {
-    const roll = Math.floor(Math.random() * 6) + 1;
-    diceElement.classList.add('rolling');
-    setTimeout(() => {
-        diceElement.textContent = roll;
-        movePlayer(currentSquare + roll);
-    }, 800);
-}
+```python
+# WebSocket player sync (socketio_handlers/boss_battle.py)
+@socketio.on('boss_player_move')
+def handle_player_move(data):
+    room_id = data.get('room_id')
+    boss_battles[room_id]['players'][request.sid]['x'] = data['x']
+    boss_battles[room_id]['players'][request.sid]['y'] = data['y']
+    emit('boss_player_position', {'sid': request.sid, 'x': data['x'], 'y': data['y']},
+         room=room_id, include_self=False)
 ```
 </details>
 </div>
@@ -425,26 +425,27 @@ function updateBossPosition() {
 
 <div class="team-card">
 <h4>Aneesh</h4>
-<div class="role">Multiplayer & Victory System Developer</div>
+<div class="role">Game Board Lead</div>
 <ul>
-<li>WebSocket handler (<code>socketio_handlers/boss_battle.py</code>)</li>
-<li>Real-time player sync for both Boss Battle and PvP</li>
-<li>Group chat system (lobby + in-battle messaging)</li>
-<li><code>victory.html</code> with confetti animation and Hall of Champions</li>
-<li>Leaderboard API, Champions API, game completion endpoints</li>
-<li>Autosave mechanism (10s interval) and demo/guest mode</li>
+<li>Main game board UI and dice-rolling mechanics</li>
+<li>Character selection carousel with pixel-art sprites</li>
+<li>Mode Selection hub page (<code>mode-selection.html</code>)</li>
+<li>Frontend navigation flow between all game pages</li>
+<li><code>game-board-part1.html</code>, <code>game-board-part2.html</code></li>
+<li>Board square rendering and progression visualization</li>
 </ul>
 <details><summary><strong>Code Snippet</strong></summary>
 
-```python
-# WebSocket player sync (socketio_handlers/boss_battle.py)
-@socketio.on('boss_player_move')
-def handle_player_move(data):
-    room_id = data.get('room_id')
-    boss_battles[room_id]['players'][request.sid]['x'] = data['x']
-    boss_battles[room_id]['players'][request.sid]['y'] = data['y']
-    emit('boss_player_position', {'sid': request.sid, 'x': data['x'], 'y': data['y']},
-         room=room_id, include_self=False)
+```javascript
+// Dice roll animation (game-board-part2.html)
+function rollDice() {
+    const roll = Math.floor(Math.random() * 6) + 1;
+    diceElement.classList.add('rolling');
+    setTimeout(() => {
+        diceElement.textContent = roll;
+        movePlayer(currentSquare + roll);
+    }, 800);
+}
 ```
 </details>
 </div>
@@ -521,13 +522,13 @@ Each team member's contribution demonstrates specific College Board requirements
 
 <div class="team-card">
 <h4>Akhil — AP CSP Alignment</h4>
-<div class="role">Game Board & Navigation</div>
+<div class="role">Multiplayer & Victory</div>
 <ul>
-<li><strong>Input:</strong> Click handlers for dice rolls, character selection buttons, navigation links</li>
-<li><strong>Selection:</strong> <code>if (roll + currentSquare > 56)</code> redirects to mode selection</li>
-<li><strong>Iteration:</strong> <code>for</code> loop renders 56 board squares with dynamic CSS classes</li>
-<li><strong>Procedure:</strong> <code>rollDice()</code> function with animation timing and state updates</li>
-<li><strong>List:</strong> Character array <code>['knight','wizard','archer','warrior']</code> for carousel</li>
+<li><strong>The Internet:</strong> WebSocket events (<code>emit</code>/<code>on</code>) for real-time sync across clients</li>
+<li><strong>Iteration:</strong> <code>setInterval</code> broadcasts position every 50ms; autosave every 10s</li>
+<li><strong>List:</strong> <code>boss_battles[room_id]['players']</code> dict; <code>champions[]</code> for leaderboard</li>
+<li><strong>Procedure:</strong> <code>handle_player_move(data)</code> with room_id parameter and broadcast</li>
+<li><strong>Data Storage:</strong> <code>ChampionsAPI</code> queries completed games; <code>ResetProgressAPI</code> clears state</li>
 </ul>
 </div>
 
@@ -581,13 +582,13 @@ Each team member's contribution demonstrates specific College Board requirements
 
 <div class="team-card">
 <h4>Aneesh — AP CSP Alignment</h4>
-<div class="role">Multiplayer & Victory</div>
+<div class="role">Game Board & Navigation</div>
 <ul>
-<li><strong>The Internet:</strong> WebSocket events (<code>emit</code>/<code>on</code>) for real-time sync across clients</li>
-<li><strong>Iteration:</strong> <code>setInterval</code> broadcasts position every 50ms; autosave every 10s</li>
-<li><strong>List:</strong> <code>boss_battles[room_id]['players']</code> dict; <code>champions[]</code> for leaderboard</li>
-<li><strong>Procedure:</strong> <code>handle_player_move(data)</code> with room_id parameter and broadcast</li>
-<li><strong>Data Storage:</strong> <code>ChampionsAPI</code> queries completed games; <code>ResetProgressAPI</code> clears state</li>
+<li><strong>Input:</strong> Click handlers for dice rolls, character selection buttons, navigation links</li>
+<li><strong>Selection:</strong> <code>if (roll + currentSquare > 56)</code> redirects to mode selection</li>
+<li><strong>Iteration:</strong> <code>for</code> loop renders 56 board squares with dynamic CSS classes</li>
+<li><strong>Procedure:</strong> <code>rollDice()</code> function with animation timing and state updates</li>
+<li><strong>List:</strong> Character array <code>['knight','wizard','archer','warrior']</code> for carousel</li>
 </ul>
 </div>
 
