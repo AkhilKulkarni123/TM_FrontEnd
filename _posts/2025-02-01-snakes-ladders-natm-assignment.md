@@ -91,7 +91,7 @@ categories: ['Game Development', 'N@tM']
 <div class="individual-card">
 <h3>Akhil</h3>
 <div class="role">Scrum Master / Multiplayer & Victory System Developer</div>
-<div class="superpower">⚡ Superpower: Real-time Multiplayer Sync — connects players across the world in milliseconds</div>
+<div class="superpower"> Superpower: Real-time Multiplayer Sync — connects players across the world in milliseconds</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — WebSocket Multiplayer & Victory System <span class="time-badge">1 MIN</span></h4>
@@ -142,7 +142,7 @@ champions = SnakesGameData.query.filter_by(game_status='completed')
 <div class="individual-card">
 <h3>Moiz</h3>
 <div class="role">DevOps / Authentication Lead</div>
-<div class="superpower">⚡ Superpower: Secure Sessions — JWT tokens keep your game data safe across devices</div>
+<div class="superpower"> Superpower: Secure Sessions — JWT tokens keep your game data safe across devices</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — JWT Authentication & Guest Mode <span class="time-badge">1 MIN</span></h4>
@@ -199,7 +199,7 @@ function isDemoMode() {
 <div class="individual-card">
 <h3>Samarth</h3>
 <div class="role">Lesson System Developer</div>
-<div class="superpower">⚡ Superpower: Progressive Learning — turns CS education into unlockable game achievements</div>
+<div class="superpower"> Superpower: Progressive Learning — turns CS education into unlockable game achievements</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — Interactive Lesson Completion & Section Unlocking <span class="time-badge">1 MIN</span></h4>
@@ -247,7 +247,7 @@ def complete_lesson():
 <div class="individual-card">
 <h3>Arnav</h3>
 <div class="role">Boss Battle & PvP Developer</div>
-<div class="superpower">⚡ Superpower: Combat Systems — brings intense boss AI and competitive PvP to educational gaming</div>
+<div class="superpower"> Superpower: Combat Systems — brings intense boss AI and competitive PvP to educational gaming</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — Boss Battle Arena & PvP Combat <span class="time-badge">1 MIN</span></h4>
@@ -310,7 +310,7 @@ function checkCollisions() {
 <div class="individual-card">
 <h3>Ethan</h3>
 <div class="role">Question System Developer</div>
-<div class="superpower">⚡ Superpower: Knowledge Testing — 50 unique questions that make learning feel like a game</div>
+<div class="superpower"> Superpower: Knowledge Testing — 50 unique questions that make learning feel like a game</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — Question Bank & Answer Validation <span class="time-badge">1 MIN</span></h4>
@@ -366,7 +366,7 @@ def answer_question():
 <div class="individual-card">
 <h3>Aneesh</h3>
 <div class="role">Game Board Lead</div>
-<div class="superpower">⚡ Superpower: User Experience — smooth navigation and satisfying dice mechanics that make the game addictive</div>
+<div class="superpower"> Superpower: User Experience — smooth navigation and satisfying dice mechanics that make the game addictive</div>
 
 <div class="skill-section">
 <h4>Skill A: Task — Game Board UI, Dice Rolling & Mode Selection <span class="time-badge">1 MIN</span></h4>
