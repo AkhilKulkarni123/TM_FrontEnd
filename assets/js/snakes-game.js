@@ -11,8 +11,9 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
 }
 
 function getLoginUrl() {
-    var base = API_URL.replace(/\/api\/?$/, '');
-    return base + '/login';
+    var path = window.location.pathname || '';
+    var base = path.startsWith('/TM_FrontEnd') ? '/TM_FrontEnd' : '';
+    return window.location.origin + base + '/login';
 }
 
 // Standard fetch options for CORS requests - matches config.js
