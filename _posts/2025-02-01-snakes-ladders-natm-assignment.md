@@ -626,6 +626,6 @@ function selectMode(mode) {
 | Input/Output demonstrated | ✅ | All tasks |
 | List usage shown | ✅ | All tasks |
 | Procedure with parameter | ✅ | All tasks |
-| Algorithm (seq + sel + iter) | ✅ | Arnav (collision), Ethan (question lookup) |
+| Algorithm (seq + sel + iter) | ✅ | Arnav (collision), Ethan (question lookup), Samarth (Game Flow/Progression) |
 | Transactional data (CRUD) | ✅ | Samarth (lessons), Ethan (questions), Akhil (champions) |
 | Deployment demo ready | ✅ | Moiz |
