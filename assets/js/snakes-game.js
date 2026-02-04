@@ -10,6 +10,11 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
     API_URL = "https://snakes.opencodingsociety.com/api";  // Deployed backend
 }
 
+function getLoginUrl() {
+    var base = API_URL.replace(/\/api\/?$/, '');
+    return base + '/login';
+}
+
 // Standard fetch options for CORS requests - matches config.js
 var fetchOptions = {
     mode: 'cors',
@@ -271,7 +276,8 @@ function useExistingLogin() {
         .then(function (response) {
             if (!response.ok) {
                 alert('Please log in to the website first, then return to the game.');
-                window.location.href = '/login';
+                var returnTo = window.location.pathname + window.location.search + window.location.hash;
+                window.location.href = getLoginUrl() + '?next=' + encodeURIComponent(returnTo);
                 return null;
             }
             return response.json();
