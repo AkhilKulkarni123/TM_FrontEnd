@@ -65,8 +65,18 @@ categories: ['Game Development']
 .team-card .role {
     font-size: 0.8em;
     color: #f093fb;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     font-weight: 600;
+}
+.team-card .superpower {
+    font-size: 0.75em;
+    color: #ffd700;
+    margin-bottom: 10px;
+    font-style: italic;
+    padding: 4px 8px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 4px;
+    display: inline-block;
 }
 .team-card ul {
     margin: 0;
@@ -284,6 +294,7 @@ All API calls are secured with **JWT tokens** stored in HttpOnly cookies. The `@
 <div class="team-card">
 <h4>Akhil</h4>
 <div class="role">Scrum Master / Multiplayer & Victory System Developer</div>
+<div class="superpower">⚡ Real-time Multiplayer Sync — connects players across the world in milliseconds</div>
 <ul>
 <li>Project coordination, sprint planning, and stand-ups</li>
 <li>WebSocket handler (<code>socketio_handlers/boss_battle.py</code>)</li>
@@ -311,6 +322,7 @@ def handle_player_move(data):
 <div class="team-card">
 <h4>Moiz</h4>
 <div class="role">DevOps / Authentication Lead</div>
+<div class="superpower">🔐 Secure Sessions — JWT tokens keep your game data safe across devices</div>
 <ul>
 <li>Backend deployment: Dockerfile, docker-compose, Nginx</li>
 <li>Production environment variables and CORS config</li>
@@ -342,6 +354,7 @@ def token_required():
 <div class="team-card">
 <h4>Samarth</h4>
 <div class="role">Lesson System Developer</div>
+<div class="superpower">📚 Progressive Learning — turns CS education into unlockable game achievements</div>
 <ul>
 <li>Five interactive lesson pages (<code>lessons/lesson1-5.html</code>)</li>
 <li>Arcade-style lesson CSS and UI animations</li>
@@ -370,6 +383,7 @@ async function completeLesson(lessonNum) {
 <div class="team-card">
 <h4>Arnav</h4>
 <div class="role">Boss Battle & PvP Developer</div>
+<div class="superpower">🐉 Combat Systems — brings intense boss AI and competitive PvP to educational gaming</div>
 <ul>
 <li>Full <code>boss-battle.html</code> with canvas-based rendering</li>
 <li>Pixel-art character sprites and boss AI movement patterns</li>
@@ -400,6 +414,7 @@ function updateBossPosition() {
 <div class="team-card">
 <h4>Ethan</h4>
 <div class="role">Question System Developer</div>
+<div class="superpower">🧠 Knowledge Testing — 50 unique questions that make learning feel like a game</div>
 <ul>
 <li>50-question bank across 5 CS topics (<code>questions_bank.js</code>)</li>
 <li>Question modal template and answer validation</li>
@@ -426,6 +441,7 @@ const QUESTIONS = [
 <div class="team-card">
 <h4>Aneesh</h4>
 <div class="role">Game Board Lead</div>
+<div class="superpower">🎲 User Experience — smooth navigation and satisfying dice mechanics that make the game addictive</div>
 <ul>
 <li>Main game board UI and dice-rolling mechanics</li>
 <li>Character selection carousel with pixel-art sprites</li>
