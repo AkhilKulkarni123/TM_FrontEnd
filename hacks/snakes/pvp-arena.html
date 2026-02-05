@@ -581,6 +581,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/snakes/sfx.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1099,6 +1100,9 @@
             // Player hit
             socket.on('pvp_player_hit', (data) => {
                 if (data.target === socket.id) {
+                    if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                        window.SnakesSFX.play('hurt');
+                    }
                     gameState.player.lives = data.lives;
                     updateLives();
                     if (data.lives <= 0) {
@@ -1275,6 +1279,9 @@
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('shoot');
+                }
                 const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
                 const bulletSpeed = 12;
                 const dx = Math.cos(shotAngle) * bulletSpeed;
@@ -1669,6 +1676,9 @@
             const text = document.getElementById('gameOverText');
 
             if (victory) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('win');
+                }
                 title.textContent = 'VICTORY!';
                 gameOver.className = 'game-over victory';
                 gameState.player.lives = DEFAULT_LIVES;
@@ -1681,6 +1691,9 @@
 
                 document.getElementById('victoryPageBtn').style.display = 'inline-block';
             } else {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('lose');
+                }
                 title.textContent = 'DEFEAT';
                 gameOver.className = 'game-over defeat';
                 document.getElementById('victoryPageBtn').style.display = 'none';

@@ -349,6 +349,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/snakes/sfx.js"></script>
     <script>
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         // Flask runs on port 8306 with integrated Socket.IO
@@ -529,6 +530,9 @@
 
         // Select game mode
         function selectMode(mode) {
+            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                window.SnakesSFX.play('click');
+            }
             if (mode === 'pvp') {
                 const pvpCard = document.getElementById('pvpCard');
                 if (pvpCard.classList.contains('disabled')) {
@@ -550,6 +554,9 @@
 
         // Go back to game board
         function goBack() {
+            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                window.SnakesSFX.play('click');
+            }
             window.location.href = 'game-board-part2.html';
         }
 

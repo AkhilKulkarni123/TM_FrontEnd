@@ -1930,6 +1930,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/snakes/sfx.js"></script>
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="../../assets/js/mini-games.js"></script>
     <script src="../../assets/js/lesson-arcade.js"></script>
@@ -2433,12 +2434,18 @@ console.log(student.name); // 'Ada'</code></pre>
             var correct = (parseInt(selected.value) === lesson.question.correct);
 
             if (!correct) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('wrong');
+                }
                 alert('Incorrect answer. Review the lesson and try again!');
                 return;
             }
 
             // Check if in demo mode or guest mode - handle locally without API call
             if (typeof gameState !== 'undefined' && (gameState.isDemoMode || gameState.isGuest)) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('correct');
+                }
                 alert('Lesson completed! You earned 5 bullets.');
 
                 // Update game state locally
@@ -2495,6 +2502,9 @@ console.log(student.name); // 'Ada'</code></pre>
             })
             .then(function(res) {
                 if (res.ok) {
+                    if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                        window.SnakesSFX.play('correct');
+                    }
                     alert('Lesson completed! You earned 5 bullets.');
 
                     // Update game state

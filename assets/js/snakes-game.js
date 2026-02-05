@@ -207,6 +207,11 @@ var multiplayerState = {
 
 function $(selector) { return document.querySelector(selector); }
 function $all(selector) { return document.querySelectorAll(selector); }
+function playSfx(name) {
+    if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+        window.SnakesSFX.play(name);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // DON'T hide character selection here - let autoResumeIfReady handle it
@@ -336,6 +341,7 @@ function checkExistingLogin() {
 }
 
 function useExistingLogin() {
+    playSfx('click');
     fetch(API_URL + '/id', {
         method: 'GET',
         mode: fetchOptions.mode,
@@ -400,6 +406,7 @@ function useExistingLogin() {
 }
 
 function playAsGuest() {
+    playSfx('click');
     gameState.isGuest = true;
     gameState.userId = 'guest_' + Date.now();
     gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
@@ -660,6 +667,7 @@ function selectCharacter(card) {
 }
 
 function startGame() {
+    playSfx('click');
     if (!gameState.character) {
         alert('Please select a character!');
         return;
@@ -1357,6 +1365,7 @@ function isLessonOrQuestionOpen() {
 }
 
 function rollDice() {
+    playSfx('dice');
     // Block dice roll if a lesson or question is currently open
     if (isLessonOrQuestionOpen()) {
         alert('Please close the current lesson or question first before rolling the dice.\n\nYou can close it by clicking the X button to return to the game board.');
@@ -1777,6 +1786,7 @@ function showQuestionModal(square, row, index) {
 
         var chosen = parseInt(selected.value, 10);
         var correct = (chosen === question.answer);
+        playSfx(correct ? 'correct' : 'wrong');
         var bullets = correct ? QUESTION_BULLETS : 0;
 
         // If in demo mode, handle locally without API call
@@ -1917,8 +1927,10 @@ function animateMoveToSquare(from, to) {
     marker.style.transition = 'all 0.9s cubic-bezier(.2,.8,.2,1)';
 
     if (isLadder) {
+        playSfx('ladder');
         marker.classList.add('ladder-anim');
     } else {
+        playSfx('snake');
         marker.classList.add('snake-anim');
     }
 

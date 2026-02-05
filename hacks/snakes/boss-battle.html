@@ -719,6 +719,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/snakes/sfx.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1533,6 +1534,9 @@
 
         async function startBattle() {
             try {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('battle');
+                }
                 ensureBattleAmmo();
                 // Ensure full health before battle starts
                 gameState.player.lives = DEFAULT_LIVES;
@@ -1864,6 +1868,9 @@
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('shoot');
+                }
                 const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
                 // Calculate bullet direction based on aim angle
                 const bulletSpeed = 10;
@@ -2062,6 +2069,9 @@
             gameState.bossProjectiles.forEach(proj => {
                 const distance = Math.hypot(proj.x - gameState.player.x, proj.y - gameState.player.y);
                 if (distance < gameState.player.size + proj.size) {
+                    if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                        window.SnakesSFX.play('hurt');
+                    }
                     gameState.player.lives--;
                     updateLives();
                     savePlayerState();
@@ -2535,6 +2545,10 @@
             const config = POWERUP_TYPES[type];
             if (!config) return;
 
+            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                window.SnakesSFX.play('powerup');
+            }
+
             const now = Date.now();
 
             // Track powerup collection in stats
@@ -2748,6 +2762,9 @@
             const text = document.getElementById('gameOverText');
 
             if (victory) {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('win');
+                }
                 title.textContent = 'VICTORY!';
 
                 // Calculate local battle stats
@@ -2866,6 +2883,9 @@
                 // Show victory page button
                 document.getElementById('victoryPageBtn').style.display = 'inline-block';
             } else {
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('lose');
+                }
                 title.textContent = 'GAME OVER';
                 text.textContent = 'The boss was too powerful...';
                 document.getElementById('victoryPageBtn').style.display = 'none';

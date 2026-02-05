@@ -514,6 +514,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/snakes/sfx.js"></script>
     <script>
         const IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         const GAME_API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
@@ -603,6 +604,9 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const mode = urlParams.get('mode') || localStorage.getItem('snakes_win_mode') || 'Boss Battle';
                 document.getElementById('winMode').textContent = mode === 'pvp' ? 'PVP Arena' : 'Boss Battle';
+                if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                    window.SnakesSFX.play('win');
+                }
 
             } catch (err) {
                 console.error('Error loading player data:', err);
