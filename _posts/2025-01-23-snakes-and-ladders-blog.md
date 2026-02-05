@@ -328,7 +328,7 @@ def handle_player_move(data):
 <li>Production environment variables and CORS config</li>
 <li>JWT authentication system (<code>api/jwt_authorize.py</code>)</li>
 <li>Cookie management and <code>@token_required()</code> decorator</li>
-<li>Demo/Guest mode with sessionStorage fallback</li>
+<li>Snakes SFX system (procedural audio + toggle)</li>
 <li>Flask application factory and server configuration</li>
 </ul>
 <details><summary><strong>Code Snippet</strong></summary>
@@ -445,10 +445,12 @@ const QUESTIONS = [
 <ul>
 <li>Main game board UI and dice-rolling mechanics</li>
 <li>Character selection carousel with pixel-art sprites</li>
+<li>Character perks (knight/wizard/archer/warrior)</li>
 <li>Mode Selection hub page (<code>mode-selection.html</code>)</li>
 <li>Frontend navigation flow between all game pages</li>
 <li><code>game-board-part1.html</code>, <code>game-board-part2.html</code></li>
 <li>Board square rendering and progression visualization</li>
+<li>Guest mode (sessionStorage-based progress)</li>
 </ul>
 <details><summary><strong>Code Snippet</strong></summary>
 
