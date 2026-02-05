@@ -423,11 +423,11 @@ function selectMode(mode) {
 ## Visual Demos
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image.png" alt="Character Selection">
+<img src="{{site.baseurl}}/images/snakes-ladders/image.png" alt="Character Selection">
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-1.png" alt="Game Board">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-1.png" alt="Game Board">
 </div>
 
 <div class="visual-placeholder">
@@ -435,23 +435,23 @@ function selectMode(mode) {
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-2.png" alt="Question Modal">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-2.png" alt="Question Modal">
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-3.png" alt="Mode Selection">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-3.png" alt="Mode Selection">
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-4.png" alt="Boss Battle">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-4.png" alt="Boss Battle">
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-5.png" alt="PvP Arena">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-5.png" alt="PvP Arena">
 </div>
 
 <div class="visual-placeholder">
-<img src="/images/snakes-ladders/image-6.png" alt="Victory Page">
+<img src="{{site.baseurl}}/images/snakes-ladders/image-6.png" alt="Victory Page">
 </div>
 
 ---
