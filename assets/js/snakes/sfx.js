@@ -88,6 +88,11 @@
                 sweep(1400, 520, 0.08, 'sawtooth', 0.04);
                 tone(1800, 0.03, 'square', 0.025, 0.02);
                 break;
+            case 'fireball':
+                // Fireball: airy burst + low crackle
+                sweep(900, 260, 0.12, 'triangle', 0.045);
+                tone(520, 0.08, 'sawtooth', 0.03, 0.04);
+                break;
             case 'hurt':
                 tone(180, 0.18, 'square', 0.05);
                 tone(140, 0.16, 'square', 0.04, 0.04);

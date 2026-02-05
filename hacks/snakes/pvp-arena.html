@@ -804,6 +804,7 @@
                             gameState.player.lives = Number(data.lives || DEFAULT_LIVES);
                             updateLives();
                         }
+                        applyMaxLivesForPlayer();
                         loadedFromServer = true;
                     }
                 }
@@ -828,6 +829,7 @@
                         gameState.player.lives = Number(demoData.lives || DEFAULT_LIVES);
                         updateLives();
                     }
+                    applyMaxLivesForPlayer();
                 }
                 if (!loadedFromServer && gameState.player.username === 'Player') {
                     gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
@@ -1085,16 +1087,35 @@
 
             // Opponent shot
             socket.on('pvp_opponent_shot', (data) => {
-                const charConfig = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+                const isWizard = data.character === 'wizard';
+                const isArcher = data.character === 'archer';
                 gameState.opponentBullets.push({
                     x: data.bulletX,
                     y: data.bulletY,
                     dx: data.dx,
                     dy: data.dy,
                     size: 8,
-                    color: '#e94560',
-                    glow: '#ff6b6b'
+                    color: isWizard ? '#ff3b30' : '#e94560',
+                    glow: isWizard ? '#ff6b6b' : '#ff6b6b',
+                    isFireball: isWizard,
+                    homing: isArcher
                 });
+                if (isWizard) {
+                    const angle = Math.atan2(data.dy, data.dx);
+                    const speed = Math.hypot(data.dx, data.dy) || 12;
+                    const offset = 0.12;
+                    gameState.opponentBullets.push({
+                        x: data.bulletX,
+                        y: data.bulletY,
+                        dx: Math.cos(angle + offset) * speed,
+                        dy: Math.sin(angle + offset) * speed,
+                        size: 8,
+                        color: '#ff3b30',
+                        glow: '#ff6b6b',
+                        isFireball: true,
+                        homing: isArcher
+                    });
+                }
             });
 
             // Player hit
@@ -1191,7 +1212,7 @@
         }
 
         function startBattle() {
-            gameState.player.lives = DEFAULT_LIVES;
+            gameState.player.lives = getMaxLivesFor(gameState.player.character);
             updateLives();
             gameActive = true;
             document.getElementById('controlsPanel').classList.add('hidden');
@@ -1280,9 +1301,9 @@
         function shoot() {
             if (gameState.player.bullets > 0) {
                 if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                    window.SnakesSFX.play('shoot');
+                    window.SnakesSFX.play(gameState.player.character === 'wizard' ? 'fireball' : 'shoot');
                 }
-                const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
+                let shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
                 const bulletSpeed = 12;
                 const dx = Math.cos(shotAngle) * bulletSpeed;
                 const dy = Math.sin(shotAngle) * bulletSpeed;
@@ -1290,15 +1311,25 @@
                 const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
                 const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
 
-                gameState.playerBullets.push({
-                    x: spawnX,
-                    y: spawnY,
-                    size: 8,
-                    speed: bulletSpeed,
-                    dx: dx,
-                    dy: dy,
-                    color: gameState.player.color,
-                    glow: CHARACTER_CONFIG[gameState.player.character]?.glow || '#4facfe'
+                const isWizard = gameState.player.character === 'wizard';
+                const isArcher = gameState.player.character === 'archer';
+                const shots = isWizard ? [-0.12, 0.12] : [0];
+                shots.forEach((offset) => {
+                    const angle = shotAngle + offset;
+                    const bdx = Math.cos(angle) * bulletSpeed;
+                    const bdy = Math.sin(angle) * bulletSpeed;
+                    gameState.playerBullets.push({
+                        x: spawnX,
+                        y: spawnY,
+                        size: 8,
+                        speed: bulletSpeed,
+                        dx: bdx,
+                        dy: bdy,
+                        color: isWizard ? '#ff3b30' : gameState.player.color,
+                        glow: isWizard ? '#ff6b6b' : (CHARACTER_CONFIG[gameState.player.character]?.glow || '#4facfe'),
+                        isFireball: isWizard,
+                        homing: isArcher
+                    });
                 });
 
                 gameState.player.bullets--;
@@ -1319,12 +1350,28 @@
 
         function moveBullets() {
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                if (bullet.homing && gameState.opponent) {
+                    const desired = Math.atan2(gameState.opponent.y - bullet.y, gameState.opponent.x - bullet.x);
+                    const current = Math.atan2(bullet.dy, bullet.dx);
+                    const adjusted = lerpAngle(current, desired, 0.04);
+                    const speed = Math.hypot(bullet.dx, bullet.dy) || 12;
+                    bullet.dx = Math.cos(adjusted) * speed;
+                    bullet.dy = Math.sin(adjusted) * speed;
+                }
                 bullet.x += bullet.dx;
                 bullet.y += bullet.dy;
                 return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
             });
 
             gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
+                if (bullet.homing) {
+                    const desired = Math.atan2(gameState.player.y - bullet.y, gameState.player.x - bullet.x);
+                    const current = Math.atan2(bullet.dy, bullet.dx);
+                    const adjusted = lerpAngle(current, desired, 0.04);
+                    const speed = Math.hypot(bullet.dx, bullet.dy) || 12;
+                    bullet.dx = Math.cos(adjusted) * speed;
+                    bullet.dy = Math.sin(adjusted) * speed;
+                }
                 bullet.x += bullet.dx;
                 bullet.y += bullet.dy;
                 return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
@@ -1337,6 +1384,20 @@
                     const distance = Math.hypot(bullet.x - gameState.opponent.x, bullet.y - gameState.opponent.y);
                     if (distance < gameState.opponent.size || distance < 35) {
                         socket.emit('pvp_hit_opponent', {});
+                        if (getDamageBonusRoll()) {
+                            setTimeout(() => {
+                                socket.emit('pvp_hit_opponent', {});
+                            }, 50);
+                        }
+                        if (gameState.player.character === 'warrior' && Math.random() < 0.10) {
+                            [1000, 2000, 3000, 4000, 5000].forEach((delay) => {
+                                setTimeout(() => {
+                                    if (gameActive && socket && socket.connected) {
+                                        socket.emit('pvp_hit_opponent', {});
+                                    }
+                                }, delay);
+                            });
+                        }
                         return false;
                     }
                     return true;
@@ -1405,27 +1466,31 @@
                 drawPlayer(gameState.opponent, false);
             }
 
-            // Draw player bullets
-            gameState.playerBullets.forEach(bullet => {
+            function drawBullet(bullet) {
+                if (bullet.isFireball) {
+                    const grd = ctx.createRadialGradient(bullet.x, bullet.y, 2, bullet.x, bullet.y, 10);
+                    grd.addColorStop(0, '#fff2a8');
+                    grd.addColorStop(0.4, '#ff9f1c');
+                    grd.addColorStop(1, '#ff3b30');
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = '#ff6b6b';
+                    ctx.fillStyle = grd;
+                } else {
+                    ctx.fillStyle = bullet.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = bullet.glow;
+                }
                 ctx.beginPath();
-                ctx.fillStyle = bullet.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = bullet.glow;
                 ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
-            });
+            }
+
+            // Draw player bullets
+            gameState.playerBullets.forEach(drawBullet);
 
             // Draw opponent bullets
-            gameState.opponentBullets.forEach(bullet => {
-                ctx.beginPath();
-                ctx.fillStyle = bullet.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = bullet.glow;
-                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            });
+            gameState.opponentBullets.forEach(drawBullet);
 
             // Draw aim indicator (match boss-battle)
             if (gameActive) {
@@ -1515,7 +1580,7 @@
         }
 
         function updateLives() {
-            const maxLives = DEFAULT_LIVES;
+            const maxLives = gameState.player.maxLives || getMaxLivesFor(gameState.player.character);
             const lives = gameActive
                 ? Math.max(0, Math.floor(gameState.player.lives))
                 : maxLives;
@@ -1525,7 +1590,7 @@
         }
 
         function updateOpponentLives() {
-            const maxLives = DEFAULT_LIVES;
+            const maxLives = getMaxLivesFor(gameState.opponent?.character);
             const lives = gameActive
                 ? Math.max(0, Math.floor(gameState.opponent?.lives ?? maxLives))
                 : maxLives;
@@ -1681,7 +1746,7 @@
                 }
                 title.textContent = 'VICTORY!';
                 gameOver.className = 'game-over victory';
-                gameState.player.lives = DEFAULT_LIVES;
+                gameState.player.lives = getMaxLivesFor(gameState.player.character);
                 updateLives();
                 savePlayerState();
 
@@ -1759,3 +1824,31 @@
     </script>
 </body>
 </html>
+        function lerpAngle(current, target, factor) {
+            let diff = target - current;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            return current + diff * factor;
+        }
+
+        function getDamageBonusRoll() {
+            const c = gameState.player.character;
+            if (c === 'warrior') {
+                return Math.random() < 0.2;
+            }
+            return false;
+        }
+
+        function getMaxLivesFor(character) {
+            return character === 'knight' ? (DEFAULT_LIVES + 1) : DEFAULT_LIVES;
+        }
+
+        function applyMaxLivesForPlayer() {
+            const max = getMaxLivesFor(gameState.player.character);
+            gameState.player.maxLives = max;
+            if (gameState.player.lives > max) gameState.player.lives = max;
+            if (gameState.player.character === 'knight' && gameState.player.lives < max) {
+                gameState.player.lives = max;
+            }
+            updateLives();
+        }

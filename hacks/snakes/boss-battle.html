@@ -903,6 +903,7 @@
             keys: {},
             otherPlayers: {},  // { odfsid: {x, y, character, username, lives, bullets} }
             chatMessages: [],
+            bossBleed: { ticksLeft: 0, nextTick: 0, damagePerTick: 4, flashOn: false, endTime: 0 },
             // Mouse aiming with smooth interpolation
             mouseX: 0,
             mouseY: 0,
@@ -1034,6 +1035,7 @@
                         gameState.player.lives = Number(demoData.lives || DEFAULT_LIVES);
                         updateLives();
                     }
+                    applyMaxLives();
 
                     updatePlayersList();
                     return Promise.resolve();
@@ -1060,6 +1062,7 @@
                         gameState.player.lives = Number(guestData.lives || DEFAULT_LIVES);
                         updateLives();
                     }
+                    applyMaxLives();
                     const guestName = sessionStorage.getItem('snakes_guest_name');
                     if (guestName) {
                         gameState.player.username = guestName;
@@ -1092,6 +1095,7 @@
                         gameState.player.lives = Number(data.lives || DEFAULT_LIVES);
                         updateLives();
                     }
+                    applyMaxLives();
                 })
                 .catch(err => console.error('Could not load player progress', err));
         }
@@ -1339,15 +1343,35 @@
             // Other player shot a bullet
             socket.on('boss_player_bullet', (data) => {
                 const charConfig = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
+                const isWizard = data.character === 'wizard';
+                const isArcher = data.character === 'archer';
                 gameState.otherPlayerBullets.push({
                     x: data.bulletX,
                     y: data.bulletY,
                     dx: data.dx,
                     dy: data.dy,
                     size: 8,
-                    color: charConfig.color,
-                    glow: charConfig.glow
+                    color: isWizard ? '#ff3b30' : charConfig.color,
+                    glow: isWizard ? '#ff6b6b' : charConfig.glow,
+                    isFireball: isWizard,
+                    homing: isArcher
                 });
+                if (isWizard) {
+                    const angle = Math.atan2(data.dy, data.dx);
+                    const speed = Math.hypot(data.dx, data.dy) || 10;
+                    const offset = 0.1;
+                    gameState.otherPlayerBullets.push({
+                        x: data.bulletX,
+                        y: data.bulletY,
+                        dx: Math.cos(angle + offset) * speed,
+                        dy: Math.sin(angle + offset) * speed,
+                        size: 8,
+                        color: '#ff3b30',
+                        glow: '#ff6b6b',
+                        isFireball: true,
+                        homing: isArcher
+                    });
+                }
             });
 
             // Boss health update
@@ -1539,9 +1563,9 @@
                 }
                 ensureBattleAmmo();
                 // Ensure full health before battle starts
-                gameState.player.lives = DEFAULT_LIVES;
+                gameState.player.lives = getMaxLives();
                 updateLives();
-                savePlayerState({ lives: DEFAULT_LIVES });
+                savePlayerState({ lives: gameState.player.lives });
                 // Join room via REST API
                 const response = await fetch(`${GAME_API_ROOT}/boss/join`, {
                     method: 'POST',
@@ -1846,9 +1870,52 @@
             updateBuffs();
             drawGame();
             checkCollisions();
+            applyBossBleed();
             updateProgressBar();
 
             requestAnimationFrame(gameLoop);
+        }
+
+        function applyBossBleed() {
+            if (gameState.bossBleed.ticksLeft <= 0) return;
+            const now = performance.now();
+            if (now < gameState.bossBleed.nextTick) return;
+            if (gameState.bossBleed.endTime && now > gameState.bossBleed.endTime) {
+                gameState.bossBleed.ticksLeft = 0;
+                gameState.bossBleed.flashOn = false;
+                const bossFill = document.getElementById('bossHealth');
+                if (bossFill) bossFill.style.background = '#27ae60';
+                return;
+            }
+
+            const dmg = gameState.bossBleed.damagePerTick;
+            gameState.boss.health = Math.max(0, gameState.boss.health - dmg);
+            updateBossHealthBar();
+            const bossFill = document.getElementById('bossHealth');
+            if (bossFill) {
+                gameState.bossBleed.flashOn = !gameState.bossBleed.flashOn;
+                bossFill.style.background = gameState.bossBleed.flashOn ? '#27ae60' : '#e74c3c';
+            }
+
+            if (socket && socket.connected && roomId) {
+                socket.emit('boss_damage', {
+                    room_id: roomId,
+                    damage: dmg
+                });
+            }
+
+            gameState.bossBleed.ticksLeft -= 1;
+            gameState.bossBleed.nextTick = now + 500;
+
+            if (gameState.bossBleed.ticksLeft <= 0 && bossFill) {
+                bossFill.style.background = '#27ae60';
+                gameState.bossBleed.flashOn = false;
+                gameState.bossBleed.endTime = 0;
+            }
+
+            if (gameState.boss.health <= 0) {
+                endGame(true);
+            }
         }
 
         function movePlayer() {
@@ -1866,12 +1933,42 @@
             }
         }
 
+function getDamageMultiplier() {
+    const c = gameState.player.character;
+    return (c === 'warrior') ? 1.2 : 1;
+}
+
+        function getMaxLives() {
+            return gameState.player.character === 'knight' ? (DEFAULT_LIVES + 1) : DEFAULT_LIVES;
+        }
+
+        function applyMaxLives() {
+            const maxLives = getMaxLives();
+            gameState.player.maxLives = maxLives;
+            if (gameState.player.lives > maxLives) {
+                gameState.player.lives = maxLives;
+            }
+            if (gameState.player.character === 'knight' && gameState.player.lives < maxLives) {
+                gameState.player.lives = maxLives;
+            }
+            if (typeof updateLives === 'function') {
+                updateLives();
+            }
+        }
+
+        function getBulletStyle() {
+            if (gameState.player.character === 'wizard') {
+                return { color: '#ff3b30', glow: '#ff6b6b', isFireball: true };
+            }
+            return { color: '#FFD700', glow: '#FFD700', isFireball: false };
+        }
+
         function shoot() {
             if (gameState.player.bullets > 0) {
                 if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                    window.SnakesSFX.play('shoot');
+                    window.SnakesSFX.play(gameState.player.character === 'wizard' ? 'fireball' : 'shoot');
                 }
-                const shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
+                let shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
                 // Calculate bullet direction based on aim angle
                 const bulletSpeed = 10;
                 const dx = Math.cos(shotAngle) * bulletSpeed;
@@ -1882,13 +1979,26 @@
                 const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
                 const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
 
-                gameState.playerBullets.push({
-                    x: spawnX,
-                    y: spawnY,
-                    size: 8,
-                    speed: bulletSpeed,
-                    dx: dx,
-                    dy: dy
+                const style = getBulletStyle();
+                const isWizard = gameState.player.character === 'wizard';
+                const isArcher = gameState.player.character === 'archer';
+                const shots = isWizard ? [-0.1, 0.1] : [0];
+                shots.forEach((offset) => {
+                    const angle = shotAngle + offset;
+                    const bdx = Math.cos(angle) * bulletSpeed;
+                    const bdy = Math.sin(angle) * bulletSpeed;
+                    gameState.playerBullets.push({
+                        x: spawnX,
+                        y: spawnY,
+                        size: 8,
+                        speed: bulletSpeed,
+                        dx: bdx,
+                        dy: bdy,
+                        color: style.color,
+                        glow: style.glow,
+                        isFireball: style.isFireball,
+                        homing: isArcher
+                    });
                 });
                 gameState.player.bullets--;
                 updateBulletsDisplay();
@@ -1916,6 +2026,14 @@
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                 // Use directional movement if available, otherwise move upward
                 if (bullet.dx !== undefined && bullet.dy !== undefined) {
+                    if (bullet.homing) {
+                        const desired = Math.atan2(gameState.boss.y - bullet.y, gameState.boss.x - bullet.x);
+                        const current = Math.atan2(bullet.dy, bullet.dx);
+                        const adjusted = lerpAngle(current, desired, 0.04);
+                        const speed = Math.hypot(bullet.dx, bullet.dy) || 10;
+                        bullet.dx = Math.cos(adjusted) * speed;
+                        bullet.dy = Math.sin(adjusted) * speed;
+                    }
                     bullet.x += bullet.dx;
                     bullet.y += bullet.dy;
                 } else {
@@ -1929,6 +2047,14 @@
             // Move other players' bullets
             gameState.otherPlayerBullets = gameState.otherPlayerBullets.filter(bullet => {
                 if (bullet.dx !== undefined && bullet.dy !== undefined) {
+                    if (bullet.homing) {
+                        const desired = Math.atan2(gameState.boss.y - bullet.y, gameState.boss.x - bullet.x);
+                        const current = Math.atan2(bullet.dy, bullet.dx);
+                        const adjusted = lerpAngle(current, desired, 0.04);
+                        const speed = Math.hypot(bullet.dx, bullet.dy) || 10;
+                        bullet.dx = Math.cos(adjusted) * speed;
+                        bullet.dy = Math.sin(adjusted) * speed;
+                    }
                     bullet.x += bullet.dx;
                     bullet.y += bullet.dy;
                 } else {
@@ -2031,7 +2157,7 @@
                 if (distance < gameState.boss.size) {
                     // Apply damage multiplier from powerups
                     const baseDamage = 10;
-                    const damage = Math.round(baseDamage * gameState.playerBuffs.damageMultiplier);
+                    const damage = Math.round(baseDamage * gameState.playerBuffs.damageMultiplier * getDamageMultiplier());
                     gameState.boss.health = Math.max(0, gameState.boss.health - damage);
                     updateBossHealthBar();
 
@@ -2046,6 +2172,13 @@
                             damage: damage
                         });
                     }
+
+                    // Warrior bleed effect (35% chance)
+            if (gameState.player.character === 'warrior' && Math.random() < 0.10) {
+                gameState.bossBleed.ticksLeft = 10;
+                gameState.bossBleed.nextTick = performance.now() + 500;
+                gameState.bossBleed.endTime = performance.now() + 5000;
+            }
 
                     if (gameState.boss.health <= 0) {
                         endGame(true);
@@ -2361,25 +2494,30 @@
 
             ctx.shadowBlur = 0;
 
-            // Draw player bullets
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#FFD700';
-            ctx.fillStyle = '#FFD700';
-            gameState.playerBullets.forEach(bullet => {
+            function drawBullet(bullet) {
+                if (bullet.isFireball) {
+                    const grd = ctx.createRadialGradient(bullet.x, bullet.y, 2, bullet.x, bullet.y, 10);
+                    grd.addColorStop(0, '#fff2a8');
+                    grd.addColorStop(0.4, '#ff9f1c');
+                    grd.addColorStop(1, '#ff3b30');
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = '#ff6b6b';
+                    ctx.fillStyle = grd;
+                } else {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = bullet.glow || '#FFD700';
+                    ctx.fillStyle = bullet.color || '#FFD700';
+                }
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
                 ctx.fill();
-            });
+            }
 
-            // Draw other players' bullets with their character colors
-            gameState.otherPlayerBullets.forEach(bullet => {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = bullet.glow || '#4facfe';
-                ctx.fillStyle = bullet.color || '#4facfe';
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            // Draw player bullets
+            gameState.playerBullets.forEach(drawBullet);
+
+            // Draw other players' bullets
+            gameState.otherPlayerBullets.forEach(drawBullet);
 
             // Draw boss projectiles
             ctx.shadowBlur = 15;
@@ -2390,6 +2528,23 @@
                 ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI * 2);
                 ctx.fill();
             });
+
+            // Bleed visual effect on boss (red droplets)
+            if (gameState.bossBleed.ticksLeft > 0) {
+                const t = Date.now() * 0.004;
+                for (let i = 0; i < 6; i++) {
+                    const angle = t + (i * Math.PI / 3);
+                    const r = gameState.boss.size * (0.6 + (i % 2) * 0.2);
+                    const x = gameState.boss.x + Math.cos(angle) * r;
+                    const y = gameState.boss.y + Math.sin(angle) * r + (i % 3) * 6;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#e74c3c';
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3 + (i % 2), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
 
             // Draw powerups
             gameState.powerups.forEach(powerup => {
@@ -2455,7 +2610,7 @@
         }
 
         function updateLives() {
-            const maxLives = DEFAULT_LIVES;
+            const maxLives = gameState.player.maxLives || getMaxLives();
             const lives = gameActive
                 ? Math.max(0, Math.floor(gameState.player.lives))
                 : maxLives;
@@ -2581,7 +2736,7 @@
                     break;
 
                 case 'heal':
-                    if (gameState.player.lives < DEFAULT_LIVES) {
+                    if (gameState.player.lives < getMaxLives()) {
                         gameState.player.lives += config.healAmount;
                         updateLives();
                         addSystemMessage(`You got ${config.name}! +1 life`);
@@ -2860,9 +3015,9 @@
                     <p style="margin-top: 15px; font-size: 1.1em;">You and your team defeated the boss!</p>
                 `;
 
-                gameState.player.lives = DEFAULT_LIVES;
+                gameState.player.lives = getMaxLives();
                 updateLives();
-                savePlayerState({ lives: DEFAULT_LIVES });
+                savePlayerState({ lives: gameState.player.lives });
                 showVictoryAnimation();
 
                 // Store win mode and stats for victory page

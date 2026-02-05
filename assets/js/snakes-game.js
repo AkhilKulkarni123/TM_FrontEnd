@@ -34,6 +34,26 @@ var BOARD_TOTAL_SQUARES = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE + 1;
 var LESSON_BULLETS = 5;
 var QUESTION_BULLETS = 5;
 var AUTOSAVE_EVERY_SECONDS = 10;
+var BASE_MAX_LIVES = 5;
+
+var CHARACTER_PERKS = {
+    knight: {
+        name: 'Shielded',
+        desc: '+1 Max Life (starts with 6)'
+    },
+    wizard: {
+        name: 'Firebrand',
+        desc: 'Slightly higher damage; bullets are red'
+    },
+    archer: {
+        name: 'Keen Aim',
+        desc: 'Slight aim assist in boss & PvP'
+    },
+    warrior: {
+        name: 'Bravery',
+        desc: 'Slightly higher damage'
+    }
+};
 
 var gameState = {
     isGuest: false,
@@ -42,7 +62,8 @@ var gameState = {
     username: '',
     character: '',
     bullets: 0,
-    lives: 3,
+    lives: BASE_MAX_LIVES,
+    maxLives: BASE_MAX_LIVES,
     currentSquare: 0,
     visitedSquares: [0],
     completedLessons: [],
@@ -52,6 +73,30 @@ var gameState = {
     timeElapsed: 0,
     bossAttempts: 0,
     socket: null
+};
+
+function getPerkConfig() {
+    return CHARACTER_PERKS[gameState.character] || null;
+}
+
+function getPerkDescription() {
+    var perk = getPerkConfig();
+    return perk ? (perk.name + ': ' + perk.desc) : 'None';
+}
+
+function applyCharacterPerks() {
+    var perk = getPerkConfig();
+    gameState.maxLives = BASE_MAX_LIVES;
+    if (perk && gameState.character === 'knight') {
+        gameState.maxLives = BASE_MAX_LIVES + 1;
+        if (gameState.lives < gameState.maxLives) {
+            gameState.lives = gameState.maxLives;
+        }
+    }
+}
+
+window.SnakesPerks = {
+    getDescription: getPerkDescription
 };
 
 // Demo mode: when enabled, progress is session-only and excluded from leaderboard
@@ -101,9 +146,10 @@ function loadGuestProgress() {
             gameState.completedLessons = guestData.completedLessons || [];
             gameState.completedQuestions = guestData.completedQuestions || [];
             gameState.unlockedSections = guestData.unlockedSections || ['half1'];
-            gameState.lives = guestData.lives || 3;
+            gameState.lives = guestData.lives || BASE_MAX_LIVES;
             gameState.timeElapsed = guestData.timeElapsed || 0;
             if (guestData.character) gameState.character = guestData.character;
+            applyCharacterPerks();
             return true;
         }
     } catch (e) {
@@ -121,9 +167,10 @@ function loadGuestProgress() {
                 gameState.completedLessons = demoData.completedLessons || [];
                 gameState.completedQuestions = demoData.completedQuestions || [];
                 gameState.unlockedSections = demoData.unlockedSections || ['half1'];
-                gameState.lives = demoData.lives || 3;
+                gameState.lives = demoData.lives || BASE_MAX_LIVES;
                 gameState.timeElapsed = demoData.timeElapsed || 0;
                 if (demoData.character) gameState.character = demoData.character;
+                applyCharacterPerks();
                 return true;
             }
         } catch (e) {
@@ -172,7 +219,7 @@ function loadDemoProgress() {
             gameState.completedLessons = demoData.completedLessons || [];
             gameState.completedQuestions = demoData.completedQuestions || [];
             gameState.unlockedSections = demoData.unlockedSections || ['half1'];
-            gameState.lives = demoData.lives || 3;
+            gameState.lives = demoData.lives || BASE_MAX_LIVES;
             gameState.timeElapsed = demoData.timeElapsed || 0;
             if (demoData.character) gameState.character = demoData.character;
             console.log('Demo progress loaded from session:', demoData);
@@ -468,7 +515,7 @@ function loadOrCreateGameData() {
             } else {
                 gameState.visitedSquares = [gameState.currentSquare];
             }
-            gameState.lives = Number(data.lives || 3);
+            gameState.lives = Number(data.lives || BASE_MAX_LIVES);
             gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
             gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
 
@@ -489,6 +536,7 @@ function loadOrCreateGameData() {
             if (gameState.isDemoMode) {
                 loadDemoProgress();
             }
+            applyCharacterPerks();
         })
         .catch(function (error) { console.error('Error loading game data:', error); });
 }
@@ -540,6 +588,7 @@ function loadProgress() {
             if (gameState.isDemoMode) {
                 loadDemoProgress();
             }
+            applyCharacterPerks();
         })
         .catch(function (error) { console.error('Error loading progress:', error); });
 }
@@ -578,6 +627,7 @@ function selectCharacter(card) {
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
+    applyCharacterPerks();
     // Save selection for resume (localStorage for logged-in, sessionStorage for guest)
     try {
         if (gameState.isGuest) {
@@ -674,6 +724,7 @@ function startGame() {
     }
 
     console.log('Starting game with character:', gameState.character);
+    applyCharacterPerks();
 
     loadOrCreateGameData()
         .then(function () { 
@@ -939,7 +990,7 @@ function autoResumeIfReady() {
                 if (Array.isArray(data.visited_squares)) {
                     gameState.visitedSquares = data.visited_squares.map(function (s) { return Number(s) - 1; });
                 }
-                gameState.lives = Number(data.lives || 3);
+                gameState.lives = Number(data.lives || BASE_MAX_LIVES);
                 gameState.bossAttempts = Number(data.boss_battle_attempts || 0);
                 gameState.timeElapsed = Math.floor(Number(data.time_played || 0));
 
@@ -1313,6 +1364,7 @@ function updatePlayerInfo() {
     var livesSpan = document.getElementById('player-lives');
     var squareSpan = document.getElementById('player-square');
     var timeSpan = document.getElementById('player-time');
+    var perkSpan = document.getElementById('player-perk');
 
     console.log('Updating player info with character:', gameState.character);
     
@@ -1321,6 +1373,7 @@ function updatePlayerInfo() {
     if (livesSpan) livesSpan.textContent = gameState.lives;
     if (squareSpan) squareSpan.textContent = (gameState.currentSquare === 0) ? 'START' : gameState.currentSquare;
     if (timeSpan) timeSpan.textContent = formatTime(gameState.timeElapsed);
+    if (perkSpan) perkSpan.textContent = getPerkDescription();
 }
 
 function formatTime(totalSeconds) {
@@ -1660,6 +1713,7 @@ function showQuestionModal(square, row, index) {
         document.getElementById('question-subtitle').textContent = 'Answer correctly to earn 5 bullets!';
     }
 
+
     // Function to check mini-game completion periodically
     // Function to check mini-game completion periodically
     // ONLY checks for arcadeCompleted='true' which is set by MiniGames system on successful completion
@@ -1791,7 +1845,7 @@ function showQuestionModal(square, row, index) {
 
         // If in demo mode, handle locally without API call
         if (gameState.isDemoMode || gameState.isGuest) {
-            alert(correct ? 'Correct! You earned ' + QUESTION_BULLETS + ' bullets.' : 'Incorrect. No bullets awarded.');
+            alert(correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.');
 
             if (correct) {
                 gameState.bullets += QUESTION_BULLETS;
@@ -1827,7 +1881,7 @@ function showQuestionModal(square, row, index) {
         })
         .then(function(res) {
             if (res.ok) {
-                alert(correct ? 'Correct! You earned ' + QUESTION_BULLETS + ' bullets.' : 'Incorrect. No bullets awarded.');
+                alert(correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.');
 
                 if (correct) {
                     gameState.bullets += QUESTION_BULLETS;
