@@ -431,7 +431,7 @@ function selectMode(mode) {
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Lesson page showing CS content with progress bar]
+<img src="{{site.baseurl}}/images/snakes-ladders/image-7.png" alt="Lesson Page">
 </div>
 
 <div class="visual-placeholder">
