@@ -423,11 +423,11 @@ function selectMode(mode) {
 ## Visual Demos
 
 <div class="visual-placeholder">
-[SCREENSHOT: Character selection screen with 4 pixel-art characters]
+<img src="/images/snakes-ladders/image.png" alt="Character Selection">
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Game board with dice, character on square, bullets/lives HUD]
+<img src="/images/snakes-ladders/image-1.png" alt="Game Board">
 </div>
 
 <div class="visual-placeholder">
@@ -435,23 +435,23 @@ function selectMode(mode) {
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Question modal with multiple choice answers and feedback]
+<img src="/images/snakes-ladders/image-2.png" alt="Question Modal">
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Mode Selection hub showing Boss Battle vs PvP options]
+<img src="/images/snakes-ladders/image-3.png" alt="Mode Selection">
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Boss battle arena with multiple players, boss, powerups, and chat sidebar]
+<img src="/images/snakes-ladders/image-4.png" alt="Boss Battle">
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: PvP arena with center wall, two players facing off]
+<img src="/images/snakes-ladders/image-5.png" alt="PvP Arena">
 </div>
 
 <div class="visual-placeholder">
-[SCREENSHOT: Victory page with confetti, stats, and Hall of Champions]
+<img src="/images/snakes-ladders/image-6.png" alt="Victory Page">
 </div>
 
 ---
