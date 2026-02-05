@@ -1284,6 +1284,47 @@
             font-style: italic;
         }
 
+        .character-perk-display {
+            background: linear-gradient(145deg, rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9));
+            border: 2px solid #3498db;
+            border-radius: 12px;
+            padding: 15px 25px;
+            margin: 20px auto;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .character-perk-display:hover {
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .perk-header {
+            font-size: 0.75em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .perk-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .perk-description {
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.4;
+            transition: all 0.3s ease;
+        }
+
         /* DETAILED PIXEL ART CHARACTERS */
         .knight-pixel {
             background: 
@@ -1699,6 +1740,11 @@
             </div>
             
             <button class="carousel-btn next-btn" id="next-character">►</button>
+        </div>
+        <div id="character-perk-display" class="character-perk-display">
+            <div class="perk-header">Character Perk</div>
+            <div class="perk-name" id="perk-name-display">Shielded</div>
+            <div class="perk-description" id="perk-desc-display">+1 Max Life (starts with 6)</div>
         </div>
         <button id="start-game-btn" class="game-start-btn" disabled>START ADVENTURE</button>
     </div>
@@ -2566,13 +2612,29 @@ console.log(student.name); // 'Ada'</code></pre>
                 var clickTimer = null;
                 
                 if (!cards.length || !prevBtn || !nextBtn) return;
-                
+
+                function updatePerkDisplay(characterType) {
+                    var perkNameEl = document.getElementById('perk-name-display');
+                    var perkDescEl = document.getElementById('perk-desc-display');
+
+                    if (perkNameEl && perkDescEl && typeof CHARACTER_PERKS !== 'undefined') {
+                        var perk = CHARACTER_PERKS[characterType];
+                        if (perk) {
+                            perkNameEl.textContent = perk.name;
+                            perkDescEl.textContent = perk.desc;
+                        }
+                    }
+                }
+
                 function updateCarousel() {
                     cards.forEach(function(card, index) {
                         card.classList.remove('center', 'left', 'right');
-                        
+
                         if (index === currentIndex) {
                             card.classList.add('center');
+                            // Update perk display for centered character
+                            var characterType = card.getAttribute('data-character');
+                            updatePerkDisplay(characterType);
                         } else if (index === currentIndex - 1 || (currentIndex === 0 && index === cards.length - 1)) {
                             card.classList.add('left');
                         } else if (index === currentIndex + 1 || (currentIndex === cards.length - 1 && index === 0)) {
