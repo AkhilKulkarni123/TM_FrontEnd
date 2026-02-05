@@ -978,6 +978,24 @@
             }
         }
 
+        function isGuestSession() {
+            try {
+                return sessionStorage.getItem('snakes_isGuest') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function loadGuestProgress() {
+            try {
+                const stored = sessionStorage.getItem('snakes_guest_progress');
+                if (stored) return JSON.parse(stored);
+            } catch (e) {
+                console.error('Error loading guest progress:', e);
+            }
+            return null;
+        }
+
         // Load demo progress from sessionStorage
         function loadDemoProgress() {
             try {
@@ -1021,6 +1039,35 @@
                 }
             }
 
+            // Guest session (no server)
+            if (isGuestSession()) {
+                const guestData = loadGuestProgress();
+                if (guestData) {
+                    console.log('Loading player data from guest progress:', guestData);
+                    if (guestData.character) {
+                        gameState.player.character = guestData.character;
+                        const charConfig = CHARACTER_CONFIG[guestData.character];
+                        if (charConfig) {
+                            gameState.player.color = charConfig.color;
+                        }
+                    }
+                    if (typeof guestData.bullets !== 'undefined') {
+                        gameState.player.bullets = Number(guestData.bullets || 0);
+                        updateBulletsDisplay();
+                    }
+                    if (typeof guestData.lives !== 'undefined') {
+                        gameState.player.lives = Number(guestData.lives || DEFAULT_LIVES);
+                        updateLives();
+                    }
+                    const guestName = sessionStorage.getItem('snakes_guest_name');
+                    if (guestName) {
+                        gameState.player.username = guestName;
+                    }
+                    updatePlayersList();
+                    return Promise.resolve();
+                }
+            }
+
             // Not in demo mode, fetch from server
             return fetch(GAME_API_ROOT + '/snakes/', { credentials: 'include' })
                 .then(res => res.ok ? res.json() : null)
@@ -1050,6 +1097,13 @@
 
         // Get username
         function loadUserInfo() {
+            if (isGuestSession()) {
+                try {
+                    const guestName = sessionStorage.getItem('snakes_guest_name');
+                    if (guestName) gameState.player.username = guestName;
+                } catch (e) {}
+                return Promise.resolve();
+            }
             return fetch(GAME_API_ROOT.replace('/api', '') + '/api/id', { credentials: 'include' })
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
@@ -1497,6 +1551,10 @@
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error('Join battle failed: ' + response.status);
+                }
+
                 if (response.ok) {
                     const data = await response.json();
                     roomId = data.room_id;
@@ -1719,6 +1777,21 @@
                     console.log('Demo mode: saved player state to session', demoData);
                 } catch (e) {
                     console.error('Error saving demo state:', e);
+                }
+                return Promise.resolve();
+            }
+
+            // Guest session: save to sessionStorage instead of server
+            if (isGuestSession()) {
+                try {
+                    const stored = sessionStorage.getItem('snakes_guest_progress');
+                    let guestData = stored ? JSON.parse(stored) : {};
+                    guestData.bullets = overrides?.total_bullets ?? bullets;
+                    guestData.lives = overrides?.lives ?? lives;
+                    sessionStorage.setItem('snakes_guest_progress', JSON.stringify(guestData));
+                    console.log('Guest session: saved player state to session', guestData);
+                } catch (e) {
+                    console.error('Error saving guest state:', e);
                 }
                 return Promise.resolve();
             }

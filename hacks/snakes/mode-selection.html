@@ -386,10 +386,27 @@
             }
         }
 
+        function isGuestSession() {
+            try {
+                return sessionStorage.getItem('snakes_isGuest') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
         // Load demo progress
         function loadDemoProgress() {
             try {
                 const stored = sessionStorage.getItem('snakes_demo_progress');
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+            return null;
+        }
+
+        // Load guest progress
+        function loadGuestProgress() {
+            try {
+                const stored = sessionStorage.getItem('snakes_guest_progress');
                 if (stored) return JSON.parse(stored);
             } catch (e) {}
             return null;
@@ -422,6 +439,22 @@
                 }
             } catch (err) {
                 console.error('Error loading player data from server:', err);
+            }
+
+            // Guest session (no server)
+            if (isGuestSession()) {
+                const guestData = loadGuestProgress();
+                if (guestData) {
+                    playerData.character = guestData.character || playerData.character;
+                    playerData.bullets = guestData.bullets || playerData.bullets;
+                    playerData.lives = guestData.lives || playerData.lives;
+                }
+                if (!loadedFromServer) {
+                    const guestName = sessionStorage.getItem('snakes_guest_name');
+                    playerData.username = guestName || 'Guest';
+                }
+                updateUI();
+                return;
             }
 
             // If demo mode is active, use demo bullets (from autofill) for the session

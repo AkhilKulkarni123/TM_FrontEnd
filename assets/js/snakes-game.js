@@ -109,6 +109,27 @@ function loadGuestProgress() {
     } catch (e) {
         console.error('Error loading guest progress:', e);
     }
+    // Fallback: if demo mode is active for guest, load demo progress
+    if (gameState.isDemoMode) {
+        try {
+            var demoStored = sessionStorage.getItem('snakes_demo_progress');
+            if (demoStored) {
+                var demoData = JSON.parse(demoStored);
+                gameState.bullets = demoData.bullets || 0;
+                gameState.currentSquare = demoData.currentSquare || 0;
+                gameState.visitedSquares = demoData.visitedSquares || [0];
+                gameState.completedLessons = demoData.completedLessons || [];
+                gameState.completedQuestions = demoData.completedQuestions || [];
+                gameState.unlockedSections = demoData.unlockedSections || ['half1'];
+                gameState.lives = demoData.lives || 3;
+                gameState.timeElapsed = demoData.timeElapsed || 0;
+                if (demoData.character) gameState.character = demoData.character;
+                return true;
+            }
+        } catch (e) {
+            console.error('Error loading demo progress for guest:', e);
+        }
+    }
     return false;
 }
 
@@ -132,6 +153,10 @@ function saveDemoProgress() {
         console.log('Demo progress saved to session');
     } catch (e) {
         console.error('Error saving demo progress:', e);
+    }
+
+    if (gameState.isGuest) {
+        saveGuestProgress();
     }
 }
 
@@ -1537,6 +1562,12 @@ function handleSquareEvent() {
             return;
         }
         if (square === sectionEnd) {
+            if (gameState.isGuest || gameState.isDemoMode) {
+                if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
+                saveProgress();
+                alert('You reached the end of the questions! You can now proceed to the boss.');
+                return;
+            }
             checkPlayerTopFive().then(function (isTopFive) {
                 if (isTopFive) {
                     if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
@@ -1938,6 +1969,12 @@ function navigateNext() {
         }
         window.location.href = 'game-board-part2.html';
     } else if (section === 2) {
+        if (gameState.isGuest || gameState.isDemoMode) {
+            if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
+            saveProgress();
+            window.location.href = 'mode-selection.html';
+            return;
+        }
         if (gameState.unlockedSections.indexOf('boss') === -1) {
             checkPlayerTopFive().then(function (isTopFive) {
                 if (!isTopFive) {
@@ -1956,6 +1993,8 @@ function navigateNext() {
 }
 
 function checkPlayerTopFive() {
+    if (gameState.isGuest || gameState.isDemoMode) return Promise.resolve(true);
+
     return fetch(API_URL + '/snakes/leaderboard?limit=10', {
         method: 'GET',
         mode: fetchOptions.mode,
