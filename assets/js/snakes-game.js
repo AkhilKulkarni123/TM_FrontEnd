@@ -68,6 +68,50 @@ function enableDemoMode() {
     console.log('Demo mode enabled - progress will not be saved to server or reflected in leaderboard');
 }
 
+// Guest mode: session-only progress (no server persistence)
+function saveGuestProgress() {
+    if (!gameState.isGuest) return;
+
+    try {
+        var guestData = {
+            bullets: gameState.bullets,
+            currentSquare: gameState.currentSquare,
+            visitedSquares: gameState.visitedSquares,
+            completedLessons: gameState.completedLessons,
+            completedQuestions: gameState.completedQuestions,
+            unlockedSections: gameState.unlockedSections,
+            lives: gameState.lives,
+            timeElapsed: gameState.timeElapsed,
+            character: gameState.character
+        };
+        sessionStorage.setItem('snakes_guest_progress', JSON.stringify(guestData));
+    } catch (e) {
+        console.error('Error saving guest progress:', e);
+    }
+}
+
+function loadGuestProgress() {
+    try {
+        var stored = sessionStorage.getItem('snakes_guest_progress');
+        if (stored) {
+            var guestData = JSON.parse(stored);
+            gameState.bullets = guestData.bullets || 0;
+            gameState.currentSquare = guestData.currentSquare || 0;
+            gameState.visitedSquares = guestData.visitedSquares || [0];
+            gameState.completedLessons = guestData.completedLessons || [];
+            gameState.completedQuestions = guestData.completedQuestions || [];
+            gameState.unlockedSections = guestData.unlockedSections || ['half1'];
+            gameState.lives = guestData.lives || 3;
+            gameState.timeElapsed = guestData.timeElapsed || 0;
+            if (guestData.character) gameState.character = guestData.character;
+            return true;
+        }
+    } catch (e) {
+        console.error('Error loading guest progress:', e);
+    }
+    return false;
+}
+
 // Save demo progress to sessionStorage
 function saveDemoProgress() {
     if (!gameState.isDemoMode) return;
@@ -334,7 +378,11 @@ function playAsGuest() {
     gameState.isGuest = true;
     gameState.userId = 'guest_' + Date.now();
     gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
-    try { localStorage.setItem('snakes_isGuest', '1'); } catch (e) {}
+    try {
+        sessionStorage.setItem('snakes_isGuest', '1');
+        sessionStorage.setItem('snakes_user_id', String(gameState.userId));
+        sessionStorage.setItem('snakes_guest_name', gameState.username);
+    } catch (e) {}
 
     var loginContainer = document.getElementById('login-container');
     var characterSelection = document.getElementById('character-selection');
@@ -343,7 +391,10 @@ function playAsGuest() {
 }
 
 function loadOrCreateGameData() {
-    if (gameState.isGuest) return Promise.resolve();
+    if (gameState.isGuest) {
+        loadGuestProgress();
+        return Promise.resolve();
+    }
 
     return fetch(API_URL + '/snakes/', {
         method: 'GET',
@@ -411,7 +462,10 @@ function loadOrCreateGameData() {
 }
 
 function loadProgress() {
-    if (gameState.isGuest) return Promise.resolve();
+    if (gameState.isGuest) {
+        loadGuestProgress();
+        return Promise.resolve();
+    }
 
     return fetch(API_URL + '/snakes/progress', {
         method: 'GET',
@@ -459,7 +513,11 @@ function loadProgress() {
 }
 
 function saveProgress() {
-    if (gameState.isGuest || gameState.isDemoMode) return Promise.resolve();
+    if (gameState.isGuest) {
+        saveGuestProgress();
+        return Promise.resolve();
+    }
+    if (gameState.isDemoMode) return Promise.resolve();
 
     if (gameState.timeStarted !== null) gameState.timeElapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
 
@@ -488,11 +546,18 @@ function selectCharacter(card) {
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
-    // Save to localStorage with user ID for multi-account support
+    // Save selection for resume (localStorage for logged-in, sessionStorage for guest)
     try {
-        localStorage.setItem('snakes_selected_character', gameState.character);
-        if (gameState.userId) {
-            localStorage.setItem('snakes_user_id', String(gameState.userId));
+        if (gameState.isGuest) {
+            sessionStorage.setItem('snakes_selected_character', gameState.character);
+            if (gameState.userId) {
+                sessionStorage.setItem('snakes_user_id', String(gameState.userId));
+            }
+        } else {
+            localStorage.setItem('snakes_selected_character', gameState.character);
+            if (gameState.userId) {
+                localStorage.setItem('snakes_user_id', String(gameState.userId));
+            }
         }
     } catch (e) {}
 
@@ -599,9 +664,16 @@ function startGame() {
             if (loginContainer) loginContainer.classList.add('hidden');
 
             try {
-                localStorage.setItem('snakes_started', '1');
-                if (gameState.userId) {
-                    localStorage.setItem('snakes_user_id', String(gameState.userId));
+                if (gameState.isGuest) {
+                    sessionStorage.setItem('snakes_started', '1');
+                    if (gameState.userId) {
+                        sessionStorage.setItem('snakes_user_id', String(gameState.userId));
+                    }
+                } else {
+                    localStorage.setItem('snakes_started', '1');
+                    if (gameState.userId) {
+                        localStorage.setItem('snakes_user_id', String(gameState.userId));
+                    }
                 }
             } catch (e) {}
 
@@ -698,6 +770,50 @@ function autoResumeIfReady() {
     var storedUserId = null;
     try { storedUserId = localStorage.getItem('snakes_user_id'); } catch (e) {}
 
+    // Guest auto-resume (session-only, no backend)
+    var isGuestStored = false;
+    try { isGuestStored = (sessionStorage.getItem('snakes_isGuest') === '1'); } catch (e) {}
+    if (isGuestStored) {
+        gameState.isGuest = true;
+        try { storedChar = sessionStorage.getItem('snakes_selected_character'); } catch (e) {}
+        try { hasStarted = (sessionStorage.getItem('snakes_started') === '1'); } catch (e) {}
+        var guestUserId = null;
+        try { guestUserId = sessionStorage.getItem('snakes_user_id'); } catch (e) {}
+        if (!guestUserId) {
+            guestUserId = 'guest_' + Date.now();
+            try { sessionStorage.setItem('snakes_user_id', String(guestUserId)); } catch (e) {}
+        }
+        gameState.userId = guestUserId;
+        try { gameState.username = sessionStorage.getItem('snakes_guest_name') || 'Guest'; } catch (e) { gameState.username = 'Guest'; }
+
+        if (storedChar && hasStarted) {
+            gameState.character = storedChar;
+            loadGuestProgress();
+
+            var guestCharacterSelection = document.getElementById('character-selection');
+            var guestGameContainer = document.getElementById('game-container');
+            var guestLoginContainer = document.getElementById('login-container');
+            if (guestCharacterSelection) guestCharacterSelection.classList.add('hidden');
+            if (guestGameContainer) guestGameContainer.classList.remove('hidden');
+            if (guestLoginContainer) guestLoginContainer.classList.add('hidden');
+
+            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+            return Promise.resolve();
+        }
+
+        // Guest without selection/start: show character select if available, otherwise go back to section 1
+        var guestLoginContainerFallback = document.getElementById('login-container');
+        var guestCharacterSelectionFallback = document.getElementById('character-selection');
+        if (guestLoginContainerFallback) guestLoginContainerFallback.classList.add('hidden');
+        if (guestCharacterSelectionFallback) {
+            guestCharacterSelectionFallback.classList.remove('hidden');
+        } else {
+            window.location.href = 'game-board-part1.html';
+        }
+        return Promise.resolve();
+    }
+
     // Clear localStorage if:
     // 1. There's stored data but no stored user ID (old format before user ID tracking)
     // 2. User ID doesn't match current logged-in user
@@ -719,7 +835,9 @@ function autoResumeIfReady() {
             localStorage.removeItem('snakes_selected_character');
             localStorage.removeItem('snakes_started');
             localStorage.removeItem('snakes_user_id');
-            localStorage.removeItem('snakes_isGuest');
+            sessionStorage.removeItem('snakes_isGuest');
+            sessionStorage.removeItem('snakes_guest_name');
+            sessionStorage.removeItem('snakes_user_id');
         } catch (e) {}
         storedChar = null;
         hasStarted = false;
@@ -729,7 +847,7 @@ function autoResumeIfReady() {
     // Only auto-resume if BOTH character is selected AND game was started AND same user
     if (storedChar && hasStarted && gameState.userId && storedUserId === String(gameState.userId)) {
         gameState.character = storedChar;
-        gameState.isGuest = (localStorage.getItem('snakes_isGuest') === '1');
+        gameState.isGuest = false;
 
         return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
             var characterSelection = document.getElementById('character-selection');
