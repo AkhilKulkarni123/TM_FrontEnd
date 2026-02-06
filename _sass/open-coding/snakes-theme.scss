@@ -1,0 +1,274 @@
+// Snakes & Ladders theme layer (Sass)
+
+$bg-start: #101624;
+$bg-mid: #1a2133;
+$bg-end: #232b40;
+
+$accent-primary: #2f8f85;
+$accent-secondary: #9b7a35;
+$accent-muted: #5f7280;
+
+$panel: rgba(10, 14, 22, 0.78);
+$panel-border: rgba(255, 255, 255, 0.12);
+$panel-soft: rgba(255, 255, 255, 0.08);
+$text-soft: rgba(255, 255, 255, 0.72);
+
+@mixin glow($color, $blur: 50px) {
+  box-shadow: 0 20px $blur rgba($color, 0.35);
+}
+
+@mixin glass-panel {
+  background: $panel;
+  border: 2px solid $panel-border;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+body.snakes-theme {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: $bg-mid;
+  color: #fff;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.08) 0%, transparent 55%),
+      radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.08) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container,
+  #game-container,
+  #login-container,
+  #character-selection {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+  }
+
+  .login-box,
+  .login-options,
+  .login-notice,
+  .display-name-card,
+  .character-perk-display,
+  .board-status,
+  .info-card,
+  .board-grid-frame,
+  .modal-content,
+  .leaderboard-content,
+  .question-modal-content,
+  .online-players-content,
+  .player-stats {
+    @include glass-panel;
+  }
+
+  p,
+  li,
+  label,
+  span,
+  small,
+  .mode-description,
+  .mode-features li {
+    color: $text-soft;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .stat-value,
+  .player-name-label,
+  .mode-title {
+    color: #ffffff;
+  }
+
+  a {
+    color: $accent-primary;
+
+    &:hover {
+      color: $accent-secondary;
+    }
+  }
+
+  input,
+  select,
+  textarea {
+    background: rgba(12, 16, 26, 0.75);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  table,
+  th,
+  td {
+    color: #ffffff;
+  }
+
+  .leaderboard-table-container,
+  #leaderboard-table {
+    color: #ffffff;
+  }
+
+  .login-title,
+  .page-title,
+  .leaderboard-header h2 {
+    color: #f5f7ff;
+    text-shadow: 0 2px 10px rgba(15, 20, 35, 0.35);
+  }
+
+  .login-subtitle,
+  .page-subtitle,
+  .board-status p,
+  .info-card p,
+  .control-hint,
+  .question-meta,
+  .mode-description {
+    color: $text-soft;
+  }
+
+  .btn,
+  .nav-btn,
+  #controls button,
+  .game-start-btn,
+  .mode-card,
+  .back-btn,
+  .question-submit,
+  .primary-login,
+  .guest-login {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn,
+  .nav-btn,
+  #controls button,
+  .question-submit,
+  .game-start-btn {
+    background: linear-gradient(135deg, #2a3b4a, #24303c);
+    color: #f7fafc;
+    border-color: rgba(255, 255, 255, 0.16);
+    @include glow(#1c2430, 14px);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(20, 28, 40, 0.35);
+    }
+  }
+
+  .primary-login {
+    background: linear-gradient(135deg, #364a5a, #2b3a47);
+    @include glow(#1c2430, 14px);
+  }
+
+  .guest-login {
+    background: linear-gradient(135deg, #2a3b4a, #24303c);
+  }
+
+  .status-pill {
+    background: linear-gradient(135deg, #3a4f60, #2b3a47);
+    color: #f7fafc;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-weight: 700;
+    @include glow(#1c2430, 12px);
+  }
+
+  .active-players-badge {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35);
+  }
+
+  .board-grid-frame {
+    border-radius: 12px;
+  }
+
+  #game-board,
+  .game-board {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+  }
+
+  .question-header,
+  .question-body .arcade-zone {
+    background: linear-gradient(135deg, rgba(47, 143, 133, 0.38), rgba(95, 114, 128, 0.38));
+  }
+
+  .question-options label {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: $text-soft;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+  }
+
+  .question-options label:has(input:checked) {
+    background: rgba(47, 143, 133, 0.2);
+    border-color: rgba(47, 143, 133, 0.4);
+    color: #fff;
+  }
+
+  .question-submit {
+    background: linear-gradient(135deg, #364a5a, #2b3a47);
+  }
+
+  .mode-card {
+    @include glass-panel;
+    border-width: 3px;
+
+    &.boss-mode {
+      border-color: $accent-secondary;
+    }
+
+    &.pvp-mode {
+      border-color: $accent-primary;
+    }
+  }
+
+  .game-header,
+  .hud .stat-box {
+    @include glass-panel;
+  }
+
+  .hud .stat-box {
+    background: rgba(38, 52, 64, 0.8);
+  }
+
+  #locked-overlay {
+    background: rgba(4, 8, 18, 0.85);
+    backdrop-filter: blur(6px);
+  }
+
+  .physical-dice {
+    width: 48px;
+    height: 48px;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #f8fafc, #d6dbe2);
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .dice-label {
+    color: $text-soft;
+  }
+}
+
+@media (max-width: 900px) {
+  body.snakes-theme {
+    .board-shell {
+      grid-template-columns: 1fr;
+    }
+  }
+}
