@@ -1590,6 +1590,10 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 && isGuestSession()) {
+                        console.warn('Guest join blocked by API (401). Falling back to socket-only join.');
+                        return startGuestSocketOnlyBattle();
+                    }
                     throw new Error('Join battle failed: ' + response.status);
                 }
 
@@ -1683,6 +1687,55 @@
                 startOfflinePowerupSpawner();
                 gameLoop();
             }
+        }
+
+        function startGuestSocketOnlyBattle() {
+            connectSocket();
+            roomId = 'boss_battle_room';
+
+            document.getElementById('roomBadge').style.display = 'block';
+            document.getElementById('roomCode').textContent = roomId;
+            document.getElementById('playerCount').textContent = 1;
+
+            const joinPayload = {
+                username: gameState.player.username || 'Guest',
+                user_id: (function () {
+                    try { return sessionStorage.getItem('snakes_user_id') || 'guest'; } catch (e) { return 'guest'; }
+                })(),
+                bullets: gameState.player.bullets,
+                character: gameState.player.character
+            };
+
+            if (socket && socket.connected) {
+                socket.emit('join_boss_battle', joinPayload);
+            } else {
+                socket.once('connect', () => {
+                    socket.emit('join_boss_battle', joinPayload);
+                });
+            }
+
+            ensureBattleAmmo();
+            gameState.player.lives = getMaxLives();
+            updateLives();
+            savePlayerState({ lives: gameState.player.lives });
+
+            startPositionBroadcast();
+            startPowerupSpawnRequests();
+            gameActive = true;
+
+            gameState.battleStats = {
+                bulletsFired: 0,
+                bulletsHit: 0,
+                damageDealt: 0,
+                livesLost: 0,
+                startLives: gameState.player.lives,
+                powerupsCollected: [],
+                battleStartTime: Date.now()
+            };
+
+            activateBattleMode();
+            addSystemMessage('Battle started! Work together to defeat the boss!');
+            gameLoop();
         }
 
         // Offline mode powerup spawner (local only)
