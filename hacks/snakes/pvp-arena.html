@@ -1250,6 +1250,28 @@
             return current + diff * factor;
         }
 
+        function getDamageBonusRoll() {
+            const c = gameState.player.character;
+            if (c === 'warrior') {
+                return Math.random() < 0.2;
+            }
+            return false;
+        }
+
+        function getMaxLivesFor(character) {
+            return character === 'knight' ? (DEFAULT_LIVES + 1) : DEFAULT_LIVES;
+        }
+
+        function applyMaxLivesForPlayer() {
+            const max = getMaxLivesFor(gameState.player.character);
+            gameState.player.maxLives = max;
+            if (gameState.player.lives > max) gameState.player.lives = max;
+            if (gameState.player.character === 'knight' && gameState.player.lives < max) {
+                gameState.player.lives = max;
+            }
+            updateLives();
+        }
+
         function gameLoop() {
             if (!gameActive) return;
 
@@ -1824,31 +1846,3 @@
     </script>
 </body>
 </html>
-        function lerpAngle(current, target, factor) {
-            let diff = target - current;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-            return current + diff * factor;
-        }
-
-        function getDamageBonusRoll() {
-            const c = gameState.player.character;
-            if (c === 'warrior') {
-                return Math.random() < 0.2;
-            }
-            return false;
-        }
-
-        function getMaxLivesFor(character) {
-            return character === 'knight' ? (DEFAULT_LIVES + 1) : DEFAULT_LIVES;
-        }
-
-        function applyMaxLivesForPlayer() {
-            const max = getMaxLivesFor(gameState.player.character);
-            gameState.player.maxLives = max;
-            if (gameState.player.lives > max) gameState.player.lives = max;
-            if (gameState.player.character === 'knight' && gameState.player.lives < max) {
-                gameState.player.lives = max;
-            }
-            updateLives();
-        }
