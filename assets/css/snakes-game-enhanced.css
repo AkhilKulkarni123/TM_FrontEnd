@@ -1,0 +1,459 @@
+/* ============================================
+   RETRACTABLE HINT BAR STYLES
+   ============================================ */
+
+.hint-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.hint-bar {
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(calc(100% - 60px));
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: all;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.hint-bar.expanded {
+    transform: translateY(0);
+}
+
+.hint-bar-toggle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px 20px 0 0;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #667eea;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.hint-bar-toggle:hover {
+    background: white;
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.hint-bar-toggle .toggle-icon {
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
+}
+
+.hint-bar.expanded .hint-bar-toggle .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.hint-bar-content {
+    padding: 60px 30px 30px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.hint-bar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.hint-bar-icon {
+    font-size: 2em;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.hint-bar-title {
+    flex: 1;
+}
+
+.hint-bar-title h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.5em;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hint-bar-title p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9em;
+}
+
+.hints-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.hint-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.hint-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.hint-card.hint-primary {
+    border-left-color: #667eea;
+}
+
+.hint-card.hint-success {
+    border-left-color: #2ecc71;
+}
+
+.hint-card.hint-warning {
+    border-left-color: #f39c12;
+}
+
+.hint-card.hint-danger {
+    border-left-color: #e74c3c;
+}
+
+.hint-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.hint-card-emoji {
+    font-size: 1.5em;
+}
+
+.hint-card-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.hint-card-content {
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.hint-card-steps {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+
+.hint-card-steps li {
+    padding: 8px 0 8px 30px;
+    position: relative;
+    color: #555;
+}
+
+.hint-card-steps li::before {
+    content: "→";
+    position: absolute;
+    left: 10px;
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Custom scrollbar for hint bar */
+.hint-bar-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.hint-bar-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.hint-bar-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.hint-bar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Mobile responsiveness for hint bar */
+@media (max-width: 768px) {
+    .hint-bar {
+        transform: translateY(calc(100% - 50px));
+    }
+    
+    .hint-bar-toggle {
+        width: 100px;
+        height: 35px;
+        font-size: 0.9em;
+    }
+    
+    .hint-bar-content {
+        padding: 50px 20px 20px;
+    }
+    
+    .hint-bar-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .hint-bar-title h3 {
+        font-size: 1.2em;
+    }
+    
+    .hint-card {
+        padding: 15px;
+    }
+}
+
+/* ============================================
+   ENHANCED LEADERBOARD STYLES
+   ============================================ */
+
+.leaderboard-section {
+    margin-bottom: 20px;
+}
+
+.leaderboard-section-header {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-section-header:first-child {
+    border-top: none;
+}
+
+.leaderboard-divider {
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+    );
+    margin: 10px 0;
+    position: relative;
+}
+
+.leaderboard-divider::before {
+    content: "⋯";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 1.2em;
+    letter-spacing: 4px;
+}
+
+/* Highlight user's row even more prominently */
+.current-user-row {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-weight: bold;
+    border: 3px solid #ffd700 !important;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 
+                0 0 40px rgba(102, 126, 234, 0.4) !important;
+    position: relative;
+    animation: userRowPulse 2s ease-in-out infinite;
+}
+
+@keyframes userRowPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 
+                    0 0 40px rgba(102, 126, 234, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 
+                    0 0 60px rgba(102, 126, 234, 0.6);
+    }
+}
+
+.current-user-row::before {
+    content: "YOU";
+    position: absolute;
+    left: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #ffd700;
+    color: #2c3e50;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.current-user-row td {
+    color: white !important;
+}
+
+/* User position badge in their own row */
+.user-position-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+/* Loading state for leaderboard */
+.leaderboard-loading {
+    text-align: center;
+    padding: 40px;
+    color: white;
+}
+
+.leaderboard-loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: leaderboardSpin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes leaderboardSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error state for leaderboard */
+.leaderboard-error {
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px;
+    text-align: center;
+}
+
+.leaderboard-error-icon {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+
+.leaderboard-error-text {
+    color: white;
+    margin: 10px 0;
+}
+
+.leaderboard-error-retry {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-error-retry:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* Rank position indicators */
+.rank-position-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rank-trend {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.rank-trend.up {
+    color: #2ecc71;
+}
+
+.rank-trend.down {
+    color: #e74c3c;
+}
+
+/* Enhanced empty state */
+.empty-leaderboard {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-leaderboard-icon {
+    font-size: 5em;
+    margin-bottom: 20px;
+    opacity: 0.3;
+    animation: emptyBounce 2s ease-in-out infinite;
+}
+
+@keyframes emptyBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.empty-leaderboard-title {
+    font-size: 1.5em;
+    color: white;
+    margin: 0 0 10px 0;
+}
+
+.empty-leaderboard-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1em;
+    margin: 0;
+}
+
+/* Mobile responsive leaderboard */
+@media (max-width: 768px) {
+    .current-user-row::before {
+        left: 5px;
+        top: -25px;
+        transform: none;
+    }
+    
+    .leaderboard-section-header {
+        padding: 10px 15px;
+        font-size: 0.8em;
+    }
+}
