@@ -35,6 +35,7 @@ var LESSON_BULLETS = 5;
 var QUESTION_BULLETS = 5;
 var AUTOSAVE_EVERY_SECONDS = 10;
 var BASE_MAX_LIVES = 5;
+var DISPLAY_NAME_KEY = 'snakes_display_name';
 
 var CHARACTER_PERKS = {
     knight: {
@@ -284,6 +285,9 @@ function initializeEventListeners() {
     var rollBtn = document.getElementById('roll-dice-btn');
     if (rollBtn) rollBtn.addEventListener('click', rollDice);
 
+    var physicalDice = document.getElementById('physical-dice');
+    if (physicalDice) physicalDice.addEventListener('click', rollDice);
+
     var leaderboardBtn = document.getElementById('view-leaderboard-btn');
     if (leaderboardBtn) leaderboardBtn.addEventListener('click', viewLeaderboard);
 
@@ -360,6 +364,24 @@ function initializeEventListeners() {
             }
         });
     }
+
+    var displayNameSave = document.getElementById('display-name-save');
+    if (displayNameSave) displayNameSave.addEventListener('click', submitDisplayName);
+
+    var displayNameSkip = document.getElementById('display-name-skip');
+    if (displayNameSkip) displayNameSkip.addEventListener('click', skipDisplayName);
+
+    var displayNameInput = document.getElementById('display-name-input');
+    if (displayNameInput) {
+        displayNameInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') submitDisplayName();
+        });
+    }
+
+    var editNameBtn = document.getElementById('edit-name-btn');
+    if (editNameBtn) editNameBtn.addEventListener('click', function () {
+        showDisplayNameModal(true);
+    });
 }
 
 function closeQuestionModal() {
@@ -413,6 +435,7 @@ function useExistingLogin() {
             return loadOrCreateGameData();
         })
         .then(function () { return loadProgress(); })
+        .then(function () { return ensureDisplayName(); })
         .then(function () {
             var loginContainer = document.getElementById('login-container');
             var characterSelection = document.getElementById('character-selection');
@@ -466,7 +489,9 @@ function playAsGuest() {
     var loginContainer = document.getElementById('login-container');
     var characterSelection = document.getElementById('character-selection');
     if (loginContainer) loginContainer.classList.add('hidden');
-    if (characterSelection) characterSelection.classList.remove('hidden');
+    ensureDisplayName().then(function () {
+        if (characterSelection) characterSelection.classList.remove('hidden');
+    });
 }
 
 function loadOrCreateGameData() {
@@ -842,6 +867,8 @@ window.showRollPrompt = showRollPrompt;
 window.dismissRollPrompt = dismissRollPrompt;
 
 function autoResumeIfReady() {
+    var storedName = getStoredDisplayName();
+    if (storedName) gameState.username = storedName;
     // Check if user has previously selected a character AND started the game
     var storedChar = null;
     try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) {}
@@ -1365,6 +1392,7 @@ function updatePlayerInfo() {
     var squareSpan = document.getElementById('player-square');
     var timeSpan = document.getElementById('player-time');
     var perkSpan = document.getElementById('player-perk');
+    var nameSpan = document.getElementById('player-name-display');
 
     console.log('Updating player info with character:', gameState.character);
     
@@ -1374,6 +1402,7 @@ function updatePlayerInfo() {
     if (squareSpan) squareSpan.textContent = (gameState.currentSquare === 0) ? 'START' : gameState.currentSquare;
     if (timeSpan) timeSpan.textContent = formatTime(gameState.timeElapsed);
     if (perkSpan) perkSpan.textContent = getPerkDescription();
+    if (nameSpan) nameSpan.textContent = gameState.username || 'Player';
 }
 
 function formatTime(totalSeconds) {
@@ -2152,6 +2181,8 @@ function viewLeaderboard() {
                 </tr>
             `;
         });
+
+    // Display name and dice only; no extra leaderboard rank block
 }
 
 function startBossBattle() {
@@ -2418,6 +2449,122 @@ function startBulletRefresh() {
         refreshBulletCount();
     }, 5000);
 }
+
+// ============================================
+// DISPLAY NAME / THEMES / HINT BAR
+// ============================================
+function getStoredDisplayName() {
+    try {
+        return gameState.isGuest
+            ? sessionStorage.getItem(DISPLAY_NAME_KEY)
+            : localStorage.getItem(DISPLAY_NAME_KEY);
+    } catch (e) {
+        return null;
+    }
+}
+
+function storeDisplayName(name) {
+    try {
+        if (gameState.isGuest) {
+            sessionStorage.setItem(DISPLAY_NAME_KEY, name);
+            sessionStorage.setItem('snakes_guest_name', name);
+        } else {
+            localStorage.setItem(DISPLAY_NAME_KEY, name);
+        }
+    } catch (e) {}
+}
+
+function saveDisplayName(name) {
+    gameState.username = name;
+    updatePlayerInfo();
+    storeDisplayName(name);
+
+    if (gameState.isGuest) return Promise.resolve();
+
+    var updateUser = fetch(API_URL + '/user', {
+        method: 'PUT',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers,
+        body: JSON.stringify({ name: name })
+    }).catch(function () {});
+
+    var updateGame = fetch(API_URL + '/snakes/', {
+        method: 'PUT',
+        mode: fetchOptions.mode,
+        cache: fetchOptions.cache,
+        credentials: fetchOptions.credentials,
+        headers: fetchOptions.headers,
+        body: JSON.stringify({ username: name })
+    }).catch(function () {});
+
+    return Promise.all([updateUser, updateGame]);
+}
+
+var displayNameResolve = null;
+function ensureDisplayName() {
+    return new Promise(function (resolve) {
+        var modal = document.getElementById('display-name-modal');
+        if (!modal) return resolve();
+
+        var stored = getStoredDisplayName();
+        if (stored) {
+            saveDisplayName(stored).then(resolve);
+            return;
+        }
+
+        displayNameResolve = resolve;
+        showDisplayNameModal(false);
+    });
+}
+
+function showDisplayNameModal(allowCancel) {
+    var modal = document.getElementById('display-name-modal');
+    var input = document.getElementById('display-name-input');
+    var skipBtn = document.getElementById('display-name-skip');
+    if (!modal || !input) return;
+
+    modal.classList.remove('hidden');
+    input.value = gameState.username || '';
+    input.focus();
+    if (skipBtn) skipBtn.style.display = allowCancel ? 'inline-block' : 'none';
+}
+
+function hideDisplayNameModal() {
+    var modal = document.getElementById('display-name-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function submitDisplayName() {
+    var input = document.getElementById('display-name-input');
+    if (!input) return;
+    var name = String(input.value || '').trim();
+    if (name.length < 2) {
+        alert('Please enter at least 2 characters for your screen name.');
+        return;
+    }
+    if (name.length > 20) name = name.slice(0, 20);
+    saveDisplayName(name).then(function () {
+        hideDisplayNameModal();
+        if (displayNameResolve) {
+            displayNameResolve();
+            displayNameResolve = null;
+        }
+    });
+}
+
+function skipDisplayName() {
+    var fallback = gameState.username || 'Player';
+    saveDisplayName(fallback).then(function () {
+        hideDisplayNameModal();
+        if (displayNameResolve) {
+            displayNameResolve();
+            displayNameResolve = null;
+        }
+    });
+}
+
 
 // ============================================
 // EXPOSE FUNCTION GLOBALLY FOR MANUAL REFRESH
