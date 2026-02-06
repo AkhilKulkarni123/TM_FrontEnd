@@ -1567,16 +1567,26 @@
                 updateLives();
                 savePlayerState({ lives: gameState.player.lives });
                 // Join room via REST API
+                const payload = {
+                    bullets: gameState.player.bullets,
+                    lives: gameState.player.lives,
+                    character: gameState.player.character,
+                    dev_mode: true  // Skip square 25 requirement for testing
+                };
+                if (isGuestSession()) {
+                    try {
+                        const guestId = sessionStorage.getItem('snakes_user_id');
+                        const guestName = sessionStorage.getItem('snakes_guest_name') || gameState.player.username;
+                        if (guestId) payload.guest_id = guestId;
+                        if (guestName) payload.guest_name = guestName;
+                    } catch (e) {}
+                }
+
                 const response = await fetch(`${GAME_API_ROOT}/boss/join`, {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        bullets: gameState.player.bullets,
-                        lives: gameState.player.lives,
-                        character: gameState.player.character,
-                        dev_mode: true  // Skip square 25 requirement for testing
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
@@ -3095,11 +3105,18 @@ function getDamageMultiplier() {
 
                 if (roomId && socket) {
                     socket.emit('boss_leave_room', { room_id: roomId });
+                    const leavePayload = { room_id: roomId };
+                    if (isGuestSession()) {
+                        try {
+                            const guestId = sessionStorage.getItem('snakes_user_id');
+                            if (guestId) leavePayload.guest_id = guestId;
+                        } catch (e) {}
+                    }
                     fetch(`${GAME_API_ROOT}/boss/leave`, {
                         method: 'POST',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ room_id: roomId })
+                        body: JSON.stringify(leavePayload)
                     }).catch(() => {});
                 }
                 returnToBoard();
