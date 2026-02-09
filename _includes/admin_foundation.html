@@ -360,7 +360,33 @@
 
   <div class="admin-panel-content">
     <div id="admin-container">
-      <em>Loading admin data...</em>
+      <div class="admin-loading">
+        <p>Loading admin data...</p>
+      </div>
+      <div id="admin-content" style="display: none;">
+        <div class="admin-controls">
+          <button id="refresh-admin-btn" class="btn btn-primary" style="margin-bottom: 15px;">
+            🔄 Refresh Data
+          </button>
+        </div>
+        <table id="admin-table">
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Display Name</th>
+              <th>UID</th>
+              <th>Bullets</th>
+              <th>Lives</th>
+              <th>Position</th>
+              <th>Character</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table-body">
+            <!-- Player data will be populated here -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </aside>
@@ -377,35 +403,45 @@
         <input type="hidden" id="user-id" name="id">
 
         <div class="form-group">
-          <label for="username">Username <span style="color: red;">*</span></label>
+          <label for="username">Display Name <span style="color: red;">*</span></label>
           <input type="text" id="username" name="username" required>
         </div>
 
         <div class="form-group">
-          <label for="email">Email <span style="color: red;">*</span></label>
-          <input type="email" id="email" name="email" required>
+          <label for="uid">UID</label>
+          <input type="text" id="uid" name="uid" readonly>
         </div>
 
         <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" name="role">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="moderator">Moderator</option>
-          </select>
+          <label for="bullets">Bullets</label>
+          <input type="number" id="bullets" name="bullets" min="0">
         </div>
 
         <div class="form-group">
-          <label for="status">Status</label>
-          <select id="status" name="status">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+          <label for="lives">Lives</label>
+          <input type="number" id="lives" name="lives" min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="position">Position</label>
+          <input type="number" id="position" name="position" min="1" max="25">
+        </div>
+
+        <div class="form-group">
+          <label for="character">Character</label>
+          <select id="character" name="character">
+            <option value="mario">Mario</option>
+            <option value="luigi">Luigi</option>
+            <option value="peach">Peach</option>
+            <option value="yoshi">Yoshi</option>
+            <option value="toad">Toad</option>
+            <option value="bowser">Bowser</option>
           </select>
         </div>
 
         <div class="form-actions">
           <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
       </form>
     </div>
@@ -413,71 +449,230 @@
 </div>
 
 <script type="module">
-  // Wait for DOM to be fully loaded
-  document.addEventListener('DOMContentLoaded', function () {
-    console.log("Admin panel script loaded.");
+  import { pythonURI } from '{{ site.baseurl }}/assets/js/api/config.js';
 
-    // Admin panel open/close logic
-    const adminPanel = document.getElementById('admin-panel');
-    const adminFab = document.getElementById('admin-toggle-btn');
-    const adminCloseBtn = document.getElementById('admin-close-btn');
+  let allPlayers = [];
 
-    if (adminFab && adminPanel && adminCloseBtn) {
-      adminFab.addEventListener('click', function () {
-        adminPanel.classList.add('open');
-        adminFab.style.display = 'none';
-      });
+  // Admin panel open/close logic
+  const adminPanel = document.getElementById('admin-panel');
+  const adminFab = document.getElementById('admin-toggle-btn');
+  const adminCloseBtn = document.getElementById('admin-close-btn');
 
-      adminCloseBtn.addEventListener('click', function () {
-        adminPanel.classList.remove('open');
-        adminFab.style.display = '';
-      });
+  if (adminFab && adminPanel && adminCloseBtn) {
+    adminFab.addEventListener('click', function () {
+      adminPanel.classList.add('open');
+      adminFab.style.display = 'none';
+      loadAdminData();
+    });
+
+    adminCloseBtn.addEventListener('click', function () {
+      adminPanel.classList.remove('open');
+      adminFab.style.display = '';
+    });
+  }
+
+  // Modal open/close logic
+  const modal = document.getElementById('admin-modal');
+  if (modal && modal.parentElement !== document.body) {
+    try {
+      document.body.appendChild(modal);
+    } catch (err) {
+      console.warn('Could not move admin modal to body:', err);
     }
+  }
+  
+  const modalClose = document.getElementById('modal-close');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const refreshBtn = document.getElementById('refresh-admin-btn');
 
-    // Modal open/close logic
-    const modal = document.getElementById('admin-modal');
-    // If the include is rendered inside a transformed/overflowing container,
-    // move the modal overlay into `document.body` so it can cover the full viewport
-    // and avoid clipping by parent stacking contexts.
-    if (modal && modal.parentElement !== document.body) {
-      try {
-        document.body.appendChild(modal);
-      } catch (err) {
-        console.warn('Could not move admin modal to body:', err);
+  if (modalClose && modal) {
+    modalClose.addEventListener('click', function () {
+      modal.classList.remove('active');
+    });
+  }
+
+  if (cancelBtn && modal) {
+    cancelBtn.addEventListener('click', function () {
+      modal.classList.remove('active');
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) {
+        modal.classList.remove('active');
       }
-    }
-    const modalClose = document.getElementById('modal-close');
-    const cancelBtn = document.getElementById('cancel-btn');
+    });
+  }
 
-    if (modalClose && modal) {
-      modalClose.addEventListener('click', function () {
-        modal.classList.remove('active');
-      });
-    }
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadAdminData);
+  }
 
-    if (cancelBtn && modal) {
-      cancelBtn.addEventListener('click', function () {
-        modal.classList.remove('active');
-      });
-    }
+  // Load admin data from backend
+  async function loadAdminData() {
+    const container = document.getElementById('admin-container');
+    const loadingDiv = container.querySelector('.admin-loading');
+    const contentDiv = document.getElementById('admin-content');
+    
+    try {
+      loadingDiv.style.display = 'block';
+      contentDiv.style.display = 'none';
 
-    if (modal) {
-      modal.addEventListener('click', function (e) {
-        if (e.target === modal) {
-          modal.classList.remove('active');
+      const response = await fetch(`${pythonURI}/api/admin/players`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
-    }
 
-    // Form submission (placeholder)
-    const adminForm = document.getElementById('admin-form');
-    if (adminForm) {
-      adminForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        console.log('Form submitted');
-        if (modal) modal.classList.remove('active');
-        // Add your form handling logic here
-      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch admin data');
+      }
+
+      const data = await response.json();
+      allPlayers = data.players || [];
+      renderAdminTable(allPlayers);
+
+      loadingDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
+
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      loadingDiv.innerHTML = '<p style="color: red;">❌ Error loading admin data. Please try again.</p>';
+      contentDiv.style.display = 'none';
     }
-  });
+  }
+
+  // Render admin table
+  function renderAdminTable(players) {
+    const tbody = document.getElementById('admin-table-body');
+    tbody.innerHTML = '';
+
+    players.forEach(player => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${player.id}</td>
+        <td>${player.username}</td>
+        <td>${player.uid}</td>
+        <td>${player.game_progress?.bullets || 0}</td>
+        <td>${player.game_progress?.lives || 5}</td>
+        <td>${player.game_progress?.position || 1}</td>
+        <td>${player.game_progress?.character || 'mario'}</td>
+        <td>
+          <button class="action-btn edit" onclick="openEditModal(${player.id})" title="Edit Player">
+            ✏️
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Open edit modal with player data
+  function openEditModal(playerId) {
+    const player = allPlayers.find(p => p.id === playerId);
+    if (!player) return;
+
+    const modal = document.getElementById('admin-modal');
+    const modalTitle = document.getElementById('modal-title');
+    
+    modalTitle.textContent = `Edit Player: ${player.username}`;
+    
+    // Populate form fields
+    document.getElementById('user-id').value = player.id;
+    document.getElementById('username').value = player.username;
+    document.getElementById('uid').value = player.uid;
+    document.getElementById('bullets').value = player.game_progress?.bullets || 0;
+    document.getElementById('lives').value = player.game_progress?.lives || 5;
+    document.getElementById('position').value = player.game_progress?.position || 1;
+    document.getElementById('character').value = player.game_progress?.character || 'mario';
+    
+    modal.classList.add('active');
+  }
+
+  // Form submission handler
+  const adminForm = document.getElementById('admin-form');
+  if (adminForm) {
+    adminForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      
+      const userId = document.getElementById('user-id').value;
+      const formData = {
+        username: document.getElementById('username').value,
+        bullets: parseInt(document.getElementById('bullets').value) || 0,
+        lives: parseInt(document.getElementById('lives').value) || 5,
+        position: parseInt(document.getElementById('position').value) || 1,
+        character: document.getElementById('character').value
+      };
+
+      try {
+        const response = await fetch(`${pythonURI}/api/admin/player/${userId}/modify`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update player');
+        }
+
+        const result = await response.json();
+        console.log('Update successful:', result);
+
+        // Update local data
+        const playerIndex = allPlayers.findIndex(p => p.id === parseInt(userId));
+        if (playerIndex !== -1) {
+          allPlayers[playerIndex] = {
+            ...allPlayers[playerIndex],
+            username: result.user.username,
+            game_progress: result.progress
+          };
+          renderAdminTable(allPlayers);
+        }
+
+        // Close modal and show success
+        modal.classList.remove('active');
+        showNotification('✅ Player updated successfully!', 'success');
+
+      } catch (error) {
+        console.error('Error updating player:', error);
+        showNotification('❌ Failed to update player: ' + error.message, 'error');
+      }
+    });
+  }
+
+  // Show notification
+  function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      ${type === 'success' ? 'background: #10b981;' : 'background: #ef4444;'}
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
+
+  // Initialize admin data when panel is first opened
+  console.log("Admin panel script loaded.");
 </script>
