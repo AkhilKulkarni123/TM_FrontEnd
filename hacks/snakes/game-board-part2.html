@@ -122,36 +122,52 @@
         }
 
         .physical-dice {
-            width: 46px;
-            height: 46px;
-            border-radius: 10px;
-            border: 2px solid #fef6e0;
-            background: linear-gradient(145deg, #ffffff, #d6d3c8);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            border: 2px solid #c9a84c;
+            background: linear-gradient(145deg, #fefefe 0%, #e8e6e1 60%, #d4d0c8 100%);
+            box-shadow:
+                3px 3px 0 0 #b8860b,
+                5px 5px 0 0 #8b6914,
+                0 8px 20px rgba(0, 0, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.6);
             display: grid;
             place-items: center;
             cursor: pointer;
             position: relative;
-        }
-
-        .physical-dice::before,
-        .physical-dice::after {
-            content: '';
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #111827;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         .physical-dice::before {
-            top: 10px;
-            left: 10px;
+            content: '\2680';
+            font-size: 24px;
+            color: #1a1a2e;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .physical-dice::after {
-            bottom: 10px;
-            right: 10px;
+            content: none;
+        }
+
+        .physical-dice:hover {
+            transform: translateY(-2px) rotate(-5deg);
+            box-shadow:
+                4px 4px 0 0 #b8860b,
+                6px 6px 0 0 #8b6914,
+                0 12px 25px rgba(0, 0, 0, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        }
+
+        .physical-dice:active {
+            transform: translateY(1px);
+            box-shadow:
+                1px 1px 0 0 #b8860b,
+                2px 2px 0 0 #8b6914,
+                0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         .dice-label {
@@ -612,9 +628,10 @@
         }
 
         .player-name-label {
-            font-size: 1em;
+            font-size: 1.05em;
             font-weight: bold;
-            color: #fff;
+            color: #4ade80;
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
             text-align: center;
             word-break: break-word;
         }
@@ -669,14 +686,15 @@
         }
 
         .section2-instructions-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(74, 222, 128, 0.3);
             border-radius: 20px;
             padding: 40px;
             max-width: 600px;
             width: 90%;
             color: white;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             animation: slideUp 0.5s ease-out;
             position: relative;
         }
@@ -684,7 +702,8 @@
         .section2-instructions-content h2 {
             font-size: 2em;
             margin: 0 0 20px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: #4ade80;
+            text-shadow: 0 2px 10px rgba(74, 222, 128, 0.3);
         }
 
         .section2-instructions-content .instructions-icon {
@@ -706,7 +725,8 @@
         }
 
         .section2-instructions-content .instructions-list {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.2);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
@@ -718,6 +738,7 @@
             padding-left: 10px;
             list-style: none;
             position: relative;
+            color: rgba(255, 255, 255, 0.92);
         }
 
         .section2-instructions-content .instructions-list li::before {
@@ -731,13 +752,14 @@
         .section2-instructions-content .dismiss-text {
             font-size: 0.9em;
             margin-top: 25px;
-            opacity: 0.8;
+            color: rgba(255, 255, 255, 0.7);
             font-style: italic;
         }
 
         .auto-dismiss-timer {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
             padding: 4px 12px;
             border-radius: 12px;
             font-weight: bold;
