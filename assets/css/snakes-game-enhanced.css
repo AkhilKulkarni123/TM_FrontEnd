@@ -13,7 +13,7 @@
 
 .hint-bar {
     position: relative;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ffdf9e 0%, #ffd884 45%, #fec75f 100%);
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
     transform: translateY(calc(100% - 60px));
@@ -22,6 +22,8 @@
     max-width: 1200px;
     margin: 0 auto;
     overflow: hidden;
+    border: 3px solid rgba(254, 199, 95, 0.8);
+    border-bottom: none;
 }
 
 .hint-bar.expanded {
@@ -35,7 +37,7 @@
     transform: translateX(-50%);
     width: 120px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.95);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px 20px 0 0;
     border: none;
     cursor: pointer;
@@ -44,15 +46,16 @@
     justify-content: center;
     gap: 8px;
     font-weight: 600;
-    color: #667eea;
+    color: white;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
     z-index: 10;
 }
 
 .hint-bar-toggle:hover {
-    background: white;
+    background: linear-gradient(135deg, #5568d3 0%, #6a5acd 100%);
     box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%) translateY(-2px);
 }
 
 .hint-bar-toggle .toggle-icon {
@@ -91,14 +94,16 @@
 .hint-bar-title h3 {
     margin: 0 0 4px 0;
     font-size: 1.5em;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    color: #2c3e50;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+    font-weight: 700;
 }
 
 .hint-bar-title p {
     margin: 0;
-    color: rgba(255, 255, 255, 0.9);
+    color: #5d4e37;
     font-size: 0.9em;
+    font-weight: 500;
 }
 
 .hints-grid {
@@ -110,9 +115,10 @@
     background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
     border-left: 4px solid transparent;
+    backdrop-filter: blur(10px);
 }
 
 .hint-card:hover {
@@ -149,15 +155,16 @@
 
 .hint-card-title {
     font-size: 1.1em;
-    font-weight: 600;
+    font-weight: 700;
     color: #2c3e50;
     margin: 0;
 }
 
 .hint-card-content {
-    color: #555;
+    color: #4a4a4a;
     line-height: 1.6;
     margin: 0;
+    font-weight: 400;
 }
 
 .hint-card-steps {
@@ -169,7 +176,8 @@
 .hint-card-steps li {
     padding: 8px 0 8px 30px;
     position: relative;
-    color: #555;
+    color: #4a4a4a;
+    font-weight: 400;
 }
 
 .hint-card-steps li::before {
@@ -178,6 +186,7 @@
     left: 10px;
     color: #667eea;
     font-weight: bold;
+    font-size: 1.1em;
 }
 
 /* Custom scrollbar for hint bar */
@@ -186,17 +195,17 @@
 }
 
 .hint-bar-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(254, 199, 95, 0.2);
     border-radius: 4px;
 }
 
 .hint-bar-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(254, 199, 95, 0.6);
     border-radius: 4px;
 }
 
 .hint-bar-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(254, 199, 95, 0.8);
 }
 
 /* Mobile responsiveness for hint bar */
