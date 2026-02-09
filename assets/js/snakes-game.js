@@ -76,6 +76,11 @@ var gameState = {
     socket: null
 };
 
+// Interval guards to prevent duplicate timers
+var timerIntervalId = null;
+var autosaveIntervalId = null;
+var bulletRefreshIntervalId = null;
+
 function getPerkConfig() {
     return CHARACTER_PERKS[gameState.character] || null;
 }
@@ -1420,7 +1425,8 @@ function formatTime(totalSeconds) {
 }
 
 function startTimer() {
-    setInterval(function () {
+    if (timerIntervalId) return;
+    timerIntervalId = setInterval(function () {
         if (!gameState.timeStarted) return;
         var elapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
         gameState.timeElapsed = elapsed;
@@ -1430,7 +1436,8 @@ function startTimer() {
 }
 
 function startAutosave() {
-    setInterval(function () {
+    if (autosaveIntervalId) return;
+    autosaveIntervalId = setInterval(function () {
         if (gameState.isGuest) return;
         saveProgressSilently();
     }, AUTOSAVE_EVERY_SECONDS * 1000);
@@ -2452,7 +2459,8 @@ function startBulletRefresh() {
     refreshBulletCount();
     
     // Then refresh every 5 seconds
-    setInterval(function() {
+    if (bulletRefreshIntervalId) return;
+    bulletRefreshIntervalId = setInterval(function() {
         refreshBulletCount();
     }, 5000);
 }
