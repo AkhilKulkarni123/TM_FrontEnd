@@ -40,19 +40,19 @@ var DISPLAY_NAME_KEY = 'snakes_display_name';
 var CHARACTER_PERKS = {
     knight: {
         name: 'Shielded',
-        desc: '+1 Max Life (starts with 6)'
+        desc: '+1 extra life'
     },
     wizard: {
         name: 'Firebrand',
-        desc: 'Slightly higher damage; bullets are red'
+        desc: 'Double shot'
     },
     archer: {
         name: 'Keen Aim',
-        desc: 'Slight aim assist in boss & PvP'
+        desc: 'Homing bullets'
     },
     warrior: {
         name: 'Bravery',
-        desc: 'Slightly higher damage'
+        desc: 'Slightly higher damage + bleeding effect'
     }
 };
 
