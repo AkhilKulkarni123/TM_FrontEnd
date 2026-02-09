@@ -280,6 +280,19 @@ body.snakes-theme {
       color: #fbbf24;
       font-weight: 700;
     }
+
+    .perk-line {
+      font-size: 0.85em;
+      font-style: italic;
+      border-left-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+      margin-top: 0;
+
+      span {
+        color: #fcd34d;
+        font-weight: 600;
+      }
+    }
   }
 
   .control-hint {

@@ -334,20 +334,48 @@ function viewLeaderboardEnhanced() {
             // Optionally show a few players around the user
             var contextBefore = Math.max(10, currentUserIndex - 1);
             var contextAfter = Math.min(leaderboardData.length - 1, currentUserIndex + 1);
-            
+
             // Show one player before if available and not already shown
             if (contextBefore > 10 && contextBefore < currentUserIndex) {
                 var beforeEntry = leaderboardData[contextBefore];
                 var beforeRow = createLeaderboardRow(beforeEntry, contextBefore, currentUserId);
                 tbody.insertBefore(beforeRow, userRow);
             }
-            
+
             // Show one player after if available
             if (contextAfter > currentUserIndex && contextAfter < leaderboardData.length) {
                 var afterEntry = leaderboardData[contextAfter];
                 var afterRow = createLeaderboardRow(afterEntry, contextAfter, currentUserId);
                 tbody.appendChild(afterRow);
             }
+        }
+
+        // If user is not in the leaderboard at all (0 bullets / new player), show them at the bottom
+        if (currentUserIndex === -1 && currentUserId) {
+            var dividerRow2 = document.createElement('tr');
+            dividerRow2.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
+            tbody.appendChild(dividerRow2);
+
+            var yourPosHeader2 = document.createElement('tr');
+            yourPosHeader2.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
+            tbody.appendChild(yourPosHeader2);
+
+            // Build a synthetic entry from gameState
+            var characterIcons = { knight: '🛡️', wizard: '🧙', archer: '🏹', warrior: '⚔️' };
+            var userRank = leaderboardData.length + 1;
+            var userName = (typeof gameState !== 'undefined' && gameState.username) ? gameState.username : 'You';
+            var userChar = (typeof gameState !== 'undefined' && gameState.character) ? gameState.character : '';
+            var userBullets = (typeof gameState !== 'undefined') ? (gameState.bullets || 0) : 0;
+            var charIcon = characterIcons[userChar] || '🙂';
+
+            var syntheticRow = document.createElement('tr');
+            syntheticRow.className = 'current-user-row';
+            syntheticRow.innerHTML =
+                '<td class="rank-col"><span class="rank-badge regular">' + userRank + '</span></td>' +
+                '<td class="player-col">' + charIcon + ' ' + userName + '<span class="user-position-badge">👤 YOU</span></td>' +
+                '<td class="bullets-col">' + userBullets + '</td>' +
+                '<td class="time-col">-</td>';
+            tbody.appendChild(syntheticRow);
         }
     })
     .catch(function (err) {

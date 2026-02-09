@@ -59,10 +59,37 @@
         }
 
         .roll-prompt-dice {
-            font-size: 80px;
-            margin-bottom: 20px;
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 20px;
+            background: linear-gradient(145deg, #fefefe 0%, #e8e6e1 60%, #d4d0c8 100%);
+            border: 3px solid #c9a84c;
+            border-radius: 14px;
+            box-shadow:
+                4px 4px 0 0 #b8860b,
+                7px 7px 0 0 #8b6914,
+                0 10px 25px rgba(0, 0, 0, 0.4),
+                inset 0 2px 3px rgba(255, 255, 255, 0.6);
+            position: relative;
             animation: diceWiggle 1s ease-in-out infinite;
         }
+
+        .roll-prompt-dice .dot {
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle at 35% 35%, #333 0%, #111 100%);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .roll-prompt-dice .dot.tl { top: 14px; left: 14px; }
+        .roll-prompt-dice .dot.tr { top: 14px; right: 14px; }
+        .roll-prompt-dice .dot.ml { top: 50%; left: 14px; transform: translateY(-50%); }
+        .roll-prompt-dice .dot.mr { top: 50%; right: 14px; transform: translateY(-50%); }
+        .roll-prompt-dice .dot.c  { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .roll-prompt-dice .dot.bl { bottom: 14px; left: 14px; }
+        .roll-prompt-dice .dot.br { bottom: 14px; right: 14px; }
 
         .roll-prompt-arrow {
             font-size: 40px;
@@ -1970,10 +1997,10 @@
                         </div>
                     </div>
                     <p>Character: <span id="player-character"></span></p>
+                    <p class="perk-line">Perk: <span id="player-perk">None</span></p>
                     <p>Bullets: <span id="player-bullets">0</span></p>
                     <p>Lives: <span id="player-lives">5</span></p>
                     <p>Current Square: <span id="player-square">START</span></p>
-                    <p>Perk: <span id="player-perk">None</span></p>
                     <p>Time Played: <span id="player-time">0:00</span></p>
                 </div>
                 <div id="controls" class="info-card control-panel">
@@ -3174,7 +3201,9 @@ console.log(student.name); // 'Ada'</code></pre>
                 if (!rankEl || !badgeEl) return;
 
                 if (rank === null) {
-                    rankEl.textContent = 'Unranked';
+                    // Show actual position (after all ranked players)
+                    var displayRank = totalPlayers > 0 ? (totalPlayers + 1) : 1;
+                    rankEl.textContent = '#' + displayRank + ' of ' + (totalPlayers > 0 ? totalPlayers + 1 : 1);
                     badgeEl.className = 'player-rank-badge';
                 } else {
                     rankEl.textContent = '#' + rank + ' of ' + totalPlayers;
@@ -3225,7 +3254,13 @@ console.log(student.name); // 'Ada'</code></pre>
     <!-- Roll Dice Prompt Overlay -->
 <div id="roll-prompt-overlay">
     <div class="roll-prompt-content">
-        <div class="roll-prompt-dice">🎲</div>
+        <div class="roll-prompt-dice">
+            <span class="dot tl"></span>
+            <span class="dot tr"></span>
+            <span class="dot c"></span>
+            <span class="dot bl"></span>
+            <span class="dot br"></span>
+        </div>
         <h2>Ready to Begin?</h2>
         <p><strong>ROLL DICE</strong> to start off your adventure! Click anywhere to start exploring!</p>
     </div>
