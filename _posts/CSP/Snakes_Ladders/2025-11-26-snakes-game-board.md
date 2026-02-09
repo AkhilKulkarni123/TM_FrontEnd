@@ -170,6 +170,7 @@ microblog: True
             }
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('character-selection').classList.remove('hidden');
+            document.body.classList.add('character-select-active');
           });
       })
       .catch(function(err) { console.error('Login error:', err); alert('Error connecting to server.'); });
@@ -241,6 +242,7 @@ microblog: True
         } catch(e) {}
         document.getElementById('login-container').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
+        document.body.classList.add('character-select-active');
       });
     }
     var guestDefault = document.getElementById('guest-name-default');
@@ -250,6 +252,7 @@ microblog: True
         try { sessionStorage.setItem(DISPLAY_NAME_KEY, gameState.username); } catch(e) {}
         document.getElementById('login-container').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
+        document.body.classList.add('character-select-active');
       });
     }
     var guestInput = document.getElementById('guest-display-name');

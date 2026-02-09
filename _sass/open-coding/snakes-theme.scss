@@ -25,6 +25,24 @@ $text-soft: rgba(255, 255, 255, 0.72);
   color: #fff;
 }
 
+.character-select-active {
+  overflow: hidden;
+
+  .game-landing-container {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .pixel-background {
+    display: none;
+  }
+
+  #character-selection {
+    z-index: 20;
+    box-shadow: 0 0 0 9999px rgba(10, 14, 22, 0.95);
+  }
+}
+
 body.snakes-theme,
 .snakes-theme {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -623,15 +641,19 @@ body.snakes-theme,
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background: radial-gradient(circle at 20% 40%, rgba(47, 143, 133, 0.18), transparent 60%),
-      radial-gradient(circle at 80% 80%, rgba(155, 122, 53, 0.18), transparent 55%),
-      linear-gradient(160deg, #0c1220 0%, #121a2d 45%, #0b1325 100%);
+    background: #15181f !important;
   }
 
   #character-selection::before {
-    background:
-      radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.16) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.16) 0%, transparent 50%);
+    background: transparent;
+  }
+
+  #character-selection::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: #15181f;
+    z-index: 0;
   }
 
   #character-selection h2 {
@@ -641,6 +663,13 @@ body.snakes-theme,
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .character-carousel {
+    background: #15181f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 24px 18px;
   }
 
   .character-card {
