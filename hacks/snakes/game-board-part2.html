@@ -702,12 +702,19 @@
 <script src="../../assets/js/snakes-game-hint-leaderboard.js"></script>
 <body class="snakes-theme">
     <script>
-        // Redirect to landing page if user hasn't logged in yet
+        // Redirect to landing page if user hasn't selected a character yet
         (function() {
-            var hasStarted = localStorage.getItem('snakes_started');
-            var hasCharacter = localStorage.getItem('snakes_selected_character');
-            var isGuest = sessionStorage.getItem('snakes_isGuest');
-            if (!hasStarted && !hasCharacter && !isGuest) {
+            var isGuest = false;
+            try { isGuest = (sessionStorage.getItem('snakes_isGuest') === '1'); } catch(e) {}
+            var hasStarted, hasCharacter;
+            if (isGuest) {
+                try { hasStarted = sessionStorage.getItem('snakes_started'); } catch(e) {}
+                try { hasCharacter = sessionStorage.getItem('snakes_selected_character'); } catch(e) {}
+            } else {
+                try { hasStarted = localStorage.getItem('snakes_started'); } catch(e) {}
+                try { hasCharacter = localStorage.getItem('snakes_selected_character'); } catch(e) {}
+            }
+            if (!hasStarted && !hasCharacter) {
                 var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
                 window.location.replace(base + '/snakes-game');
             }

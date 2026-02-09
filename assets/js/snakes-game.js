@@ -982,6 +982,7 @@ function autoResumeIfReady() {
                 // No game data exists - this is a NEW user
                 // Redirect to landing page for login + character selection
                 console.log('New user detected - redirecting to landing page');
+                try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
                 var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
                 window.location.replace(base + '/snakes-game');
                 return null;
@@ -1036,22 +1037,31 @@ function autoResumeIfReady() {
                     startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
                 });
             } else {
-                // User needs to select character - redirect to landing page
+                // User needs to select character - clear stale data and redirect to landing page
                 console.log('Redirecting to landing page - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
+                try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
                 var base2 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
                 window.location.replace(base2 + '/snakes-game');
             }
         })
         .catch(function (error) {
             console.error('Error checking game data:', error);
-            // On error, redirect to landing page as fallback
+            // On error, clear stale data and redirect to landing page as fallback
             console.log('Error occurred - redirecting to landing page');
+            try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
             var base3 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
             window.location.replace(base3 + '/snakes-game');
         });
     }
 
-    // Otherwise, show the appropriate screen (login or character selection)
+    // No valid session found - clear stale data and redirect to landing page
+    try {
+        localStorage.removeItem('snakes_selected_character');
+        localStorage.removeItem('snakes_started');
+        localStorage.removeItem('snakes_user_id');
+    } catch(e) {}
+    var baseFallback = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+    window.location.replace(baseFallback + '/snakes-game');
     return Promise.resolve();
 }
 
