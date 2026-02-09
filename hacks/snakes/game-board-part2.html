@@ -46,74 +46,6 @@
             font-size: 1.5rem;
         }
 
-        .display-name-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(6, 10, 14, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10002;
-        }
-
-        .display-name-card {
-            background: linear-gradient(145deg, #1b2a1f, #0f1711);
-            border: 2px solid var(--ladder-wood);
-            border-radius: 18px;
-            padding: 28px 32px;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
-            text-align: center;
-        }
-
-        .display-name-card h2 {
-            margin: 0 0 10px 0;
-            color: var(--gold);
-            font-size: 1.4em;
-        }
-
-        .display-name-card p {
-            margin: 0 0 18px 0;
-            color: #e2e8f0;
-            font-size: 0.95em;
-        }
-
-        #display-name-input {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            background: rgba(15, 23, 42, 0.85);
-            color: #f8fafc;
-            font-size: 1em;
-            margin-bottom: 16px;
-        }
-
-        .display-name-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .display-name-actions button {
-            border: none;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        #display-name-save {
-            background: linear-gradient(135deg, var(--snake-green), var(--snake-bright));
-            color: #f8fafc;
-        }
-
-        #display-name-skip {
-            background: rgba(255, 255, 255, 0.12);
-            color: #e2e8f0;
-        }
-
         .dice-widget {
             display: flex;
             align-items: center;
@@ -769,29 +701,23 @@
 </head>
 <script src="../../assets/js/snakes-game-hint-leaderboard.js"></script>
 <body class="snakes-theme">
+    <script>
+        // Redirect to landing page if user hasn't logged in yet
+        (function() {
+            var hasStarted = localStorage.getItem('snakes_started');
+            var hasCharacter = localStorage.getItem('snakes_selected_character');
+            var isGuest = sessionStorage.getItem('snakes_isGuest');
+            if (!hasStarted && !hasCharacter && !isGuest) {
+                var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+                window.location.replace(base + '/snakes-game');
+            }
+        })();
+    </script>
     <div id="locked-overlay">
         <div style="text-align: center;">
             <h2 style="margin-bottom: 20px;">🔒 Section Locked</h2>
             <p style="margin-bottom: 30px;">Complete all lessons first!</p>
             <button id="close-overlay-btn" style="padding: 12px 30px; font-size: 1.1em; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">← Go Back</button>
-        </div>
-    </div>
-    <div id="login-container">
-        <h2>Please log in to play and save your progress</h2>
-        <button id="use-existing-login">Use Website Login</button>
-        <button id="play-as-guest">Play as Guest</button>
-        <p><em>*Guest mode is for testing only. Progress will not be saved.</em></p>
-    </div>
-
-    <div id="display-name-modal" class="display-name-modal hidden">
-        <div class="display-name-card">
-            <h2>Choose Your Screen Name</h2>
-            <p>This will appear on the leaderboard and in multiplayer.</p>
-            <input id="display-name-input" type="text" maxlength="20" placeholder="e.g. SnakeMaster" />
-            <div class="display-name-actions">
-                <button id="display-name-save">Continue</button>
-                <button id="display-name-skip">Use Default</button>
-            </div>
         </div>
     </div>
 

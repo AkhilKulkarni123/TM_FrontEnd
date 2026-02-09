@@ -913,15 +913,9 @@ function autoResumeIfReady() {
             return Promise.resolve();
         }
 
-        // Guest without selection/start: show character select if available, otherwise go back to section 1
-        var guestLoginContainerFallback = document.getElementById('login-container');
-        var guestCharacterSelectionFallback = document.getElementById('character-selection');
-        if (guestLoginContainerFallback) guestLoginContainerFallback.classList.add('hidden');
-        if (guestCharacterSelectionFallback) {
-            guestCharacterSelectionFallback.classList.remove('hidden');
-        } else {
-            window.location.href = 'game-board-part1.html';
-        }
+        // Guest without selection/start: redirect to landing page for character selection
+        var guestBase = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+        window.location.replace(guestBase + '/snakes-game');
         return Promise.resolve();
     }
 
@@ -986,8 +980,10 @@ function autoResumeIfReady() {
         .then(function (response) {
             if (response.status === 404) {
                 // No game data exists - this is a NEW user
-                // Keep login container visible - let user choose "Use Website Login" or "Play as Guest"
-                console.log('New user detected - showing login options');
+                // Redirect to landing page for login + character selection
+                console.log('New user detected - redirecting to landing page');
+                var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+                window.location.replace(base + '/snakes-game');
                 return null;
             }
             return response.json();
@@ -1040,17 +1036,18 @@ function autoResumeIfReady() {
                     startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
                 });
             } else {
-                // User needs to select character - either:
-                // - No valid character in backend
-                // - Or never explicitly started the game before
-                // Keep login container visible - let user choose "Use Website Login" or "Play as Guest"
-                console.log('Showing login options - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
+                // User needs to select character - redirect to landing page
+                console.log('Redirecting to landing page - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
+                var base2 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+                window.location.replace(base2 + '/snakes-game');
             }
         })
         .catch(function (error) {
             console.error('Error checking game data:', error);
-            // On error, keep login container visible as fallback
-            console.log('Error occurred - showing login options');
+            // On error, redirect to landing page as fallback
+            console.log('Error occurred - redirecting to landing page');
+            var base3 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+            window.location.replace(base3 + '/snakes-game');
         });
     }
 
