@@ -9,74 +9,9 @@ microblog: True
 ---
 
 <link rel="stylesheet" href="{{site.baseurl}}/assets/css/snakes-entry-flow.css">
+<link rel="stylesheet" href="{{site.baseurl}}/assets/css/snakes-theme.css">
 
-<style>
-  .game-landing-container {
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-    background: #0f0f23;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-
-  .pixel-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-  }
-
-  .hidden { display: none !important; }
-
-  #login-container {
-    position: relative;
-    z-index: 10;
-  }
-
-  #character-selection {
-    background: transparent;
-    z-index: 10;
-  }
-
-  #character-selection::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background:
-      radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  #character-selection > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .display-name-modal { z-index: 10003; }
-
-  .login-options {
-    background: rgba(15, 15, 35, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.15);
-  }
-
-  .login-divider span {
-    background: rgba(15, 15, 35, 0.85);
-    color: rgba(255,255,255,0.6);
-  }
-
-  .login-divider::before,
-  .login-divider::after {
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-  }
-</style>
-
-<div class="game-landing-container">
+<div class="game-landing-container snakes-theme">
   <canvas id="pixelCanvas" class="pixel-background"></canvas>
 
   <div id="login-container">
@@ -101,24 +36,21 @@ microblog: True
           <span class="btn-description">Quick play - Progress not saved</span>
         </div>
       </button>
+      <div id="guest-display-panel" class="guest-display-panel hidden">
+        <h3>Choose Your Screen Name</h3>
+        <p>This name will show on the leaderboard and in multiplayer.</p>
+        <input id="guest-display-name" type="text" maxlength="20" placeholder="e.g. SnakeMaster" />
+        <div class="guest-display-actions">
+          <button id="guest-name-continue" type="button">Continue</button>
+          <button id="guest-name-default" type="button">Use Default</button>
+        </div>
+      </div>
     </div>
     <div class="login-footer">
       <p class="login-notice">
         <span class="notice-icon">ℹ️</span>
         Guest mode is perfect for trying out the game, but your progress won't be saved
       </p>
-    </div>
-  </div>
-
-  <div id="display-name-modal" class="display-name-modal hidden">
-    <div class="display-name-card">
-      <h2>Choose Your Screen Name</h2>
-      <p>This will appear on the leaderboard and in multiplayer.</p>
-      <input id="display-name-input" type="text" maxlength="20" placeholder="e.g. SnakeMaster" />
-      <div class="display-name-actions">
-        <button id="display-name-save">Continue</button>
-        <button id="display-name-skip">Use Default</button>
-      </div>
     </div>
   </div>
 
@@ -211,37 +143,9 @@ microblog: True
     try { return localStorage.getItem(DISPLAY_NAME_KEY) || sessionStorage.getItem(DISPLAY_NAME_KEY) || ''; } catch(e) { return ''; }
   }
 
-  function ensureDisplayName() {
-    return new Promise(function(resolve) {
-      var stored = getStoredDisplayName();
-      if (stored) { gameState.username = stored; resolve(); return; }
-      if (gameState.username) { resolve(); return; }
-      var modal = document.getElementById('display-name-modal');
-      if (!modal) { resolve(); return; }
-      modal.classList.remove('hidden');
-      window._displayNameResolve = resolve;
-    });
-  }
-
-  function submitDisplayName() {
-    var input = document.getElementById('display-name-input');
-    var name = input ? input.value.trim() : '';
-    if (!name) { alert('Please enter a name.'); return; }
-    gameState.username = name;
-    try {
-      if (gameState.isGuest) { sessionStorage.setItem(DISPLAY_NAME_KEY, name); }
-      else { localStorage.setItem(DISPLAY_NAME_KEY, name); }
-    } catch(e) {}
-    var modal = document.getElementById('display-name-modal');
-    if (modal) modal.classList.add('hidden');
-    if (window._displayNameResolve) { window._displayNameResolve(); window._displayNameResolve = null; }
-  }
-
-  function skipDisplayName() {
-    if (!gameState.username) gameState.username = 'Player_' + Math.floor(Math.random() * 1000);
-    var modal = document.getElementById('display-name-modal');
-    if (modal) modal.classList.add('hidden');
-    if (window._displayNameResolve) { window._displayNameResolve(); window._displayNameResolve = null; }
+  function saveDisplayName(name) {
+    if (!name) return;
+    try { localStorage.setItem(DISPLAY_NAME_KEY, name); } catch(e) {}
   }
 
   // ---- Login ----
@@ -253,6 +157,8 @@ microblog: True
         gameState.isGuest = false;
         gameState.userId = u.id;
         gameState.username = u.name;
+        var storedName = getStoredDisplayName();
+        if (storedName) saveDisplayName(storedName);
         return fetch(API_URL + '/snakes/', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
           .then(function(r) { return r.ok ? r.json() : null; })
           .then(function(data) {
@@ -262,10 +168,8 @@ microblog: True
               window.location.href = GAME_URL;
               return;
             }
-            return ensureDisplayName().then(function() {
-              document.getElementById('login-container').classList.add('hidden');
-              document.getElementById('character-selection').classList.remove('hidden');
-            });
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('character-selection').classList.remove('hidden');
           });
       })
       .catch(function(err) { console.error('Login error:', err); alert('Error connecting to server.'); });
@@ -276,10 +180,11 @@ microblog: True
     gameState.userId = 'guest_' + Date.now();
     gameState.username = 'Guest_' + Math.floor(Math.random() * 1000);
     try { sessionStorage.setItem('snakes_isGuest', '1'); sessionStorage.setItem('snakes_user_id', String(gameState.userId)); sessionStorage.setItem('snakes_guest_name', gameState.username); } catch(e) {}
-    ensureDisplayName().then(function() {
-      document.getElementById('login-container').classList.add('hidden');
-      document.getElementById('character-selection').classList.remove('hidden');
-    });
+    var guestPanel = document.getElementById('guest-display-panel');
+    var guestInput = document.getElementById('guest-display-name');
+    var storedName = getStoredDisplayName();
+    if (guestPanel) guestPanel.classList.remove('hidden');
+    if (guestInput && storedName) guestInput.value = storedName;
   }
 
   // ---- Character Selection ----
@@ -316,13 +221,46 @@ microblog: True
 
   // ---- Event Listeners ----
   document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('use-existing-login').addEventListener('click', useExistingLogin);
-    document.getElementById('play-as-guest').addEventListener('click', playAsGuest);
-    document.getElementById('start-game-btn').addEventListener('click', startGame);
-    document.getElementById('display-name-save').addEventListener('click', submitDisplayName);
-    document.getElementById('display-name-skip').addEventListener('click', skipDisplayName);
-    var dnInput = document.getElementById('display-name-input');
-    if (dnInput) dnInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') submitDisplayName(); });
+    var useLoginBtn = document.getElementById('use-existing-login');
+    if (useLoginBtn) useLoginBtn.addEventListener('click', useExistingLogin);
+    var guestBtn = document.getElementById('play-as-guest');
+    if (guestBtn) guestBtn.addEventListener('click', playAsGuest);
+    var startBtn = document.getElementById('start-game-btn');
+    if (startBtn) startBtn.addEventListener('click', startGame);
+    var guestContinue = document.getElementById('guest-name-continue');
+    if (guestContinue) {
+      guestContinue.addEventListener('click', function() {
+        var input = document.getElementById('guest-display-name');
+        var name = input ? input.value.trim() : '';
+        if (!name) { alert('Please enter a name.'); return; }
+        gameState.username = name;
+        saveDisplayName(name);
+        try {
+          sessionStorage.setItem(DISPLAY_NAME_KEY, name);
+          sessionStorage.setItem('snakes_guest_name', name);
+        } catch(e) {}
+        document.getElementById('login-container').classList.add('hidden');
+        document.getElementById('character-selection').classList.remove('hidden');
+      });
+    }
+    var guestDefault = document.getElementById('guest-name-default');
+    if (guestDefault) {
+      guestDefault.addEventListener('click', function() {
+        saveDisplayName(gameState.username);
+        try { sessionStorage.setItem(DISPLAY_NAME_KEY, gameState.username); } catch(e) {}
+        document.getElementById('login-container').classList.add('hidden');
+        document.getElementById('character-selection').classList.remove('hidden');
+      });
+    }
+    var guestInput = document.getElementById('guest-display-name');
+    if (guestInput) {
+      guestInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          var btn = document.getElementById('guest-name-continue');
+          if (btn) btn.click();
+        }
+      });
+    }
     fetch(API_URL + '/id', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
       .then(function(r) { return r.ok ? r.json() : null; })
       .then(function(u) { if (u) { gameState.userId = u.id; gameState.username = u.name; } })

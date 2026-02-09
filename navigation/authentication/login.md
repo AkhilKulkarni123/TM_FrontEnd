@@ -264,6 +264,9 @@ body {
             <div class="form-group">
                 <input type="password" id="password" placeholder="Password" required>
             </div>
+            <div class="form-group">
+                <input type="text" id="loginDisplayName" placeholder="Display Name (optional)">
+            </div>
             <p>
                 <button type="button" onclick="handleLogin()" class="submit-button">Login</button>
             </p>
@@ -278,6 +281,9 @@ body {
         <form id="signupForm" onsubmit="return false;">
             <div class="form-group">
                 <input type="text" id="signupName" placeholder="Name" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="signupDisplayName" placeholder="Display Name (optional)">
             </div>
             <div class="form-group">
                 <input type="text" id="signupUid" placeholder="GitHub ID" required>
@@ -323,6 +329,20 @@ body {
     console.log('Fetch Options:', fetchOptions);
 
     let validationTimeout = null;
+    const DISPLAY_NAME_KEY = 'snakes_display_name';
+
+    async function syncDisplayName(displayName) {
+        if (!displayName) return;
+        try {
+            await fetch(`${pythonURI}/api/user`, {
+                ...fetchOptions,
+                method: 'PUT',
+                body: JSON.stringify({ display_name: displayName })
+            });
+        } catch (error) {
+            console.log('Display name sync error (non-blocking):', error);
+        }
+    }
 
 
     // Password validation with debouncing
@@ -442,6 +462,7 @@ body {
     window.handleLogin = async function() {
         const uid = document.getElementById('uid').value.trim();
         const password = document.getElementById('password').value;
+        const loginDisplayName = document.getElementById('loginDisplayName')?.value.trim();
 
         if (!uid || !password) {
             showLoginMessage('Please enter both username and password');
@@ -466,6 +487,11 @@ body {
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('isAuthenticated', 'true');
+                const storedDisplayName = loginDisplayName || localStorage.getItem(DISPLAY_NAME_KEY) || data.user?.display_name || '';
+                if (storedDisplayName) {
+                    localStorage.setItem(DISPLAY_NAME_KEY, storedDisplayName);
+                    await syncDisplayName(storedDisplayName);
+                }
 
                 // Try Spring login in background (don't block on failure)
                 trySpringLogin(uid, password);
@@ -516,6 +542,7 @@ body {
         // Get form data
         const formData = {
             name: document.getElementById('signupName').value.trim(),
+            display_name: document.getElementById('signupDisplayName').value.trim(),
             uid: document.getElementById('signupUid').value.trim(),
             email: document.getElementById('signupEmail').value.trim(),
             password: document.getElementById('signupPassword').value
@@ -525,6 +552,9 @@ body {
         if (!formData.name || !formData.uid || !formData.email || !formData.password) {
             alert('Please fill in all required fields');
             return;
+        }
+        if (!formData.display_name) {
+            delete formData.display_name;
         }
 
         // Disable button
@@ -603,6 +633,9 @@ body {
                     localStorage.setItem('user', JSON.stringify(flaskResult.value.user));
                     localStorage.setItem('token', flaskResult.value.token);
                     localStorage.setItem('isAuthenticated', 'true');
+                    if (formData.display_name) {
+                        localStorage.setItem(DISPLAY_NAME_KEY, formData.display_name);
+                    }
 
                     // Auto-redirect after 2 seconds
                     setTimeout(() => {
@@ -620,6 +653,13 @@ body {
     window.addEventListener('load', async function() {
         const passwordField = document.getElementById('signupPassword');
         const confirmPasswordField = document.getElementById('confirmPassword');
+        const loginDisplayNameInput = document.getElementById('loginDisplayName');
+        const signupDisplayNameInput = document.getElementById('signupDisplayName');
+        const storedDisplayName = localStorage.getItem(DISPLAY_NAME_KEY);
+        if (storedDisplayName) {
+            if (loginDisplayNameInput) loginDisplayNameInput.value = storedDisplayName;
+            if (signupDisplayNameInput) signupDisplayNameInput.value = storedDisplayName;
+        }
 
         if (passwordField && confirmPasswordField) {
             passwordField.addEventListener('input', validatePasswordsDebounced);

@@ -25,7 +25,8 @@ $text-soft: rgba(255, 255, 255, 0.72);
   color: #fff;
 }
 
-body.snakes-theme {
+body.snakes-theme,
+.snakes-theme {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: $bg-mid;
   color: #fff;
@@ -51,6 +52,10 @@ body.snakes-theme {
     position: relative;
     z-index: 1;
     background: transparent !important;
+  }
+
+  .hidden {
+    display: none !important;
   }
 
   .login-box,
@@ -419,6 +424,257 @@ body.snakes-theme {
       border-left: none;
       padding: 0;
     }
+  }
+
+  // ── Snakes entry flow (login + character selection) ──
+  .game-landing-container {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(135deg, $bg-start 0%, $bg-mid 55%, $bg-end 100%);
+  }
+
+  .pixel-background {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0.35;
+    mix-blend-mode: screen;
+  }
+
+  #login-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 20px;
+    background: transparent;
+    position: relative;
+    z-index: 10;
+
+    &::before {
+      background:
+        radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.12) 0%, transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.12) 0%, transparent 55%);
+    }
+  }
+
+  .login-hero {
+    text-align: center;
+    margin-bottom: 40px;
+    z-index: 2;
+  }
+
+  .login-icon {
+    font-size: 72px;
+    margin-bottom: 18px;
+    text-shadow: 0 12px 24px rgba(8, 12, 20, 0.45);
+  }
+
+  .login-title {
+    font-size: clamp(2rem, 3.2vw, 2.7rem);
+    color: #f5f7ff;
+    text-shadow: 0 2px 16px rgba(12, 16, 30, 0.45);
+  }
+
+  .login-subtitle {
+    font-size: 1.05rem;
+    color: $text-soft;
+  }
+
+  .login-options {
+    @include glass-panel;
+    border-radius: 18px;
+    padding: 36px;
+    max-width: 520px;
+    width: min(92vw, 520px);
+    z-index: 2;
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 18px 22px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f7fafc;
+    text-align: left;
+    gap: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &::before {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(10, 16, 28, 0.45);
+    }
+  }
+
+  .primary-login {
+    background: linear-gradient(135deg, #2f8f85 0%, #1d6a63 100%);
+    box-shadow: 0 12px 28px rgba(47, 143, 133, 0.4);
+  }
+
+  .guest-login {
+    background: linear-gradient(135deg, #2a3b4a 0%, #1f2a36 100%);
+    box-shadow: 0 12px 28px rgba(22, 32, 42, 0.45);
+  }
+
+  .btn-title {
+    color: #ffffff;
+  }
+
+  .btn-description {
+    color: $text-soft;
+  }
+
+  .login-divider span {
+    background: rgba(10, 14, 22, 0.85);
+    color: $text-soft;
+  }
+
+  .login-divider::before,
+  .login-divider::after {
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  }
+
+  .login-footer {
+    margin-top: 26px;
+    z-index: 2;
+  }
+
+  .login-notice {
+    @include glass-panel;
+    border-radius: 14px;
+    padding: 16px 20px;
+    color: $text-soft;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .guest-display-panel {
+    margin-top: 20px;
+    @include glass-panel;
+    border-radius: 16px;
+    padding: 20px 22px;
+    text-align: left;
+
+    h3 {
+      margin: 0 0 8px 0;
+      color: #f5f7ff;
+    }
+
+    p {
+      margin: 0 0 12px 0;
+      color: $text-soft;
+    }
+
+    input {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+  }
+
+  .guest-display-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+
+    button {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: #f7fafc;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(10, 16, 28, 0.35);
+      }
+    }
+
+    #guest-name-continue {
+      background: linear-gradient(135deg, #2f8f85, #1f6e65);
+    }
+  }
+
+  .display-name-modal {
+    z-index: 10003;
+  }
+
+  #character-selection {
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: radial-gradient(circle at 20% 40%, rgba(47, 143, 133, 0.18), transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(155, 122, 53, 0.18), transparent 55%),
+      linear-gradient(160deg, #0c1220 0%, #121a2d 45%, #0b1325 100%);
+  }
+
+  #character-selection::before {
+    background:
+      radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.16) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.16) 0%, transparent 50%);
+  }
+
+  #character-selection h2 {
+    color: #f5f7ff;
+    text-shadow: 0 0 30px rgba(47, 143, 133, 0.5);
+    background: linear-gradient(45deg, #f5f7ff, #9bd7d0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .character-card {
+    background: rgba(10, 14, 22, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .character-card.center {
+    border-color: rgba(47, 143, 133, 0.7);
+    box-shadow: 0 16px 50px rgba(47, 143, 133, 0.35);
+  }
+
+  .character-card.selected {
+    border-color: rgba(155, 122, 53, 0.9) !important;
+    background: rgba(31, 41, 55, 0.9) !important;
+    box-shadow: 0 0 50px rgba(155, 122, 53, 0.6) !important;
+  }
+
+  .carousel-btn {
+    background: linear-gradient(145deg, #2a3b4a, #24303c);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 26px rgba(12, 18, 28, 0.5);
+  }
+
+  .carousel-btn:hover {
+    box-shadow: 0 14px 32px rgba(12, 18, 28, 0.6);
+  }
+
+  .game-start-btn {
+    background: linear-gradient(135deg, #2f8f85, #1f6e65);
+    color: #f7fafc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 28px rgba(47, 143, 133, 0.35);
   }
 }
 
