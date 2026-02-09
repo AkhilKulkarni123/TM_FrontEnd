@@ -106,10 +106,10 @@ microblog: True
   var fetchOpts = { mode: 'cors', cache: 'default', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-Origin': 'client' } };
   var DISPLAY_NAME_KEY = 'snakes_display_name';
   var CHARACTER_PERKS = {
-    knight: { name: 'Shielded', desc: '+1 Max Life (starts with 6)' },
-    wizard: { name: 'Firebrand', desc: 'Slightly higher damage; bullets are red' },
-    archer: { name: 'Keen Aim', desc: 'Slight aim assist in boss & PvP' },
-    warrior: { name: 'Bravery', desc: 'Slightly higher damage' }
+    knight: { name: 'Shielded', desc: '+1 Max Life' },
+    wizard: { name: 'Firebrand', desc: 'Double shot' },
+    archer: { name: 'Keen Aim', desc: 'Homing bullets' },
+    warrior: { name: 'Bravery', desc: 'Increased damage + Bleeding effect' }
   };
 
   var gameState = { isGuest: false, userId: null, username: '', character: '' };
