@@ -141,7 +141,13 @@
             height: 44px;
             border-radius: 8px;
             border: 2px solid #c9a84c;
-            background: linear-gradient(145deg, #fefefe 0%, #e8e6e1 60%, #d4d0c8 100%);
+            background:
+                radial-gradient(circle at 25% 25%, #1f2937 0 4px, transparent 5px),
+                radial-gradient(circle at 75% 75%, #1f2937 0 4px, transparent 5px),
+                radial-gradient(circle at 25% 75%, #1f2937 0 4px, transparent 5px),
+                radial-gradient(circle at 75% 25%, #1f2937 0 4px, transparent 5px),
+                radial-gradient(circle at 50% 50%, #1f2937 0 4px, transparent 5px),
+                linear-gradient(145deg, #ffffff 0%, #f0f0f0 60%, #e2e2e2 100%);
             box-shadow:
                 3px 3px 0 0 #b8860b,
                 5px 5px 0 0 #8b6914,
@@ -155,13 +161,7 @@
         }
 
         .physical-dice::before {
-            content: '\2680';
-            font-size: 24px;
-            color: #1a1a2e;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            content: none;
         }
 
         .physical-dice::after {

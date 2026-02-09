@@ -330,6 +330,35 @@ body.snakes-theme,
     gap: 6px;
   }
 
+  .dice-widget .physical-dice {
+    position: relative;
+    overflow: hidden;
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+    padding: 0 !important;
+    flex: 0 0 52px;
+    border-radius: 12px;
+  }
+
+  .dice-widget .physical-dice::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 28% 28%, #111827 0 4px, transparent 5px),
+      radial-gradient(circle at 72% 72%, #111827 0 4px, transparent 5px),
+      radial-gradient(circle at 28% 72%, #111827 0 4px, transparent 5px),
+      radial-gradient(circle at 72% 28%, #111827 0 4px, transparent 5px),
+      radial-gradient(circle at 50% 50%, #111827 0 4px, transparent 5px),
+      linear-gradient(145deg, #ffffff 0%, #f0f0f0 60%, #e2e2e2 100%);
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.8),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  }
+
   .physical-dice {
     width: 44px;
     height: 44px;
