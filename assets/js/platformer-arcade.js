@@ -329,6 +329,7 @@
             vy: 0,
             onGround: false
         },
+        dash: { active: false, timer: 0, cooldown: 0, dir: 0 },
         platforms: [],
         hazards: []
     };
@@ -653,17 +654,39 @@
 
         const accel = 1200;
         const maxSpeed = 320;
+        const dashSpeed = 700;
+        const dashDuration = 0.12;
+        const dashCooldown = 0.8;
         const friction = 0.85;
         const gravity = 1400;
         const jumpVel = 730;
 
+        // Dash activation
+        if (state.keys['shift'] && !state.dash.active && state.dash.cooldown <= 0) {
+            const left = state.keys['a'] || state.keys['arrowleft'];
+            const right = state.keys['d'] || state.keys['arrowright'];
+            const dir = right ? 1 : left ? -1 : (state.player.vx >= 0 ? 1 : -1);
+            state.dash.active = true;
+            state.dash.timer = dashDuration;
+            state.dash.cooldown = dashCooldown;
+            state.dash.dir = dir;
+        }
+
+        // During dash: override horizontal velocity, reduce gravity effect
+        if (state.dash.active) {
+            state.player.vx = dashSpeed * state.dash.dir;
+            state.player.vy *= 0.4; // reduced gravity during dash
+        }
+
         const left = state.keys['a'] || state.keys['arrowleft'];
         const right = state.keys['d'] || state.keys['arrowright'];
 
-        if (left) state.player.vx -= accel * dt;
-        if (right) state.player.vx += accel * dt;
-        if (!left && !right) state.player.vx *= friction;
-        state.player.vx = clamp(state.player.vx, -maxSpeed, maxSpeed);
+        if (!state.dash.active) {
+            if (left) state.player.vx -= accel * dt;
+            if (right) state.player.vx += accel * dt;
+            if (!left && !right) state.player.vx *= friction;
+            state.player.vx = clamp(state.player.vx, -maxSpeed, maxSpeed);
+        }
 
         state.player.vy += gravity * dt;
 
@@ -1156,6 +1179,18 @@
 
         const screenX = state.player.x - state.camera.x;
         const screenY = state.player.y - state.camera.y;
+
+        // Dash trail effect
+        if (state.dash.active) {
+            ctx.save();
+            for (let i = 1; i <= 3; i++) {
+                ctx.globalAlpha = 0.25 - i * 0.07;
+                const trailX = screenX - state.dash.dir * i * 14;
+                drawPlayerSpriteAt(trailX - 6, screenY - 8, state.player.w + 12, state.player.h + 16);
+            }
+            ctx.restore();
+        }
+
         drawPlayerSpriteAt(screenX - 6, screenY - 8, state.player.w + 12, state.player.h + 16);
     }
 
@@ -1250,6 +1285,11 @@
         const now = performance.now();
         const dt = Math.min(0.03, Math.max(0.008, (now - (last || now)) / 1000));
         state.jumpBuffer = Math.max(0, state.jumpBuffer - dt);
+        if (state.dash.cooldown > 0) state.dash.cooldown = Math.max(0, state.dash.cooldown - dt);
+        if (state.dash.active) {
+            state.dash.timer -= dt;
+            if (state.dash.timer <= 0) state.dash.active = false;
+        }
 
         updateDynamicWorld(dt, now);
         movePlayer(dt);
@@ -1297,6 +1337,9 @@
             }
             if ((key === 'arrowup' || key === 'w') && !wasDown) {
                 state.jumpBuffer = 0.14;
+            }
+            if (key === 'shift') {
+                e.preventDefault();
             }
         });
         document.addEventListener('keyup', (e) => {

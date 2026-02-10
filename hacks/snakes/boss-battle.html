@@ -794,6 +794,10 @@
                     <span class="key">SPACE / Click</span>
                 </div>
                 <div class="control-item">
+                    <span>Class Ability</span>
+                    <span class="key">Q Key</span>
+                </div>
+                <div class="control-item">
                     <span>Leave Arena</span>
                     <span class="key">X Key</span>
                 </div>
@@ -825,6 +829,13 @@
                 <div class="stat-box">
                     <div class="stat-label">Bullets</div>
                     <div class="stat-value" id="bulletsCount">50</div>
+                </div>
+                <div class="stat-box" id="abilityBox" style="min-width:180px;">
+                    <div class="stat-label" id="abilityLabel">Ability [Q]</div>
+                    <div style="position:relative;width:100%;height:28px;background:rgba(0,0,0,0.4);border-radius:6px;overflow:hidden;margin-top:4px;">
+                        <div id="abilityCooldownFill" style="height:100%;width:100%;background:linear-gradient(90deg,#4facfe,#00f2fe);border-radius:6px;transition:width 0.15s linear;"></div>
+                        <div id="abilityText" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:0.8em;font-weight:bold;text-shadow:0 0 4px #000;">READY</div>
+                    </div>
                 </div>
             </div>
 
@@ -937,11 +948,18 @@
         const REMOTE_INTERPOLATION_RATE = 11;
 
         const CHARACTER_CONFIG = {
-            knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
-            wizard: { icon: '🧙', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard' },
-            archer: { icon: '🏹', color: '#2ecc71', glow: '#27ae60', name: 'Archer' },
-            warrior: { icon: '⚔️', color: '#f39c12', glow: '#f1c40f', name: 'Warrior' }
+            knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight',
+                ability: 'Shield Wall', abilityDesc: 'Block all damage for 3s', abilityCooldown: 18000 },
+            wizard: { icon: '🧙', color: '#8e44ad', glow: '#9b59b6', name: 'Wizard',
+                ability: 'Time Warp', abilityDesc: 'Slow boss & projectiles 70% for 5s', abilityCooldown: 20000 },
+            archer: { icon: '🏹', color: '#2ecc71', glow: '#27ae60', name: 'Archer',
+                ability: 'Shadow Dash', abilityDesc: 'Dash forward invulnerable, phasing through attacks', abilityCooldown: 10000 },
+            warrior: { icon: '⚔️', color: '#f39c12', glow: '#f1c40f', name: 'Warrior',
+                ability: 'War Cry', abilityDesc: '3× damage for 4s', abilityCooldown: 16000 }
         };
+
+        const MAX_POWERUPS_PER_BATTLE = 8;
+        let powerupsSpawnedThisBattle = 0;
         const loadoutApi = window.SnakesLoadout || null;
         const HERO_WEAPON_FALLBACK = {
             knight: 'bulwark-disc',
@@ -1258,7 +1276,26 @@
                 currentPattern: 'normal', // 'normal', 'dash', 'zigzag', 'chase', 'circle'
                 circleAngle: 0,
                 erraticTimer: 0,
-                lastShotFrame: 0
+                lastShotFrame: 0,
+                phase: 1,
+                phaseTransitioned: false,
+                spiralAngle: 0,
+                burstCooldown: 0,
+                sweepAngle: 0,
+                sweepActive: false,
+                sweepEnd: 0,
+                chargeActive: false,
+                chargeTarget: null,
+                chargeEnd: 0,
+                chargeCooldown: 0,
+                venomPoolCooldown: 0,
+                tailWhipCooldown: 0,
+                tailWhipActive: false,
+                tailWhipAngle: 0,
+                tailWhipEnd: 0,
+                tailWhipTelegraphEnd: 0,
+                constrictionCooldown: 0,
+                minionCooldown: 0
             },
             playerBullets: [],
             otherPlayerBullets: [], // Bullets shot by other players
@@ -1282,6 +1319,13 @@
                 damageBuffExpiry: 0,
                 speedBuffExpiry: 0
             },
+            // Class ability state
+            ability: {
+                lastUsed: 0,
+                active: false,
+                activeExpiry: 0,
+                type: null  // 'shield', 'warcry', 'timewarp', 'dash'
+            },
             // Battle stats tracking
             battleStats: {
                 bulletsFired: 0,
@@ -1291,6 +1335,21 @@
                 startLives: DEFAULT_LIVES,
                 powerupsCollected: [],
                 battleStartTime: null
+            },
+            // Creative snake attacks
+            venomPools: [],
+            constrictionZones: [],
+            snakeMinions: [],
+            tailWhip: {
+                active: false,
+                telegraphing: false,
+                angle: 0,
+                arcStart: 0,
+                arcEnd: 0,
+                x: 0, y: 0,
+                radius: 0,
+                endTime: 0,
+                telegraphEndTime: 0
             }
         };
 
@@ -1300,7 +1359,8 @@
                 icon: '⚔️',
                 color: '#e74c3c',
                 glowColor: 'rgba(231, 76, 60, 0.6)',
-                name: 'Damage Boost',
+                name: 'Wrath Rune',
+                desc: 'Doubles attack damage',
                 effect: 'damageMultiplier',
                 multiplier: 2,
                 duration: 8000 // 8 seconds
@@ -1309,7 +1369,8 @@
                 icon: '⚡',
                 color: '#f39c12',
                 glowColor: 'rgba(243, 156, 18, 0.6)',
-                name: 'Speed Boost',
+                name: 'Swiftfoot Charm',
+                desc: 'Increases movement speed',
                 effect: 'speedMultiplier',
                 multiplier: 1.5,
                 duration: 10000 // 10 seconds
@@ -1318,7 +1379,8 @@
                 icon: '🔥',
                 color: '#9b59b6',
                 glowColor: 'rgba(155, 89, 182, 0.6)',
-                name: 'Rapid Fire',
+                name: 'Arcane Quiver',
+                desc: 'Greatly increases fire rate',
                 effect: 'rapidFire',
                 multiplier: 1,
                 duration: 6000 // 6 seconds
@@ -1327,7 +1389,8 @@
                 icon: '💚',
                 color: '#27ae60',
                 glowColor: 'rgba(39, 174, 96, 0.6)',
-                name: 'Health Restore',
+                name: 'Life Crystal',
+                desc: 'Restores one life',
                 effect: 'heal',
                 healAmount: 1,
                 duration: 0 // Instant
@@ -1536,6 +1599,11 @@
             if (e.code === 'Space' && gameActive) {
                 e.preventDefault();
                 shoot();
+            }
+            // Q key for class ability
+            if (e.key.toLowerCase() === 'q' && gameActive) {
+                e.preventDefault();
+                useClassAbility();
             }
             // X key to leave arena during battle
             if (e.key.toLowerCase() === 'x' && gameActive) {
@@ -1986,6 +2054,8 @@
             // New powerup spawned (from server)
             socket.on('boss_powerup_spawned', (data) => {
                 console.log('Powerup spawned:', data);
+                if (powerupsSpawnedThisBattle >= MAX_POWERUPS_PER_BATTLE) return;
+                powerupsSpawnedThisBattle++;
                 addPowerup({
                     id: data.id,
                     type: data.type,
@@ -2120,6 +2190,19 @@
 
                     gameActive = true;
 
+                    // Reset ability and creative attack state
+                    powerupsSpawnedThisBattle = 0;
+                    gameState.ability.lastUsed = 0;
+                    gameState.ability.active = false;
+                    gameState.ability.type = null;
+                    gameState.venomPools = [];
+                    gameState.constrictionZones = [];
+                    gameState.snakeMinions = [];
+                    gameState.tailWhip.active = false;
+                    gameState.tailWhip.telegraphing = false;
+                    gameState.boss.phase = 1;
+                    gameState.boss.charging = false;
+
                     // Initialize battle stats
                     gameState.battleStats = {
                         bulletsFired: 0,
@@ -2141,6 +2224,19 @@
                 // Fallback to single player mode
                 ensureBattleAmmo();
                 gameActive = true;
+
+                // Reset ability and creative attack state
+                powerupsSpawnedThisBattle = 0;
+                gameState.ability.lastUsed = 0;
+                gameState.ability.active = false;
+                gameState.ability.type = null;
+                gameState.venomPools = [];
+                gameState.constrictionZones = [];
+                gameState.snakeMinions = [];
+                gameState.tailWhip.active = false;
+                gameState.tailWhip.telegraphing = false;
+                gameState.boss.phase = 1;
+                gameState.boss.charging = false;
 
                 // Initialize battle stats for offline mode
                 gameState.battleStats = {
@@ -2200,6 +2296,19 @@
             startPowerupSpawnRequests();
             gameActive = true;
 
+            // Reset ability and creative attack state
+            powerupsSpawnedThisBattle = 0;
+            gameState.ability.lastUsed = 0;
+            gameState.ability.active = false;
+            gameState.ability.type = null;
+            gameState.venomPools = [];
+            gameState.constrictionZones = [];
+            gameState.snakeMinions = [];
+            gameState.tailWhip.active = false;
+            gameState.tailWhip.telegraphing = false;
+            gameState.boss.phase = 1;
+            gameState.boss.charging = false;
+
             gameState.battleStats = {
                 bulletsFired: 0,
                 bulletsHit: 0,
@@ -2222,6 +2331,8 @@
             if (offlinePowerupInterval) clearInterval(offlinePowerupInterval);
             offlinePowerupInterval = setInterval(() => {
                 if (gameActive) {
+                    if (powerupsSpawnedThisBattle >= MAX_POWERUPS_PER_BATTLE) return;
+                    powerupsSpawnedThisBattle++;
                     const types = Object.keys(POWERUP_TYPES);
                     const type = types[Math.floor(Math.random() * types.length)];
                     const powerup = {
@@ -2436,8 +2547,14 @@
             spawnBossProjectiles();
             checkPowerupCollisions();
             updateBuffs();
+            updateAbilityState();
+            updateVenomPools();
+            updateTailWhip();
+            updateConstrictionZones();
+            updateSnakeMinions();
             drawGame();
             checkCollisions();
+            checkCreativeAttackCollisions();
             applyBossBleed();
             updateProgressBar();
 
@@ -2513,7 +2630,23 @@
         }
 
         function movePlayer(step) {
-            const speed = Number.isFinite(step) ? step : gameState.player.speed;
+            // Handle archer dash movement (overrides normal movement)
+            if (gameState.player._dashing) {
+                const now = Date.now();
+                const elapsed = now - gameState.player._dashStart;
+                const t = Math.min(1, elapsed / gameState.player._dashDuration);
+                const eased = 1 - Math.pow(1 - t, 3);
+                gameState.player.x = gameState.player._dashStartX + (gameState.player._dashTargetX - gameState.player._dashStartX) * eased;
+                gameState.player.y = gameState.player._dashStartY + (gameState.player._dashTargetY - gameState.player._dashStartY) * eased;
+                if (t >= 1) {
+                    gameState.player._dashing = false;
+                }
+                return;
+            }
+
+            // Apply venom slow if standing in a venom pool
+            const venomMult = gameState.player._venomSlowed ? (gameState.player._venomSlowFactor || 0.45) : 1;
+            const speed = (Number.isFinite(step) ? step : gameState.player.speed) * venomMult;
             if (gameState.keys['a'] || gameState.keys['arrowleft']) {
                 gameState.player.x = Math.max(gameState.player.size, gameState.player.x - speed);
             }
@@ -2547,8 +2680,112 @@
 
 function getDamageMultiplier() {
     const c = gameState.player.character;
-    return (c === 'warrior') ? 1.2 : 1;
+    let base = (c === 'warrior') ? 1.2 : 1;
+    // War Cry active ability
+    if (gameState.ability.active && gameState.ability.type === 'warcry') {
+        base *= 3;
+    }
+    return base;
 }
+
+        function useClassAbility() {
+            const charConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            const now = Date.now();
+            const cooldown = charConfig.abilityCooldown || 15000;
+            const elapsed = now - gameState.ability.lastUsed;
+            if (elapsed < cooldown) {
+                const remaining = Math.ceil((cooldown - elapsed) / 1000);
+                addSystemMessage(`⏳ ${charConfig.ability} on cooldown (${remaining}s)`);
+                return;
+            }
+            gameState.ability.lastUsed = now;
+
+            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                window.SnakesSFX.play('powerup');
+            }
+
+            const char = gameState.player.character;
+
+            if (char === 'knight') {
+                gameState.ability.active = true;
+                gameState.ability.type = 'shield';
+                gameState.ability.activeExpiry = now + 3000;
+                addSystemMessage('🛡️ Shield Wall! Immune to damage for 3s');
+            } else if (char === 'wizard') {
+                gameState.ability.active = true;
+                gameState.ability.type = 'timewarp';
+                gameState.ability.activeExpiry = now + 5000;
+                addSystemMessage('🧙 Time Warp! Boss slowed 70% for 5s');
+            } else if (char === 'archer') {
+                const dashAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
+                const dashDistance = 220;
+                const dashDuration = 300;
+                const dashTargetX = Math.max(gameState.player.size, Math.min(canvas.width - gameState.player.size,
+                    gameState.player.x + Math.cos(dashAngle) * dashDistance));
+                const dashTargetY = Math.max(gameState.player.size + 200, Math.min(canvas.height - gameState.player.size,
+                    gameState.player.y + Math.sin(dashAngle) * dashDistance));
+                gameState.player._dashing = true;
+                gameState.player._dashStart = now;
+                gameState.player._dashDuration = dashDuration;
+                gameState.player._dashStartX = gameState.player.x;
+                gameState.player._dashStartY = gameState.player.y;
+                gameState.player._dashTargetX = dashTargetX;
+                gameState.player._dashTargetY = dashTargetY;
+                gameState.player._dashAngle = dashAngle;
+                gameState.ability.active = true;
+                gameState.ability.type = 'dash';
+                gameState.ability.activeExpiry = now + dashDuration + 50;
+                addSystemMessage('🏹 Shadow Dash! Phasing through attacks!');
+            } else if (char === 'warrior') {
+                gameState.ability.active = true;
+                gameState.ability.type = 'warcry';
+                gameState.ability.activeExpiry = now + 4000;
+                addSystemMessage('⚔️ War Cry! 3× damage for 4s');
+            }
+        }
+
+        function updateAbilityUI() {
+            const charConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            const cooldown = charConfig.abilityCooldown || 15000;
+            const now = Date.now();
+            const elapsed = now - gameState.ability.lastUsed;
+            const fill = document.getElementById('abilityCooldownFill');
+            const text = document.getElementById('abilityText');
+            const label = document.getElementById('abilityLabel');
+            if (!fill || !text || !label) return;
+
+            label.textContent = `${charConfig.ability} [Q]`;
+
+            if (elapsed >= cooldown) {
+                fill.style.width = '100%';
+                fill.style.background = `linear-gradient(90deg, ${charConfig.color}, ${charConfig.glow})`;
+                text.textContent = 'READY';
+                text.style.color = '#fff';
+            } else {
+                const pct = Math.min(100, (elapsed / cooldown) * 100);
+                fill.style.width = pct + '%';
+                fill.style.background = 'rgba(255,255,255,0.2)';
+                const remaining = Math.ceil((cooldown - elapsed) / 1000);
+                text.textContent = remaining + 's';
+                text.style.color = '#aaa';
+            }
+        }
+
+        function updateAbilityState() {
+            const now = Date.now();
+            if (gameState.ability.active && now > gameState.ability.activeExpiry) {
+                const type = gameState.ability.type;
+                gameState.ability.active = false;
+                gameState.ability.type = null;
+                if (type === 'shield') addSystemMessage('🛡️ Shield Wall faded');
+                if (type === 'warcry') addSystemMessage('⚔️ War Cry ended');
+                if (type === 'timewarp') addSystemMessage('🧙 Time Warp ended');
+                if (type === 'dash') {
+                    gameState.player._dashing = false;
+                }
+            }
+            updateAbilityUI();
+        }
 
         function getMaxLives() {
             return gameState.player.character === 'knight' ? (DEFAULT_LIVES + 1) : DEFAULT_LIVES;
@@ -2709,17 +2946,54 @@ function getDamageMultiplier() {
         }
 
         function moveBossProjectiles() {
+            const timeWarpActive = gameState.ability.active && gameState.ability.type === 'timewarp';
+            const projSpeedMult = timeWarpActive ? 0.3 : 1;
             gameState.bossProjectiles = gameState.bossProjectiles.filter(proj => {
-                proj.y += proj.dy !== undefined ? proj.dy : proj.speed;
-                proj.x += proj.dx;
-                return proj.y < canvas.height;
+                const pdy = proj.dy !== undefined ? proj.dy : proj.speed;
+                proj.y += pdy * projSpeedMult;
+                proj.x += (proj.dx || 0) * projSpeedMult;
+                if (proj.spiral) {
+                    proj.spiralAngle = (proj.spiralAngle || 0) + 0.08 * projSpeedMult;
+                    proj.x += Math.cos(proj.spiralAngle) * 1.5 * projSpeedMult;
+                    proj.y += Math.sin(proj.spiralAngle) * 1.5 * projSpeedMult;
+                }
+                return proj.y < canvas.height && proj.y > -50 &&
+                       proj.x > -50 && proj.x < canvas.width + 50;
             });
         }
 
         function spawnBossProjectiles() {
             const boss = gameState.boss;
-            if (Math.random() < 0.04) {
-                if (boss.patternTimer - boss.lastShotFrame < 28) return;
+            const timeWarpActive = gameState.ability.active && gameState.ability.type === 'timewarp';
+            const now = performance.now();
+
+            // === PHASE TRANSITION CHECK ===
+            if (!boss.phaseTransitioned && boss.health <= boss.maxHealth * 0.4) {
+                boss.phase = 2;
+                boss.phaseTransitioned = true;
+                boss.baseSpeed = 3.0;
+                boss.turnRate = 0.04;
+                addSystemMessage('🐍💀 The serpent ENRAGES! Phase 2!');
+                addSystemMessage('☠️ Boss is faster and has new attacks!');
+                for (let i = 0; i < 10; i++) {
+                    const angle = (i / 10) * Math.PI * 2;
+                    gameState.bossProjectiles.push({
+                        x: boss.x, y: boss.y,
+                        size: 10, speed: 3,
+                        dx: Math.cos(angle) * 2.5,
+                        dy: Math.sin(angle) * 2.5,
+                        type: 'venom', phase: 2
+                    });
+                }
+            }
+
+            // Cap max boss projectiles on screen
+            const MAX_BOSS_PROJECTILES = 30;
+            if (gameState.bossProjectiles.length >= MAX_BOSS_PROJECTILES) return;
+
+            // Aimed shot (both phases)
+            if (Math.random() < (boss.phase === 2 ? 0.032 : 0.022)) {
+                if (boss.patternTimer - boss.lastShotFrame < (boss.phase === 2 ? 30 : 45)) return;
                 const angle = Math.atan2(gameState.player.y - boss.y, gameState.player.x - boss.x);
                 const spawnOffset = boss.size * 0.6;
                 const spawnX = boss.x + Math.cos(angle) * spawnOffset;
@@ -2728,35 +3002,219 @@ function getDamageMultiplier() {
                 const last = gameState.bossProjectiles[gameState.bossProjectiles.length - 1];
                 if (last && Math.hypot(last.x - spawnX, last.y - spawnY) < last.size * 2) return;
 
+                const spd = boss.phase === 2 ? 2.2 : 1.5;
                 gameState.bossProjectiles.push({
-                    x: spawnX,
-                    y: spawnY,
-                    size: 12,
-                    speed: 3,
-                    dx: Math.cos(angle) * 1.8,
-                    dy: Math.sin(angle) * 1.8
+                    x: spawnX, y: spawnY,
+                    size: boss.phase === 2 ? 12 : 10,
+                    speed: 3, dx: Math.cos(angle) * spd, dy: Math.sin(angle) * spd,
+                    type: 'venom', phase: boss.phase
                 });
                 boss.lastShotFrame = boss.patternTimer;
             }
-            // No burst pattern; only aimed shots.
+
+            // Spiral pattern
+            const spiralInterval = boss.phase === 2 ? 240 : 360;
+            if (boss.patternTimer % spiralInterval === 0 && boss.patternTimer > 60) {
+                boss.spiralAngle = (boss.spiralAngle || 0);
+                const count = boss.phase === 2 ? 3 : 2;
+                for (let i = 0; i < count; i++) {
+                    const angle = boss.spiralAngle + (i / count) * Math.PI * 2;
+                    gameState.bossProjectiles.push({
+                        x: boss.x, y: boss.y,
+                        size: 10, speed: 2,
+                        dx: Math.cos(angle) * 2, dy: Math.sin(angle) * 2,
+                        spiral: true, spiralAngle: angle,
+                        type: 'spiral', phase: boss.phase
+                    });
+                }
+                boss.spiralAngle += 0.5;
+            }
+
+            // === PHASE 2 ONLY ATTACKS ===
+            if (boss.phase === 2) {
+                // Shotgun burst
+                if (boss.burstCooldown <= 0 && boss.patternTimer % 300 === 0) {
+                    const baseAngle = Math.atan2(gameState.player.y - boss.y, gameState.player.x - boss.x);
+                    for (let i = -2; i <= 2; i++) {
+                        const angle = baseAngle + i * 0.2;
+                        gameState.bossProjectiles.push({
+                            x: boss.x, y: boss.y,
+                            size: 9, speed: 3,
+                            dx: Math.cos(angle) * 2.6, dy: Math.sin(angle) * 2.6,
+                            type: 'burst', phase: 2
+                        });
+                    }
+                    boss.burstCooldown = 180;
+                }
+                if (boss.burstCooldown > 0) boss.burstCooldown--;
+
+                // Sweeping venom beam
+                if (!boss.sweepActive && boss.patternTimer % 540 === 270) {
+                    boss.sweepActive = true;
+                    boss.sweepAngle = Math.atan2(gameState.player.y - boss.y, gameState.player.x - boss.x) - 0.6;
+                    boss.sweepEnd = now + 1200;
+                }
+                if (boss.sweepActive) {
+                    if (now < boss.sweepEnd) {
+                        boss.sweepAngle += 0.035;
+                        if (boss.patternTimer % 5 === 0) {
+                            gameState.bossProjectiles.push({
+                                x: boss.x, y: boss.y,
+                                size: 8, speed: 4,
+                                dx: Math.cos(boss.sweepAngle) * 4,
+                                dy: Math.sin(boss.sweepAngle) * 4,
+                                type: 'sweep', phase: 2
+                            });
+                        }
+                    } else {
+                        boss.sweepActive = false;
+                    }
+                }
+
+                // Charge attack
+                if (!boss.chargeActive && boss.chargeCooldown <= 0 && boss.patternTimer % 780 === 390) {
+                    boss.chargeActive = true;
+                    boss.chargeTarget = { x: gameState.player.x, y: gameState.player.y };
+                    boss.chargeEnd = now + 1200;
+                    boss.chargeCooldown = 500;
+                    addSystemMessage('⚠️ The serpent charges at you!');
+                }
+                if (boss.chargeCooldown > 0) boss.chargeCooldown--;
+            }
+
+            // ============ CREATIVE SNAKE ATTACKS (both phases) ============
+
+            // Venom Pools
+            if (boss.venomPoolCooldown <= 0 && gameState.venomPools.length < 5) {
+                const poolInterval = boss.phase === 2 ? 300 : 480;
+                if (boss.patternTimer % poolInterval === Math.floor(poolInterval * 0.5)) {
+                    const poolX = 80 + Math.random() * (canvas.width - 160);
+                    const poolY = 260 + Math.random() * (canvas.height - 320);
+                    gameState.venomPools.push({
+                        x: poolX, y: poolY,
+                        radius: boss.phase === 2 ? 50 : 40,
+                        spawnTime: now,
+                        duration: boss.phase === 2 ? 8000 : 6000,
+                        active: false,
+                        telegraphEnd: now + 700,
+                        phase: boss.phase,
+                        slowFactor: boss.phase === 2 ? 0.35 : 0.45
+                    });
+                    boss.venomPoolCooldown = 150;
+                }
+            }
+            if (boss.venomPoolCooldown > 0) boss.venomPoolCooldown--;
+
+            // Tail Whip
+            if (!gameState.tailWhip.active && !gameState.tailWhip.telegraphing && boss.tailWhipCooldown <= 0) {
+                const whipInterval = boss.phase === 2 ? 360 : 540;
+                if (boss.patternTimer % whipInterval === Math.floor(whipInterval * 0.6)) {
+                    gameState.tailWhip.telegraphing = true;
+                    gameState.tailWhip.x = boss.x;
+                    gameState.tailWhip.y = boss.y;
+                    gameState.tailWhip.angle = 0;
+                    gameState.tailWhip.sweepAngle = 0;
+                    gameState.tailWhip.arcStart = 0;
+                    gameState.tailWhip.arcEnd = Math.PI * 2;
+                    gameState.tailWhip.radius = boss.phase === 2 ? 180 : 150;
+                    gameState.tailWhip.innerRadius = 50;
+                    gameState.tailWhip.telegraphEndTime = now + 650;
+                    gameState.tailWhip.endTime = now + 650 + 700;
+                    gameState.tailWhip._hitPlayer = false;
+                    gameState.tailWhip._flingedProjectiles = false;
+                    addSystemMessage('⚠️ The serpent coils for a tail spin!');
+                }
+            }
+            if (boss.tailWhipCooldown > 0) boss.tailWhipCooldown--;
+
+            // Constriction Zones (phase 2)
+            if (boss.phase === 2 && boss.constrictionCooldown <= 0 && gameState.constrictionZones.length < 2) {
+                if (boss.patternTimer % 480 === 240) {
+                    const zoneX = gameState.player.x + (Math.random() - 0.5) * 100;
+                    const zoneY = gameState.player.y + (Math.random() - 0.5) * 100;
+                    gameState.constrictionZones.push({
+                        x: Math.max(60, Math.min(canvas.width - 60, zoneX)),
+                        y: Math.max(250, Math.min(canvas.height - 60, zoneY)),
+                        maxRadius: 120,
+                        currentRadius: 120,
+                        spawnTime: now,
+                        shrinkDuration: 2500,
+                        snapTime: now + 2500,
+                        snapped: false,
+                        phase: 2
+                    });
+                    boss.constrictionCooldown = 360;
+                    addSystemMessage('🔴 Constriction zone — escape the ring!');
+                }
+            }
+            if (boss.constrictionCooldown > 0) boss.constrictionCooldown--;
+
+            // Snake Minions (phase 2)
+            if (boss.phase === 2 && boss.minionCooldown <= 0 && gameState.snakeMinions.length < 3) {
+                if (boss.patternTimer % 600 === 0 && boss.patternTimer > 120) {
+                    const count = Math.min(2, 3 - gameState.snakeMinions.length);
+                    for (let i = 0; i < count; i++) {
+                        const spawnAngle = Math.random() * Math.PI * 2;
+                        gameState.snakeMinions.push({
+                            x: boss.x + Math.cos(spawnAngle) * 50,
+                            y: boss.y + Math.sin(spawnAngle) * 50,
+                            hp: 2,
+                            speed: 1.5 + Math.random() * 0.5,
+                            size: 14,
+                            angle: spawnAngle,
+                            slitherPhase: Math.random() * Math.PI * 2,
+                            spawnTime: now
+                        });
+                    }
+                    boss.minionCooldown = 480;
+                    addSystemMessage('🐍 The serpent summons its brood!');
+                }
+            }
+            if (boss.minionCooldown > 0) boss.minionCooldown--;
         }
 
         function moveBoss() {
             const boss = gameState.boss;
             const margin = 90;
             const minY = 60;
-            const maxY = 220;
+            const maxY = boss.phase === 2 ? 320 : 220;
+            const timeWarpActive = gameState.ability.active && gameState.ability.type === 'timewarp';
+            const speedMult = timeWarpActive ? 0.3 : 1;
+            const now = performance.now();
 
             boss.patternTimer++;
-            boss.slitherPhase += 0.14;
+            boss.slitherPhase += 0.14 * speedMult;
+
+            // Charge attack movement (phase 2)
+            if (boss.chargeActive) {
+                if (now < boss.chargeEnd && boss.chargeTarget) {
+                    const ca = Math.atan2(boss.chargeTarget.y - boss.y, boss.chargeTarget.x - boss.x);
+                    boss.x += Math.cos(ca) * 8 * speedMult;
+                    boss.y += Math.sin(ca) * 8 * speedMult;
+                    boss.heading = ca;
+                    if (boss.patternTimer % 4 === 0) {
+                        gameState.bossProjectiles.push({
+                            x: boss.x, y: boss.y,
+                            size: 8, speed: 0,
+                            dx: (Math.random() - 0.5) * 0.5, dy: (Math.random() - 0.5) * 0.5,
+                            type: 'trail', phase: 2, lifetime: now + 2000
+                        });
+                    }
+                } else {
+                    boss.chargeActive = false;
+                }
+                boss.x = Math.max(margin, Math.min(canvas.width - margin, boss.x));
+                boss.y = Math.max(minY, Math.min(canvas.height - 80, boss.y));
+                return;
+            }
 
             // Pick a smooth target point, occasionally bias toward the player
             const shouldRetarget = !boss.targetX || Math.hypot(boss.targetX - boss.x, boss.targetY - boss.y) < 30;
-            if (shouldRetarget || boss.patternTimer % 240 === 0) {
-                const biasToPlayer = Math.random() < 0.35;
+            if (shouldRetarget || boss.patternTimer % (boss.phase === 2 ? 160 : 240) === 0) {
+                const biasToPlayer = Math.random() < (boss.phase === 2 ? 0.55 : 0.35);
                 const targetX = biasToPlayer ? gameState.player.x : margin + Math.random() * (canvas.width - margin * 2);
                 const targetY = biasToPlayer
-                    ? Math.min(maxY, Math.max(minY, gameState.player.y * 0.35))
+                    ? Math.min(maxY, Math.max(minY, gameState.player.y * (boss.phase === 2 ? 0.6 : 0.35)))
                     : minY + Math.random() * (maxY - minY);
                 boss.targetX = targetX;
                 boss.targetY = targetY;
@@ -2769,7 +3227,7 @@ function getDamageMultiplier() {
             boss.heading += Math.max(-boss.turnRate, Math.min(boss.turnRate, angleDiff));
 
             // Slither with slight speed variation
-            const speed = boss.baseSpeed + Math.sin(boss.slitherPhase) * 0.35;
+            const speed = (boss.baseSpeed + Math.sin(boss.slitherPhase) * 0.35) * speedMult;
             const lateral = Math.sin(boss.slitherPhase * 1.2) * boss.slitherAmplitude;
 
             boss.x += Math.cos(boss.heading) * speed - Math.sin(boss.heading) * (lateral * 0.05);
@@ -2853,12 +3311,28 @@ function getDamageMultiplier() {
             gameState.bossProjectiles.forEach(proj => {
                 const distance = Math.hypot(proj.x - gameState.player.x, proj.y - gameState.player.y);
                 if (distance < gameState.player.size + proj.size) {
+                    // Shield or dash blocks damage
+                    if (gameState.ability.active && (gameState.ability.type === 'shield' || gameState.ability.type === 'dash')) {
+                        proj.y = canvas.height + 100;
+                        return;
+                    }
                     if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
                         window.SnakesSFX.play('hurt');
                     }
                     gameState.player.lives--;
                     updateLives();
                     savePlayerState();
+
+                    // Knockback
+                    const kbAngle = Math.atan2(gameState.player.y - proj.y, gameState.player.x - proj.x);
+                    const kbForce = 60;
+                    gameState.player.x = Math.max(gameState.player.size,
+                        Math.min(canvas.width - gameState.player.size,
+                            gameState.player.x + Math.cos(kbAngle) * kbForce));
+                    gameState.player.y = Math.max(gameState.player.size + 200,
+                        Math.min(canvas.height - gameState.player.size,
+                            gameState.player.y + Math.sin(kbAngle) * kbForce));
+
                     proj.y = canvas.height + 100;
 
                     // Track stats
@@ -2876,6 +3350,210 @@ function getDamageMultiplier() {
                         endGame(false);
                     }
                 }
+            });
+        }
+
+        // ============ UPDATE & COLLISION FUNCTIONS FOR CREATIVE ATTACKS ============
+
+        function updateVenomPools() {
+            const now = performance.now();
+            let playerInVenom = false;
+            let worstSlow = 1;
+            gameState.venomPools = gameState.venomPools.filter(pool => {
+                if (now > pool.spawnTime + pool.duration) return false;
+                if (!pool.active && now > pool.telegraphEnd) pool.active = true;
+                if (pool.active) {
+                    const dist = Math.hypot(gameState.player.x - pool.x, gameState.player.y - pool.y);
+                    if (dist < pool.radius + gameState.player.size * 0.5) {
+                        playerInVenom = true;
+                        worstSlow = Math.min(worstSlow, pool.slowFactor || 0.45);
+                    }
+                }
+                return true;
+            });
+            if (playerInVenom) {
+                gameState.player._venomSlowed = true;
+                gameState.player._venomSlowFactor = worstSlow;
+            } else if (gameState.player._venomSlowed) {
+                gameState.player._venomSlowed = false;
+                gameState.player._venomSlowFactor = 1;
+            }
+        }
+
+        function updateTailWhip() {
+            const now = performance.now();
+            const tw = gameState.tailWhip;
+            if (tw.telegraphing) {
+                tw.x = gameState.boss.x;
+                tw.y = gameState.boss.y;
+                if (now >= tw.telegraphEndTime) {
+                    tw.telegraphing = false;
+                    tw.active = true;
+                    tw.sweepAngle = 0;
+                    tw.x = gameState.boss.x;
+                    tw.y = gameState.boss.y;
+                }
+            }
+            if (tw.active) {
+                const activeDuration = tw.endTime - tw.telegraphEndTime;
+                const elapsed = now - tw.telegraphEndTime;
+                tw.sweepAngle = (elapsed / activeDuration) * Math.PI * 2;
+                if (!tw._flingedProjectiles && tw.sweepAngle >= Math.PI) {
+                    tw._flingedProjectiles = true;
+                    const count = gameState.boss.phase === 2 ? 8 : 5;
+                    for (let i = 0; i < count; i++) {
+                        const ang = (i / count) * Math.PI * 2;
+                        gameState.bossProjectiles.push({
+                            x: tw.x + Math.cos(ang) * tw.radius * 0.7,
+                            y: tw.y + Math.sin(ang) * tw.radius * 0.7,
+                            size: 8, speed: 2.5,
+                            dx: Math.cos(ang) * 2.5,
+                            dy: Math.sin(ang) * 2.5,
+                            type: 'tail_fling', phase: gameState.boss.phase
+                        });
+                    }
+                }
+                if (now >= tw.endTime) {
+                    tw.active = false;
+                    gameState.boss.tailWhipCooldown = 240;
+                }
+            }
+        }
+
+        function updateConstrictionZones() {
+            const now = performance.now();
+            gameState.constrictionZones = gameState.constrictionZones.filter(zone => {
+                const elapsed = now - zone.spawnTime;
+                const progress = Math.min(1, elapsed / zone.shrinkDuration);
+                zone.currentRadius = zone.maxRadius * (1 - progress);
+                if (!zone.snapped && progress >= 1) {
+                    zone.snapped = true;
+                    setTimeout(() => {
+                        const idx = gameState.constrictionZones.indexOf(zone);
+                        if (idx > -1) gameState.constrictionZones.splice(idx, 1);
+                    }, 300);
+                }
+                return !zone.snapped || (now - zone.snapTime < 300);
+            });
+        }
+
+        function updateSnakeMinions() {
+            const timeWarpActive = gameState.ability.active && gameState.ability.type === 'timewarp';
+            const speedMult = timeWarpActive ? 0.3 : 1;
+            gameState.snakeMinions.forEach(minion => {
+                const dx = gameState.player.x - minion.x;
+                const dy = gameState.player.y - minion.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 5) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    let angleDiff = targetAngle - minion.angle;
+                    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                    minion.angle += Math.max(-0.06, Math.min(0.06, angleDiff));
+                    minion.x += Math.cos(minion.angle) * minion.speed * speedMult;
+                    minion.y += Math.sin(minion.angle) * minion.speed * speedMult;
+                }
+                minion.slitherPhase += 0.15 * speedMult;
+            });
+        }
+
+        function checkCreativeAttackCollisions() {
+            const now = performance.now();
+            const px = gameState.player.x;
+            const py = gameState.player.y;
+            const ps = gameState.player.size;
+            const shielded = gameState.ability.active && (gameState.ability.type === 'shield' || gameState.ability.type === 'dash');
+
+            // Tail Whip damage
+            if (gameState.tailWhip.active) {
+                const tw = gameState.tailWhip;
+                const dist = Math.hypot(px - tw.x, py - tw.y);
+                const innerSafe = tw.innerRadius || 50;
+                if (dist < tw.radius && dist > innerSafe) {
+                    const angleToPlayer = Math.atan2(py - tw.y, px - tw.x);
+                    let playerAng = angleToPlayer;
+                    if (playerAng < 0) playerAng += Math.PI * 2;
+                    const swept = tw.sweepAngle || 0;
+                    if (swept >= playerAng || swept >= Math.PI * 2 * 0.95) {
+                        if (!shielded && !tw._hitPlayer) {
+                            tw._hitPlayer = true;
+                            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') window.SnakesSFX.play('hurt');
+                            gameState.player.lives--;
+                            gameState.battleStats.livesLost++;
+                            updateLives();
+                            savePlayerState();
+                            const kbAngle = Math.atan2(py - tw.y, px - tw.x);
+                            gameState.player.x = Math.max(ps, Math.min(canvas.width - ps, px + Math.cos(kbAngle) * 80));
+                            gameState.player.y = Math.max(ps + 200, Math.min(canvas.height - ps, py + Math.sin(kbAngle) * 80));
+                            if (socket && socket.connected && roomId) socket.emit('boss_player_hit', { room_id: roomId, lives: gameState.player.lives });
+                            if (gameState.player.lives <= 0) endGame(false);
+                        }
+                    }
+                }
+            } else {
+                gameState.tailWhip._hitPlayer = false;
+            }
+
+            // Constriction Zone snap damage
+            gameState.constrictionZones.forEach(zone => {
+                if (zone.snapped) return;
+                const progress = Math.min(1, (now - zone.spawnTime) / zone.shrinkDuration);
+                if (progress > 0.15 && progress < 1) {
+                    const dist = Math.hypot(px - zone.x, py - zone.y);
+                    if (dist > zone.currentRadius * 0.7 && dist < zone.currentRadius + ps * 2) {
+                        const pushAngle = Math.atan2(zone.y - py, zone.x - px);
+                        const pushForce = 1.5 + progress * 3;
+                        gameState.player.x = Math.max(ps, Math.min(canvas.width - ps, gameState.player.x + Math.cos(pushAngle) * pushForce));
+                        gameState.player.y = Math.max(ps + 200, Math.min(canvas.height - ps, gameState.player.y + Math.sin(pushAngle) * pushForce));
+                    }
+                }
+                if (progress >= 0.88) {
+                    const dist = Math.hypot(px - zone.x, py - zone.y);
+                    if (dist < zone.currentRadius + ps * 0.5) {
+                        if (!shielded && !zone._hitPlayer) {
+                            zone._hitPlayer = true;
+                            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') window.SnakesSFX.play('hurt');
+                            gameState.player.lives--;
+                            gameState.battleStats.livesLost++;
+                            updateLives();
+                            savePlayerState();
+                            const kbAngle = Math.atan2(py - zone.y, px - zone.x);
+                            gameState.player.x = Math.max(ps, Math.min(canvas.width - ps, px + Math.cos(kbAngle) * 70));
+                            gameState.player.y = Math.max(ps + 200, Math.min(canvas.height - ps, py + Math.sin(kbAngle) * 70));
+                            if (socket && socket.connected && roomId) socket.emit('boss_player_hit', { room_id: roomId, lives: gameState.player.lives });
+                            if (gameState.player.lives <= 0) endGame(false);
+                        }
+                    }
+                }
+            });
+
+            // Snake Minion contact damage + player bullets killing minions
+            gameState.snakeMinions = gameState.snakeMinions.filter(minion => {
+                gameState.playerBullets = gameState.playerBullets.filter(bullet => {
+                    const dist = Math.hypot(bullet.x - minion.x, bullet.y - minion.y);
+                    if (dist < minion.size + (bullet.size || 5)) {
+                        minion.hp--;
+                        return bullet.effect === 'piercing' ? true : false;
+                    }
+                    return true;
+                });
+                if (minion.hp <= 0) return false;
+                const dist = Math.hypot(px - minion.x, py - minion.y);
+                if (dist < ps + minion.size) {
+                    if (!shielded) {
+                        if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') window.SnakesSFX.play('hurt');
+                        gameState.player.lives--;
+                        gameState.battleStats.livesLost++;
+                        updateLives();
+                        savePlayerState();
+                        const kbAngle = Math.atan2(py - minion.y, px - minion.x);
+                        gameState.player.x = Math.max(ps, Math.min(canvas.width - ps, px + Math.cos(kbAngle) * 50));
+                        gameState.player.y = Math.max(ps + 200, Math.min(canvas.height - ps, py + Math.sin(kbAngle) * 50));
+                        if (socket && socket.connected && roomId) socket.emit('boss_player_hit', { room_id: roomId, lives: gameState.player.lives });
+                        if (gameState.player.lives <= 0) endGame(false);
+                    }
+                    return false;
+                }
+                return true;
             });
         }
 
@@ -2939,15 +3617,30 @@ function getDamageMultiplier() {
             const bodyLength = boss.size * 2.8;
             const bodyWidth = boss.size * 0.34;
             const wiggle = Math.sin(boss.slitherPhase) * (boss.size * 0.18);
+            const isPhase2 = gameState.boss.phase === 2;
+
+            // Phase 2 color palette: angry red/dark
+            const bodyStroke = isPhase2 ? '#8b1a1a' : '#2a7a44';
+            const scaleStroke = isPhase2 ? '#5c1010' : '#1f5e34';
+            const headFill = isPhase2 ? '#a02020' : '#2f8f53';
+            const headAccent = isPhase2 ? '#8b1a1a' : '#2a7a44';
+            const eyeFill = isPhase2 ? '#ff4444' : '#0b1f0f';
+            const eyeHighlight = isPhase2 ? '#ffcccc' : '#e8f5e9';
 
             ctx.save();
             ctx.translate(boss.x, boss.y);
             ctx.rotate(boss.heading);
 
+            // Phase 2 glow aura
+            if (isPhase2) {
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = 'rgba(255, 40, 40, 0.6)';
+            }
+
             // Main body with tapering
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = 'rgba(12, 50, 30, 0.35)';
-            ctx.strokeStyle = '#2a7a44';
+            ctx.shadowBlur = isPhase2 ? 8 : 3;
+            ctx.shadowColor = isPhase2 ? 'rgba(140, 20, 20, 0.5)' : 'rgba(12, 50, 30, 0.35)';
+            ctx.strokeStyle = bodyStroke;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             const points = [];
@@ -2968,7 +3661,7 @@ function getDamageMultiplier() {
             }
 
             // Scale hints
-            ctx.strokeStyle = '#1f5e34';
+            ctx.strokeStyle = scaleStroke;
             ctx.lineWidth = 1.2;
             for (let i = 3; i <= 18; i++) {
                 const t = i / 20;
@@ -2987,7 +3680,7 @@ function getDamageMultiplier() {
             const headScale = 1.18;
             const headW = bodyWidth * 1.05 * headScale;
             const headH = bodyWidth * 0.85 * headScale;
-            ctx.fillStyle = '#2f8f53';
+            ctx.fillStyle = headFill;
             ctx.beginPath();
             ctx.moveTo(headX - headW * 0.75, headY - headH * 0.32);
             ctx.quadraticCurveTo(headX - headW * 0.1, headY - headH * 0.6, headX + headW * 0.55, headY - headH * 0.16);
@@ -2998,7 +3691,7 @@ function getDamageMultiplier() {
             ctx.fill();
 
             // Snout taper (non-circular)
-            ctx.fillStyle = '#2a7a44';
+            ctx.fillStyle = headAccent;
             ctx.beginPath();
             ctx.moveTo(headX + headW * 0.35, headY - headH * 0.22);
             ctx.quadraticCurveTo(headX + headW * 0.8, headY, headX + headW * 0.35, headY + headH * 0.22);
@@ -3006,7 +3699,7 @@ function getDamageMultiplier() {
             ctx.fill();
 
             // Neck blend to attach head to body
-            ctx.fillStyle = '#2a7a44';
+            ctx.fillStyle = headAccent;
             ctx.beginPath();
             ctx.moveTo(headX - headW * 0.75, headY - bodyWidth * 0.22);
             ctx.quadraticCurveTo(headX - headW * 0.95, headY, headX - headW * 0.75, headY + bodyWidth * 0.22);
@@ -3016,14 +3709,14 @@ function getDamageMultiplier() {
             ctx.fill();
 
             // Eyes
-            ctx.fillStyle = '#0b1f0f';
+            ctx.fillStyle = eyeFill;
             ctx.beginPath();
             ctx.arc(headX + headW * 0.05, headY - headH * 0.35, bodyWidth * 0.065, 0, Math.PI * 2);
             ctx.arc(headX + headW * 0.05, headY + headH * 0.35, bodyWidth * 0.065, 0, Math.PI * 2);
             ctx.fill();
 
             // Eye highlights
-            ctx.fillStyle = '#e8f5e9';
+            ctx.fillStyle = eyeHighlight;
             ctx.beginPath();
             ctx.arc(headX + headW * 0.1, headY - headH * 0.38, bodyWidth * 0.02, 0, Math.PI * 2);
             ctx.arc(headX + headW * 0.1, headY + headH * 0.3, bodyWidth * 0.02, 0, Math.PI * 2);
@@ -3304,13 +3997,268 @@ function getDamageMultiplier() {
                 ctx.setLineDash([]);
             }
 
+            // ============ DRAW CREATIVE SNAKE ATTACKS ============
+
+            // Draw Venom Pools
+            gameState.venomPools.forEach(pool => {
+                ctx.save();
+                const vnow = performance.now();
+                const age = vnow - pool.spawnTime;
+                const remaining = pool.duration - age;
+                const fadeAlpha = remaining < 1500 ? remaining / 1500 : 1;
+                const isActive = pool.active;
+                const pulse = 1 + Math.sin(vnow * 0.004) * 0.08;
+                if (!isActive) {
+                    const flashAlpha = (Math.sin(vnow * 0.02) + 1) * 0.3;
+                    ctx.globalAlpha = flashAlpha;
+                    ctx.strokeStyle = '#6c3483';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 4]);
+                    ctx.beginPath();
+                    ctx.arc(pool.x, pool.y, pool.radius * pulse, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else {
+                    ctx.globalAlpha = fadeAlpha * 0.65;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#6c3483';
+                    const gradient = ctx.createRadialGradient(pool.x, pool.y, 0, pool.x, pool.y, pool.radius * pulse);
+                    gradient.addColorStop(0, 'rgba(108, 52, 131, 0.7)');
+                    gradient.addColorStop(0.4, 'rgba(86, 101, 43, 0.5)');
+                    gradient.addColorStop(0.7, 'rgba(39, 174, 96, 0.3)');
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(pool.x, pool.y, pool.radius * pulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = fadeAlpha * 0.5;
+                    ctx.font = `${14 * pulse}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🐌', pool.x, pool.y);
+                }
+                ctx.restore();
+            });
+
+            // Draw Tail Whip
+            if (gameState.tailWhip.telegraphing || gameState.tailWhip.active) {
+                ctx.save();
+                const tw = gameState.tailWhip;
+                const tnow = performance.now();
+                if (tw.telegraphing) {
+                    const flash = (Math.sin(tnow * 0.025) + 1) * 0.35 + 0.15;
+                    ctx.globalAlpha = flash;
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([12, 6]);
+                    ctx.beginPath();
+                    ctx.arc(tw.x, tw.y, tw.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#2ecc71';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(tw.x, tw.y, tw.innerRadius || 50, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else if (tw.active) {
+                    const swept = tw.sweepAngle || 0;
+                    ctx.globalAlpha = 0.35;
+                    ctx.fillStyle = 'rgba(231, 76, 60, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(tw.x, tw.y, tw.radius, 0, swept);
+                    ctx.arc(tw.x, tw.y, tw.innerRadius || 50, swept, 0, true);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.globalAlpha = 0.9;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#ffd93d';
+                    ctx.strokeStyle = '#ffd93d';
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(tw.x + Math.cos(swept) * (tw.innerRadius || 50), tw.y + Math.sin(swept) * (tw.innerRadius || 50));
+                    ctx.lineTo(tw.x + Math.cos(swept) * tw.radius, tw.y + Math.sin(swept) * tw.radius);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw Constriction Zones
+            gameState.constrictionZones.forEach(zone => {
+                ctx.save();
+                const znow = performance.now();
+                const progress = Math.min(1, (znow - zone.spawnTime) / zone.shrinkDuration);
+                ctx.globalAlpha = 0.4 + progress * 0.5;
+                ctx.strokeStyle = progress > 0.8 ? '#e74c3c' : '#c0392b';
+                ctx.lineWidth = 3 + progress * 4;
+                ctx.shadowBlur = 10 + progress * 15;
+                ctx.shadowColor = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(zone.x, zone.y, zone.currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = `rgba(231, 76, 60, ${0.05 + progress * 0.2})`;
+                ctx.fill();
+                if (progress > 0.5) {
+                    ctx.globalAlpha = (Math.sin(znow * 0.02) + 1) * 0.3 + 0.4;
+                    ctx.font = `bold ${16 + progress * 10}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#ffd93d';
+                    ctx.fillText('🐍', zone.x, zone.y);
+                }
+                ctx.restore();
+            });
+
+            // Draw Snake Minions
+            gameState.snakeMinions.forEach(minion => {
+                ctx.save();
+                ctx.translate(minion.x, minion.y);
+                ctx.rotate(minion.angle);
+                const s = minion.size;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = '#27ae60';
+                for (let i = 0; i < 5; i++) {
+                    const segX = -i * (s * 0.6);
+                    const segY = Math.sin(minion.slitherPhase + i * 0.8) * 3;
+                    const segSize = s * (1 - i * 0.12);
+                    ctx.fillStyle = i % 2 === 0 ? '#27ae60' : '#1a8a50';
+                    ctx.beginPath();
+                    ctx.arc(segX, segY, segSize * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.fillStyle = '#2ecc71';
+                ctx.beginPath();
+                ctx.arc(s * 0.3, 0, s * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.arc(s * 0.45, -s * 0.2, 2, 0, Math.PI * 2);
+                ctx.arc(s * 0.45, s * 0.2, 2, 0, Math.PI * 2);
+                ctx.fill();
+                if (minion.hp < 2) {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillRect(-s * 0.5, -s - 4, s * 0.5, 3);
+                } else {
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.fillRect(-s * 0.5, -s - 4, s, 3);
+                }
+                ctx.restore();
+            });
+
+            // Draw class ability visual effects
+            if (gameState.ability.active) {
+                const abilityRemaining = gameState.ability.activeExpiry - now;
+                const abilityAlpha = abilityRemaining < 1000 ? 0.3 + 0.7 * (abilityRemaining / 1000) : 0.85;
+
+                if (gameState.ability.type === 'shield') {
+                    ctx.save();
+                    ctx.globalAlpha = abilityAlpha * 0.5;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#4facfe';
+                    ctx.strokeStyle = '#4facfe';
+                    ctx.lineWidth = 3;
+                    const shieldR = gameState.player.size + 22;
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const sa = (i / 6) * Math.PI * 2 - Math.PI / 6;
+                        const sx = gameState.player.x + Math.cos(sa) * shieldR;
+                        const sy = gameState.player.y + Math.sin(sa) * shieldR;
+                        if (i === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(79,172,254,0.12)';
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                if (gameState.ability.type === 'warcry') {
+                    ctx.save();
+                    ctx.globalAlpha = abilityAlpha * 0.7;
+                    const wcPulse = 1 + Math.sin(now * 0.008) * 0.15;
+                    const wcR = (gameState.player.size + 20) * wcPulse;
+                    ctx.shadowBlur = 22;
+                    ctx.shadowColor = '#f39c12';
+                    ctx.strokeStyle = '#f39c12';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    const spikes = 10;
+                    for (let i = 0; i < spikes * 2; i++) {
+                        const sa = (i / (spikes * 2)) * Math.PI * 2;
+                        const sr = i % 2 === 0 ? wcR : wcR * 0.75;
+                        const sx = gameState.player.x + Math.cos(sa + now * 0.002) * sr;
+                        const sy = gameState.player.y + Math.sin(sa + now * 0.002) * sr;
+                        if (i === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (gameState.ability.type === 'timewarp') {
+                    ctx.save();
+                    ctx.globalAlpha = abilityAlpha * 0.15;
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = abilityAlpha * 0.6;
+                    const twR = gameState.boss.size + 40;
+                    ctx.strokeStyle = '#d2b4de';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 6]);
+                    ctx.beginPath();
+                    ctx.arc(gameState.boss.x, gameState.boss.y, twR, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                if (gameState.ability.type === 'dash' && gameState.player._dashing) {
+                    ctx.save();
+                    for (let i = 0; i < 5; i++) {
+                        const ghostT = Math.max(0, (Date.now() - gameState.player._dashStart) / gameState.player._dashDuration - i * 0.12);
+                        const gx = gameState.player._dashStartX + (gameState.player._dashTargetX - gameState.player._dashStartX) * ghostT;
+                        const gy = gameState.player._dashStartY + (gameState.player._dashTargetY - gameState.player._dashStartY) * ghostT;
+                        ctx.globalAlpha = (0.4 - i * 0.07) * abilityAlpha;
+                        ctx.shadowBlur = 12;
+                        ctx.shadowColor = '#2ecc71';
+                        ctx.fillStyle = '#2ecc71';
+                        ctx.beginPath();
+                        ctx.arc(gx, gy, gameState.player.size * (0.8 - i * 0.1), 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
+
+            // Venom slow indicator on player
+            if (gameState.player._venomSlowed) {
+                ctx.save();
+                ctx.globalAlpha = 0.7;
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#d2b4de';
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#6c3483';
+                ctx.fillText('SLOW', gameState.player.x, gameState.player.y - gameState.player.size - 8);
+                ctx.restore();
+            }
+
             ctx.shadowBlur = 0;
             ctx.globalAlpha = 1;
         }
 
         function updateBossHealthBar() {
             const percentage = (gameState.boss.health / gameState.boss.maxHealth) * 100;
-            document.getElementById('bossHealth').style.width = percentage + '%';
+            const bar = document.getElementById('bossHealth');
+            bar.style.width = percentage + '%';
+            if (gameState.boss.phase === 2) {
+                bar.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c, #ff6b6b)';
+                bar.style.boxShadow = '0 0 10px rgba(231,76,60,0.6)';
+            } else {
+                bar.style.background = '';
+                bar.style.boxShadow = '';
+            }
         }
 
         function updateLives() {
@@ -3618,8 +4566,15 @@ function getDamageMultiplier() {
             stopPowerupSpawnRequests();
             stopOfflinePowerupSpawner();
 
-            // Clear any remaining powerups
+            // Clear any remaining powerups and creative attacks
             gameState.powerups = [];
+            gameState.venomPools = [];
+            gameState.constrictionZones = [];
+            gameState.snakeMinions = [];
+            gameState.tailWhip.active = false;
+            gameState.tailWhip.telegraphing = false;
+            gameState.ability.active = false;
+            gameState.ability.type = null;
 
             // Hide battle UI elements
             document.getElementById('ingameLeaveBtn').style.display = 'none';
