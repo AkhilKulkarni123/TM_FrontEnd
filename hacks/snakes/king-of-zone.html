@@ -493,6 +493,29 @@
             font-size: 12px;
         }
 
+        .lobby-actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .lobby-actions button {
+            border: 1px solid rgba(220, 239, 255, 0.4);
+            border-radius: 9px;
+            padding: 9px 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
+            background: rgba(20, 35, 56, 0.9);
+            min-width: 140px;
+        }
+
+        .lobby-actions button:hover {
+            background: rgba(42, 66, 97, 0.85);
+        }
+
         .countdown-shell {
             text-align: center;
             border-radius: 22px;
@@ -647,6 +670,9 @@
                 <h2 class="overlay-title">Arena Lobby</h2>
                 <p class="overlay-sub" id="kozLobbyText">Waiting for players (0 joined, 4 minimum to start)</p>
                 <div class="lobby-player-list" id="kozLobbyPlayers"></div>
+                <div class="lobby-actions">
+                    <button id="kozLobbyLeaveBtn">Leave Lobby</button>
+                </div>
             </div>
         </div>
 

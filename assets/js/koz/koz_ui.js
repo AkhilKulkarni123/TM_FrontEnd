@@ -39,6 +39,7 @@
         this.lobbyOverlay = document.getElementById('kozLobbyOverlay');
         this.lobbyText = document.getElementById('kozLobbyText');
         this.lobbyPlayerList = document.getElementById('kozLobbyPlayers');
+        this.lobbyLeaveBtn = document.getElementById('kozLobbyLeaveBtn');
 
         this.countdownOverlay = document.getElementById('kozCountdownOverlay');
         this.countdownValue = document.getElementById('kozCountdownValue');
@@ -68,6 +69,11 @@
         }
         if (this.leaveBtn) {
             this.leaveBtn.addEventListener('click', function () {
+                if (handlers.onLeave) handlers.onLeave();
+            });
+        }
+        if (this.lobbyLeaveBtn) {
+            this.lobbyLeaveBtn.addEventListener('click', function () {
                 if (handlers.onLeave) handlers.onLeave();
             });
         }
