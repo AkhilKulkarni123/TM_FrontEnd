@@ -3850,55 +3850,143 @@ function getDamageMultiplier() {
             ctx.shadowBlur = 0;
 
             function drawBullet(bullet) {
-                if (bullet.shape === 'arrow') {
-                    const angle = Math.atan2(bullet.dy, bullet.dx);
-                    ctx.save();
-                    ctx.translate(bullet.x, bullet.y);
-                    ctx.rotate(angle);
-                    ctx.fillStyle = bullet.color || '#8ef7cc';
-                    ctx.shadowBlur = 12;
-                    ctx.shadowColor = bullet.glow || '#4de8af';
+                ctx.save();
+                const bAngle = Math.atan2(bullet.dy || 0, bullet.dx || 0);
+                const bChar = bullet.character || 'knight';
+
+                if (bChar === 'wizard') {
+                    // Magic orb with swirling energy particles
+                    const time = Date.now() * 0.008;
+                    for (let i = 0; i < 4; i++) {
+                        const pa = time + (i * Math.PI / 2);
+                        const px = bullet.x + Math.cos(pa) * 7;
+                        const py = bullet.y + Math.sin(pa) * 7;
+                        ctx.globalAlpha = 0.5;
+                        ctx.fillStyle = '#d2b4de';
+                        ctx.fillRect(Math.round(px) - 2, Math.round(py) - 2, 4, 4);
+                    }
+                    ctx.globalAlpha = 1;
+                    const grd = ctx.createRadialGradient(bullet.x, bullet.y, 1, bullet.x, bullet.y, bullet.size + 2);
+                    grd.addColorStop(0, '#fef9e7');
+                    grd.addColorStop(0.25, '#f9e79f');
+                    grd.addColorStop(0.5, '#ff9f1c');
+                    grd.addColorStop(0.8, '#e74c3c');
+                    grd.addColorStop(1, 'rgba(142,68,173,0)');
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = '#9b59b6';
+                    ctx.fillStyle = grd;
                     ctx.beginPath();
-                    ctx.moveTo(bullet.size + 3, 0);
-                    ctx.lineTo(-bullet.size, -bullet.size * 0.8);
-                    ctx.lineTo(-bullet.size, bullet.size * 0.8);
+                    ctx.arc(bullet.x, bullet.y, bullet.size + 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Bright pixel core
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(Math.round(bullet.x) - 2, Math.round(bullet.y) - 2, 4, 4);
+
+                } else if (bChar === 'archer') {
+                    // Pixel-art arrow rotated in direction of travel
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(bAngle);
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = '#2ecc71';
+                    // Arrow shaft (wood)
+                    ctx.fillStyle = '#8e6b3e';
+                    ctx.fillRect(-10, -1, 16, 2);
+                    // Arrowhead (steel)
+                    ctx.fillStyle = '#bdc3c7';
+                    ctx.beginPath();
+                    ctx.moveTo(6, -4);
+                    ctx.lineTo(13, 0);
+                    ctx.lineTo(6, 4);
                     ctx.closePath();
                     ctx.fill();
-                    ctx.restore();
-                    return;
-                }
+                    // Arrowhead highlight
+                    ctx.fillStyle = '#ecf0f1';
+                    ctx.beginPath();
+                    ctx.moveTo(8, -2);
+                    ctx.lineTo(12, 0);
+                    ctx.lineTo(8, 1);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Fletching (feathers)
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.beginPath();
+                    ctx.moveTo(-10, -3);
+                    ctx.lineTo(-6, 0);
+                    ctx.lineTo(-10, 3);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#1a8a50';
+                    ctx.beginPath();
+                    ctx.moveTo(-9, -2);
+                    ctx.lineTo(-6, 0);
+                    ctx.lineTo(-9, 1);
+                    ctx.closePath();
+                    ctx.fill();
 
-                if (bullet.shape === 'axe') {
-                    const angle = Math.atan2(bullet.dy, bullet.dx) + (performance.now() * 0.015);
-                    ctx.save();
+                } else if (bChar === 'warrior') {
+                    // Spinning throwing star / axe blade
+                    const spin = Date.now() * 0.01;
                     ctx.translate(bullet.x, bullet.y);
-                    ctx.rotate(angle);
-                    ctx.fillStyle = bullet.color || '#ffc46b';
-                    ctx.shadowBlur = 14;
-                    ctx.shadowColor = bullet.glow || '#ffb347';
-                    ctx.fillRect(-bullet.size * 0.8, -bullet.size * 0.8, bullet.size * 1.6, bullet.size * 1.6);
-                    ctx.fillStyle = '#3b3b3b';
-                    ctx.fillRect(-2, -bullet.size, 4, bullet.size * 2);
-                    ctx.restore();
-                    return;
-                }
-
-                if (bullet.isFireball || bullet.shape === 'orb') {
-                    const grd = ctx.createRadialGradient(bullet.x, bullet.y, 2, bullet.x, bullet.y, 10);
-                    grd.addColorStop(0, '#fff2a8');
-                    grd.addColorStop(0.4, '#ff9f1c');
-                    grd.addColorStop(1, '#ff3b30');
-                    ctx.shadowBlur = 18;
-                    ctx.shadowColor = '#ff6b6b';
-                    ctx.fillStyle = grd;
-                } else {
+                    ctx.rotate(spin);
                     ctx.shadowBlur = 10;
-                    ctx.shadowColor = bullet.glow || '#FFD700';
-                    ctx.fillStyle = bullet.color || '#FFD700';
+                    ctx.shadowColor = '#f39c12';
+                    // 4-pointed star blade
+                    ctx.fillStyle = '#d4ac6e';
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const r = i % 2 === 0 ? bullet.size + 2 : bullet.size * 0.35;
+                        const sa = (i / 8) * Math.PI * 2;
+                        if (i === 0) ctx.moveTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                        else ctx.lineTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    // Darker edge detail
+                    ctx.fillStyle = '#b8860b';
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const r = i % 2 === 0 ? bullet.size * 0.7 : bullet.size * 0.25;
+                        const sa = (i / 8) * Math.PI * 2 + 0.4;
+                        if (i === 0) ctx.moveTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                        else ctx.lineTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    // Bright center
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffd93d';
+                    ctx.fillRect(-2, -2, 4, 4);
+
+                } else {
+                    // Knight: Glowing energy diamond / blade projectile
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(bAngle);
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = '#4facfe';
+                    // Outer diamond
+                    ctx.fillStyle = '#4facfe';
+                    ctx.beginPath();
+                    ctx.moveTo(11, 0);
+                    ctx.lineTo(2, -5);
+                    ctx.lineTo(-7, 0);
+                    ctx.lineTo(2, 5);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Inner bright core
+                    ctx.fillStyle = '#d6eaf8';
+                    ctx.beginPath();
+                    ctx.moveTo(8, 0);
+                    ctx.lineTo(2, -3);
+                    ctx.lineTo(-4, 0);
+                    ctx.lineTo(2, 3);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Center white pixel
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(-1, -1, 4, 2);
                 }
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.restore();
             }
 
             // Draw player bullets
