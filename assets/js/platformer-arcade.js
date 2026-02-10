@@ -293,11 +293,21 @@
         }
     ];
 
+    const HAZARD_TUNING = Object.freeze({
+        playerInsetX: 8,
+        playerInsetTop: 6,
+        playerInsetBottom: 8,
+        spikeInsetRatio: 0.16,
+        spikeInsetMin: 6,
+        spikeTopLethalRatio: 0.68,
+        orbRadiusScale: 0.82
+    });
+
     const state = {
         ready: false,
         won: false,
         levelIndex: 0,
-        death: { active: false, start: 0, cause: '' },
+        death: { active: false, start: 0, cause: '', originX: 0, originY: 0, spin: 0, particles: [] },
         transition: { active: false, timer: 0, duration: 1.8, nextLevel: 0, switched: false },
         keys: {},
         jumpBuffer: 0,
@@ -489,6 +499,10 @@
     function spawnAtLevelStart() {
         state.death.active = false;
         state.death.cause = '';
+        state.death.originX = 0;
+        state.death.originY = 0;
+        state.death.spin = 0;
+        state.death.particles = [];
         state.player.x = state.spawn.x;
         state.player.y = state.spawn.y;
         state.player.vx = 0;
@@ -625,6 +639,11 @@
 
     function movePlayer(dt) {
         if (state.death.active) {
+            if (state.death.cause === 'spike' || state.death.cause === 'orb') {
+                state.player.vx = 0;
+                state.player.vy = 0;
+                return;
+            }
             const gravity = 1600;
             state.player.vy += gravity * dt;
             state.player.y += state.player.vy * dt;
@@ -720,13 +739,72 @@
         return (dx * dx + dy * dy) <= (cr * cr);
     }
 
+    function getPlayerHazardRect() {
+        const insetX = HAZARD_TUNING.playerInsetX;
+        const insetTop = HAZARD_TUNING.playerInsetTop;
+        const insetBottom = HAZARD_TUNING.playerInsetBottom;
+        return {
+            x: state.player.x + insetX,
+            y: state.player.y + insetTop,
+            w: Math.max(14, state.player.w - insetX * 2),
+            h: Math.max(18, state.player.h - insetTop - insetBottom)
+        };
+    }
+
+    function getSpikeLethalRect(hazard) {
+        const insetX = Math.max(HAZARD_TUNING.spikeInsetMin, hazard.w * HAZARD_TUNING.spikeInsetRatio);
+        const lethalHeight = Math.max(6, hazard.h * HAZARD_TUNING.spikeTopLethalRatio);
+        return {
+            x: hazard.x + insetX,
+            y: hazard.y + 1,
+            w: Math.max(8, hazard.w - insetX * 2),
+            h: lethalHeight
+        };
+    }
+
+    function createDeathParticles(cause) {
+        const spikePalette = ['#fff6fb', '#ffc2d1', '#ff6d97', '#ff9e7a'];
+        const orbPalette = ['#ffffff', '#b5f4ff', '#7ac9ff', '#ff9cd4'];
+        const colors = cause === 'orb' ? orbPalette : spikePalette;
+        const count = cause === 'orb' ? 18 : 24;
+        const particles = [];
+
+        for (let i = 0; i < count; i += 1) {
+            const angle = cause === 'spike'
+                ? (-Math.PI / 2) + (Math.random() - 0.5) * 1.1 + (Math.random() < 0.22 ? Math.PI : 0)
+                : Math.random() * Math.PI * 2;
+            particles.push({
+                angle: angle,
+                speed: (cause === 'spike' ? 190 : 150) + Math.random() * 240,
+                size: 4 + Math.random() * 7,
+                life: 0.48 + Math.random() * 0.55,
+                spin: (Math.random() - 0.5) * 11,
+                alpha: 0.72 + Math.random() * 0.28,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
+        return particles;
+    }
+
     function startDeath(cause) {
         if (state.death.active || state.transition.active || state.won) return;
         state.death.active = true;
         state.death.cause = cause || 'hazard';
         state.death.start = performance.now();
-        state.player.vx *= 0.25;
-        state.player.vy = Math.max(220, state.player.vy);
+        state.death.originX = state.player.x + state.player.w * 0.5;
+        state.death.originY = state.player.y + state.player.h * 0.5;
+        state.death.spin = (Math.random() - 0.5) * (state.death.cause === 'orb' ? 5.2 : 7.4);
+        state.death.particles = (state.death.cause === 'spike' || state.death.cause === 'orb')
+            ? createDeathParticles(state.death.cause)
+            : [];
+
+        if (state.death.cause === 'spike' || state.death.cause === 'orb') {
+            state.player.vx = 0;
+            state.player.vy = 0;
+        } else {
+            state.player.vx *= 0.25;
+            state.player.vy = Math.max(220, state.player.vy);
+        }
         if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
             window.SnakesSFX.play('hurt');
         }
@@ -734,17 +812,17 @@
 
     function checkHazardDeath() {
         if (state.death.active || state.transition.active || state.won) return;
-        const playerRect = { x: state.player.x, y: state.player.y, w: state.player.w, h: state.player.h };
+        const playerRect = getPlayerHazardRect();
         for (let i = 0; i < state.hazards.length; i += 1) {
             const hazard = state.hazards[i];
             if (hazard.type === 'orb') {
-                if (circleRectOverlap(hazard.x, hazard.y, hazard.r, playerRect)) {
+                if (circleRectOverlap(hazard.x, hazard.y, hazard.r * HAZARD_TUNING.orbRadiusScale, playerRect)) {
                     startDeath('orb');
                     return;
                 }
                 continue;
             }
-            const spikeRect = { x: hazard.x, y: hazard.y, w: hazard.w, h: hazard.h };
+            const spikeRect = getSpikeLethalRect(hazard);
             if (rectsOverlap(playerRect, spikeRect)) {
                 startDeath('spike');
                 return;
@@ -1005,15 +1083,80 @@
         ctx.restore();
     }
 
-    function drawPlayer() {
-        const screenX = state.player.x - state.camera.x;
-        const screenY = state.player.y - state.camera.y;
+    function drawPlayerSpriteAt(drawX, drawY, drawW, drawH) {
         const spriteImg = PLAYER_IMAGES[state.player.character];
         if (spriteImg && spriteImg.complete && spriteImg.naturalWidth) {
-            ctx.drawImage(spriteImg, screenX - 6, screenY - 8, state.player.w + 12, state.player.h + 16);
+            ctx.drawImage(spriteImg, drawX, drawY, drawW, drawH);
             return;
         }
-        drawPixelSprite(screenX + state.player.w / 2, screenY + state.player.h / 2, state.player.h);
+        drawPixelSprite(drawX + drawW / 2, drawY + drawH / 2, state.player.h);
+    }
+
+    function drawHazardDeathAnimation(now) {
+        if (!state.death.active) return false;
+        const cause = state.death.cause;
+        if (cause !== 'spike' && cause !== 'orb') return false;
+
+        const elapsed = (now - state.death.start) / 1000;
+        const progress = clamp(elapsed / 0.9, 0, 1);
+        const centerX = state.death.originX - state.camera.x;
+        const centerY = state.death.originY - state.camera.y;
+        const drawW = state.player.w + 12;
+        const drawH = state.player.h + 16;
+
+        ctx.save();
+
+        const ring = ctx.createRadialGradient(centerX, centerY, 4, centerX, centerY, 94 * (0.42 + progress * 0.82));
+        if (cause === 'orb') {
+            ring.addColorStop(0, `rgba(236, 255, 255, ${0.36 * (1 - progress)})`);
+            ring.addColorStop(0.34, `rgba(126, 219, 255, ${0.42 * (1 - progress * 0.65)})`);
+            ring.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        } else {
+            ring.addColorStop(0, `rgba(255, 240, 246, ${0.34 * (1 - progress)})`);
+            ring.addColorStop(0.34, `rgba(255, 110, 149, ${0.44 * (1 - progress * 0.62)})`);
+            ring.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        }
+        ctx.fillStyle = ring;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 94 * (0.42 + progress * 0.82), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.translate(centerX, centerY);
+        const spin = state.death.spin * progress + Math.sin(progress * Math.PI * 7) * 0.08;
+        ctx.rotate(spin);
+        ctx.scale(1 - progress * 0.34, 1 + progress * 0.08);
+        ctx.globalAlpha = Math.max(0, 1 - progress * 1.2);
+        drawPlayerSpriteAt(-drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+
+        ctx.save();
+        state.death.particles.forEach((particle) => {
+            const lifeT = clamp(elapsed / particle.life, 0, 1);
+            if (lifeT >= 1) return;
+            const distance = particle.speed * elapsed * (1 - lifeT * 0.12);
+            const driftX = Math.cos(particle.angle) * distance;
+            const driftY = Math.sin(particle.angle) * distance + (cause === 'spike' ? 150 : 180) * elapsed * elapsed;
+            const size = particle.size * (1 - lifeT);
+            if (size < 0.8) return;
+            ctx.save();
+            ctx.translate(centerX + driftX, centerY + driftY);
+            ctx.rotate(particle.spin * elapsed);
+            ctx.globalAlpha = particle.alpha * (1 - lifeT);
+            ctx.fillStyle = particle.color;
+            ctx.fillRect(-size * 0.5, -size * 0.8, size, size * 1.6);
+            ctx.restore();
+        });
+        ctx.restore();
+
+        return true;
+    }
+
+    function drawPlayer(now) {
+        if (drawHazardDeathAnimation(now)) return;
+
+        const screenX = state.player.x - state.camera.x;
+        const screenY = state.player.y - state.camera.y;
+        drawPlayerSpriteAt(screenX - 6, screenY - 8, state.player.w + 12, state.player.h + 16);
     }
 
     function drawPixelSprite(x, y, size) {
@@ -1125,7 +1268,7 @@
         drawSpikes();
         drawHazards(now);
         drawGoal();
-        drawPlayer();
+        drawPlayer(now);
         drawTransitionOverlay();
 
         if (state.death.active) {
