@@ -130,7 +130,7 @@
         view: { width: 0, height: 0, dpr: 1 },
         world: { width: 2400, height: 900 },
         camera: { x: 0, y: 0 },
-        goalX: 0,
+        goal: { x: 0, y: 0, w: 66, h: 132 },
         bonusBullets: 25,
         player: {
             username: 'Player',
@@ -309,8 +309,15 @@
             { x: 2080, y: groundY - 320, w: 170, h: 24 },
             { x: 2270, y: groundY - 420, w: 140, h: 24 }
         ];
-        state.goalX = state.world.width - 120;
+        positionGoalOnLastPlatform();
         resetRun();
+    }
+
+    function positionGoalOnLastPlatform() {
+        const lastPlatform = state.platforms[state.platforms.length - 1];
+        if (!lastPlatform) return;
+        state.goal.x = lastPlatform.x + (lastPlatform.w - state.goal.w) / 2;
+        state.goal.y = lastPlatform.y - state.goal.h;
     }
 
     function updateCamera() {
@@ -439,17 +446,80 @@
         ctx.restore();
     }
 
+    function drawRoundedRectPath(x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
     function drawGoal() {
-        const gateX = state.goalX - state.camera.x;
-        const gateY = state.world.height - 500 - state.camera.y;
+        const gateX = state.goal.x - state.camera.x;
+        const gateY = state.goal.y - state.camera.y;
+        const gateW = state.goal.w;
+        const gateH = state.goal.h;
+
+        if (gateX + gateW < -120 || gateX > state.view.width + 120 || gateY + gateH < -120 || gateY > state.view.height + 120) {
+            return;
+        }
+
+        const t = performance.now() * 0.004;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 2.3);
+        const centerX = gateX + gateW / 2;
+        const centerY = gateY + gateH / 2;
+
         ctx.save();
-        ctx.strokeStyle = '#30d7ff';
-        ctx.lineWidth = 4;
-        ctx.shadowBlur = 18;
-        ctx.shadowColor = '#30d7ff';
-        ctx.strokeRect(gateX, gateY, 60, 140);
-        ctx.fillStyle = 'rgba(48,215,255,0.15)';
-        ctx.fillRect(gateX, gateY, 60, 140);
+
+        const aura = ctx.createRadialGradient(centerX, centerY, gateW * 0.2, centerX, centerY, gateH * 0.95);
+        aura.addColorStop(0, `rgba(131, 255, 236, ${0.28 + pulse * 0.2})`);
+        aura.addColorStop(0.55, 'rgba(68, 137, 255, 0.24)');
+        aura.addColorStop(1, 'rgba(10, 16, 40, 0)');
+        ctx.fillStyle = aura;
+        ctx.fillRect(gateX - gateW, gateY - gateH * 0.55, gateW * 3, gateH * 2.2);
+
+        const core = ctx.createLinearGradient(gateX, gateY, gateX + gateW, gateY + gateH);
+        core.addColorStop(0, `rgba(45, 241, 226, ${0.2 + pulse * 0.1})`);
+        core.addColorStop(0.45, `rgba(135, 120, 255, ${0.24 + pulse * 0.16})`);
+        core.addColorStop(1, `rgba(33, 213, 255, ${0.2 + pulse * 0.1})`);
+        drawRoundedRectPath(gateX, gateY, gateW, gateH, 16);
+        ctx.fillStyle = core;
+        ctx.fill();
+
+        ctx.strokeStyle = '#71f7ff';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(113, 247, 255, 0.95)';
+        ctx.shadowBlur = 18 + pulse * 14;
+        drawRoundedRectPath(gateX, gateY, gateW, gateH, 16);
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = `rgba(80, 255, 230, ${0.22 + pulse * 0.2})`;
+        ctx.beginPath();
+        ctx.ellipse(centerX, gateY + gateH + 3, gateW * 0.65, 7 + pulse * 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.translate(centerX, centerY);
+        ctx.lineWidth = 1.8;
+        for (let i = 0; i < 3; i++) {
+            ctx.save();
+            ctx.rotate(t * (0.7 + i * 0.28) + i);
+            const arcWidth = gateW * (0.35 + i * 0.15);
+            const arcHeight = gateH * (0.26 + i * 0.06);
+            const alpha = Math.max(0.1, 0.28 - i * 0.06 + pulse * 0.08);
+            ctx.strokeStyle = `rgba(143, 255, 243, ${alpha})`;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, arcWidth, arcHeight, 0, 0.2 + i * 1.5, 2.5 + i * 1.5);
+            ctx.stroke();
+            ctx.restore();
+        }
         ctx.restore();
     }
 
@@ -510,7 +580,7 @@
     function checkWin() {
         if (state.won) return;
         if (state.death.active) return;
-        const gateRect = { x: state.goalX, y: state.world.height - 210, w: 60, h: 140 };
+        const gateRect = { x: state.goal.x + 4, y: state.goal.y + 8, w: state.goal.w - 8, h: state.goal.h - 10 };
         const playerRect = { x: state.player.x, y: state.player.y, w: state.player.w, h: state.player.h };
         if (rectsOverlap(playerRect, gateRect)) {
             state.won = true;

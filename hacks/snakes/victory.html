@@ -250,22 +250,22 @@
             transform: translateY(-5px);
         }
 
-        .action-card.finish {
-            border-color: #27ae60;
+        .action-card.board {
+            border-color: #4facfe;
         }
 
-        .action-card.finish:hover {
-            background: rgba(39, 174, 96, 0.2);
-            box-shadow: 0 10px 30px rgba(39, 174, 96, 0.3);
+        .action-card.board:hover {
+            background: rgba(79, 172, 254, 0.2);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
         }
 
-        .action-card.restart {
-            border-color: #e74c3c;
+        .action-card.mini {
+            border-color: #f39c12;
         }
 
-        .action-card.restart:hover {
-            background: rgba(231, 76, 60, 0.2);
-            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+        .action-card.mini:hover {
+            background: rgba(243, 156, 18, 0.2);
+            box-shadow: 0 10px 30px rgba(243, 156, 18, 0.3);
         }
 
         .action-icon {
@@ -279,8 +279,8 @@
             margin-bottom: 10px;
         }
 
-        .finish .action-title { color: #27ae60; }
-        .restart .action-title { color: #e74c3c; }
+        .board .action-title { color: #4facfe; }
+        .mini .action-title { color: #f39c12; }
 
         .action-description {
             color: rgba(255, 255, 255, 0.7);
@@ -493,23 +493,21 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Options -->
         <div class="actions-section">
-            <div class="action-card finish" onclick="finishGame()">
+            <div class="action-card board" onclick="goToBoard()">
                 <div class="action-icon"></div>
-                <h3 class="action-title">Complete Your Victory</h3>
+                <h3 class="action-title">Back to Board</h3>
                 <p class="action-description">
-                    Cement your place in the Hall of Champions. Your achievement will be recorded forever,
-                    and you can view the leaderboard anytime!
+                    Return to the Snakes and Ladders board and continue your progress.
                 </p>
             </div>
 
-            <div class="action-card restart" onclick="confirmRestart()">
+            <div class="action-card mini" onclick="goToMiniGames()">
                 <div class="action-icon"></div>
-                <h3 class="action-title">Play Again</h3>
+                <h3 class="action-title">Other Mini-Games</h3>
                 <p class="action-description">
-                    Reset your progress and start a new adventure from the beginning.
-                    Your champion status will remain, but your current game data will be cleared.
+                    Jump into other mini-game modes from the arcade selection screen.
                 </p>
             </div>
         </div>
@@ -687,6 +685,14 @@
                     </div>
                 `;
             }
+        }
+
+        function goToBoard() {
+            window.location.href = 'game-board-part1.html';
+        }
+
+        function goToMiniGames() {
+            window.location.href = 'mode-selection.html';
         }
 
         // Show modal

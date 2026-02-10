@@ -1,4 +1,4 @@
-git add hacks/snakes/boss-battle.html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -525,6 +525,32 @@ git add hacks/snakes/boss-battle.html<!DOCTYPE html>
             text-align: center;
             box-shadow: 0 10px 40px rgba(233, 69, 96, 0.5);
             animation: slideIn 0.6s ease;
+            position: relative;
+        }
+
+        .intro-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            width: 34px;
+            height: 34px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.35);
+            color: #ffffff;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .intro-close-btn:hover {
+            background: rgba(233, 69, 96, 0.55);
+            border-color: rgba(233, 69, 96, 0.9);
+            transform: scale(1.05);
         }
 
         .intro-content h1 {
@@ -627,6 +653,7 @@ git add hacks/snakes/boss-battle.html<!DOCTYPE html>
     <!-- Intro Popup -->
     <div class="intro-overlay" id="introOverlay">
         <div class="intro-content">
+            <button class="intro-close-btn" id="introCloseBtn" aria-label="Close intro">x</button>
             <h1>🐉 Boss Battle Arena 🐉</h1>
             <div class="boss-icon">🐍</div>
             <p>Welcome to the <span class="highlight">Multiplayer Boss Battle</span>!</p>
@@ -652,8 +679,8 @@ git add hacks/snakes/boss-battle.html<!DOCTYPE html>
                 </div>
             </div>
             
-            <p>Wait <span class="highlight">five seconds</span> to begin!</p>
-            <p class="intro-timer">This message will close in <span id="introTimer">5</span> seconds...</p>
+            <p><span class="highlight">Click anywhere</span> to continue.</p>
+            <p class="intro-timer">Tip: You can also close with the <span class="highlight">x</span> button.</p>
         </div>
     </div>
     <!-- Notification toasts for battle events -->
@@ -2800,14 +2827,10 @@ function getDamageMultiplier() {
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
 
-                // Pixel character
+                // Character + avatar token
                 ctx.shadowBlur = 0;
-<<<<<<< Updated upstream
                 drawCharacter(ctx, player.x, player.y, 52, player.character);
-=======
-                drawPixelSprite(ctx, player.x, player.y, 52, sprite);
                 drawAvatarToken(player, player.x, player.y - 47, 'rgba(255, 255, 255, 0.88)');
->>>>>>> Stashed changes
 
                 // Player name
                 ctx.shadowBlur = 0;
@@ -2865,12 +2888,8 @@ function getDamageMultiplier() {
             }
 
             ctx.shadowBlur = 0;
-<<<<<<< Updated upstream
             drawCharacter(ctx, gameState.player.x, gameState.player.y, gameState.player.size * 1.7, gameState.player.character);
-=======
-            drawPixelSprite(ctx, gameState.player.x, gameState.player.y, gameState.player.size * 1.7, playerSprite);
             drawAvatarToken(gameState.player, gameState.player.x, gameState.player.y - 47, 'rgba(79, 172, 254, 0.95)');
->>>>>>> Stashed changes
 
             // "You" label
             ctx.shadowBlur = 0;
@@ -3040,33 +3059,35 @@ function getDamageMultiplier() {
         // Show intro popup on page load
         function showIntroPopup() {
             const overlay = document.getElementById('introOverlay');
-            const timerElement = document.getElementById('introTimer');
-            let countdown = 5;
-            
-            // Update countdown timer
-            const timerInterval = setInterval(() => {
-                countdown--;
-                if (timerElement) {
-                    timerElement.textContent = countdown;
-                }
-                
-                if (countdown <= 0) {
-                    clearInterval(timerInterval);
-                    // Fade out and remove
-                    overlay.classList.add('fade-out');
-                    setTimeout(() => {
-                        overlay.style.display = 'none';
-                    }, 500);
-                }
-            }, 1000);
-            
-            // Also allow clicking anywhere to dismiss
-            overlay.addEventListener('click', () => {
-                clearInterval(timerInterval);
+            const closeBtn = document.getElementById('introCloseBtn');
+            if (!overlay) return;
+
+            let dismissed = false;
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
                 overlay.classList.add('fade-out');
                 setTimeout(() => {
                     overlay.style.display = 'none';
-                }, 500);
+                }, 400);
+            }
+
+            // Click anywhere on overlay to continue.
+            overlay.addEventListener('click', dismissIntro);
+
+            // Close button support.
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    dismissIntro();
+                });
+            }
+
+            // Keyboard fallback for accessibility.
+            document.addEventListener('keydown', (event) => {
+                if (!dismissed && (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ')) {
+                    dismissIntro();
+                }
             });
         }
 
