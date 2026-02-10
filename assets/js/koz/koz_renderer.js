@@ -43,6 +43,69 @@
         ammo: '#ffe189'
     };
 
+    var MAP_THEMES = {
+        'nebula-night': {
+            bgA: '#06101f',
+            bgB: '#112a4a',
+            bgC: '#1a3c64',
+            glowA: 'rgba(122, 219, 255, 0.22)',
+            glowB: 'rgba(79, 154, 255, 0.18)',
+            stripe: 'rgba(145, 208, 255, 0.08)',
+            grid: 'rgba(171, 219, 255, 0.08)',
+            wallFill: '#344a69',
+            wallStroke: 'rgba(214, 238, 255, 0.42)',
+            zoneStroke: 'rgba(110, 202, 255, 0.9)',
+            zoneFill: 'rgba(83, 179, 255, 0.10)',
+            minimapBg: 'rgba(9, 15, 26, 0.74)',
+            minimapStroke: 'rgba(175, 223, 255, 0.22)'
+        },
+        'sunset-dunes': {
+            bgA: '#24130b',
+            bgB: '#4a2414',
+            bgC: '#6d381b',
+            glowA: 'rgba(255, 194, 116, 0.22)',
+            glowB: 'rgba(255, 142, 102, 0.18)',
+            stripe: 'rgba(255, 206, 142, 0.09)',
+            grid: 'rgba(255, 214, 162, 0.075)',
+            wallFill: '#7a4a31',
+            wallStroke: 'rgba(255, 222, 186, 0.36)',
+            zoneStroke: 'rgba(255, 186, 114, 0.92)',
+            zoneFill: 'rgba(255, 175, 104, 0.11)',
+            minimapBg: 'rgba(24, 12, 7, 0.74)',
+            minimapStroke: 'rgba(255, 218, 178, 0.24)'
+        },
+        'neon-grid': {
+            bgA: '#05061b',
+            bgB: '#0d1230',
+            bgC: '#141f4f',
+            glowA: 'rgba(132, 215, 255, 0.2)',
+            glowB: 'rgba(159, 146, 255, 0.18)',
+            stripe: 'rgba(142, 157, 255, 0.10)',
+            grid: 'rgba(154, 209, 255, 0.09)',
+            wallFill: '#2f3f7b',
+            wallStroke: 'rgba(213, 230, 255, 0.4)',
+            zoneStroke: 'rgba(136, 206, 255, 0.94)',
+            zoneFill: 'rgba(132, 174, 255, 0.10)',
+            minimapBg: 'rgba(8, 10, 26, 0.74)',
+            minimapStroke: 'rgba(184, 213, 255, 0.24)'
+        },
+        'jungle-monsoon': {
+            bgA: '#071711',
+            bgB: '#143228',
+            bgC: '#21503f',
+            glowA: 'rgba(124, 255, 198, 0.2)',
+            glowB: 'rgba(102, 214, 255, 0.14)',
+            stripe: 'rgba(145, 255, 204, 0.08)',
+            grid: 'rgba(178, 242, 219, 0.075)',
+            wallFill: '#2f5e4f',
+            wallStroke: 'rgba(209, 245, 228, 0.36)',
+            zoneStroke: 'rgba(130, 244, 199, 0.88)',
+            zoneFill: 'rgba(106, 234, 190, 0.10)',
+            minimapBg: 'rgba(6, 18, 14, 0.75)',
+            minimapStroke: 'rgba(187, 239, 220, 0.24)'
+        }
+    };
+
     // Renderer stores camera/view state plus lightweight transient visual effects.
     function KOZRenderer(canvas) {
         this.canvas = canvas;
@@ -96,6 +159,11 @@
         this.canvas.style.height = this.view.height + 'px';
     };
 
+    KOZRenderer.prototype._getTheme = function (state) {
+        var mapTheme = state && state.map && state.map.theme ? String(state.map.theme) : 'nebula-night';
+        return MAP_THEMES[mapTheme] || MAP_THEMES['nebula-night'];
+    };
+
     // Convert world coordinates to current camera-relative screen coordinates.
     KOZRenderer.prototype.worldToScreen = function (x, y) {
         return {
@@ -127,17 +195,44 @@
 
     // Draw base gradient + moving world grid for spatial orientation.
     KOZRenderer.prototype._drawBackground = function (ctx, state) {
+        var theme = this._getTheme(state);
         var grad = ctx.createLinearGradient(0, 0, this.view.width, this.view.height);
-        grad.addColorStop(0, '#0f1a2d');
-        grad.addColorStop(1, '#17263f');
+        grad.addColorStop(0, theme.bgA);
+        grad.addColorStop(0.58, theme.bgB);
+        grad.addColorStop(1, theme.bgC);
         ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, this.view.width, this.view.height);
+
+        var glowTop = ctx.createRadialGradient(this.view.width * 0.22, this.view.height * 0.16, 30, this.view.width * 0.22, this.view.height * 0.16, this.view.width * 0.55);
+        glowTop.addColorStop(0, theme.glowA);
+        glowTop.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glowTop;
+        ctx.fillRect(0, 0, this.view.width, this.view.height);
+
+        var glowBottom = ctx.createRadialGradient(this.view.width * 0.80, this.view.height * 0.86, 24, this.view.width * 0.80, this.view.height * 0.86, this.view.width * 0.48);
+        glowBottom.addColorStop(0, theme.glowB);
+        glowBottom.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glowBottom;
         ctx.fillRect(0, 0, this.view.width, this.view.height);
 
         var start = this.screenToWorld(0, 0);
         var end = this.screenToWorld(this.view.width, this.view.height);
 
         ctx.save();
-        ctx.strokeStyle = 'rgba(189, 223, 255, 0.06)';
+        ctx.strokeStyle = theme.stripe;
+        ctx.lineWidth = 1;
+        var stripeStep = 120;
+        var stripeOffset = ((start.x + start.y) % stripeStep + stripeStep) % stripeStep;
+        for (var stripe = -stripeOffset; stripe < this.view.width + this.view.height; stripe += stripeStep) {
+            ctx.beginPath();
+            ctx.moveTo(stripe, 0);
+            ctx.lineTo(stripe - this.view.height, this.view.height);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = theme.grid;
         ctx.lineWidth = 1;
 
         var grid = 140;
@@ -167,6 +262,7 @@
     KOZRenderer.prototype._drawStormAndZone = function (ctx, state) {
         var zoneScreen = this.worldToScreen(state.zone.x, state.zone.y);
         var r = Math.max(1, state.zone.radius);
+        var theme = this._getTheme(state);
 
         ctx.save();
         ctx.fillStyle = 'rgba(8, 15, 24, 0.54)';
@@ -179,13 +275,13 @@
         ctx.restore();
 
         ctx.save();
-        ctx.strokeStyle = 'rgba(110, 202, 255, 0.86)';
+        ctx.strokeStyle = theme.zoneStroke;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(zoneScreen.x, zoneScreen.y, r, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.fillStyle = 'rgba(83, 179, 255, 0.08)';
+        ctx.fillStyle = theme.zoneFill;
         ctx.beginPath();
         ctx.arc(zoneScreen.x, zoneScreen.y, r, 0, Math.PI * 2);
         ctx.fill();
@@ -193,7 +289,8 @@
     };
 
     // Draw static collision walls only when they are inside/near viewport.
-    KOZRenderer.prototype._drawObstacles = function (ctx, obstacles) {
+    KOZRenderer.prototype._drawObstacles = function (ctx, obstacles, state) {
+        var theme = this._getTheme(state);
         ctx.save();
         obstacles.forEach(function (wall) {
             var screen = this.worldToScreen(wall.x, wall.y);
@@ -204,9 +301,9 @@
                 return;
             }
 
-            ctx.fillStyle = '#33465f';
+            ctx.fillStyle = theme.wallFill;
             ctx.fillRect(screen.x, screen.y, w, h);
-            ctx.strokeStyle = 'rgba(228, 245, 255, 0.35)';
+            ctx.strokeStyle = theme.wallStroke;
             ctx.lineWidth = 2;
             ctx.strokeRect(screen.x + 1, screen.y + 1, w - 2, h - 2);
         }, this);
@@ -336,9 +433,10 @@
     };
 
     // Draw objective core with animated glow.
-    KOZRenderer.prototype._drawCore = function (ctx, core, t) {
+    KOZRenderer.prototype._drawCore = function (ctx, core, t, state) {
         var screen = this.worldToScreen(core.x, core.y);
         if (screen.x < -80 || screen.x > this.view.width + 80 || screen.y < -80 || screen.y > this.view.height + 80) return;
+        var theme = this._getTheme(state);
 
         var glowRadius = 32 + Math.sin(t / 180) * 5;
 
@@ -351,7 +449,7 @@
         ctx.arc(screen.x, screen.y, glowRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#8efeff';
+        ctx.fillStyle = theme.zoneStroke;
         ctx.beginPath();
         ctx.arc(screen.x, screen.y, core.radius || 20, 0, Math.PI * 2);
         ctx.fill();
@@ -386,10 +484,11 @@
         var h = 132;
         var x = this.view.width - w - 18;
         var y = 18;
+        var theme = this._getTheme(state);
 
         ctx.save();
-        ctx.fillStyle = 'rgba(9, 15, 26, 0.72)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillStyle = theme.minimapBg;
+        ctx.strokeStyle = theme.minimapStroke;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') {
@@ -404,14 +503,14 @@
         var sy = h / state.map.height;
 
         state.obstacles.forEach(function (wall) {
-            ctx.fillStyle = 'rgba(188, 211, 235, 0.34)';
+            ctx.fillStyle = 'rgba(220, 236, 255, 0.28)';
             ctx.fillRect(x + wall.x * sx, y + wall.y * sy, wall.w * sx, wall.h * sy);
         });
 
         var zoneX = x + state.zone.x * sx;
         var zoneY = y + state.zone.y * sy;
         var zoneR = state.zone.radius * sx;
-        ctx.strokeStyle = 'rgba(119, 218, 255, 0.9)';
+        ctx.strokeStyle = theme.zoneStroke;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(zoneX, zoneY, zoneR, 0, Math.PI * 2);
@@ -447,6 +546,11 @@
                 ctx.fillText('CORE', x + holder.x * sx + 5, y + holder.y * sy - 5);
             }
         }
+
+        ctx.fillStyle = 'rgba(223, 241, 255, 0.9)';
+        ctx.font = '11px "Rajdhani", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText((state.map && state.map.name) ? state.map.name : 'Arena', x + 8, y + 14);
 
         ctx.restore();
     };
@@ -542,9 +646,9 @@
 
         this._drawBackground(ctx, state);
         this._drawStormAndZone(ctx, state);
-        this._drawObstacles(ctx, state.obstacles || []);
+        this._drawObstacles(ctx, state.obstacles || [], state);
         this._drawPowerups(ctx, state.powerups || [], now);
-        this._drawCore(ctx, state.core || {}, now);
+        this._drawCore(ctx, state.core || {}, now, state);
         this._drawProjectiles(ctx, state.projectiles || []);
 
         (state.remotePlayers || []).forEach(function (player) {

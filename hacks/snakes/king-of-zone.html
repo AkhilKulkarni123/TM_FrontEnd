@@ -19,6 +19,7 @@
             --accent: #79d9ff;
             --highlight: #ffd877;
             --ok: #8bf3c2;
+            --koz-map-accent: #79d9ff;
         }
 
         * {
@@ -36,11 +37,42 @@
             background: radial-gradient(circle at 20% 10%, #1a2b4a 0%, #070d18 55%);
         }
 
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 12% 14%, rgba(121, 217, 255, 0.16), transparent 34%),
+                radial-gradient(circle at 86% 82%, rgba(255, 216, 119, 0.12), transparent 40%),
+                repeating-linear-gradient(
+                    -20deg,
+                    rgba(121, 217, 255, 0.04) 0,
+                    rgba(121, 217, 255, 0.04) 2px,
+                    transparent 2px,
+                    transparent 18px
+                );
+            z-index: 0;
+        }
+
         #kozRoot {
             position: relative;
             width: 100%;
             height: 100%;
             overflow: hidden;
+            z-index: 1;
+        }
+
+        #kozRoot[data-theme='sunset-dunes'] {
+            --koz-map-accent: #ffbe6b;
+        }
+
+        #kozRoot[data-theme='neon-grid'] {
+            --koz-map-accent: #8ac7ff;
+        }
+
+        #kozRoot[data-theme='jungle-monsoon'] {
+            --koz-map-accent: #8ff1b7;
         }
 
         #gameCanvas {
@@ -88,6 +120,44 @@
             color: var(--muted);
             font-size: 13px;
             letter-spacing: 0.5px;
+        }
+
+        .map-pill {
+            margin-top: 8px;
+            border: 1px solid var(--koz-map-accent);
+            background: linear-gradient(135deg, rgba(14, 32, 54, 0.82), rgba(12, 22, 40, 0.68));
+            border-radius: 12px;
+            padding: 7px 10px;
+            display: grid;
+            gap: 2px;
+            box-shadow: 0 6px 22px rgba(4, 10, 22, 0.45);
+        }
+
+        .map-pill-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.05px;
+            color: rgba(198, 224, 255, 0.74);
+        }
+
+        .map-pill-name {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 16px;
+            line-height: 1.1;
+            letter-spacing: 0.6px;
+            color: #f4fbff;
+        }
+
+        .map-pill-biome {
+            font-size: 12px;
+            color: var(--koz-map-accent);
+            letter-spacing: 0.35px;
+        }
+
+        .map-flavor {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(222, 239, 255, 0.82);
         }
 
         .state-pill {
@@ -840,6 +910,12 @@
             <section class="panel">
                 <h2 class="hud-title">Match Control</h2>
                 <p class="hud-sub">Server-authoritative arena. Minimum 4 players to start.</p>
+                <div class="map-pill">
+                    <span class="map-pill-label">Current Map</span>
+                    <strong class="map-pill-name" id="kozMapName">Core Crucible</strong>
+                    <span class="map-pill-biome" id="kozMapTheme">Control Grid</span>
+                </div>
+                <p class="hud-sub map-flavor" id="kozMapFlavor">Balanced lanes with mirrored cover around center.</p>
                 <div class="state-pill" id="kozStateLabel">LOBBY</div>
                 <div class="timers">
                     <div class="timer-box">
@@ -881,7 +957,7 @@
                 </div>
                 <h2 class="overlay-title">Arena Lobby</h2>
                 <p class="overlay-sub" id="kozLobbyText">Waiting for players (0 joined, 4 minimum to start)</p>
-                <p class="battle-lobby-flavor">Suit up. Storm cycle starts once enough fighters deploy.</p>
+                <p class="battle-lobby-flavor" id="kozLobbyFlavor">Suit up. Storm cycle starts once enough fighters deploy.</p>
                 <div class="lobby-player-list" id="kozLobbyPlayers"></div>
                 <div class="lobby-actions">
                     <button id="kozLobbyLeaveBtn">Leave Lobby</button>

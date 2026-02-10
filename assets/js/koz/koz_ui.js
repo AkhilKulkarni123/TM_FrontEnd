@@ -23,9 +23,13 @@
 
     // Cache all relevant DOM nodes once to avoid repeated queries per frame.
     function KOZUI() {
+        this.root = document.getElementById('kozRoot');
         this.stateLabel = document.getElementById('kozStateLabel');
         this.matchTimer = document.getElementById('kozMatchTimer');
         this.shrinkTimer = document.getElementById('kozShrinkTimer');
+        this.mapName = document.getElementById('kozMapName');
+        this.mapTheme = document.getElementById('kozMapTheme');
+        this.mapFlavor = document.getElementById('kozMapFlavor');
 
         this.hpValue = document.getElementById('kozHpValue');
         this.ammoValue = document.getElementById('kozAmmoValue');
@@ -38,6 +42,7 @@
 
         this.lobbyOverlay = document.getElementById('kozLobbyOverlay');
         this.lobbyText = document.getElementById('kozLobbyText');
+        this.lobbyFlavor = document.getElementById('kozLobbyFlavor');
         this.lobbyPlayerList = document.getElementById('kozLobbyPlayers');
         this.lobbyLeaveBtn = document.getElementById('kozLobbyLeaveBtn');
         this.lobbyStatusBadge = document.getElementById('kozLobbyStatusBadge');
@@ -211,6 +216,10 @@
             }
         }
 
+        if (this.lobbyFlavor && state.map && state.map.flavor) {
+            this.lobbyFlavor.textContent = state.map.flavor;
+        }
+
         var show = (state.match.state === 'LOBBY' || state.match.state === 'COUNTDOWN');
         this.lobbyOverlay.classList.toggle('active', show);
     };
@@ -256,9 +265,18 @@
 
     // Main UI update entry called once per frame with current render state.
     KOZUI.prototype.render = function (state) {
+        if (this.root && state.map && state.map.theme) {
+            this.root.setAttribute('data-theme', state.map.theme);
+            if (state.map.previewColor) {
+                this.root.style.setProperty('--koz-map-accent', state.map.previewColor);
+            }
+        }
         this.stateLabel.textContent = state.match.state || 'LOBBY';
         this.matchTimer.textContent = formatClock(state.match.timeLeft || 0);
         this.shrinkTimer.textContent = formatClock(state.match.nextShrinkIn || 0);
+        if (this.mapName) this.mapName.textContent = (state.map && state.map.name) || 'Core Crucible';
+        if (this.mapTheme) this.mapTheme.textContent = (state.map && state.map.biome) || 'Control Grid';
+        if (this.mapFlavor && state.map && state.map.flavor) this.mapFlavor.textContent = state.map.flavor;
 
         this.hpValue.textContent = Math.max(0, Math.round(state.localPlayer.hp || 0));
         this.ammoValue.textContent = Math.max(0, Math.round(state.localPlayer.ammo || 0));

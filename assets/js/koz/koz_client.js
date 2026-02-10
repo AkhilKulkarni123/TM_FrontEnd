@@ -90,7 +90,16 @@
             weaponType: 'bulwark-disc'
         };
 
-        this.map = { width: 4200, height: 2800 };
+        this.map = {
+            id: 'core-crucible',
+            name: 'Core Crucible',
+            theme: 'nebula-night',
+            biome: 'Control Grid',
+            flavor: '',
+            previewColor: '#79d9ff',
+            width: 4200,
+            height: 2800
+        };
         this.match = {
             state: 'LOBBY',
             timeLeft: 0,
@@ -153,6 +162,19 @@
     KOZClient.prototype = Object.create(Emitter.prototype);
     KOZClient.prototype.constructor = KOZClient;
 
+    KOZClient.prototype._normalizeMapPayload = function (payload) {
+        var next = Object.assign({}, this.map, payload || {});
+        next.width = Number(next.width || this.map.width || 4200);
+        next.height = Number(next.height || this.map.height || 2800);
+        next.id = String(next.id || this.map.id || 'core-crucible');
+        next.name = String(next.name || this.map.name || 'Core Crucible');
+        next.theme = String(next.theme || this.map.theme || 'nebula-night');
+        next.biome = String(next.biome || this.map.biome || 'Control Grid');
+        next.flavor = String(next.flavor || this.map.flavor || '');
+        next.previewColor = String(next.previewColor || this.map.previewColor || '#79d9ff');
+        return next;
+    };
+
     // Establish socket connection and bind all server event handlers.
     KOZClient.prototype.connect = function () {
         var self = this;
@@ -183,7 +205,7 @@
         this.socket.on('koz:joined', function (payload) {
             self.selfId = payload.sid || self.selfId;
             self.role = payload.role || 'spectator';
-            if (payload.map) self.map = payload.map;
+            if (payload.map) self.map = self._normalizeMapPayload(payload.map);
             if (typeof payload.minPlayers !== 'undefined') {
                 self.match.minPlayers = Number(payload.minPlayers) || self.match.minPlayers;
             }
@@ -209,6 +231,9 @@
             if (!Array.isArray(nextLobby.players)) {
                 nextLobby.players = Array.isArray(self.lobby.players) ? self.lobby.players : [];
             }
+            if (nextLobby.map && typeof nextLobby.map === 'object') {
+                self.map = self._normalizeMapPayload(nextLobby.map);
+            }
             var derivedActive = nextLobby.players.filter(function (player) {
                 return !player || !player.spectator;
             }).length;
@@ -223,6 +248,9 @@
 
         this.socket.on('koz:match_state', function (payload) {
             self.match = Object.assign({}, self.match, payload || {});
+            if (payload && payload.map && typeof payload.map === 'object') {
+                self.map = self._normalizeMapPayload(payload.map);
+            }
             self.emit('match_state', self.match);
         });
 
@@ -363,8 +391,11 @@
         var self = this;
         if (!snapshot) return;
 
-        if (snapshot.map) this.map = snapshot.map;
+        if (snapshot.map) this.map = this._normalizeMapPayload(snapshot.map);
         if (snapshot.match) this.match = Object.assign({}, this.match, snapshot.match);
+        if (snapshot.match && snapshot.match.map && typeof snapshot.match.map === 'object') {
+            this.map = this._normalizeMapPayload(snapshot.match.map);
+        }
         if (snapshot.zone) this.zone = Object.assign({}, this.zone, snapshot.zone);
         if (snapshot.storm) this.storm = Object.assign({}, this.storm, snapshot.storm);
         if (snapshot.core) this.core = Object.assign({}, this.core, snapshot.core);

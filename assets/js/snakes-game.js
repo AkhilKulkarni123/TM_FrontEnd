@@ -1560,6 +1560,7 @@ function renderOtherPlayersOnSquare(square, squareNum) {
 
     var playerCount = playersHere.length;
     var displayCount = playerCount > 99 ? '99+' : String(playerCount);
+    var icon = playerCount > 1 ? '👥' : '👤';
 
     var container = document.createElement('div');
     container.className = 'other-players-container';
@@ -1571,7 +1572,7 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     else if (playerCount >= 10) playersBtn.classList.add('presence-crowded');
     else if (playerCount >= 5) playersBtn.classList.add('presence-busy');
     playersBtn.innerHTML =
-        '<span class="tile-presence-icon" aria-hidden="true">👤</span>' +
+        '<span class="tile-presence-icon" aria-hidden="true">' + icon + '</span>' +
         '<span class="tile-presence-count">' + displayCount + '</span>';
     playersBtn.title = playerCount + (playerCount === 1 ? ' player on this square' : ' players on this square');
     playersBtn.setAttribute('aria-label', 'View ' + playerCount + (playerCount === 1 ? ' player on this square' : ' players on this square'));
