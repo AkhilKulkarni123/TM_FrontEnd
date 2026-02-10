@@ -504,6 +504,52 @@ body.snakes-theme,
     background: var(--button-bg);
   }
 
+  /* Lesson theming to follow the selector */
+  .lesson-body .container {
+    background: var(--panel-bg) !important;
+    border: 2px solid var(--panel-border);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+    color: var(--heading);
+  }
+
+  .lesson-body .header {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.42), rgba(var(--accent-2-rgb), 0.38)) !important;
+    color: var(--heading);
+  }
+
+  .lesson-body .section h2 {
+    color: var(--heading);
+  }
+
+  .lesson-body .section p,
+  .lesson-body .content p,
+  .lesson-body .content li,
+  .lesson-body .question p,
+  .lesson-body .question label,
+  .lesson-body .question span {
+    color: var(--muted-text);
+  }
+
+  .lesson-body .content p[style] {
+    color: var(--muted-text) !important;
+  }
+
+  .lesson-body .question {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.32), rgba(var(--accent-2-rgb), 0.28)) !important;
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    color: var(--heading);
+  }
+
+  .lesson-body .options label {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .lesson-body .options label:has(input:checked) {
+    background: rgba(var(--accent-rgb), 0.25) !important;
+    border-color: rgba(var(--accent-rgb), 0.55) !important;
+  }
+
   .mode-card {
     @include glass-panel;
     border-width: 3px;
