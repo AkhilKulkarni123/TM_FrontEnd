@@ -14,9 +14,117 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: 
+                radial-gradient(circle at 15% 20%, rgba(255, 0, 100, 0.4) 0%, transparent 35%),
+                radial-gradient(circle at 85% 80%, rgba(100, 0, 255, 0.5) 0%, transparent 40%),
+                radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.3) 0%, transparent 30%),
+                radial-gradient(circle at 20% 90%, rgba(0, 255, 200, 0.35) 0%, transparent 35%),
+                radial-gradient(circle at 90% 30%, rgba(255, 100, 0, 0.4) 0%, transparent 38%),
+                linear-gradient(180deg, #0a0015 0%, #1a0a30 20%, #2d1550 40%, #1a0a30 60%, #0a0520 80%, #050010 100%);
+            background-size: 100% 100%;
             overflow: hidden;
             color: white;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 25% 25%, rgba(255, 0, 100, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 75% 75%, rgba(100, 0, 255, 0.35) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.2) 0%, transparent 60%);
+            animation: backgroundPulse 6s ease-in-out infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes backgroundPulse {
+            0%, 100% { 
+                opacity: 0.6; 
+                transform: scale(1) rotate(0deg);
+            }
+            33% {
+                opacity: 0.9;
+                transform: scale(1.1) rotate(2deg);
+            }
+            66% {
+                opacity: 0.7;
+                transform: scale(1.05) rotate(-2deg);
+            }
+        }
+
+
+        /* Animated stars/particles effect */
+        /* Animated energy particles effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(3px 3px at 20% 30%, white, transparent),
+                radial-gradient(4px 4px at 60% 70%, #ffd700, transparent),
+                radial-gradient(2px 2px at 50% 50%, #ff00ff, transparent),
+                radial-gradient(3px 3px at 80% 10%, #00ffff, transparent),
+                radial-gradient(4px 4px at 10% 60%, #ff0066, transparent),
+                radial-gradient(2px 2px at 33% 80%, #00ff88, transparent),
+                radial-gradient(3px 3px at 15% 15%, #ffaa00, transparent),
+                radial-gradient(2px 2px at 85% 85%, #aa00ff, transparent),
+                radial-gradient(4px 4px at 45% 25%, white, transparent),
+                radial-gradient(3px 3px at 70% 55%, #ff3366, transparent);
+            background-size: 250% 250%;
+            background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%, 25% 75%, 75% 25%, 10% 90%, 90% 10%, 40% 60%;
+            animation: energyFloat 15s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        @keyframes energyFloat {
+            0% {
+                background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%, 25% 75%, 75% 25%, 10% 90%, 90% 10%, 40% 60%;
+            }
+            50% {
+                background-position: 100% 100%, 0% 0%, 25% 75%, 100% 0%, 0% 100%, 75% 25%, 25% 75%, 90% 10%, 10% 90%, 60% 40%;
+            }
+            100% {
+                background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%, 25% 75%, 75% 25%, 10% 90%, 90% 10%, 40% 60%;
+            }
+        }
+
+
+        /* Energy streaks effect */
+        .game-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 48%, rgba(255, 0, 100, 0.15) 49%, rgba(255, 0, 100, 0.15) 51%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, rgba(100, 0, 255, 0.15) 49%, rgba(100, 0, 255, 0.15) 51%, transparent 52%);
+            background-size: 100px 100px, 120px 120px;
+            animation: energyStreaks 10s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        @keyframes energyStreaks {
+            0% {
+                background-position: 0 0, 0 0;
+            }
+            100% {
+                background-position: 100px 100px, -120px 120px;
+            }
         }
 
         .game-wrapper {
@@ -33,8 +141,16 @@
 
         #gameCanvas {
             display: block;
-            background: radial-gradient(circle, #0f3460 0%, #1a1a2e 100%);
+            background: 
+                radial-gradient(circle at 25% 35%, rgba(139, 0, 139, 0.4) 0%, transparent 45%),
+                radial-gradient(circle at 75% 65%, rgba(0, 100, 255, 0.35) 0%, transparent 45%),
+                radial-gradient(circle at 50% 15%, rgba(233, 69, 96, 0.25) 0%, transparent 55%),
+                linear-gradient(180deg, #0d0820 0%, #1a0f2e 40%, #0f1b3d 100%);
             border: 3px solid #e94560;
+            box-shadow: 
+                inset 0 0 100px rgba(139, 0, 139, 0.2),
+                inset 0 0 60px rgba(0, 100, 255, 0.15),
+                0 0 40px rgba(233, 69, 96, 0.5);
         }
 
         /* HUD Styles */
@@ -517,13 +633,17 @@
         }
 
         .intro-content {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: 
+                linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            backdrop-filter: blur(10px);
             border: 3px solid #e94560;
             border-radius: 20px;
             padding: 40px 50px;
             max-width: 600px;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(233, 69, 96, 0.5);
+            box-shadow: 
+                0 10px 40px rgba(233, 69, 96, 0.5),
+                inset 0 0 30px rgba(233, 69, 96, 0.1);
             animation: slideIn 0.6s ease;
             position: relative;
         }
@@ -1575,7 +1695,7 @@
                 console.log('Room state received:', data);
                 if (data.bossHealth !== undefined) {
                     gameState.boss.health = data.bossHealth;
-                    gameState.boss.maxHealth = data.maxBossHealth || 1000;
+                    gameState.boss.maxHealth = data.maxBossHealth || 2000;
                     updateBossHealthBar();
                 }
                 if (data.self) {
@@ -1716,7 +1836,7 @@
             socket.on('boss_health_update', (data) => {
                 console.log('Boss health update:', data);
                 gameState.boss.health = data.bossHealth;
-                gameState.boss.maxHealth = data.maxBossHealth || 1000;
+                gameState.boss.maxHealth = data.maxBossHealth || 2000;
                 updateBossHealthBar();
                 if (data.attacker && data.attacker !== gameState.player.username) {
                     addSystemMessage(`${data.attacker} dealt ${data.damage} damage!`);
@@ -3122,6 +3242,11 @@ function getDamageMultiplier() {
             }
 
             // Draw powerups
+            // Reset shadow and alpha before drawing powerups
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+
+            // Draw powerups
             gameState.powerups.forEach(powerup => {
                 const config = POWERUP_TYPES[powerup.type];
                 if (!config) return;
@@ -3153,6 +3278,10 @@ function getDamageMultiplier() {
                 ctx.textBaseline = 'middle';
                 ctx.fillText(config.icon, powerup.x, powerup.y);
             });
+
+            // Reset ctx state after powerups
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
 
             // Draw active buff indicators on player
             const now = Date.now();
