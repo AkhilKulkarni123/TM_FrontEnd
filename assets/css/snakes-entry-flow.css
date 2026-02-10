@@ -459,7 +459,7 @@
     border-radius: 16px;
     padding: 20px 16px;
     cursor: pointer;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease, filter 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -468,14 +468,16 @@
     gap: 12px;
     min-width: 150px;
     opacity: 0.4;
-    transform: scale(0.7);
+    transform: translateY(0) scale(0.7);
+    transform-origin: center;
     filter: grayscale(50%);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    will-change: transform, box-shadow, filter;
 }
 
 .character-card.center {
     opacity: 1;
-    transform: scale(1.15);
+    transform: translateY(0) scale(1.15);
     border-color: #667eea;
     box-shadow: 0 15px 50px rgba(102, 126, 234, 0.7), 0 0 80px rgba(118, 75, 162, 0.3);
     z-index: 5;
@@ -502,7 +504,23 @@
 .character-card.left,
 .character-card.right {
     opacity: 0.6;
-    transform: scale(0.85);
+    transform: translateY(0) scale(0.85);
+}
+
+.character-card:hover:not(.selected) {
+    opacity: 0.85;
+    filter: grayscale(0%) saturate(1.05) brightness(1.06);
+    box-shadow: 0 18px 48px rgba(102, 126, 234, 0.35), 0 0 40px rgba(118, 75, 162, 0.2);
+}
+
+.character-card.left:hover:not(.selected),
+.character-card.right:hover:not(.selected) {
+    transform: translateY(-10px) scale(0.92);
+}
+
+.character-card.center:hover:not(.selected) {
+    transform: translateY(-14px) scale(1.22);
+    box-shadow: 0 22px 70px rgba(102, 126, 234, 0.8), 0 0 100px rgba(118, 75, 162, 0.45);
 }
 
 .character-name {
@@ -534,6 +552,7 @@
     margin: 0 auto;
     display: block;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+    transition: filter 0.35s ease;
 }
 
 .character-card.center .pixel-character {
@@ -542,6 +561,14 @@
 
 .character-card.center .pixel-character {
     animation: centerIdle 1.5s ease-in-out infinite;
+}
+
+.character-card:hover .pixel-character {
+    filter: drop-shadow(0 6px 14px rgba(118, 75, 162, 0.55)) brightness(1.05);
+}
+
+.character-card.center:hover .pixel-character {
+    filter: drop-shadow(0 10px 20px rgba(102, 126, 234, 0.7)) brightness(1.08);
 }
 
 @keyframes idle {
@@ -785,4 +812,3 @@
         linear-gradient(to right, transparent 64px, #4a0404 64px, #4a0404 65px, #641e16 65px, #641e16 66px, #7b241c 66px, #7b241c 67px, #922b21 67px, #922b21 68px, #a93226 68px, #a93226 69px, #c0392b 69px, #c0392b 70px, #e74c3c 70px, #e74c3c 71px, #ec7063 71px, #ec7063 72px, #f1948a 72px, #f1948a 73px, #fadbd8 73px, #fadbd8 74px, #f1948a 74px, #f1948a 75px, #ec7063 75px, #ec7063 76px, #e74c3c 76px, #e74c3c 77px, #c0392b 77px, #c0392b 78px, #a93226 78px, #a93226 79px, #922b21 79px, #922b21 80px, #7b241c 80px, #7b241c 81px, #641e16 81px, #641e16 82px, #4a0404 82px, #4a0404 83px, transparent 83px) 0px 8px / 100px 7px;
     background-repeat: no-repeat;
 }
-

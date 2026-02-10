@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>King of the Zone</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --koz-panel: rgba(10, 14, 26, 0.8);
+            --koz-panel-border: rgba(255, 255, 255, 0.12);
+            --koz-accent: #30d7ff;
+            --koz-warning: #f1c40f;
+            --koz-danger: #ff4d5a;
+            --koz-success: #2ecc71;
+            --koz-muted: rgba(255, 255, 255, 0.7);
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Rajdhani', 'Oxanium', system-ui, sans-serif;
+            background: #05060e;
+            color: #f7f7fb;
+        }
+        #kozContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #gameCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: radial-gradient(circle at 30% 20%, rgba(18,24,48,0.9), rgba(5,6,14,0.9));
+        }
+        .panel {
+            background: var(--koz-panel);
+            border: 1px solid var(--koz-panel-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            box-shadow: 0 18px 36px rgba(3, 6, 18, 0.6);
+            backdrop-filter: blur(12px);
+        }
+        .hud {
+            position: absolute;
+            inset: 18px 18px auto 18px;
+            display: grid;
+            grid-template-columns: 1.2fr 1.6fr 1fr;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .hud .panel { pointer-events: auto; }
+        .hud-title {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 6px 0;
+        }
+        .hud-sub {
+            font-size: 13px;
+            color: var(--koz-muted);
+            margin: 0;
+        }
+        .hud-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        .hud-meta span {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+        }
+        .control-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 12px;
+            text-transform: uppercase;
+            border: 1px solid transparent;
+            background: rgba(255,255,255,0.12);
+        }
+        .badge.contested { border-color: rgba(241,196,15,0.7); color: #fbe390; }
+        .badge.controlled { border-color: rgba(48,215,255,0.7); color: #a7f1ff; }
+        .badge.neutral { border-color: rgba(255,255,255,0.2); }
+        .hud-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .hud-right .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .hud-right button {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(4, 6, 16, 0.8);
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        .hud-right button:hover { background: rgba(255,255,255,0.15); }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .stat {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .stat strong { font-size: 14px; }
+        .storm-meter {
+            margin-top: 6px;
+        }
+        .storm-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .storm-bar span {
+            display: block;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #2ecc71 0%, #f1c40f 55%, #ff4d5a 100%);
+            transition: width 0.3s ease;
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 150px;
+            left: 18px;
+            width: 240px;
+            max-height: 60vh;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: auto;
+        }
+        #scoreBoard h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--koz-muted);
+        }
+        .score-row {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 13px;
+        }
+        .score-row .row-top {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        .score-row .progress {
+            height: 6px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .score-row .progress span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            background: var(--koz-accent);
+            transition: width 0.4s ease;
+        }
+        .score-row.active {
+            border-color: rgba(48,215,255,0.6);
+            box-shadow: 0 0 18px rgba(48,215,255,0.2);
+        }
+        .info-panel {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            width: 260px;
+            pointer-events: auto;
+        }
+        .info-panel h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--koz-muted);
+        }
+        .info-panel p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            margin: 0 0 8px 0;
+        }
+        .zone-warning {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 77, 90, 0.2);
+            border: 1px solid rgba(255, 77, 90, 0.6);
+            color: #ffe2e2;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+            pointer-events: none;
+        }
+        .zone-warning.active { display: inline-flex; }
+        .zone-event {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #fff;
+            font-size: 13px;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .zone-event.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        .overlay.active { display: flex; }
+        .overlay .modal {
+            background: #111326;
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 20px;
+            border-radius: 14px;
+            width: min(420px, 90vw);
+            text-align: center;
+        }
+        .modal h2 { margin: 0 0 8px 0; }
+        .modal p { margin: 6px 0; }
+        .modal button {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            background: #f39c12;
+            color: #101010;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        @media (max-width: 900px) {
+            .hud { grid-template-columns: 1fr; }
+            #scoreBoard { width: 200px; }
+            .info-panel { width: 220px; }
+        }
+    </style>
+</head>
+<body class="snakes-theme koz-mode">
+    <div id="kozContainer">
+        <canvas id="gameCanvas" width="1100" height="680"></canvas>
+
+        <div class="hud">
+            <div class="panel">
+                <h1 class="hud-title">King of the Zone</h1>
+                <p class="hud-sub">Hold the core. Survive the storm. Rule the arena.</p>
+                <div class="hud-meta">
+                    <span>Room: <strong id="roomId">--</strong></span>
+                    <span>Phase: <strong id="phaseBadge">1</strong></span>
+                    <span>Zone: <strong id="zoneRadius">--</strong></span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="control-status">
+                    <div id="controlStatus" class="badge neutral">Neutral</div>
+                    <span id="controlDetail" class="hud-sub">No player holds the zone.</span>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat">
+                        <span>Time Left</span>
+                        <strong id="timeLeft">--</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Storm Level</span>
+                        <strong id="stormLevel">--</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Integrity</span>
+                        <strong id="stormValue">100%</strong>
+                    </div>
+                </div>
+                <div class="storm-meter">
+                    <div class="storm-bar"><span id="stormFill"></span></div>
+                </div>
+            </div>
+
+            <div class="panel hud-right">
+                <div class="controls">
+                    <button id="joinBtn">Join Match</button>
+                    <button id="leaveBtn">Leave</button>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat">
+                        <span>Bullets</span>
+                        <strong id="bulletCount">--</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Combat HP</span>
+                        <strong id="hpCount">--</strong>
+                    </div>
+                    <div class="stat">
+                        <span>You</span>
+                        <strong id="playerName">--</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="scoreBoard">
+            <h3>Scoreboard</h3>
+        </div>
+
+        <div class="panel info-panel">
+            <h3>Objective</h3>
+            <p>Secure the safe zone and eliminate rivals. Contested zones score nothing.</p>
+            <p>Storm damage stacks fast. Grab the core for bonus points.</p>
+        </div>
+
+        <div id="zoneWarning" class="zone-warning">Storm pressure detected - return to safe zone</div>
+        <div id="zoneEvent" class="zone-event"></div>
+    </div>
+
+    <div class="overlay" id="endOverlay">
+        <div class="modal">
+            <h2 id="endTitle">Match Ended</h2>
+            <p id="endSubtitle">Winner: --</p>
+            <button id="endBack">Back to Modes</button>
+        </div>
+    </div>
+
+    <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/king-of-zone.js"></script>
+</body>
+</html>

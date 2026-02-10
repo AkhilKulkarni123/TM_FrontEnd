@@ -742,6 +742,14 @@
         }
         resizeCanvas();
 
+        function getBattleBounds() {
+            return {
+                width: canvas.width,
+                height: canvas.height,
+                top: 200
+            };
+        }
+
         let gameActive = false;
         let roomId = null;
         let socket = null;
@@ -1251,6 +1259,7 @@
                         room_id: roomId,
                         boss_health: gameState.boss.health,
                         max_boss_health: gameState.boss.maxHealth,
+                        bounds: getBattleBounds(),
                         player: {
                             username: gameState.player.username,
                             character: gameState.player.character,
@@ -1289,6 +1298,18 @@
                     gameState.boss.health = data.bossHealth;
                     gameState.boss.maxHealth = data.maxBossHealth || 1000;
                     updateBossHealthBar();
+                }
+                if (data.self) {
+                    if (typeof data.self.x === 'number') gameState.player.x = data.self.x;
+                    if (typeof data.self.y === 'number') gameState.player.y = data.self.y;
+                    if (typeof data.self.lives === 'number') {
+                        gameState.player.lives = data.self.lives;
+                        updateLives();
+                    }
+                    if (typeof data.self.bullets === 'number') {
+                        gameState.player.bullets = data.self.bullets;
+                        updateBulletsDisplay();
+                    }
                 }
                 if (data.players) {
                     // Clear any stale player data from REST API (keyed differently)
@@ -1339,6 +1360,11 @@
                     gameState.otherPlayers[data.sid].x = data.x;
                     gameState.otherPlayers[data.sid].y = data.y;
                 }
+            });
+
+            socket.on('boss_self_position', (data) => {
+                if (typeof data.x === 'number') gameState.player.x = data.x;
+                if (typeof data.y === 'number') gameState.player.y = data.y;
             });
 
             // Other player shot a bullet
@@ -1629,6 +1655,7 @@
                                 room_id: roomId,
                                 boss_health: gameState.boss.health,
                                 max_boss_health: gameState.boss.maxHealth,
+                                bounds: getBattleBounds(),
                                 player: {
                                     user_id: data.player?.user_id,
                                     username: data.player?.username || gameState.player.username,
@@ -1704,7 +1731,8 @@
                     try { return sessionStorage.getItem('snakes_user_id') || 'guest'; } catch (e) { return 'guest'; }
                 })(),
                 bullets: gameState.player.bullets,
-                character: gameState.player.character
+                character: gameState.player.character,
+                bounds: getBattleBounds()
             };
 
             if (socket && socket.connected) {
@@ -1815,7 +1843,9 @@
                     socket.emit('boss_player_move', {
                         room_id: roomId,
                         x: gameState.player.x,
-                        y: gameState.player.y
+                        y: gameState.player.y,
+                        boss_x: gameState.boss.x,
+                        boss_y: gameState.boss.y
                     });
                 }
             }, 50); // 20 FPS position updates
@@ -1994,6 +2024,23 @@
             }
             if (gameState.keys['s'] || gameState.keys['arrowdown']) {
                 gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + gameState.player.speed);
+            }
+            resolvePlayerBossCollision();
+            gameState.player.x = Math.max(gameState.player.size, Math.min(canvas.width - gameState.player.size, gameState.player.x));
+            gameState.player.y = Math.max(gameState.player.size + 200, Math.min(canvas.height - gameState.player.size, gameState.player.y));
+        }
+
+        function resolvePlayerBossCollision() {
+            const dx = gameState.player.x - gameState.boss.x;
+            const dy = gameState.player.y - gameState.boss.y;
+            const minDist = gameState.player.size + gameState.boss.size;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0.01 && dist < minDist) {
+                const overlap = minDist - dist;
+                const nx = dx / dist;
+                const ny = dy / dist;
+                gameState.player.x += nx * overlap;
+                gameState.player.y += ny * overlap;
             }
         }
 

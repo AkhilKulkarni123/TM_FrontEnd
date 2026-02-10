@@ -606,6 +606,7 @@
 
         let gameActive = false;
         let socket = null;
+        let currentRoomId = null;
         let positionBroadcastInterval = null;
         const DEFAULT_LIVES = 5;
         let lastJoinData = null;
@@ -988,8 +989,13 @@
             socket.on('pvp_room_state', (data) => {
                 console.log('=== PVP ROOM STATE ===');
                 console.log('Received data:', data);
+                currentRoomId = data.roomId || currentRoomId;
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
+                const roomBadge = document.getElementById('roomBadge');
+                if (roomBadge && currentRoomId) {
+                    roomBadge.innerHTML = `PVP Arena #${currentRoomId} | Players: <span id="playerCount">${data.playerCount || 1}</span>/2`;
+                }
                 gameState.playerNumber = Number(data.playerNumber) || 1;
 
                 if (gameState.playerNumber === 1) {
@@ -1055,6 +1061,10 @@
                 updateOpponentLives();
                 updatePlayersList();
                 document.getElementById('playerCount').textContent = 2;
+                const roomBadge = document.getElementById('roomBadge');
+                if (roomBadge && currentRoomId) {
+                    roomBadge.innerHTML = `PVP Arena #${currentRoomId} | Players: <span id="playerCount">2</span>/2`;
+                }
             });
 
             // Opponent left
@@ -1068,6 +1078,10 @@
                     addSystemMessage(`${data.username || 'Opponent'} left the arena`);
                     updatePlayersList();
                     document.getElementById('playerCount').textContent = 1;
+                    const roomBadge = document.getElementById('roomBadge');
+                    if (roomBadge && currentRoomId) {
+                        roomBadge.innerHTML = `PVP Arena #${currentRoomId} | Players: <span id="playerCount">1</span>/2`;
+                    }
                 }
             });
 
@@ -1150,6 +1164,17 @@
                 updatePlayersList();
             });
 
+            // Authoritative correction for local player (server-side collision)
+            socket.on('pvp_self_position', (data) => {
+                if (!data) return;
+                const dx = (data.x || 0) - gameState.player.x;
+                const dy = (data.y || 0) - gameState.player.y;
+                if (Math.hypot(dx, dy) > 0.5) {
+                    gameState.player.x = data.x;
+                    gameState.player.y = data.y;
+                }
+            });
+
             // Chat message
             socket.on('pvp_chat_message', (data) => {
                 addChatMessage(data);
@@ -1164,15 +1189,20 @@
                 addSystemMessage(`${data.username} is back!`);
             });
 
-            // PVP status
-            socket.on('pvp_status', (data) => {
+            // PVP room status (room-specific)
+            socket.on('pvp_room_status', (data) => {
                 if (!data) return;
+                if (data.roomId) currentRoomId = data.roomId;
                 if (typeof data.playerCount !== 'undefined') {
                     document.getElementById('roomBadge').style.display = 'block';
                     document.getElementById('playerCount').textContent = data.playerCount;
+                    const roomBadge = document.getElementById('roomBadge');
+                    if (roomBadge && currentRoomId) {
+                        roomBadge.innerHTML = `PVP Arena #${currentRoomId} | Players: <span id="playerCount">${data.playerCount}</span>/2`;
+                    }
                 }
                 if (data.playerCount >= 2 && !gameState.opponent) {
-                    requestPvpResync('status');
+                    requestPvpResync('room_status');
                 }
             });
 

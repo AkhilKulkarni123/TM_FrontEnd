@@ -129,6 +129,15 @@
             box-shadow: 0 25px 50px rgba(79, 172, 254, 0.5), 0 0 80px rgba(79, 172, 254, 0.2);
         }
 
+        .mode-card.koz-mode {
+            border-color: #f1c40f;
+        }
+
+        .mode-card.koz-mode:hover {
+            border-color: #f1c40f;
+            box-shadow: 0 25px 50px rgba(243, 156, 18, 0.45), 0 0 80px rgba(241, 196, 15, 0.2);
+        }
+
        
 
         .mode-card.disabled {
@@ -166,6 +175,10 @@
 
         .pvp-mode .mode-title {
             color: #4facfe;
+        }
+
+        .koz-mode .mode-title {
+            color: #f39c12;
         }
 
         .mode-description {
@@ -207,6 +220,10 @@
             color: #4facfe;
         }
 
+        .koz-mode .mode-features li::before {
+            color: #f39c12;
+        }
+
         .mode-status {
             text-align: center;
             padding: 10px 20px;
@@ -223,6 +240,11 @@
         .pvp-mode .mode-status {
             background: rgba(79, 172, 254, 0.2);
             color: #7fc8ff;
+        }
+
+        .koz-mode .mode-status {
+            background: rgba(243, 156, 18, 0.2);
+            color: #ffd08a;
         }
 
         .mode-status.full {
@@ -355,7 +377,7 @@
         </div>
     </div>
 
-    <h1 class="page-title">Final Battle Arena</h1>
+    <h1 class="page-title">Battle Arcade</h1>
     <p class="page-subtitle">Choose your challenge wisely...</p>
 
     <div class="mode-container">
@@ -385,7 +407,23 @@
                 <li>Last player standing wins</li>
             </ul>
             <div class="mode-status" id="pvpStatus">
-                <span id="pvpPlayerCount">0</span>/2 players in arena
+                Players online: <span id="pvpPlayerCount">0</span> • Arenas active: <span id="pvpRoomCount">0</span> • Open slots: <span id="pvpOpenSlots">2</span>
+            </div>
+        </div>
+
+        <!-- King of the Zone Mode -->
+        <div class="mode-card koz-mode" onclick="selectMode('koz')" id="kozCard">
+            <span class="mode-icon"></span>
+            <h2 class="mode-title">King of the Zone</h2>
+            <p class="mode-description">Control the shrinking zone and rack up points before time runs out.</p>
+            <ul class="mode-features">
+                <li>Shrinking capture zone</li>
+                <li>Contested control denies points</li>
+                <li>Timed matches + score limit</li>
+                <li>Dynamic relocations keep it fresh</li>
+            </ul>
+            <div class="mode-status" id="kozStatus">
+                Players online: <span id="kozPlayerCount">0</span> • Arenas active: <span id="kozRoomCount">0</span> • Open slots: <span id="kozOpenSlots">0</span>
             </div>
         </div>
     </div>
@@ -417,7 +455,8 @@
             bullets: 0,
             lives: 3
         };
-        let pvpPlayerCount = 0;
+        let pvpStatusState = { totalPlayers: 0, activeRooms: 0, openSlots: 2 };
+        let kozStatusState = { totalPlayers: 0, activeRooms: 0, openSlots: 0 };
 
         // Check for demo mode
         function isDemoMode() {
@@ -537,35 +576,53 @@
                 console.log('Socket connected for mode selection');
                 // Request PVP room status
                 socket.emit('pvp_get_status', {});
+                socket.emit('koz_get_status', {});
             });
 
             socket.on('pvp_status', (data) => {
-                pvpPlayerCount = data.playerCount || 0;
+                if (!data) return;
+                pvpStatusState.totalPlayers = data.totalPlayers || 0;
+                pvpStatusState.activeRooms = data.activeRooms || 0;
+                pvpStatusState.openSlots = data.openSlots || 0;
                 updatePVPStatus();
             });
 
-            socket.on('pvp_player_count_update', (data) => {
-                pvpPlayerCount = data.playerCount || 0;
-                updatePVPStatus();
+            socket.on('koz_status', (data) => {
+                if (!data) return;
+                kozStatusState.totalPlayers = data.totalPlayers || 0;
+                kozStatusState.activeRooms = data.activeRooms || 0;
+                kozStatusState.openSlots = data.openSlots || 0;
+                updateKOZStatus();
             });
         }
 
         // Update PVP status display
         function updatePVPStatus() {
-            const pvpCard = document.getElementById('pvpCard');
-            const pvpStatus = document.getElementById('pvpStatus');
+            const pvpStatusEl = document.getElementById('pvpStatus');
             const pvpCount = document.getElementById('pvpPlayerCount');
+            const pvpRooms = document.getElementById('pvpRoomCount');
+            const pvpOpenSlots = document.getElementById('pvpOpenSlots');
 
-            pvpCount.textContent = pvpPlayerCount;
+            if (pvpCount) pvpCount.textContent = pvpStatusState.totalPlayers;
+            if (pvpRooms) pvpRooms.textContent = pvpStatusState.activeRooms;
+            if (pvpOpenSlots) pvpOpenSlots.textContent = pvpStatusState.openSlots;
 
-            if (pvpPlayerCount >= 2) {
-                pvpCard.classList.add('disabled');
-                pvpStatus.classList.add('full');
-                pvpStatus.innerHTML = '<span id="pvpPlayerCount">2</span>/2 players - ARENA FULL';
-            } else {
-                pvpCard.classList.remove('disabled');
-                pvpStatus.classList.remove('full');
-                pvpStatus.innerHTML = '<span id="pvpPlayerCount">' + pvpPlayerCount + '</span>/2 players in arena';
+            if (pvpStatusEl) {
+                pvpStatusEl.classList.remove('full');
+                pvpStatusEl.innerHTML =
+                    'Players online: <span id=\"pvpPlayerCount\">' + pvpStatusState.totalPlayers +
+                    '</span> • Arenas active: <span id=\"pvpRoomCount\">' + pvpStatusState.activeRooms +
+                    '</span> • Open slots: <span id=\"pvpOpenSlots\">' + pvpStatusState.openSlots + '</span>';
+            }
+        }
+
+        function updateKOZStatus() {
+            const kozStatusEl = document.getElementById('kozStatus');
+            if (kozStatusEl) {
+                kozStatusEl.innerHTML =
+                    'Players online: <span id=\"kozPlayerCount\">' + kozStatusState.totalPlayers +
+                    '</span> • Arenas active: <span id=\"kozRoomCount\">' + kozStatusState.activeRooms +
+                    '</span> • Open slots: <span id=\"kozOpenSlots\">' + kozStatusState.openSlots + '</span>';
             }
         }
 
@@ -574,14 +631,6 @@
             if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
                 window.SnakesSFX.play('click');
             }
-            if (mode === 'pvp') {
-                const pvpCard = document.getElementById('pvpCard');
-                if (pvpCard.classList.contains('disabled')) {
-                    alert('The PVP arena is full! Please wait for a spot to open.');
-                    return;
-                }
-            }
-
             // Show loading
             document.getElementById('loadingOverlay').classList.add('active');
 
@@ -590,6 +639,8 @@
                 window.location.href = 'boss-battle.html';
             } else if (mode === 'pvp') {
                 window.location.href = 'pvp-arena.html';
+            } else if (mode === 'koz') {
+                window.location.href = 'king-of-zone.html';
             }
         }
 
@@ -612,6 +663,7 @@
         setInterval(() => {
             if (socket && socket.connected) {
                 socket.emit('pvp_get_status', {});
+                socket.emit('koz_get_status', {});
             }
         }, 3000);
     </script>

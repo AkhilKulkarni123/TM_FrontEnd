@@ -1915,3 +1915,44 @@ body {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.8; }
 }
+
+/* ======================================================
+   Light surface text fixes (Snakes theme)
+   Ensure readability inside white/light cards & panels
+   without affecting dark surfaces.
+   ====================================================== */
+.snakes-theme :is(
+  .login-box,
+  .character-box,
+  .game-header,
+  #dice-animation,
+  .leaderboard-entry,
+  .quiz-option,
+  .memory-card.flipped,
+  .hint-card,
+  .leaderboard-table-container
+) {
+  color: #111111;
+}
+
+.snakes-theme :is(
+  .login-box,
+  .character-box,
+  .game-header,
+  #dice-animation,
+  .leaderboard-entry,
+  .quiz-option,
+  .memory-card.flipped,
+  .hint-card,
+  .leaderboard-table-container
+) :is(h1, h2, h3, h4, h5, h6, p, li, label, small) {
+  color: #111111;
+}
+
+.snakes-theme .leaderboard-entry .player-stats {
+  color: #555555;
+}
+
+.snakes-theme .hint-card-steps li::before {
+  color: #667eea;
+}
