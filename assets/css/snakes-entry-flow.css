@@ -546,19 +546,29 @@ body[data-theme="sandstone-gold"] {
 /* ====== Character Carousel + Theme Selector ====== */
 #character-selection {
     text-align: center;
-    padding: 24px;
+    padding: 20px;
     margin: 0;
     background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
     min-height: 100vh;
-    height: 100vh;
     width: 100vw;
     position: fixed;
     top: 0;
     left: 0;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.hero-selection-layout {
+    width: min(1280px, 100%);
+    display: flex;
     align-items: center;
-    overflow: hidden;
+    justify-content: center;
+    gap: 24px;
+    padding-bottom: 60px;
+    margin: 0 auto;
 }
 
 #character-selection::before {
