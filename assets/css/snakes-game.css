@@ -1380,13 +1380,14 @@ body {
 
 .other-players-container {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 3px;
+    right: 3px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    max-width: calc(100% - 8px);
-    z-index: 5;
+    max-width: calc(100% - 6px);
+    z-index: 12;
+    pointer-events: auto;
 }
 
 .tile-avatars {
@@ -1455,8 +1456,8 @@ body {
 }
 
 .tile-avatar-count {
-    min-width: 40px;
-    padding: 0 8px;
+    min-width: 0;
+    padding: 0;
     border-radius: 999px;
 }
 
@@ -1519,28 +1520,87 @@ body {
 ============================================ */
 
 .square-players-btn {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(145deg, rgba(86, 101, 216, 0.96), rgba(98, 74, 182, 0.96));
     color: white;
-    border: none;
+    border: 1px solid rgba(237, 241, 255, 0.45);
     border-radius: 999px;
     width: auto;
-    min-width: 40px;
-    height: 22px;
-    font-size: 0.72em;
+    min-width: 34px;
+    height: 19px;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 3px;
-    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 2px 6px rgba(39, 53, 120, 0.35);
+    backdrop-filter: blur(2px);
     transition: all 0.2s ease;
-    padding: 0 8px;
+    padding: 0 6px;
+    letter-spacing: 0.01em;
+}
+
+.square-players-btn.presence-solo {
+    background: linear-gradient(145deg, rgba(56, 141, 128, 0.95), rgba(42, 116, 115, 0.95));
+    border-color: rgba(193, 255, 243, 0.65);
+}
+
+.square-players-btn.presence-busy {
+    background: linear-gradient(145deg, rgba(203, 120, 67, 0.96), rgba(150, 91, 195, 0.96));
+    border-color: rgba(255, 224, 205, 0.62);
+}
+
+.square-players-btn.presence-crowded {
+    background: linear-gradient(145deg, rgba(201, 83, 124, 0.97), rgba(124, 68, 183, 0.97));
+    border-color: rgba(255, 214, 232, 0.68);
 }
 
 .square-players-btn:hover {
-    transform: scale(1.2);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(39, 53, 120, 0.45);
+}
+
+.square-players-btn:active {
+    transform: translateY(0);
+}
+
+.square-players-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.95);
+    outline-offset: 1px;
+}
+
+.tile-presence-icon {
+    font-size: 10px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.tile-presence-count {
+    font-family: 'Oxanium', 'Rajdhani', sans-serif;
+    font-size: 10px;
+    line-height: 1;
+    min-width: 10px;
+    text-align: center;
+}
+
+.game-board[data-scale="lesson"] .square-players-btn {
+    height: 20px;
+    min-width: 36px;
+    padding: 0 7px;
+}
+
+.game-board[data-scale="question"] .square-players-btn {
+    height: 15px;
+    min-width: 27px;
+    padding: 0 4px;
+    gap: 2px;
+    font-size: 9px;
+}
+
+.game-board[data-scale="question"] .tile-presence-icon,
+.game-board[data-scale="question"] .tile-presence-count {
+    font-size: 8px;
 }
 
 /* ============================================
@@ -1709,6 +1769,18 @@ body {
 
     .tile-avatars {
         max-width: 52px;
+    }
+
+    .square-players-btn {
+        height: 17px;
+        min-width: 30px;
+        padding: 0 5px;
+        gap: 2px;
+    }
+
+    .tile-presence-icon,
+    .tile-presence-count {
+        font-size: 8px;
     }
 }
 

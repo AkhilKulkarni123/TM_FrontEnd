@@ -1553,47 +1553,35 @@ function getPlayersOnSquare(squareNum) {
     });
 }
 
-// Adds avatar markers/buttons for other players currently sharing this square.
+// Adds a compact player-presence chip for players on this square.
 function renderOtherPlayersOnSquare(square, squareNum) {
     var playersHere = getPlayersOnSquare(squareNum);
     if (playersHere.length === 0) return;
 
+    var playerCount = playersHere.length;
+    var displayCount = playerCount > 99 ? '99+' : String(playerCount);
+
     var container = document.createElement('div');
     container.className = 'other-players-container';
 
-    if (playersHere.length <= 3) {
-        var avatarsWrap = document.createElement('div');
-        avatarsWrap.className = 'tile-avatars';
+    var playersBtn = document.createElement('button');
+    playersBtn.type = 'button';
+    playersBtn.className = 'square-players-btn tile-presence-pill';
+    if (playerCount === 1) playersBtn.classList.add('presence-solo');
+    else if (playerCount >= 10) playersBtn.classList.add('presence-crowded');
+    else if (playerCount >= 5) playersBtn.classList.add('presence-busy');
+    playersBtn.innerHTML =
+        '<span class="tile-presence-icon" aria-hidden="true">👤</span>' +
+        '<span class="tile-presence-count">' + displayCount + '</span>';
+    playersBtn.title = playerCount + (playerCount === 1 ? ' player on this square' : ' players on this square');
+    playersBtn.setAttribute('aria-label', 'View ' + playerCount + (playerCount === 1 ? ' player on this square' : ' players on this square'));
 
-        playersHere.forEach(function(player) {
-            var avatarBtn = document.createElement('button');
-            avatarBtn.type = 'button';
-            avatarBtn.className = 'tile-avatar-btn';
-            avatarBtn.setAttribute('aria-label', 'View player details for ' + (player.username || 'Unknown'));
-            avatarBtn.title = (player.username || 'Unknown') + ' • ' + getCharacterDisplayName(player.selected_character);
-            avatarBtn.innerHTML = renderAvatarMarkup(player, 'tile-avatar-bubble', 18, 'rgba(255,255,255,0.6)');
-            avatarBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                showSquarePlayersPopup(squareNum, playersHere);
-            });
-            avatarsWrap.appendChild(avatarBtn);
-        });
+    playersBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showSquarePlayersPopup(squareNum, playersHere);
+    });
 
-        container.appendChild(avatarsWrap);
-    } else {
-        var playersBtn = document.createElement('button');
-        playersBtn.className = 'square-players-btn tile-avatar-count';
-        playersBtn.textContent = '👤 +' + playersHere.length;
-        playersBtn.title = playersHere.length + ' players on this square';
-        playersBtn.setAttribute('aria-label', 'View ' + playersHere.length + ' players on this square');
-
-        playersBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            showSquarePlayersPopup(squareNum, playersHere);
-        });
-
-        container.appendChild(playersBtn);
-    }
+    container.appendChild(playersBtn);
 
     square.appendChild(container);
 }
