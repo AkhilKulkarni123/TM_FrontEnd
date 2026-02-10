@@ -40,6 +40,7 @@
         this.lobbyText = document.getElementById('kozLobbyText');
         this.lobbyPlayerList = document.getElementById('kozLobbyPlayers');
         this.lobbyLeaveBtn = document.getElementById('kozLobbyLeaveBtn');
+        this.lobbyStatusBadge = document.getElementById('kozLobbyStatusBadge');
 
         this.countdownOverlay = document.getElementById('kozCountdownOverlay');
         this.countdownValue = document.getElementById('kozCountdownValue');
@@ -182,10 +183,22 @@
 
         if (waiting) {
             this.lobbyText.textContent = 'Waiting for players (' + activePlayers + ' joined, ' + minPlayers + ' minimum to start)';
+            if (this.lobbyStatusBadge) {
+                this.lobbyStatusBadge.textContent = 'Awaiting Squad';
+                this.lobbyStatusBadge.setAttribute('data-state', 'waiting');
+            }
         } else if ((state.match || {}).state === 'COUNTDOWN') {
             this.lobbyText.textContent = 'Minimum reached. Match starting soon.';
+            if (this.lobbyStatusBadge) {
+                this.lobbyStatusBadge.textContent = 'Launch Imminent';
+                this.lobbyStatusBadge.setAttribute('data-state', 'countdown');
+            }
         } else {
             this.lobbyText.textContent = 'Lobby ready. More players can still join.';
+            if (this.lobbyStatusBadge) {
+                this.lobbyStatusBadge.textContent = 'Combat Ready';
+                this.lobbyStatusBadge.setAttribute('data-state', 'ready');
+            }
         }
 
         var show = (state.match.state === 'LOBBY' || state.match.state === 'COUNTDOWN');
