@@ -12,270 +12,206 @@
     const GAMES_PER_LESSON = 5;
 
     // =====================================================
-    // LESSON 1: Algorithms & Programming Basics
-    // Games: Loop Racer, Variable Vault, If-Then Tower, Bug Squasher, Algorithm Chef
+    // LESSON 1: AP CSP Programming Fundamentals
+    // Games: Binary Converter, Variable Scope Explorer, Data Type Detective, Algorithm Sorter, Debug Detective
     // =====================================================
 
     const LESSON_1_GAMES = {
-        // Game 1: Loop Racer - Navigate maze with loop commands
-        loopRacer: {
-            name: 'Loop Racer',
-            description: 'Guide your character through a maze using loop commands!',
+        // Game 1: Binary Converter - Convert decimal to binary (AP CSP 2.3)
+        binaryConverter: {
+            name: 'Binary Converter',
+            description: 'Convert decimal numbers to binary! Essential for computer representation!',
             init: function(container, onComplete) {
-                const state = {
-                    moves: [],
-                    position: { x: 0, y: 0 },
-                    target: { x: 4, y: 4 },
-                    grid: 5,
-                    completed: false
-                };
-
-                container.innerHTML = `
-                    <div class="mini-game loop-racer" style="width: 100%;">
-                        <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🏎️ Loop Racer</span>
-                        </div>
-                        <div class="game-instructions" style="margin-bottom: 10px; font-size: 0.9em;">
-                            <strong>🎯 Goal:</strong> Guide the arrow to the target (🎯) using commands.
-                        </div>
-                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; flex-wrap: nowrap; width: 100%;">
-                            <div class="game-visual-area" style="flex-shrink: 0;">
-                                <div class="maze-grid" id="maze-grid" style="background: #1a1a2e; padding: 20px; border-radius: 10px; min-width: 250px;"></div>
-                            </div>
-                            <div class="game-controls-area" style="flex: 1; min-width: 400px;">
-                                <div style="margin-bottom: 10px; font-weight: 600; color: #555; font-size: 1em;">Code Blocks:</div>
-                                <div class="command-buttons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-                                    <button class="cmd-btn" data-cmd="forward" style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">⬆️ Forward</button>
-                                    <button class="cmd-btn" data-cmd="right" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">➡️ Right</button>
-                                    <button class="cmd-btn" data-cmd="left" style="padding: 12px 20px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em;">⬅️ Left</button>
-                                    <div style="display: flex; gap: 8px; align-items: center; margin-left: 10px;">
-                                        <label style="font-size: 1em; font-weight: 500;">Repeat: <input type="number" id="loop-count" min="1" max="5" value="1" style="width: 50px; padding: 8px; border-radius: 6px; border: 1px solid #ccc;"></label>
-                                        <button id="add-loop" style="padding: 12px 18px; background: #9b59b6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🔁 Loop</button>
-                                    </div>
-                                </div>
-                                <div style="margin-bottom: 8px; font-weight: 600; color: #555; font-size: 1em;">Your Code:</div>
-                                <div class="command-queue" id="cmd-queue" style="min-height: 50px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 2px solid #e0e0e0; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.95em;"></div>
-                                <div style="display: flex; gap: 15px;">
-                                    <button id="run-code" class="run-btn" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">▶️ Run Code</button>
-                                    <button id="clear-code" class="clear-btn" style="padding: 14px 24px; background: #dc3545; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">🗑️ Clear</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                const mazeGrid = container.querySelector('#maze-grid');
-                const cmdQueue = container.querySelector('#cmd-queue');
-                let direction = 0; // 0=up, 1=right, 2=down, 3=left
-                let commands = [];
-
-                // Create maze grid
-                function renderMaze() {
-                    mazeGrid.innerHTML = '';
-                    mazeGrid.style.cssText = `display:grid;grid-template-columns:repeat(${state.grid},50px);gap:4px;`;
-                    for (let y = 0; y < state.grid; y++) {
-                        for (let x = 0; x < state.grid; x++) {
-                            const cell = document.createElement('div');
-                            cell.className = 'maze-cell';
-                            cell.style.cssText = 'width:50px;height:50px;background:#2a2a4a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.5em;';
-                            if (x === state.position.x && y === state.position.y) {
-                                cell.textContent = ['↑', '→', '↓', '←'][direction];
-                                cell.style.background = '#ffd700';
-                            } else if (x === state.target.x && y === state.target.y) {
-                                cell.textContent = '🎯';
-                                cell.style.background = '#4caf50';
-                            }
-                            mazeGrid.appendChild(cell);
-                        }
-                    }
-                }
-
-                // Add command to queue
-                container.querySelectorAll('.cmd-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        commands.push({ type: btn.dataset.cmd, repeat: 1 });
-                        renderCommands();
-                    });
-                });
-
-                container.querySelector('#add-loop').addEventListener('click', () => {
-                    const count = parseInt(container.querySelector('#loop-count').value) || 1;
-                    if (commands.length > 0) {
-                        commands[commands.length - 1].repeat = count;
-                        renderCommands();
-                    }
-                });
-
-                function renderCommands() {
-                    cmdQueue.innerHTML = commands.map((c, i) =>
-                        `<span class="cmd-item">${c.type}${c.repeat > 1 ? ' x' + c.repeat : ''}</span>`
-                    ).join('');
-                }
-
-                // Run the code
-                container.querySelector('#run-code').addEventListener('click', async () => {
-                    state.position = { x: 0, y: 0 };
-                    direction = 2; // Start facing down
-                    renderMaze();
-
-                    for (const cmd of commands) {
-                        for (let r = 0; r < cmd.repeat; r++) {
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                            if (cmd.type === 'forward') {
-                                const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-                                const newX = state.position.x + dirs[direction][0];
-                                const newY = state.position.y + dirs[direction][1];
-                                if (newX >= 0 && newX < state.grid && newY >= 0 && newY < state.grid) {
-                                    state.position.x = newX;
-                                    state.position.y = newY;
-                                }
-                            } else if (cmd.type === 'right') {
-                                direction = (direction + 1) % 4;
-                            } else if (cmd.type === 'left') {
-                                direction = (direction + 3) % 4;
-                            }
-                            renderMaze();
-                        }
-                    }
-
-                    if (state.position.x === state.target.x && state.position.y === state.target.y) {
-                        state.completed = true;
-                        onComplete(true, commands.length <= 8 ? 100 : 70);
-                    }
-                });
-
-                container.querySelector('#clear-code').addEventListener('click', () => {
-                    commands = [];
-                    state.position = { x: 0, y: 0 };
-                    direction = 2;
-                    renderCommands();
-                    renderMaze();
-                });
-
-                renderMaze();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, 0);
-                });
-
-                return state;
-            }
-        },
-
-        // Game 2: Variable Vault - Match variables with values
-        variableVault: {
-            name: 'Variable Vault',
-            description: 'Match containers (variables) with the correct values!',
-            init: function(container, onComplete) {
-                const state = { score: 0, total: 8, completed: false };
-
-                const variables = [
-                    { name: 'age', value: '25', type: 'number' },
-                    { name: 'name', value: '"Alice"', type: 'string' },
-                    { name: 'isActive', value: 'true', type: 'boolean' },
-                    { name: 'score', value: '100', type: 'number' },
-                    { name: 'greeting', value: '"Hello"', type: 'string' },
-                    { name: 'isEmpty', value: 'false', type: 'boolean' },
-                    { name: 'count', value: '42', type: 'number' },
-                    { name: 'message', value: '"World"', type: 'string' }
+                const state = { score: 0, total: 5, completed: false };
+                const challenges = [
+                    { decimal: 5, binary: '101' },
+                    { decimal: 10, binary: '1010' },
+                    { decimal: 13, binary: '1101' },
+                    { decimal: 21, binary: '10101' },
+                    { decimal: 42, binary: '101010' }
                 ];
-
-                const shuffledVars = [...variables].sort(() => Math.random() - 0.5);
-                const shuffledVals = [...variables].sort(() => Math.random() - 0.5);
-
+                
                 container.innerHTML = `
-                    <div class="mini-game variable-vault" style="width: 100%;">
+                    <div class="mini-game binary-converter" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🔐 Variable Vault</span>
-                            <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
+                            <span style="font-weight: bold; color: #667eea;">💾 Binary Converter</span>
+                            <div class="game-score">Score: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 15px;">
-                            <strong>📋 Instructions:</strong> Click a variable name on the left, then click its matching value on the right.
-                            <strong style="margin-left: 10px;">💡 Tip:</strong> Numbers have no quotes, strings have "quotes", booleans are true/false.
+                        <div class="game-instructions" style="margin-bottom: 15px; font-size: 0.9em;">
+                            <strong>🎯 Goal:</strong> Convert decimal numbers to binary (base-2). Computers store all data as binary!
+                            <strong style="margin-left: 10px;">💡 AP CSP:</strong> Topic 2.3 - Data Representation
                         </div>
-                        <div class="vault-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%;">
-                            <div class="variables-col" id="vars-col" style="background: #f0f7ff; padding: 20px; border-radius: 12px;"></div>
-                            <div class="values-col" id="vals-col" style="background: #fff8f0; padding: 20px; border-radius: 12px;"></div>
-                        </div>
+                        <div class="conversion-area" id="conversion-area" style="width: 100%;"></div>
                     </div>
                 `;
-
-                const varsCol = container.querySelector('#vars-col');
-                const valsCol = container.querySelector('#vals-col');
-                let selectedVar = null;
-
-                shuffledVars.forEach((v, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'var-box';
-                    div.dataset.name = v.name;
-                    div.innerHTML = `<code>${v.name}</code>`;
-                    div.style.cssText = 'padding:8px 12px;background:#e8f4fc;border:2px solid #3498db;border-radius:8px;margin:4px;cursor:pointer;transition:all 0.2s;';
-                    div.addEventListener('click', () => {
-                        if (div.classList.contains('matched')) return;
-                        document.querySelectorAll('.var-box').forEach(el => el.classList.remove('selected'));
-                        div.classList.add('selected');
-                        selectedVar = v;
-                    });
-                    varsCol.appendChild(div);
-                });
-
-                shuffledVals.forEach((v, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'val-box';
-                    div.dataset.name = v.name;
-                    div.innerHTML = `<code>${v.value}</code>`;
-                    div.style.cssText = 'padding:8px 12px;background:#fef3e2;border:2px solid #e67e22;border-radius:8px;margin:4px;cursor:pointer;transition:all 0.2s;';
-                    div.addEventListener('click', () => {
-                        if (div.classList.contains('matched') || !selectedVar) return;
-                        if (selectedVar.name === v.name) {
+                
+                const conversionArea = container.querySelector('#conversion-area');
+                let currentChallenge = 0;
+                
+                function showChallenge() {
+                    if (currentChallenge >= challenges.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
+                        return;
+                    }
+                    
+                    const challenge = challenges[currentChallenge];
+                    conversionArea.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center;">
+                                <div style="font-size: 1.2em; font-weight: bold; color: #1976d2; margin-bottom: 10px;">Decimal</div>
+                                <div style="font-size: 2em; font-weight: bold; color: #0d47a1;">${challenge.decimal}</div>
+                            </div>
+                            <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; text-align: center;">
+                                <div style="font-size: 1.2em; font-weight: bold; color: #7b1fa2; margin-bottom: 10px;">Binary</div>
+                                <input type="text" id="binary-input" placeholder="Enter binary" style="font-size: 1.5em; padding: 10px; border: 2px solid #9c27b0; border-radius: 8px; text-align: center; width: 100%;">
+                            </div>
+                        </div>
+                        <button id="check-binary" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #4caf50, #45a049); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer;">Check Answer</button>
+                    `;
+                    
+                    const input = container.querySelector('#binary-input');
+                    const checkBtn = container.querySelector('#check-binary');
+                    
+                    checkBtn.addEventListener('click', () => {
+                        if (input.value.trim() === challenge.binary) {
                             state.score++;
                             container.querySelector('#score').textContent = state.score;
-                            div.classList.add('matched');
-                            div.style.background = '#d4edda';
-                            const varBox = varsCol.querySelector(`[data-name="${v.name}"]`);
-                            varBox.classList.add('matched');
-                            varBox.style.background = '#d4edda';
-                            selectedVar = null;
-
-                            if (state.score >= state.total) {
-                                state.completed = true;
-                                onComplete(true, 100);
-                            }
+                            currentChallenge++;
+                            showChallenge();
                         } else {
-                            div.style.background = '#f8d7da';
-                            setTimeout(() => div.style.background = '#fef3e2', 300);
+                            input.style.borderColor = '#f44336';
+                            setTimeout(() => {
+                                input.style.borderColor = '#9c27b0';
+                            }, 500);
                         }
                     });
-                    valsCol.appendChild(div);
-                });
-
-                varsCol.style.cssText = 'display:flex;flex-direction:column;';
-                valsCol.style.cssText = 'display:flex;flex-direction:column;';
-                container.querySelector('.vault-container').style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:20px;';
-
+                    
+                    input.focus();
+                }
+                
+                showChallenge();
                 startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
-
+                
                 return state;
             }
         },
 
-        // Game 3: If-Then Tower - Stack conditional blocks
+        // Game 2: Data Type Detective - Identify data types (AP CSP 2.2)
+        dataTypeDetective: {
+            name: 'Data Type Detective',
+            description: 'Identify data types! Critical for understanding variables in programming!',
+            init: function(container, onComplete) {
+                const state = { score: 0, total: 8, completed: false };
+                
+                const challenges = [
+                    { value: '42', type: 'Number', hint: 'Whole numbers' },
+                    { value: '"hello"', type: 'String', hint: 'Text in quotes' },
+                    { value: 'true', type: 'Boolean', hint: 'True or false' },
+                    { value: '[1,2,3]', type: 'Array/List', hint: 'Square brackets' },
+                    { value: '3.14', type: 'Number', hint: 'Decimal numbers' },
+                    { value: 'null', type: 'Null/None', hint: 'Empty value' },
+                    { value: '{name:"John"}', type: 'Object', hint: 'Curly braces' },
+                    { value: 'false', type: 'Boolean', hint: 'True or false' }
+                ];
+                
+                const shuffled = [...challenges].sort(() => Math.random() - 0.5);
+                
+                container.innerHTML = `
+                    <div class="mini-game data-type-detective" style="width: 100%;">
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span style="font-weight: bold; color: #667eea;">🔍 Data Type Detective</span>
+                            <div class="game-score">Found: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px;">
+                            <strong>📋 Instructions:</strong> Look at the value and identify its data type.
+                            <strong style="margin-left: 10px;">💡 AP CSP:</strong> Topic 2.2 - Data Types
+                        </div>
+                        <div class="detective-area" id="detective-area" style="width: 100%;"></div>
+                    </div>
+                `;
+                
+                const detectiveArea = container.querySelector('#detective-area');
+                let currentChallenge = 0;
+                
+                function showChallenge() {
+                    if (currentChallenge >= shuffled.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
+                        return;
+                    }
+                    
+                    const challenge = shuffled[currentChallenge];
+                    const types = ['Number', 'String', 'Boolean', 'Array/List', 'Object', 'Null/None'];
+                    
+                    detectiveArea.innerHTML = `
+                        <div style="background: #f5f5f5; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                            <div style="font-size: 1.1em; margin-bottom: 10px; color: #333;">What data type is this value?</div>
+                            <div style="font-size: 1.8em; font-weight: bold; font-family: monospace; background: #333; color: #4caf50; padding: 15px; border-radius: 8px; margin: 10px 0;">${challenge.value}</div>
+                            <div style="font-size: 0.9em; color: #666; font-style: italic;">Hint: ${challenge.hint}</div>
+                        </div>
+                        <div class="type-options" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;"></div>
+                    `;
+                    
+                    const optionsContainer = detectiveArea.querySelector('.type-options');
+                    types.forEach(type => {
+                        const btn = document.createElement('button');
+                        btn.className = 'type-btn';
+                        btn.textContent = type;
+                        btn.style.cssText = 'padding: 12px; background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;';
+                        
+                        btn.addEventListener('click', () => {
+                            if (type === challenge.type) {
+                                state.score++;
+                                container.querySelector('#score').textContent = state.score;
+                                btn.style.background = '#4caf50';
+                                btn.style.borderColor = '#2e7d32';
+                                btn.style.color = 'white';
+                                setTimeout(() => {
+                                    currentChallenge++;
+                                    showChallenge();
+                                }, 500);
+                            } else {
+                                btn.style.background = '#f44336';
+                                btn.style.borderColor = '#d32f2f';
+                                setTimeout(() => {
+                                    btn.style.background = '#e3f2fd';
+                                    btn.style.borderColor = '#2196f3';
+                                }, 500);
+                            }
+                        });
+                        
+                        optionsContainer.appendChild(btn);
+                    });
+                }
+                
+                showChallenge();
+                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
+                });
+                
+                return state;
+            }
+        },
+
+        // Game 3: If-Then Tower - Evaluate conditionals (AP CSP 2.4)
         ifThenTower: {
             name: 'If-Then Tower',
-            description: 'Stack conditional blocks to build a tower!',
+            description: 'Master conditional logic! Build towers by evaluating boolean expressions!',
             init: function(container, onComplete) {
                 const state = { height: 0, target: 6, completed: false };
 
                 const conditions = [
-                    { condition: 'score > 10', trueBlock: 'blue', falseBlock: 'red', value: 15 },
-                    { condition: 'lives === 0', trueBlock: 'gray', falseBlock: 'green', value: 3 },
-                    { condition: 'time < 30', trueBlock: 'yellow', falseBlock: 'orange', value: 25 },
-                    { condition: 'level >= 5', trueBlock: 'purple', falseBlock: 'pink', value: 5 },
-                    { condition: 'coins !== 0', trueBlock: 'gold', falseBlock: 'silver', value: 10 },
-                    { condition: 'health <= 50', trueBlock: 'red', falseBlock: 'green', value: 30 }
+                    { condition: 'age >= 18', trueBlock: 'blue', falseBlock: 'red', value: 21, context: 'Voting eligibility' },
+                    { condition: 'score >= 60', trueBlock: 'green', falseBlock: 'orange', value: 75, context: 'Passing grade' },
+                    { condition: 'hasPermission === true', trueBlock: 'purple', falseBlock: 'gray', value: true, context: 'Access granted' },
+                    { condition: 'temperature > 32', trueBlock: 'yellow', falseBlock: 'lightblue', value: 98, context: 'Water boiling' },
+                    { condition: 'username !== null', trueBlock: 'gold', falseBlock: 'silver', value: 'student123', context: 'Login check' },
+                    { condition: 'batteryLevel <= 20', trueBlock: 'red', falseBlock: 'green', value: 15, context: 'Low battery warning' }
                 ];
 
                 container.innerHTML = `
@@ -287,6 +223,7 @@
                         </div>
                         <div class="game-instructions" style="margin-bottom: 10px; font-size: 0.95em;">
                             <strong>🎯 Goal:</strong> Evaluate if-statements. If TRUE, pick the first color; if FALSE, pick the second.
+                            <strong style="margin-left: 10px;">💡 AP CSP:</strong> Topic 2.4 - Conditional Statements
                         </div>
                         <div class="game-layout-horizontal" style="display: flex; gap: 50px; align-items: flex-start; flex-wrap: nowrap; width: 100%;">
                             <div class="game-visual-area" style="flex-shrink: 0;">
@@ -317,7 +254,7 @@
                     panel.innerHTML = `
                         <div class="condition-text" style="margin-bottom:10px;font-family:monospace;background:#1e1e1e;color:#d4d4d4;padding:10px;border-radius:8px;">
                             if (${cond.condition}) { add ${cond.trueBlock} } else { add ${cond.falseBlock} }
-                            <br><small style="color:#888;">Current value: ${cond.value}</small>
+                            <br><small style="color:#888;">Context: ${cond.context} | Current value: ${cond.value}</small>
                         </div>
                         <div class="block-choices" style="display:flex;gap:10px;justify-content:center;">
                             <button class="block-btn" data-block="${cond.trueBlock}" style="padding:15px 30px;background:${cond.trueBlock};border:none;border-radius:8px;cursor:pointer;font-weight:bold;color:${cond.trueBlock === 'yellow' || cond.trueBlock === 'gold' ? '#333' : '#fff'};">${cond.trueBlock}</button>
@@ -2252,7 +2189,7 @@
     };
 
     const GAME_NAMES = {
-        1: ['loopRacer', 'variableVault', 'ifThenTower', 'bugSquasher', 'algorithmChef'],
+        1: ['binaryConverter', 'dataTypeDetective', 'ifThenTower', 'bugSquasher', 'algorithmChef'],
         2: ['arrayAssembler', 'objectDetective', 'stackAttack', 'queueQuest', 'nestedNavigator'],
         3: ['ipAddressMatcher', 'dnsSpeedRun', 'packetPathfinder', 'urlDecoder', 'routerRush'],
         4: ['passwordStrengthSmash', 'caesarCipherCracker', 'phishingDetector', 'firewallFrenzy', 'encryptionKeyMatch'],
