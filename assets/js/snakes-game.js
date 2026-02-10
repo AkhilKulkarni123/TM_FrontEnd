@@ -1583,7 +1583,7 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     } else {
         var playersBtn = document.createElement('button');
         playersBtn.className = 'square-players-btn tile-avatar-count';
-        playersBtn.textContent = '+' + playersHere.length;
+        playersBtn.textContent = '👤 +' + playersHere.length;
         playersBtn.title = playersHere.length + ' players on this square';
         playersBtn.setAttribute('aria-label', 'View ' + playersHere.length + ' players on this square');
 

@@ -1455,8 +1455,8 @@ body {
 }
 
 .tile-avatar-count {
-    min-width: 28px;
-    padding: 0 6px;
+    min-width: 40px;
+    padding: 0 8px;
     border-radius: 999px;
 }
 
@@ -1522,18 +1522,20 @@ body {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 0.7em;
+    border-radius: 999px;
+    width: auto;
+    min-width: 40px;
+    height: 22px;
+    font-size: 0.72em;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 3px;
     box-shadow: 0 2px 6px rgba(102, 126, 234, 0.5);
     transition: all 0.2s ease;
-    padding: 0;
+    padding: 0 8px;
 }
 
 .square-players-btn:hover {
