@@ -138,6 +138,25 @@
         }
     };
 
+    const loadoutApi = window.SnakesLoadout || null;
+
+    // Visual tuning for server-authoritative weapon projectiles.
+    const WEAPON_VISUALS = {
+        'bulwark-disc': { color: '#8ed7ff', glow: '#53c5ff', size: 10, shape: 'disc' },
+        'arcane-orb': { color: '#ff9f5a', glow: '#ff6b6b', size: 11, shape: 'orb' },
+        'piercing-arrow': { color: '#8ef7cc', glow: '#4de8af', size: 8, shape: 'arrow' },
+        'rage-axe': { color: '#ffc46b', glow: '#ffb347', size: 12, shape: 'axe' }
+    };
+
+    const POWERUP_VISUALS = {
+        'speed-boost': { color: '#7dff9b', label: 'Speed Boost' },
+        'shield': { color: '#6fc3ff', label: 'Shield' },
+        'rapid-fire': { color: '#ff9c6f', label: 'Rapid Fire' },
+        'heal': { color: '#8dffa6', label: 'Heal' },
+        'vision-ping': { color: '#d8a6ff', label: 'Vision Ping' },
+        'ammo-pack': { color: '#ffe07a', label: 'Ammo Pack' }
+    };
+
     const state = {
         connected: false,
         joined: false,
@@ -145,38 +164,42 @@
         roomId: null,
         selfId: null,
         localId: null,
-        map: { width: 2000, height: 1300 },
+        map: { width: 9800, height: 7600 },
         rules: {
-            targetScore: 180,
-            timeLimit: 240,
+            targetScore: 220,
+            timeLimit: 300,
             scorePerSec: 4,
-            coreBonus: 2,
+            coreBonus: 3,
             stormMax: 100
         },
-        storm: { level: 1, damage: 8, regen: 4 },
+        storm: { level: 1, damage: 9, regen: 5 },
         player: {
             username: 'Player',
             character: 'knight',
-            x: 600,
-            y: 600,
-            speed: 5.8,
+            weaponType: 'bulwark-disc',
+            x: 4800,
+            y: 3800,
+            speed: 7.4,
             speedMultiplier: 1,
             zoneHp: 100,
             combatHp: 100,
             bullets: 60,
+            shield: 0,
             outside: false,
             radius: 18,
             vx: 0,
             vy: 0
         },
         players: {},
-        zone: { x: 900, y: 650, radius: 520, base_radius: 520, core_radius: 180 },
+        zone: { x: 4900, y: 3800, radius: 3400, base_radius: 3400, core_radius: 1180 },
         teamScores: {},
         scoreLabels: {},
         controller: null,
         controllerName: null,
         contested: false,
         timeLeft: 0,
+        nextShrinkIn: 0,
+        shrink: { active: false, progress: 0, fromRadius: 0, toRadius: 0 },
         round: 1,
         phase: 1,
         keys: {},
@@ -186,12 +209,18 @@
         lastShotAt: 0,
         playerBullets: [],
         foreignBullets: [],
-        camera: { x: 900, y: 650 },
+        projectiles: {},
+        obstacles: {},
+        powerups: {},
+        visionPing: { until: 0, reveals: [] },
+        damageIndicator: { until: 0, angle: 0, strength: 0 },
+        camera: { x: 4900, y: 3800 },
         view: { width: canvas.clientWidth || 1100, height: canvas.clientHeight || 680, dpr: 1 },
-        fx: { shake: 0, pulse: 0 }
+        fx: { shake: 0, pulse: 0, hitFlash: 0 },
+        debug: { enabled: false, hitboxes: false, zone: false, obstacles: false }
     };
 
-    const SHOT_COOLDOWN = 160;
+    const SHOT_COOLDOWN = 160; // Offline fallback cooldown.
     const BULLET_SPEED = 16;
     const BULLET_MAX_LIFE = 220;
 
@@ -223,6 +252,43 @@
         const mins = Math.floor(seconds / 60);
         const secs = Math.max(0, seconds % 60);
         return mins + ':' + String(secs).padStart(2, '0');
+    }
+
+    function normalizeHero(hero) {
+        const key = String(hero || '').trim().toLowerCase();
+        if (key === 'knight' || key === 'wizard' || key === 'archer' || key === 'warrior') return key;
+        return 'knight';
+    }
+
+    function resolveWeaponType(character, explicitWeaponType) {
+        if (loadoutApi && typeof loadoutApi.normalizeWeaponType === 'function') {
+            return loadoutApi.normalizeWeaponType(character, explicitWeaponType);
+        }
+        const hero = normalizeHero(character);
+        const explicit = String(explicitWeaponType || '').trim().toLowerCase();
+        if (WEAPON_VISUALS[explicit]) return explicit;
+        const defaults = {
+            knight: 'bulwark-disc',
+            wizard: 'arcane-orb',
+            archer: 'piercing-arrow',
+            warrior: 'rage-axe'
+        };
+        return defaults[hero] || 'bulwark-disc';
+    }
+
+    function getWeaponVisual(weaponType) {
+        return WEAPON_VISUALS[weaponType] || WEAPON_VISUALS['bulwark-disc'];
+    }
+
+    function themeVar(name, fallback) {
+        try {
+            const root = document.body || document.documentElement;
+            if (!root) return fallback;
+            const value = getComputedStyle(root).getPropertyValue(name).trim();
+            return value || fallback;
+        } catch (e) {
+            return fallback;
+        }
     }
 
     function resizeCanvas() {
@@ -340,8 +406,10 @@
         setUI('roomId', state.roomId || '--');
         setUI('phaseBadge', state.phase || 1);
         setUI('stormLevel', state.storm.level || 1);
+        setUI('nextShrink', formatTime(Math.max(0, Math.floor(state.nextShrinkIn || 0))));
         setUI('bulletCount', state.player.bullets);
         setUI('hpCount', Math.max(0, Math.round(state.player.combatHp)));
+        setUI('shieldCount', Math.max(0, Math.round(state.player.shield || 0)));
         setUI('playerName', state.player.username);
         updateStormMeter();
     }
@@ -361,9 +429,38 @@
         if (data.zone) {
             state.zone = Object.assign({}, state.zone, data.zone);
         }
+        if (Array.isArray(data.obstacles)) {
+            state.obstacles = keyedById(data.obstacles, 'id');
+        }
+        if (Array.isArray(data.powerups)) {
+            state.powerups = keyedById(data.powerups, 'id');
+        }
+        if (Array.isArray(data.players)) {
+            data.players.forEach((entry) => {
+                if (!entry || !entry.sid) return;
+                if (entry.sid === state.selfId) {
+                    if (typeof entry.x === 'number') state.player.x = entry.x;
+                    if (typeof entry.y === 'number') state.player.y = entry.y;
+                    if (entry.character) state.player.character = normalizeHero(entry.character);
+                    state.player.weaponType = resolveWeaponType(entry.character || state.player.character, entry.weapon_type || state.player.weaponType);
+                    if (typeof entry.hp !== 'undefined') state.player.combatHp = Number(entry.hp) || state.player.combatHp;
+                    return;
+                }
+                state.players[entry.sid] = {
+                    x: Number(entry.x || 0),
+                    y: Number(entry.y || 0),
+                    character: normalizeHero(entry.character),
+                    weaponType: resolveWeaponType(entry.character, entry.weapon_type),
+                    username: entry.username || state.players[entry.sid]?.username,
+                    combatHp: typeof entry.hp !== 'undefined' ? Number(entry.hp) : (state.players[entry.sid]?.combatHp || 100)
+                };
+            });
+        }
         if (data.teamScores) state.teamScores = data.teamScores;
         if (data.scoreLabels) state.scoreLabels = data.scoreLabels;
         if (typeof data.timeLeft !== 'undefined') state.timeLeft = data.timeLeft;
+        if (typeof data.nextShrinkIn !== 'undefined') state.nextShrinkIn = Math.max(0, Number(data.nextShrinkIn || 0));
+        if (data.shrink) state.shrink = Object.assign({}, state.shrink, data.shrink);
         if (typeof data.round !== 'undefined') state.round = data.round;
         if (typeof data.phase !== 'undefined') state.phase = data.phase;
         if (typeof data.controller !== 'undefined') state.controller = data.controller;
@@ -383,6 +480,18 @@
 
     function getLabel(id) {
         return state.scoreLabels[id] || (state.players[id] && state.players[id].username) || 'Player';
+    }
+
+    function keyedById(list, keyName) {
+        const out = {};
+        if (!Array.isArray(list)) return out;
+        list.forEach((item) => {
+            if (!item || typeof item !== 'object') return;
+            const key = item[keyName || 'id'];
+            if (!key) return;
+            out[key] = item;
+        });
+        return out;
     }
 
     function isDemoMode() {
@@ -435,10 +544,30 @@
     }
 
     async function loadPlayerData() {
+        let storedCharacter = '';
+        let storedWeaponType = '';
+        try {
+            storedCharacter = localStorage.getItem('snakes_selected_character')
+                || sessionStorage.getItem('snakes_selected_character')
+                || '';
+            storedWeaponType = localStorage.getItem('snakes_selected_weapon')
+                || sessionStorage.getItem('snakes_selected_weapon')
+                || '';
+        } catch (e) {}
+
+        if (storedCharacter) {
+            state.player.character = normalizeHero(storedCharacter);
+        }
+        state.player.weaponType = resolveWeaponType(state.player.character, storedWeaponType);
+
         try {
             if (sessionStorage.getItem('snakes_isGuest') === '1') {
                 state.player.username = sessionStorage.getItem('snakes_guest_name') || 'Guest';
-                state.player.character = sessionStorage.getItem('snakes_selected_character') || 'knight';
+                state.player.character = normalizeHero(sessionStorage.getItem('snakes_selected_character') || 'knight');
+                state.player.weaponType = resolveWeaponType(
+                    state.player.character,
+                    sessionStorage.getItem('snakes_selected_weapon') || state.player.weaponType
+                );
                 const storedBullets = sessionStorage.getItem('snakes_selected_bullets');
                 if (storedBullets) state.player.bullets = Number(storedBullets) || state.player.bullets;
                 return;
@@ -455,7 +584,13 @@
             if (gameRes.ok) {
                 const gameData = await gameRes.json();
                 if (gameData && gameData.selected_character) {
-                    state.player.character = gameData.selected_character;
+                    state.player.character = normalizeHero(gameData.selected_character);
+                }
+                if (gameData && (gameData.weapon_type || gameData.selected_weapon)) {
+                    state.player.weaponType = resolveWeaponType(
+                        state.player.character,
+                        gameData.weapon_type || gameData.selected_weapon
+                    );
                 }
                 if (typeof gameData.total_bullets !== 'undefined') {
                     const fetchedBullets = Number(gameData.total_bullets);
@@ -469,12 +604,25 @@
         if (isDemoMode()) {
             const demoData = loadDemoProgress();
             if (demoData) {
-                if (demoData.character) state.player.character = demoData.character;
+                if (demoData.character) state.player.character = normalizeHero(demoData.character);
+                if (demoData.weaponType || demoData.weapon_type || demoData.selected_weapon) {
+                    state.player.weaponType = resolveWeaponType(
+                        state.player.character,
+                        demoData.weaponType || demoData.weapon_type || demoData.selected_weapon
+                    );
+                }
                 if (typeof demoData.bullets !== 'undefined') state.player.bullets = Number(demoData.bullets || state.player.bullets);
             }
             if (state.player.username === 'Player') {
                 state.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
             }
+        }
+
+        if (loadoutApi && typeof loadoutApi.getStoredWeaponType === 'function') {
+            state.player.weaponType = resolveWeaponType(
+                state.player.character,
+                loadoutApi.getStoredWeaponType(state.player.character)
+            );
         }
     }
 
@@ -486,6 +634,9 @@
         socket.emit('koz_join', {
             username: state.player.username,
             character: state.player.character,
+            weapon_type: state.player.weaponType,
+            selected_weapon: state.player.weaponType,
+            bullets: state.player.bullets,
             x: state.player.x,
             y: state.player.y
         });
@@ -496,6 +647,46 @@
             socket.emit('koz_leave', {});
         }
         window.location.href = 'mode-selection.html';
+    }
+
+    function upsertServerProjectile(item) {
+        if (!item || !item.id) return;
+        const weaponType = resolveWeaponType(item.character, item.weaponType || item.weapon_type);
+        const visual = getWeaponVisual(weaponType);
+        const existing = state.projectiles[item.id];
+        const next = Object.assign({}, existing || {}, {
+            id: item.id,
+            x: Number(item.x || 0),
+            y: Number(item.y || 0),
+            vx: Number(item.vx || 0),
+            vy: Number(item.vy || 0),
+            shooter: item.shooter || existing?.shooter || null,
+            weaponType,
+            color: item.color || visual.color,
+            size: Number(item.radius || visual.size || 9),
+            shape: visual.shape,
+            age: Number(item.age || existing?.age || 0)
+        });
+        state.projectiles[item.id] = next;
+    }
+
+    function applyDamageIndicator(payload) {
+        if (!payload) return;
+        const sx = Number(payload.shooterX);
+        const sy = Number(payload.shooterY);
+        if (Number.isFinite(sx) && Number.isFinite(sy)) {
+            state.damageIndicator.angle = Math.atan2(sy - state.player.y, sx - state.player.x);
+        } else {
+            const vx = Number(payload.vx || 0);
+            const vy = Number(payload.vy || 0);
+            if (vx || vy) {
+                state.damageIndicator.angle = Math.atan2(vy, vx);
+            }
+        }
+        state.damageIndicator.strength = clamp(Number(payload.damage || 10) / 28, 0.25, 1.0);
+        state.damageIndicator.until = performance.now() + 900;
+        state.fx.hitFlash = 1.0;
+        state.fx.shake = Math.max(state.fx.shake, 0.75);
     }
 
     function connectSocket() {
@@ -527,10 +718,17 @@
         });
 
         socket.on('koz_room_state', (data) => {
+            const wasJoined = state.joined;
             state.joined = true;
             state.roomId = data.roomId || state.roomId;
             if (data.selfId) state.selfId = data.selfId;
+            state.projectiles = {};
+            state.players = {};
             mergeRoomState(data);
+            if (!wasJoined) {
+                state.camera.x = state.player.x;
+                state.camera.y = state.player.y;
+            }
             updateStatus();
             updateScoreboard();
         });
@@ -547,9 +745,11 @@
                 playCue('powerup');
                 return;
             }
-            if (data.type === 'shrink') {
+            if (data.type === 'shrink' || data.type === 'shrink_start') {
                 state.fx.pulse = 1.0;
                 showZoneEvent('Zone collapsing!', 'powerup');
+            } else if (data.type === 'shrink_end') {
+                showZoneEvent('Zone shrink complete', 'click');
             } else if (data.type === 'relocate') {
                 state.fx.shake = 1.2;
                 showZoneEvent('Zone relocating - move!', 'battle');
@@ -585,6 +785,7 @@
                 x: data.x,
                 y: data.y,
                 character: data.character,
+                weaponType: resolveWeaponType(data.character, data.weapon_type || data.weaponType),
                 username: data.username || state.players[data.sid]?.username,
                 combatHp: typeof data.hp !== 'undefined' ? data.hp : (state.players[data.sid]?.combatHp || 100)
             };
@@ -606,8 +807,18 @@
             if (typeof data.outside !== 'undefined') state.player.outside = data.outside;
             if (typeof data.speedMultiplier !== 'undefined') state.player.speedMultiplier = data.speedMultiplier;
             if (typeof data.combatHp !== 'undefined') state.player.combatHp = data.combatHp;
+            if (typeof data.bullets !== 'undefined') state.player.bullets = Number(data.bullets) || state.player.bullets;
+            if (typeof data.shield !== 'undefined') state.player.shield = Number(data.shield) || 0;
+            if (typeof data.nextShrinkIn !== 'undefined') state.nextShrinkIn = Math.max(0, Number(data.nextShrinkIn || 0));
             if (data.storm) state.storm = Object.assign({}, state.storm, data.storm);
             if (typeof data.phase !== 'undefined') state.phase = data.phase;
+            updateStatus();
+        });
+
+        socket.on('koz_damage_feedback', (data) => {
+            if (!data || data.target !== state.selfId) return;
+            if (typeof data.hp !== 'undefined') state.player.combatHp = data.hp;
+            applyDamageIndicator(data);
             updateStatus();
         });
 
@@ -625,25 +836,106 @@
             updateScoreboard();
         });
 
+        socket.on('koz_player_down', (data) => {
+            if (!data) return;
+            if (data.sid === state.selfId) {
+                state.fx.shake = 1.1;
+                state.fx.hitFlash = 0.7;
+            }
+            showZoneEvent((data.username || 'Player') + ' down (' + (data.reason || 'combat') + ')', 'hurt');
+        });
+
+        socket.on('koz_shot_rejected', (data) => {
+            if (!data) return;
+            if (data.reason === 'ammo') showZoneEvent('Out of ammo', 'wrong');
+            if (data.reason === 'cooldown') {
+                const msLeft = Math.max(80, Math.floor((Number(data.remaining || 0) * 1000)));
+                state.lastShotAt = Date.now() - SHOT_COOLDOWN + msLeft;
+            }
+        });
+
+        socket.on('koz_projectile_spawned', (data) => {
+            if (!data || !Array.isArray(data.projectiles)) return;
+            data.projectiles.forEach((item) => upsertServerProjectile(item));
+        });
+
+        socket.on('koz_projectile_positions', (data) => {
+            if (!data || !Array.isArray(data.updates)) return;
+            data.updates.forEach((item) => upsertServerProjectile(item));
+        });
+
+        socket.on('koz_projectile_removed', (data) => {
+            if (!data || !Array.isArray(data.items)) return;
+            data.items.forEach((item) => {
+                const id = typeof item === 'string' ? item : item.id;
+                if (!id) return;
+                delete state.projectiles[id];
+            });
+        });
+
+        socket.on('koz_obstacles_removed', (data) => {
+            if (!data || !Array.isArray(data.ids)) return;
+            data.ids.forEach((id) => {
+                delete state.obstacles[id];
+            });
+        });
+
+        socket.on('koz_powerup_spawned', (data) => {
+            if (!data || !data.id) return;
+            state.powerups[data.id] = data;
+        });
+
+        socket.on('koz_powerup_collected', (data) => {
+            if (!data || !data.id) return;
+            delete state.powerups[data.id];
+            if (data.by === state.selfId) playCue('powerup');
+        });
+
+        socket.on('koz_powerup_effect', (data) => {
+            if (!data) return;
+            const visual = POWERUP_VISUALS[data.type];
+            const name = visual ? visual.label : (data.label || 'Powerup');
+            showZoneEvent(name + ' activated', 'powerup');
+            if (typeof data.bullets !== 'undefined') state.player.bullets = Number(data.bullets) || state.player.bullets;
+            if (typeof data.shield !== 'undefined') state.player.shield = Number(data.shield) || state.player.shield;
+            if (typeof data.combatHp !== 'undefined') state.player.combatHp = Number(data.combatHp) || state.player.combatHp;
+            updateStatus();
+        });
+
+        socket.on('koz_vision_ping', (data) => {
+            if (!data) return;
+            state.visionPing.until = performance.now() + (Number(data.duration || 0) * 1000);
+            state.visionPing.reveals = Array.isArray(data.reveals) ? data.reveals : [];
+        });
+
         socket.on('koz_bullet', (data) => {
             if (!data) return;
             if (data.shooter === state.selfId) return;
-            const bullet = buildBullet({
+            upsertServerProjectile({
+                id: 'legacy_' + data.shooter + '_' + Date.now(),
                 x: data.bulletX,
                 y: data.bulletY,
-                dx: data.dx,
-                dy: data.dy,
-                character: data.character,
+                vx: data.dx,
+                vy: data.dy,
                 shooter: data.shooter,
-                target: data.target,
-                fromRemote: true
+                character: data.character,
+                weaponType: resolveWeaponType(data.character)
             });
-            if (bullet) state.foreignBullets.push(bullet);
         });
 
         socket.on('koz_player_joined', (data) => {
             if (data && data.sid && data.username) {
                 state.scoreLabels[data.sid] = data.username;
+                if (!state.players[data.sid]) {
+                    state.players[data.sid] = {
+                        x: 0,
+                        y: 0,
+                        character: normalizeHero(data.character),
+                        weaponType: resolveWeaponType(data.character, data.weapon_type),
+                        username: data.username,
+                        combatHp: 100
+                    };
+                }
             }
             playCue('click');
             updateScoreboard();
@@ -654,6 +946,11 @@
                 delete state.players[data.sid];
                 delete state.scoreLabels[data.sid];
                 delete state.teamScores[data.sid];
+                Object.keys(state.projectiles).forEach((projId) => {
+                    if (state.projectiles[projId] && state.projectiles[projId].shooter === data.sid) {
+                        delete state.projectiles[projId];
+                    }
+                });
             }
             playCue('click');
             updateScoreboard();
@@ -699,9 +996,39 @@
         return (dx * dx + dy * dy) <= (state.zone.radius * state.zone.radius);
     }
 
+    function resolveCircleObstacleCollision(x, y, radius, obstacle) {
+        const ox = Number(obstacle.x || 0);
+        const oy = Number(obstacle.y || 0);
+        const rr = radius + Number(obstacle.radius || 0);
+        let dx = x - ox;
+        let dy = y - oy;
+        const distSq = dx * dx + dy * dy;
+        if (distSq >= rr * rr) return { x, y, corrected: false };
+        let dist = Math.sqrt(distSq);
+        if (dist < 0.0001) {
+            dx = 1;
+            dy = 0;
+            dist = 1;
+        }
+        const overlap = rr - dist;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        return {
+            x: x + nx * overlap,
+            y: y + ny * overlap,
+            corrected: true
+        };
+    }
+
     function drawBackground() {
+        const bg1 = themeVar('--bg-1', '#0b0f1e');
+        const bg2 = themeVar('--bg-2', '#121a2b');
+        const accentRgb = themeVar('--accent-rgb', '48, 215, 255');
         ctx.save();
-        ctx.fillStyle = '#0b0f1e';
+        const gradient = ctx.createLinearGradient(0, 0, state.view.width, state.view.height);
+        gradient.addColorStop(0, bg1);
+        gradient.addColorStop(1, bg2);
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, state.view.width, state.view.height);
 
         const grid = 140;
@@ -712,7 +1039,7 @@
         const startY = Math.floor(start.y / grid) * grid;
         const endY = Math.ceil(end.y / grid) * grid;
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
         ctx.lineWidth = 1;
         for (let x = startX; x <= endX; x += grid) {
             const sx = worldToScreen(x, 0).x;
@@ -728,6 +1055,13 @@
             ctx.lineTo(state.view.width, sy);
             ctx.stroke();
         }
+
+        const centerGlow = worldToScreen(state.zone.x, state.zone.y);
+        const glow = ctx.createRadialGradient(centerGlow.x, centerGlow.y, 40, centerGlow.x, centerGlow.y, Math.max(700, state.zone.radius * 0.35));
+        glow.addColorStop(0, 'rgba(' + accentRgb + ', 0.12)');
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, state.view.width, state.view.height);
 
         ctx.restore();
     }
@@ -750,12 +1084,15 @@
         const radius = state.zone.radius;
         const coreRadius = state.zone.core_radius || radius * 0.35;
         const pulse = Math.sin(time / 260) * 3 + state.fx.pulse * 6;
-        const baseColor = state.contested ? 'rgba(241,196,15,0.9)' : 'rgba(48,215,255,0.9)';
+        const accentRgb = themeVar('--accent-rgb', '48, 215, 255');
+        const borderRgb = themeVar('--card-border-rgb', '46, 204, 113');
+        const baseColor = state.contested ? 'rgba(241,196,15,0.9)' : 'rgba(' + accentRgb + ',0.9)';
+        const fillColor = state.contested ? 'rgba(241,196,15,0.16)' : 'rgba(' + borderRgb + ',0.14)';
 
         ctx.save();
         const fillGrad = ctx.createRadialGradient(zoneScreen.x, zoneScreen.y, coreRadius * 0.2, zoneScreen.x, zoneScreen.y, radius);
-        fillGrad.addColorStop(0, 'rgba(48,215,255,0.18)');
-        fillGrad.addColorStop(1, 'rgba(48,215,255,0.02)');
+        fillGrad.addColorStop(0, fillColor);
+        fillGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = fillGrad;
         ctx.beginPath();
         ctx.arc(zoneScreen.x, zoneScreen.y, radius, 0, Math.PI * 2);
@@ -779,6 +1116,111 @@
         ctx.shadowColor = baseColor;
         ctx.stroke();
         ctx.restore();
+
+        if (state.debug.zone) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 96, 96, 0.65)';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.arc(zoneScreen.x, zoneScreen.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = '12px Rajdhani, sans-serif';
+            ctx.fillText('R:' + Math.round(radius), zoneScreen.x + 8, zoneScreen.y - 8);
+            ctx.restore();
+        }
+    }
+
+    function drawObstacles() {
+        const entries = Object.values(state.obstacles || {});
+        if (!entries.length) return;
+        entries.forEach((obs) => {
+            const radius = Number(obs.radius || 40);
+            const screen = worldToScreen(Number(obs.x || 0), Number(obs.y || 0));
+            if (screen.x < -radius - 20 || screen.x > state.view.width + radius + 20 || screen.y < -radius - 20 || screen.y > state.view.height + radius + 20) {
+                return;
+            }
+            const type = String(obs.type || 'rock');
+            let fill = 'rgba(92, 104, 122, 0.7)';
+            if (type === 'crate') fill = 'rgba(124, 92, 59, 0.78)';
+            if (type === 'pillar') fill = 'rgba(82, 98, 122, 0.78)';
+            if (type === 'wall') fill = 'rgba(78, 84, 97, 0.78)';
+
+            ctx.save();
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+            ctx.lineWidth = 2;
+            if (type === 'wall') {
+                const w = radius * 2.2;
+                const h = radius * 0.95;
+                ctx.fillRect(screen.x - w / 2, screen.y - h / 2, w, h);
+                ctx.strokeRect(screen.x - w / 2, screen.y - h / 2, w, h);
+            } else if (type === 'crate') {
+                const side = radius * 1.9;
+                ctx.fillRect(screen.x - side / 2, screen.y - side / 2, side, side);
+                ctx.strokeRect(screen.x - side / 2, screen.y - side / 2, side, side);
+            } else {
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            if (obs.destructible) {
+                ctx.fillStyle = 'rgba(255,236,199,0.9)';
+                ctx.font = '12px Rajdhani, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(obs.hp || 0), screen.x, screen.y);
+            }
+            if (state.debug.hitboxes || state.debug.obstacles) {
+                ctx.strokeStyle = 'rgba(255, 80, 80, 0.55)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+    }
+
+    function drawPowerups(time) {
+        const entries = Object.values(state.powerups || {});
+        if (!entries.length) return;
+        entries.forEach((powerup) => {
+            const radius = Number(powerup.radius || 16);
+            const screen = worldToScreen(Number(powerup.x || 0), Number(powerup.y || 0));
+            if (screen.x < -radius - 20 || screen.x > state.view.width + radius + 20 || screen.y < -radius - 20 || screen.y > state.view.height + radius + 20) {
+                return;
+            }
+            const visual = POWERUP_VISUALS[powerup.type] || { color: '#ffffff', label: '?' };
+            const spawnedAt = Number(powerup.spawnedAt || powerup.spawned_at || 0);
+            const pulse = 1 + Math.sin((time + spawnedAt * 20) / 200) * 0.15;
+            const drawRadius = radius * pulse;
+            ctx.save();
+            const grad = ctx.createRadialGradient(screen.x, screen.y, 2, screen.x, screen.y, drawRadius + 10);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.35, visual.color);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, drawRadius + 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = visual.color;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, drawRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#0b0f1e';
+            ctx.font = 'bold 11px Rajdhani, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const symbol = (visual.label || '?').charAt(0).toUpperCase();
+            ctx.fillText(symbol, screen.x, screen.y);
+            ctx.restore();
+        });
     }
 
     function drawPixelSprite(ctx, x, y, size, sprite) {
@@ -934,6 +1376,21 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
+        Object.values(state.obstacles || {}).forEach((obs) => {
+            ctx.fillStyle = 'rgba(170, 180, 200, 0.7)';
+            ctx.beginPath();
+            ctx.arc(x + obs.x * scaleX, y + obs.y * scaleY, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        Object.values(state.powerups || {}).forEach((powerup) => {
+            const visual = POWERUP_VISUALS[powerup.type] || { color: '#fff' };
+            ctx.fillStyle = visual.color;
+            ctx.beginPath();
+            ctx.arc(x + powerup.x * scaleX, y + powerup.y * scaleY, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
         Object.keys(state.players).forEach((pid) => {
             const p = state.players[pid];
             if (!p) return;
@@ -969,7 +1426,7 @@
     }
 
     function drawBullets() {
-        const drawBullet = (bullet) => {
+        const drawCircleBullet = (bullet) => {
             const screen = worldToScreen(bullet.x, bullet.y);
             if (bullet.isFireball) {
                 const grd = ctx.createRadialGradient(screen.x, screen.y, 2, screen.x, screen.y, 10);
@@ -990,8 +1447,111 @@
             ctx.shadowBlur = 0;
         };
 
-        state.playerBullets.forEach(drawBullet);
-        state.foreignBullets.forEach(drawBullet);
+        const drawServerProjectile = (projectile) => {
+            const screen = worldToScreen(projectile.x, projectile.y);
+            if (screen.x < -60 || screen.x > state.view.width + 60 || screen.y < -60 || screen.y > state.view.height + 60) {
+                return;
+            }
+            const shape = projectile.shape || getWeaponVisual(projectile.weaponType).shape;
+            const radius = projectile.size || getWeaponVisual(projectile.weaponType).size;
+            const angle = Math.atan2(projectile.vy || 0, projectile.vx || 1);
+
+            ctx.save();
+            ctx.translate(screen.x, screen.y);
+            ctx.rotate(angle);
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = projectile.color || '#ffffff';
+            ctx.fillStyle = projectile.color || '#ffffff';
+            ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+            ctx.lineWidth = 1.2;
+
+            if (shape === 'arrow') {
+                ctx.beginPath();
+                ctx.moveTo(radius * 1.8, 0);
+                ctx.lineTo(-radius * 1.2, radius * 0.78);
+                ctx.lineTo(-radius * 0.55, 0);
+                ctx.lineTo(-radius * 1.2, -radius * 0.78);
+                ctx.closePath();
+                ctx.fill();
+            } else if (shape === 'axe') {
+                ctx.fillRect(-radius * 1.1, -radius * 0.26, radius * 1.2, radius * 0.52);
+                ctx.beginPath();
+                ctx.moveTo(radius * 0.2, -radius);
+                ctx.lineTo(radius * 1.35, -radius * 0.55);
+                ctx.lineTo(radius * 1.35, radius * 0.55);
+                ctx.lineTo(radius * 0.2, radius);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                const orbGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, radius + 4);
+                orbGrad.addColorStop(0, '#ffffff');
+                orbGrad.addColorStop(0.35, projectile.color || '#ffffff');
+                orbGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = orbGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius + (shape === 'orb' ? 1.5 : 0), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            if (state.debug.hitboxes) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 80, 80, 0.55)';
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        Object.values(state.projectiles).forEach(drawServerProjectile);
+        if (state.offline) {
+            state.playerBullets.forEach(drawCircleBullet);
+            state.foreignBullets.forEach(drawCircleBullet);
+        }
+    }
+
+    function drawDamageIndicator(now) {
+        if (!state.damageIndicator.until || now > state.damageIndicator.until) return;
+        const remaining = clamp((state.damageIndicator.until - now) / 900, 0, 1);
+        const alpha = remaining * 0.65 * Math.max(0.4, state.damageIndicator.strength || 0.8);
+        const angle = state.damageIndicator.angle || 0;
+        const cx = state.view.width / 2;
+        const cy = state.view.height / 2;
+        const radius = Math.min(state.view.width, state.view.height) * 0.42;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillStyle = 'rgba(255, 70, 85, ' + alpha.toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.moveTo(radius - 12, 0);
+        ctx.lineTo(radius - 80, -26);
+        ctx.lineTo(radius - 80, 26);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawVisionPings(now) {
+        if (!state.visionPing.until || now > state.visionPing.until) return;
+        const ttl = clamp((state.visionPing.until - now) / 3500, 0, 1);
+        state.visionPing.reveals.forEach((reveal) => {
+            const screen = worldToScreen(Number(reveal.x || 0), Number(reveal.y || 0));
+            if (screen.x < -40 || screen.x > state.view.width + 40 || screen.y < -40 || screen.y > state.view.height + 40) return;
+            const base = 20 + (1 - ttl) * 34;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 93, 131, ' + (0.42 * ttl).toFixed(3) + ')';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, base, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255, 180, 208, ' + (0.55 * ttl).toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
     }
 
     function drawAimIndicator() {
@@ -1021,17 +1581,19 @@
         const now = time || performance.now();
         const dt = Math.min(0.05, Math.max(0.001, (now - (lastFrameAt || now)) / 1000));
         lastFrameAt = now;
+        state.nextShrinkIn = Math.max(0, (state.nextShrinkIn || 0) - dt);
+        setUI('nextShrink', formatTime(Math.max(0, Math.floor(state.nextShrinkIn || 0))));
 
         movePlayer(dt);
 
         updateCamera();
         const localOutside = !isInsideZone(state.player.x, state.player.y);
-        if (localOutside !== state.player.outside) {
+        if (state.offline && localOutside !== state.player.outside) {
             state.player.outside = localOutside;
             updateStormMeter();
         }
 
-        if (state.joined || state.offline) {
+        if (state.offline) {
             const stormMax = state.rules.stormMax || 100;
             if (state.player.outside) {
                 state.player.zoneHp = clamp(state.player.zoneHp - (state.storm.damage || 8) * dt, 0, stormMax);
@@ -1050,6 +1612,8 @@
         drawBackground();
         drawStormOverlay();
         drawZone(time || 0);
+        drawObstacles();
+        drawPowerups(now);
 
         drawPlayer({
             x: state.player.x,
@@ -1072,15 +1636,23 @@
             }, false);
         });
 
+        drawVisionPings(now);
         drawBullets();
         drawAimIndicator();
         drawDirectionalArrow();
+        drawDamageIndicator(now);
         drawMiniMap();
         drawVignette();
+        if (state.fx.hitFlash > 0) {
+            ctx.fillStyle = 'rgba(255, 66, 79, ' + (state.fx.hitFlash * 0.18).toFixed(3) + ')';
+            ctx.fillRect(0, 0, state.view.width, state.view.height);
+        }
         ctx.restore();
 
-        moveBullets();
-        checkBulletHits();
+        if (state.offline) {
+            moveBullets();
+            checkBulletHits();
+        }
 
         if (socket && state.connected && state.joined && now - lastMoveSentAt > 60) {
             lastMoveSentAt = now;
@@ -1093,6 +1665,7 @@
 
         state.fx.pulse = Math.max(0, state.fx.pulse - 0.02);
         state.fx.shake = Math.max(0, state.fx.shake - 0.02);
+        state.fx.hitFlash = Math.max(0, state.fx.hitFlash - 0.03);
 
         requestAnimationFrame(gameLoop);
     }
@@ -1116,6 +1689,16 @@
         state.player.y += state.player.vy * dt;
 
         const margin = state.player.radius + 6;
+        state.player.x = clamp(state.player.x, margin, state.map.width - margin);
+        state.player.y = clamp(state.player.y, margin, state.map.height - margin);
+
+        Object.values(state.obstacles || {}).forEach((obs) => {
+            const next = resolveCircleObstacleCollision(state.player.x, state.player.y, state.player.radius, obs);
+            if (next.corrected) {
+                state.player.x = next.x;
+                state.player.y = next.y;
+            }
+        });
         state.player.x = clamp(state.player.x, margin, state.map.width - margin);
         state.player.y = clamp(state.player.y, margin, state.map.height - margin);
     }
@@ -1172,22 +1755,26 @@
 
     function buildBullet({ x, y, dx, dy, character, shooter, target, fromRemote }) {
         if (typeof x !== 'number' || typeof y !== 'number') return null;
-        const isWizard = character === 'wizard';
-        const isArcher = character === 'archer';
+        const weaponType = resolveWeaponType(character, state.player.weaponType);
+        const visual = getWeaponVisual(weaponType);
+        const isWizard = weaponType === 'arcane-orb';
+        const isArcher = weaponType === 'piercing-arrow';
         const color = fromRemote ? getColor(shooter || 'enemy') : '#ffffff';
         return {
             x,
             y,
             dx,
             dy,
-            size: isWizard ? 9 : 7,
+            size: visual.size || (isWizard ? 9 : 7),
             speed: BULLET_SPEED,
             life: 0,
             maxLife: BULLET_MAX_LIFE,
-            color: isWizard ? '#ff3b30' : color,
-            glow: isWizard ? '#ff6b6b' : color,
+            color: isWizard ? '#ff3b30' : (visual.color || color),
+            glow: isWizard ? '#ff6b6b' : (visual.glow || color),
             isFireball: isWizard,
             homing: isArcher,
+            shape: visual.shape,
+            weaponType,
             target: target || null,
             owner: shooter || state.selfId
         };
@@ -1211,39 +1798,44 @@
         const spawnOffset = state.player.radius + 6;
         const spawnX = state.player.x + Math.cos(shotAngle) * spawnOffset;
         const spawnY = state.player.y + Math.sin(shotAngle) * spawnOffset;
+        const weaponType = resolveWeaponType(state.player.character, state.player.weaponType);
+        state.player.weaponType = weaponType;
 
-        const isWizard = state.player.character === 'wizard';
-        const isArcher = state.player.character === 'archer';
+        const isWizard = weaponType === 'arcane-orb';
+        const isArcher = weaponType === 'piercing-arrow';
         const shots = isWizard ? [-0.12, 0.12] : [0];
         const targetId = isArcher ? getNearestTargetId() : null;
 
-        shots.forEach((offset) => {
-            const angle = shotAngle + offset;
-            const dx = Math.cos(angle) * BULLET_SPEED;
-            const dy = Math.sin(angle) * BULLET_SPEED;
-            const bullet = buildBullet({
-                x: spawnX,
-                y: spawnY,
-                dx,
-                dy,
-                character: state.player.character,
-                shooter: state.selfId,
-                target: targetId
+        if (state.offline) {
+            shots.forEach((offset) => {
+                const angle = shotAngle + offset;
+                const dx = Math.cos(angle) * BULLET_SPEED;
+                const dy = Math.sin(angle) * BULLET_SPEED;
+                const bullet = buildBullet({
+                    x: spawnX,
+                    y: spawnY,
+                    dx,
+                    dy,
+                    character: state.player.character,
+                    shooter: state.selfId,
+                    target: targetId
+                });
+                if (bullet) state.playerBullets.push(bullet);
             });
-            if (bullet) state.playerBullets.push(bullet);
-        });
+        }
 
-        state.player.bullets -= 1;
+        if (state.offline) {
+            state.player.bullets -= 1;
+            scheduleBulletSave();
+        }
         updateStatus();
-        scheduleBulletSave();
 
         if (socket && socket.connected && !state.offline) {
             socket.emit('koz_shoot', {
-                bulletX: spawnX,
-                bulletY: spawnY,
-                dx: Math.cos(shotAngle) * BULLET_SPEED,
-                dy: Math.sin(shotAngle) * BULLET_SPEED,
+                aimX: state.mouse.inCanvas ? state.mouse.worldX : (state.player.x + Math.cos(shotAngle) * 1200),
+                aimY: state.mouse.inCanvas ? state.mouse.worldY : (state.player.y + Math.sin(shotAngle) * 1200),
                 character: state.player.character,
+                weapon_type: weaponType,
                 target: targetId
             });
         }
@@ -1310,6 +1902,24 @@
 
     function bindInputs() {
         document.addEventListener('keydown', (e) => {
+            if (e.code === 'F6') {
+                e.preventDefault();
+                state.debug.hitboxes = !state.debug.hitboxes;
+                showZoneEvent('Debug hitboxes ' + (state.debug.hitboxes ? 'on' : 'off'));
+                return;
+            }
+            if (e.code === 'F7') {
+                e.preventDefault();
+                state.debug.zone = !state.debug.zone;
+                showZoneEvent('Debug zone bounds ' + (state.debug.zone ? 'on' : 'off'));
+                return;
+            }
+            if (e.code === 'F8') {
+                e.preventDefault();
+                state.debug.obstacles = !state.debug.obstacles;
+                showZoneEvent('Debug obstacle bounds ' + (state.debug.obstacles ? 'on' : 'off'));
+                return;
+            }
             state.keys[e.key.toLowerCase()] = true;
             if (e.code === 'Space') {
                 e.preventDefault();

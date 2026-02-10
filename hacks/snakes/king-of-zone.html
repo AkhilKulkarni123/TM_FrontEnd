@@ -127,7 +127,7 @@
         .hud-right button:hover { background: rgba(255,255,255,0.15); }
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
             gap: 8px;
             margin-top: 8px;
         }
@@ -336,6 +336,10 @@
                         <span>Integrity</span>
                         <strong id="stormValue">100%</strong>
                     </div>
+                    <div class="stat">
+                        <span>Next Shrink</span>
+                        <strong id="nextShrink">--</strong>
+                    </div>
                 </div>
                 <div class="storm-meter">
                     <div class="storm-bar"><span id="stormFill"></span></div>
@@ -355,6 +359,10 @@
                     <div class="stat">
                         <span>Combat HP</span>
                         <strong id="hpCount">--</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Shield</span>
+                        <strong id="shieldCount">0</strong>
                     </div>
                     <div class="stat">
                         <span>You</span>
@@ -386,6 +394,7 @@
         </div>
     </div>
 
+    <script src="../../assets/js/player-loadout.js"></script>
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
     <script src="../../assets/js/king-of-zone.js"></script>
