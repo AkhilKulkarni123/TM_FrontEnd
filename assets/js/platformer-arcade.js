@@ -122,14 +122,189 @@
         }
     };
 
+    const LEVELS = [
+        {
+            name: 'Neon Dock',
+            subtitle: 'Warm up on short hops before the deep run.',
+            world: { width: 2480, height: 900 },
+            spawn: { x: 82, yOffset: 160 },
+            palette: {
+                top: '#0b1126',
+                bottom: '#05060e',
+                grid: 'rgba(255,255,255,0.04)',
+                platformFill: '#141c30',
+                platformStroke: 'rgba(48,215,255,0.35)',
+                movingFill: '#1e2b44',
+                movingStroke: 'rgba(131,255,236,0.65)',
+                hazard: 'rgba(255, 90, 114, 0.9)'
+            },
+            build(groundY) {
+                return {
+                    platforms: [
+                        { x: 0, y: groundY, w: 520, h: 80 },
+                        { x: 230, y: groundY - 140, w: 220, h: 24 },
+                        { x: 550, y: groundY - 240, w: 180, h: 24 },
+                        { x: 820, y: groundY - 180, w: 200, h: 24 },
+                        { x: 1080, y: groundY - 300, w: 190, h: 24 },
+                        { x: 1360, y: groundY - 230, w: 210, h: 24 },
+                        { x: 1630, y: groundY - 130, w: 220, h: 24 },
+                        { x: 1900, y: groundY - 220, w: 210, h: 24 },
+                        { x: 2160, y: groundY - 340, w: 170, h: 24 }
+                    ],
+                    hazards: [
+                        { type: 'spike', x: 1415, y: groundY - 246, w: 82, h: 16 },
+                        { type: 'orb', x: 1750, y: groundY - 178, r: 16, move: { axis: 'x', range: 64, speed: 1.9, phase: 0.4 } }
+                    ]
+                };
+            }
+        },
+        {
+            name: 'Reactor Tunnels',
+            subtitle: 'Lifts drift while vents flare underneath.',
+            world: { width: 3000, height: 940 },
+            spawn: { x: 82, yOffset: 160 },
+            palette: {
+                top: '#101629',
+                bottom: '#060914',
+                grid: 'rgba(137,196,255,0.06)',
+                platformFill: '#1a2138',
+                platformStroke: 'rgba(143,179,255,0.45)',
+                movingFill: '#1f3048',
+                movingStroke: 'rgba(165, 255, 232, 0.72)',
+                hazard: 'rgba(255, 115, 71, 0.92)'
+            },
+            build(groundY) {
+                return {
+                    platforms: [
+                        { x: 0, y: groundY, w: 430, h: 80 },
+                        { x: 500, y: groundY - 140, w: 160, h: 24, move: { axis: 'y', range: 72, speed: 1.6, phase: 0.2 } },
+                        { x: 760, y: groundY - 250, w: 170, h: 24 },
+                        { x: 1030, y: groundY - 320, w: 170, h: 24, move: { axis: 'x', range: 112, speed: 1.45, phase: 1.3 } },
+                        { x: 1325, y: groundY - 210, w: 140, h: 24 },
+                        { x: 1540, y: groundY - 320, w: 180, h: 24 },
+                        { x: 1810, y: groundY - 420, w: 150, h: 24, move: { axis: 'y', range: 96, speed: 1.85, phase: 2.1 } },
+                        { x: 2060, y: groundY - 280, w: 170, h: 24 },
+                        { x: 2330, y: groundY - 380, w: 150, h: 24 },
+                        { x: 2590, y: groundY - 500, w: 190, h: 24 }
+                    ],
+                    hazards: [
+                        { type: 'spike', x: 790, y: groundY - 266, w: 82, h: 16 },
+                        { type: 'spike', x: 1600, y: groundY - 336, w: 78, h: 16 },
+                        { type: 'spike', x: 2360, y: groundY - 396, w: 72, h: 16 },
+                        { type: 'orb', x: 1210, y: groundY - 255, r: 17, move: { axis: 'y', range: 60, speed: 2.35, phase: 0.6 } },
+                        { type: 'orb', x: 2140, y: groundY - 338, r: 17, move: { axis: 'x', range: 92, speed: 2.05, phase: 1.8 } }
+                    ]
+                };
+            }
+        },
+        {
+            name: 'Skybridge Ruins',
+            subtitle: 'Narrow ledges with roaming sentry orbs.',
+            world: { width: 3500, height: 980 },
+            spawn: { x: 82, yOffset: 160 },
+            palette: {
+                top: '#0e1423',
+                bottom: '#04070f',
+                grid: 'rgba(201,220,255,0.06)',
+                platformFill: '#19253b',
+                platformStroke: 'rgba(100,170,255,0.5)',
+                movingFill: '#22314c',
+                movingStroke: 'rgba(173, 255, 244, 0.74)',
+                hazard: 'rgba(255, 98, 124, 0.94)'
+            },
+            build(groundY) {
+                return {
+                    platforms: [
+                        { x: 0, y: groundY, w: 360, h: 80 },
+                        { x: 470, y: groundY - 130, w: 120, h: 24 },
+                        { x: 650, y: groundY - 230, w: 120, h: 24 },
+                        { x: 860, y: groundY - 320, w: 130, h: 24, move: { axis: 'x', range: 140, speed: 1.8, phase: 0.8 } },
+                        { x: 1110, y: groundY - 200, w: 110, h: 24 },
+                        { x: 1310, y: groundY - 340, w: 130, h: 24, move: { axis: 'y', range: 120, speed: 1.95, phase: 1.9 } },
+                        { x: 1570, y: groundY - 450, w: 120, h: 24 },
+                        { x: 1770, y: groundY - 320, w: 110, h: 24 },
+                        { x: 1970, y: groundY - 410, w: 130, h: 24, move: { axis: 'x', range: 130, speed: 2.1, phase: 0.2 } },
+                        { x: 2245, y: groundY - 520, w: 120, h: 24 },
+                        { x: 2475, y: groundY - 380, w: 130, h: 24 },
+                        { x: 2700, y: groundY - 500, w: 120, h: 24, move: { axis: 'y', range: 96, speed: 2.2, phase: 2.6 } },
+                        { x: 2960, y: groundY - 610, w: 170, h: 24 }
+                    ],
+                    hazards: [
+                        { type: 'spike', x: 686, y: groundY - 246, w: 48, h: 16 },
+                        { type: 'spike', x: 1598, y: groundY - 466, w: 64, h: 16 },
+                        { type: 'spike', x: 2266, y: groundY - 536, w: 78, h: 16 },
+                        { type: 'orb', x: 1010, y: groundY - 252, r: 18, move: { axis: 'y', range: 70, speed: 2.4, phase: 0.6 } },
+                        { type: 'orb', x: 1860, y: groundY - 380, r: 18, move: { axis: 'x', range: 102, speed: 2.15, phase: 1.5 } },
+                        { type: 'orb', x: 2560, y: groundY - 470, r: 18, move: { axis: 'y', range: 86, speed: 2.5, phase: 2.3 } }
+                    ]
+                };
+            }
+        },
+        {
+            name: 'Void Circuit',
+            subtitle: 'Final ascent through chaotic moving gates.',
+            world: { width: 4100, height: 1040 },
+            spawn: { x: 82, yOffset: 160 },
+            palette: {
+                top: '#140f28',
+                bottom: '#070713',
+                grid: 'rgba(219,198,255,0.07)',
+                platformFill: '#231f3d',
+                platformStroke: 'rgba(174,143,255,0.55)',
+                movingFill: '#2b2a4a',
+                movingStroke: 'rgba(198, 255, 243, 0.76)',
+                hazard: 'rgba(255, 88, 122, 0.96)'
+            },
+            build(groundY) {
+                return {
+                    platforms: [
+                        { x: 0, y: groundY, w: 350, h: 80 },
+                        { x: 420, y: groundY - 140, w: 120, h: 24, move: { axis: 'y', range: 110, speed: 2.2, phase: 0.7 } },
+                        { x: 620, y: groundY - 270, w: 120, h: 24, move: { axis: 'x', range: 150, speed: 2.3, phase: 0.1 } },
+                        { x: 910, y: groundY - 200, w: 100, h: 24 },
+                        { x: 1060, y: groundY - 350, w: 110, h: 24, move: { axis: 'y', range: 130, speed: 2.55, phase: 1.9 } },
+                        { x: 1300, y: groundY - 480, w: 120, h: 24 },
+                        { x: 1540, y: groundY - 360, w: 120, h: 24, move: { axis: 'x', range: 150, speed: 2.4, phase: 0.4 } },
+                        { x: 1820, y: groundY - 510, w: 110, h: 24 },
+                        { x: 2010, y: groundY - 640, w: 120, h: 24, move: { axis: 'y', range: 130, speed: 2.65, phase: 2.2 } },
+                        { x: 2260, y: groundY - 500, w: 115, h: 24 },
+                        { x: 2470, y: groundY - 600, w: 120, h: 24, move: { axis: 'x', range: 140, speed: 2.5, phase: 1.2 } },
+                        { x: 2745, y: groundY - 710, w: 115, h: 24 },
+                        { x: 2970, y: groundY - 580, w: 120, h: 24, move: { axis: 'y', range: 130, speed: 2.8, phase: 0.9 } },
+                        { x: 3220, y: groundY - 730, w: 125, h: 24 },
+                        { x: 3520, y: groundY - 850, w: 220, h: 24 }
+                    ],
+                    hazards: [
+                        { type: 'spike', x: 930, y: groundY - 216, w: 60, h: 16 },
+                        { type: 'spike', x: 1328, y: groundY - 496, w: 68, h: 16 },
+                        { type: 'spike', x: 1840, y: groundY - 526, w: 70, h: 16 },
+                        { type: 'spike', x: 2278, y: groundY - 516, w: 78, h: 16 },
+                        { type: 'spike', x: 2765, y: groundY - 726, w: 75, h: 16 },
+                        { type: 'spike', x: 3240, y: groundY - 746, w: 84, h: 16 },
+                        { type: 'orb', x: 980, y: groundY - 300, r: 19, move: { axis: 'y', range: 88, speed: 2.6, phase: 0.4 } },
+                        { type: 'orb', x: 1700, y: groundY - 430, r: 19, move: { axis: 'x', range: 122, speed: 2.35, phase: 1.2 } },
+                        { type: 'orb', x: 2130, y: groundY - 560, r: 19, move: { axis: 'y', range: 98, speed: 2.9, phase: 1.8 } },
+                        { type: 'orb', x: 2590, y: groundY - 670, r: 19, move: { axis: 'x', range: 130, speed: 2.7, phase: 2.2 } },
+                        { type: 'orb', x: 3090, y: groundY - 650, r: 19, move: { axis: 'y', range: 112, speed: 2.8, phase: 2.9 } },
+                        { type: 'orb', x: 3370, y: groundY - 790, r: 19, move: { axis: 'x', range: 90, speed: 2.45, phase: 0.7 } }
+                    ]
+                };
+            }
+        }
+    ];
+
     const state = {
         ready: false,
         won: false,
-        death: { active: false, start: 0 },
+        levelIndex: 0,
+        death: { active: false, start: 0, cause: '' },
+        transition: { active: false, timer: 0, duration: 1.8, nextLevel: 0, switched: false },
         keys: {},
+        jumpBuffer: 0,
         view: { width: 0, height: 0, dpr: 1 },
-        world: { width: 2400, height: 900 },
+        world: { width: LEVELS[0].world.width, height: LEVELS[0].world.height },
         camera: { x: 0, y: 0 },
+        spawn: { x: LEVELS[0].spawn.x, y: 0 },
         goal: { x: 0, y: 0, w: 66, h: 132 },
         bonusBullets: 25,
         player: {
@@ -144,7 +319,8 @@
             vy: 0,
             onGround: false
         },
-        platforms: []
+        platforms: [],
+        hazards: []
     };
 
     function clamp(value, min, max) {
@@ -281,48 +457,168 @@
         }).catch(() => {});
     }
 
-    function resetRun() {
-        state.won = false;
+    function getCurrentLevel() {
+        return LEVELS[state.levelIndex] || LEVELS[0];
+    }
+
+    function updateLevelHud() {
+        const level = getCurrentLevel();
+        const checkpoint = document.getElementById('checkpointLabel');
+        if (checkpoint) checkpoint.textContent = `L${state.levelIndex + 1}/${LEVELS.length} ${level.name}`;
+
+        const bonus = document.getElementById('bonusLabel');
+        if (bonus) bonus.textContent = `+${state.bonusBullets} bullets`;
+
+        const controlsHint = document.getElementById('controlsHint');
+        if (controlsHint) controlsHint.textContent = 'Move: A/D or Left/Right • Jump: W or Up Arrow';
+
+        const goalTitle = document.querySelector('.goal-banner h3');
+        const goalText = document.querySelector('.goal-banner p');
+        if (goalTitle) {
+            goalTitle.textContent = state.levelIndex === LEVELS.length - 1
+                ? 'Final Gate'
+                : `Portal ${state.levelIndex + 1} → ${state.levelIndex + 2}`;
+        }
+        if (goalText) {
+            goalText.textContent = state.levelIndex === LEVELS.length - 1
+                ? 'Last sector. Break through this portal to finish the gauntlet.'
+                : `Reach the portal to warp into ${LEVELS[state.levelIndex + 1].name}.`;
+        }
+    }
+
+    function spawnAtLevelStart() {
         state.death.active = false;
-        state.player.x = 80;
-        state.player.y = state.world.height - 160;
+        state.death.cause = '';
+        state.player.x = state.spawn.x;
+        state.player.y = state.spawn.y;
         state.player.vx = 0;
         state.player.vy = 0;
         state.player.onGround = false;
-        state.camera.x = 0;
-        state.camera.y = 0;
+        state.jumpBuffer = 0;
+
+        const maxX = Math.max(0, state.world.width - state.view.width);
+        const maxY = Math.max(0, state.world.height - state.view.height);
+        state.camera.x = clamp(state.player.x - state.view.width * 0.4, 0, maxX);
+        state.camera.y = clamp(state.player.y - state.view.height * 0.6, 0, maxY);
+    }
+
+    function applyLevel(levelIndex) {
+        const safeIndex = clamp(levelIndex, 0, LEVELS.length - 1);
+        state.levelIndex = safeIndex;
+        const level = getCurrentLevel();
+        state.world.width = level.world.width;
+        state.world.height = level.world.height;
+
+        const groundY = state.world.height - 80;
+        const layout = level.build(groundY);
+
+        state.platforms = (layout.platforms || []).map((platform) => {
+            const move = platform.move
+                ? {
+                    axis: platform.move.axis === 'y' ? 'y' : 'x',
+                    range: Number(platform.move.range || 0),
+                    speed: Number(platform.move.speed || 1),
+                    phase: Number(platform.move.phase || 0)
+                }
+                : null;
+            return {
+                x: Number(platform.x || 0),
+                y: Number(platform.y || 0),
+                w: Number(platform.w || 0),
+                h: Number(platform.h || 0),
+                baseX: Number(platform.x || 0),
+                baseY: Number(platform.y || 0),
+                vx: 0,
+                vy: 0,
+                move: move
+            };
+        });
+
+        state.hazards = (layout.hazards || []).map((hazard) => {
+            const move = hazard.move
+                ? {
+                    axis: hazard.move.axis === 'y' ? 'y' : 'x',
+                    range: Number(hazard.move.range || 0),
+                    speed: Number(hazard.move.speed || 1),
+                    phase: Number(hazard.move.phase || 0)
+                }
+                : null;
+            return {
+                type: hazard.type || 'spike',
+                x: Number(hazard.x || 0),
+                y: Number(hazard.y || 0),
+                w: Number(hazard.w || 0),
+                h: Number(hazard.h || 0),
+                r: Number(hazard.r || 16),
+                baseX: Number(hazard.x || 0),
+                baseY: Number(hazard.y || 0),
+                move: move
+            };
+        });
+
+        state.spawn.x = Number(level.spawn.x || 80);
+        state.spawn.y = state.world.height - Number(level.spawn.yOffset || 160);
+        positionGoalOnLastPlatform();
+        spawnAtLevelStart();
+        updateLevelHud();
+    }
+
+    function resetRun() {
+        state.won = false;
+        state.transition.active = false;
+        state.transition.timer = 0;
+        state.transition.switched = false;
+        applyLevel(state.levelIndex);
         const overlay = document.getElementById('winOverlay');
         if (overlay) overlay.classList.remove('active');
     }
 
-    function buildPlatforms() {
-        const groundY = state.world.height - 80;
-        state.platforms = [
-            { x: 0, y: groundY, w: 460, h: 80 },
-            { x: 220, y: groundY - 140, w: 220, h: 24 },
-            { x: 520, y: groundY - 240, w: 200, h: 24 },
-            { x: 820, y: groundY - 180, w: 180, h: 24 },
-            { x: 1040, y: groundY - 320, w: 220, h: 24 },
-            { x: 1320, y: groundY - 220, w: 240, h: 24 },
-            { x: 1620, y: groundY - 120, w: 220, h: 24 },
-            { x: 1880, y: groundY - 200, w: 240, h: 24 },
-            { x: 2080, y: groundY - 320, w: 170, h: 24 },
-            { x: 2270, y: groundY - 420, w: 140, h: 24 }
-        ];
-        positionGoalOnLastPlatform();
-        resetRun();
-    }
-
     function positionGoalOnLastPlatform() {
-        const lastPlatform = state.platforms[state.platforms.length - 1];
-        if (!lastPlatform) return;
+        if (!state.platforms.length) return;
+        let lastPlatform = state.platforms[0];
+        state.platforms.forEach((platform) => {
+            if (platform.x > lastPlatform.x) lastPlatform = platform;
+        });
         state.goal.x = lastPlatform.x + (lastPlatform.w - state.goal.w) / 2;
         state.goal.y = lastPlatform.y - state.goal.h;
     }
 
+    function updateDynamicWorld(dt, now) {
+        const t = now / 1000;
+        const safeDt = dt || 0.016;
+
+        state.platforms.forEach((platform) => {
+            platform.vx = 0;
+            platform.vy = 0;
+            if (!platform.move) return;
+            const prevX = platform.x;
+            const prevY = platform.y;
+            const offset = Math.sin(t * platform.move.speed + platform.move.phase) * platform.move.range;
+            if (platform.move.axis === 'x') {
+                platform.x = platform.baseX + offset;
+            } else {
+                platform.y = platform.baseY + offset;
+            }
+            platform.vx = (platform.x - prevX) / safeDt;
+            platform.vy = (platform.y - prevY) / safeDt;
+        });
+
+        state.hazards.forEach((hazard) => {
+            if (!hazard.move) return;
+            const offset = Math.sin(t * hazard.move.speed + hazard.move.phase) * hazard.move.range;
+            if (hazard.move.axis === 'x') {
+                hazard.x = hazard.baseX + offset;
+            } else {
+                hazard.y = hazard.baseY + offset;
+            }
+        });
+    }
+
     function updateCamera() {
-        const targetX = clamp(state.player.x - state.view.width * 0.4, 0, state.world.width - state.view.width);
-        const targetY = clamp(state.player.y - state.view.height * 0.6, 0, state.world.height - state.view.height);
+        const maxX = Math.max(0, state.world.width - state.view.width);
+        const maxY = Math.max(0, state.world.height - state.view.height);
+        const targetX = clamp(state.player.x - state.view.width * 0.4, 0, maxX);
+        const targetY = clamp(state.player.y - state.view.height * 0.6, 0, maxY);
         state.camera.x += (targetX - state.camera.x) * 0.1;
         state.camera.y += (targetY - state.camera.y) * 0.1;
     }
@@ -334,11 +630,13 @@
             state.player.y += state.player.vy * dt;
             return;
         }
+        if (state.transition.active || state.won) return;
+
         const accel = 1200;
         const maxSpeed = 320;
         const friction = 0.85;
         const gravity = 1400;
-        const jumpVel = 720;
+        const jumpVel = 730;
 
         const left = state.keys['a'] || state.keys['arrowleft'];
         const right = state.keys['d'] || state.keys['arrowright'];
@@ -353,40 +651,50 @@
         let nextX = state.player.x + state.player.vx * dt;
         let nextY = state.player.y + state.player.vy * dt;
 
-        // Horizontal collisions
-        const rect = { x: nextX, y: state.player.y, w: state.player.w, h: state.player.h };
-        state.platforms.forEach((p) => {
-            if (!rectsOverlap(rect, p)) return;
+        const rectX = { x: nextX, y: state.player.y, w: state.player.w, h: state.player.h };
+        state.platforms.forEach((platform) => {
+            if (!rectsOverlap(rectX, platform)) return;
             if (state.player.vx > 0) {
-                nextX = p.x - state.player.w;
+                nextX = platform.x - state.player.w;
             } else if (state.player.vx < 0) {
-                nextX = p.x + p.w;
+                nextX = platform.x + platform.w;
             }
             state.player.vx = 0;
-            rect.x = nextX;
+            rectX.x = nextX;
         });
 
-        // Vertical collisions
         const rectY = { x: nextX, y: nextY, w: state.player.w, h: state.player.h };
+        let landedPlatform = null;
         state.player.onGround = false;
-        state.platforms.forEach((p) => {
-            if (!rectsOverlap(rectY, p)) return;
+        state.platforms.forEach((platform) => {
+            if (!rectsOverlap(rectY, platform)) return;
             if (state.player.vy > 0) {
-                nextY = p.y - state.player.h;
+                const candidateY = platform.y - state.player.h;
+                if (!state.player.onGround || candidateY < nextY) {
+                    nextY = candidateY;
+                    landedPlatform = platform;
+                }
                 state.player.onGround = true;
             } else if (state.player.vy < 0) {
-                nextY = p.y + p.h;
+                nextY = platform.y + platform.h;
             }
             state.player.vy = 0;
             rectY.y = nextY;
         });
 
-        state.player.x = clamp(nextX, 0, state.world.width - state.player.w);
+        if (landedPlatform && landedPlatform.move) {
+            nextX += landedPlatform.vx * dt;
+            nextY += landedPlatform.vy * dt;
+        }
+
+        const maxX = Math.max(0, state.world.width - state.player.w);
+        state.player.x = clamp(nextX, 0, maxX);
         state.player.y = clamp(nextY, 0, state.world.height + 300);
 
-        if (state.player.onGround && (state.keys[' '] || state.keys['space'])) {
+        if (state.player.onGround && state.jumpBuffer > 0) {
             state.player.vy = -jumpVel;
             state.player.onGround = false;
+            state.jumpBuffer = 0;
         }
     }
 
@@ -394,14 +702,98 @@
         return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
     }
 
-    function drawBackground() {
+    function circleRectOverlap(cx, cy, cr, rect) {
+        const nearestX = clamp(cx, rect.x, rect.x + rect.w);
+        const nearestY = clamp(cy, rect.y, rect.y + rect.h);
+        const dx = cx - nearestX;
+        const dy = cy - nearestY;
+        return (dx * dx + dy * dy) <= (cr * cr);
+    }
+
+    function startDeath(cause) {
+        if (state.death.active || state.transition.active || state.won) return;
+        state.death.active = true;
+        state.death.cause = cause || 'hazard';
+        state.death.start = performance.now();
+        state.player.vx *= 0.25;
+        state.player.vy = Math.max(220, state.player.vy);
+        if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+            window.SnakesSFX.play('hurt');
+        }
+    }
+
+    function checkHazardDeath() {
+        if (state.death.active || state.transition.active || state.won) return;
+        const playerRect = { x: state.player.x, y: state.player.y, w: state.player.w, h: state.player.h };
+        for (let i = 0; i < state.hazards.length; i += 1) {
+            const hazard = state.hazards[i];
+            if (hazard.type === 'orb') {
+                if (circleRectOverlap(hazard.x, hazard.y, hazard.r, playerRect)) {
+                    startDeath('orb');
+                    return;
+                }
+                continue;
+            }
+            const spikeRect = { x: hazard.x, y: hazard.y, w: hazard.w, h: hazard.h };
+            if (rectsOverlap(playerRect, spikeRect)) {
+                startDeath('spike');
+                return;
+            }
+        }
+    }
+
+    function beginLevelTransition(nextLevel) {
+        state.transition.active = true;
+        state.transition.timer = 0;
+        state.transition.duration = 1.8;
+        state.transition.nextLevel = clamp(nextLevel, 0, LEVELS.length - 1);
+        state.transition.switched = false;
+        state.player.vx = 0;
+        state.player.vy = 0;
+        if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+            window.SnakesSFX.play('powerup');
+        }
+    }
+
+    function updateLevelTransition(dt) {
+        if (!state.transition.active) return;
+        state.transition.timer += dt;
+        const progress = state.transition.timer / state.transition.duration;
+        if (!state.transition.switched && progress >= 0.5) {
+            applyLevel(state.transition.nextLevel);
+            state.transition.switched = true;
+            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+                window.SnakesSFX.play('click');
+            }
+        }
+        if (progress >= 1) {
+            state.transition.active = false;
+            state.transition.timer = 0;
+            state.transition.switched = false;
+        }
+    }
+
+    function drawBackground(now) {
+        const level = getCurrentLevel();
         const grd = ctx.createLinearGradient(0, 0, 0, state.view.height);
-        grd.addColorStop(0, '#0b1126');
-        grd.addColorStop(1, '#05060e');
+        grd.addColorStop(0, level.palette.top);
+        grd.addColorStop(1, level.palette.bottom);
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, state.view.width, state.view.height);
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        const orbTime = now * 0.00035;
+        for (let i = 0; i < 4; i += 1) {
+            const px = (state.view.width * (0.15 + i * 0.24)) + Math.sin(orbTime + i * 1.3) * 26;
+            const py = (state.view.height * (0.2 + (i % 2) * 0.32)) + Math.cos(orbTime * 1.4 + i) * 30;
+            const r = 90 + i * 12;
+            const glow = ctx.createRadialGradient(px, py, 6, px, py, r);
+            glow.addColorStop(0, 'rgba(144, 201, 255, 0.12)');
+            glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(px - r, py - r, r * 2, r * 2);
+        }
+
+        ctx.strokeStyle = level.palette.grid;
         ctx.lineWidth = 1;
         const grid = 120;
         const startX = Math.floor(state.camera.x / grid) * grid;
@@ -415,24 +807,27 @@
     }
 
     function drawPlatforms() {
-        state.platforms.forEach((p) => {
-            const x = p.x - state.camera.x;
-            const y = p.y - state.camera.y;
-            ctx.fillStyle = p.h > 40 ? '#1a1f33' : '#111826';
-            ctx.fillRect(x, y, p.w, p.h);
-            ctx.strokeStyle = 'rgba(48,215,255,0.35)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, p.w, p.h);
+        const level = getCurrentLevel();
+        state.platforms.forEach((platform) => {
+            const x = platform.x - state.camera.x;
+            const y = platform.y - state.camera.y;
+            const isMoving = !!platform.move;
+            ctx.fillStyle = isMoving ? level.palette.movingFill : level.palette.platformFill;
+            ctx.fillRect(x, y, platform.w, platform.h);
+            ctx.strokeStyle = isMoving ? level.palette.movingStroke : level.palette.platformStroke;
+            ctx.lineWidth = isMoving ? 2.4 : 2;
+            ctx.strokeRect(x, y, platform.w, platform.h);
         });
     }
 
     function drawSpikes() {
+        const level = getCurrentLevel();
         const spikeY = state.world.height - 20 - state.camera.y;
         const spikeW = 28;
         const spikeH = 26;
         ctx.save();
-        ctx.fillStyle = 'rgba(255, 77, 90, 0.85)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillStyle = level.palette.hazard;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.lineWidth = 1;
         for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
             ctx.beginPath();
@@ -443,6 +838,83 @@
             ctx.fill();
             ctx.stroke();
         }
+        ctx.restore();
+    }
+
+    function drawHazards(now) {
+        const level = getCurrentLevel();
+        const t = now * 0.004;
+        state.hazards.forEach((hazard) => {
+            if (hazard.type === 'orb') {
+                const x = hazard.x - state.camera.x;
+                const y = hazard.y - state.camera.y;
+                const r = hazard.r;
+                if (x + r < -40 || x - r > state.view.width + 40 || y + r < -40 || y - r > state.view.height + 40) return;
+                const pulse = 0.84 + Math.sin(t + hazard.baseX * 0.002) * 0.18;
+                const glow = ctx.createRadialGradient(x, y, 3, x, y, r * 2.2);
+                glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+                glow.addColorStop(0.35, 'rgba(255,130,150,0.85)');
+                glow.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, r * 2.2 * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = level.palette.hazard;
+                ctx.beginPath();
+                ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                return;
+            }
+
+            const x = hazard.x - state.camera.x;
+            const y = hazard.y - state.camera.y;
+            if (x + hazard.w < -40 || x > state.view.width + 40 || y + hazard.h < -40 || y > state.view.height + 40) return;
+            const spikeW = 18;
+            const count = Math.max(1, Math.ceil(hazard.w / spikeW));
+            ctx.save();
+            ctx.fillStyle = level.palette.hazard;
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < count; i += 1) {
+                const sx = x + i * spikeW;
+                ctx.beginPath();
+                ctx.moveTo(sx, y + hazard.h);
+                ctx.lineTo(sx + spikeW * 0.5, y);
+                ctx.lineTo(sx + spikeW, y + hazard.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+    }
+
+    function drawTransitionOverlay() {
+        if (!state.transition.active) return;
+        const progress = clamp(state.transition.timer / state.transition.duration, 0, 1);
+        const nextLevel = LEVELS[state.transition.nextLevel] || getCurrentLevel();
+        const midpoint = 1 - Math.abs(progress - 0.5) * 2;
+        const alpha = 0.15 + Math.pow(midpoint, 0.7) * 0.78;
+        const radius = Math.min(state.view.width, state.view.height) * (0.22 + progress * 0.55);
+
+        ctx.save();
+        ctx.fillStyle = `rgba(4, 6, 16, ${alpha.toFixed(3)})`;
+        ctx.fillRect(0, 0, state.view.width, state.view.height);
+
+        ctx.strokeStyle = `rgba(141, 246, 255, ${(0.28 + midpoint * 0.45).toFixed(3)})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(state.view.width / 2, state.view.height / 2, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const textAlpha = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
+        ctx.fillStyle = `rgba(235, 245, 255, ${(0.25 + textAlpha * 0.7).toFixed(3)})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '700 28px Oxanium, sans-serif';
+        ctx.fillText(`Warping to Level ${state.transition.nextLevel + 1}`, state.view.width / 2, state.view.height * 0.46);
+        ctx.font = '600 18px Rajdhani, sans-serif';
+        ctx.fillText(nextLevel.name, state.view.width / 2, state.view.height * 0.53);
         ctx.restore();
     }
 
@@ -577,40 +1049,46 @@
         ctx.restore();
     }
 
-    function checkWin() {
+    function completeRun() {
         if (state.won) return;
-        if (state.death.active) return;
+        state.won = true;
+        const newTotal = state.player.bullets + state.bonusBullets;
+        saveBullets(newTotal);
+        if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
+            window.SnakesSFX.play('win');
+        }
+        try {
+            localStorage.setItem('snakes_win_mode', 'platformer');
+            sessionStorage.setItem('snakes_just_won', 'true');
+        } catch (e) {}
+        const overlay = document.getElementById('winOverlay');
+        if (overlay) overlay.classList.add('active');
+        setTimeout(() => {
+            window.location.href = 'victory.html?mode=platformer';
+        }, 1400);
+    }
+
+    function checkWin() {
+        if (state.won || state.death.active || state.transition.active) return;
         const gateRect = { x: state.goal.x + 4, y: state.goal.y + 8, w: state.goal.w - 8, h: state.goal.h - 10 };
         const playerRect = { x: state.player.x, y: state.player.y, w: state.player.w, h: state.player.h };
-        if (rectsOverlap(playerRect, gateRect)) {
-            state.won = true;
-            const newTotal = state.player.bullets + state.bonusBullets;
-            saveBullets(newTotal);
-            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                window.SnakesSFX.play('win');
-            }
-            try {
-                localStorage.setItem('snakes_win_mode', 'platformer');
-                sessionStorage.setItem('snakes_just_won', 'true');
-            } catch (e) {}
-            const overlay = document.getElementById('winOverlay');
-            if (overlay) overlay.classList.add('active');
-            setTimeout(() => {
-                window.location.href = 'victory.html?mode=platformer';
-            }, 1400);
+        if (!rectsOverlap(playerRect, gateRect)) return;
+
+        if (state.levelIndex < LEVELS.length - 1) {
+            beginLevelTransition(state.levelIndex + 1);
+            return;
         }
+        completeRun();
     }
 
     function checkFallDeath() {
-        if (state.death.active || state.won) return;
+        if (state.death.active || state.won || state.transition.active) return;
+        if (state.player.y + state.player.h >= state.world.height - 20) {
+            startDeath('floor');
+            return;
+        }
         if (state.player.y > state.world.height + 120) {
-            state.death.active = true;
-            state.death.start = performance.now();
-            state.player.vx = 0;
-            state.player.vy = 200;
-            if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                window.SnakesSFX.play('hurt');
-            }
+            startDeath('fall');
         }
     }
 
@@ -618,24 +1096,32 @@
         if (!state.ready) return;
         const now = performance.now();
         const dt = Math.min(0.03, Math.max(0.008, (now - (last || now)) / 1000));
+        state.jumpBuffer = Math.max(0, state.jumpBuffer - dt);
 
+        updateDynamicWorld(dt, now);
         movePlayer(dt);
+        if (!state.transition.active) {
+            checkHazardDeath();
+            checkFallDeath();
+            checkWin();
+        }
+        updateLevelTransition(dt);
         updateCamera();
-        checkFallDeath();
-        checkWin();
 
         ctx.setTransform(state.view.dpr, 0, 0, state.view.dpr, 0, 0);
         ctx.clearRect(0, 0, state.view.width, state.view.height);
-        drawBackground();
+        drawBackground(now);
         drawPlatforms();
         drawSpikes();
+        drawHazards(now);
         drawGoal();
         drawPlayer();
+        drawTransitionOverlay();
 
         if (state.death.active) {
             const elapsed = now - state.death.start;
             if (elapsed > 900) {
-                resetRun();
+                applyLevel(state.levelIndex);
             }
         }
 
@@ -645,19 +1131,35 @@
     function bindInputs() {
         document.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
+            const wasDown = !!state.keys[key];
             state.keys[key] = true;
+
             if (e.code === 'Space') {
                 e.preventDefault();
-                state.keys[' '] = true;
+                return;
+            }
+
+            if (key === 'arrowup' || key === 'arrowleft' || key === 'arrowright') {
+                e.preventDefault();
+            }
+            if ((key === 'arrowup' || key === 'w') && !wasDown) {
+                state.jumpBuffer = 0.14;
             }
         });
         document.addEventListener('keyup', (e) => {
             const key = e.key.toLowerCase();
             delete state.keys[key];
-            if (e.code === 'Space') delete state.keys[' '];
         });
-        window.addEventListener('blur', () => { state.keys = {}; });
-        document.addEventListener('visibilitychange', () => { if (document.hidden) state.keys = {}; });
+        window.addEventListener('blur', () => {
+            state.keys = {};
+            state.jumpBuffer = 0;
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                state.keys = {};
+                state.jumpBuffer = 0;
+            }
+        });
 
         const restartBtn = document.getElementById('restartBtn');
         if (restartBtn) restartBtn.addEventListener('click', resetRun);
@@ -673,11 +1175,14 @@
 
     function init() {
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        buildPlatforms();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            updateCamera();
+        });
         bindInputs();
         loadPlayerData().then(() => {
             updateHud();
+            applyLevel(0);
             state.ready = true;
             requestAnimationFrame(() => loop());
         });

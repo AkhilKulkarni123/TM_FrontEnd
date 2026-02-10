@@ -808,8 +808,12 @@
         let socket = null;
         let roomPollInterval = null;
         let positionBroadcastInterval = null;
+        let lastFrameAt = 0;
         const DEFAULT_LIVES = 5;
         const MAX_BULLETS = 50;
+        const FRAME_RATE_BASE = 60;
+        const SELF_RECONCILE_SOFT_PX = 3;
+        const SELF_RECONCILE_HARD_PX = 44;
 
         const CHARACTER_CONFIG = {
             knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight' },
@@ -1590,8 +1594,26 @@
             });
 
             socket.on('boss_self_position', (data) => {
-                if (typeof data.x === 'number') gameState.player.x = data.x;
-                if (typeof data.y === 'number') gameState.player.y = data.y;
+                if (!data) return;
+                const serverX = Number(data.x);
+                const serverY = Number(data.y);
+                if (!Number.isFinite(serverX) || !Number.isFinite(serverY)) return;
+
+                const dx = serverX - gameState.player.x;
+                const dy = serverY - gameState.player.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > SELF_RECONCILE_HARD_PX) {
+                    gameState.player.x = serverX;
+                    gameState.player.y = serverY;
+                } else if (dist > SELF_RECONCILE_SOFT_PX) {
+                    // Ease into authoritative positions to avoid visible jitter from network delay.
+                    gameState.player.x += dx * 0.35;
+                    gameState.player.y += dy * 0.35;
+                }
+
+                gameState.player.x = Math.max(gameState.player.size, Math.min(canvas.width - gameState.player.size, gameState.player.x));
+                gameState.player.y = Math.max(gameState.player.size + 200, Math.min(canvas.height - gameState.player.size, gameState.player.y));
             });
 
             // Other player shot a bullet
@@ -1911,6 +1933,7 @@
 
                     activateBattleMode();
                     addSystemMessage('Battle started! Work together to defeat the boss!');
+                    lastFrameAt = 0;
                     gameLoop();
                 }
             } catch (error) {
@@ -1934,6 +1957,7 @@
                 addSystemMessage('Playing in offline mode');
                 // Start local powerup spawning for offline mode
                 startOfflinePowerupSpawner();
+                lastFrameAt = 0;
                 gameLoop();
             }
         }
@@ -1988,6 +2012,7 @@
 
             activateBattleMode();
             addSystemMessage('Battle started! Work together to defeat the boss!');
+            lastFrameAt = 0;
             gameLoop();
         }
 
@@ -2191,15 +2216,19 @@
             document.getElementById('battleProgressText').textContent = `Boss Damage: ${Math.round(damagePercent)}%`;
         }
 
-        function gameLoop() {
+        function gameLoop(frameTime) {
             if (!gameActive) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const now = typeof frameTime === 'number' ? frameTime : performance.now();
+            const dt = Math.min(0.05, Math.max(0.008, (now - (lastFrameAt || now)) / 1000));
+            lastFrameAt = now;
+            const moveStep = gameState.player.speed * dt * FRAME_RATE_BASE;
 
             // Smooth aim interpolation
             gameState.aimAngle = lerpAngle(gameState.aimAngle, gameState.targetAimAngle, gameState.aimSmoothness);
 
-            movePlayer();
+            movePlayer(moveStep);
             moveBoss();
             moveBullets();
             moveBossProjectiles();
@@ -2256,18 +2285,19 @@
             }
         }
 
-        function movePlayer() {
+        function movePlayer(step) {
+            const speed = Number.isFinite(step) ? step : gameState.player.speed;
             if (gameState.keys['a'] || gameState.keys['arrowleft']) {
-                gameState.player.x = Math.max(gameState.player.size, gameState.player.x - gameState.player.speed);
+                gameState.player.x = Math.max(gameState.player.size, gameState.player.x - speed);
             }
             if (gameState.keys['d'] || gameState.keys['arrowright']) {
-                gameState.player.x = Math.min(canvas.width - gameState.player.size, gameState.player.x + gameState.player.speed);
+                gameState.player.x = Math.min(canvas.width - gameState.player.size, gameState.player.x + speed);
             }
             if (gameState.keys['w'] || gameState.keys['arrowup']) {
-                gameState.player.y = Math.max(gameState.player.size + 200, gameState.player.y - gameState.player.speed);
+                gameState.player.y = Math.max(gameState.player.size + 200, gameState.player.y - speed);
             }
             if (gameState.keys['s'] || gameState.keys['arrowdown']) {
-                gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + gameState.player.speed);
+                gameState.player.y = Math.min(canvas.height - gameState.player.size, gameState.player.y + speed);
             }
             resolvePlayerBossCollision();
             gameState.player.x = Math.max(gameState.player.size, Math.min(canvas.width - gameState.player.size, gameState.player.x));
