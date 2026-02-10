@@ -602,8 +602,11 @@
         function resizeCanvas() {
             canvas.width = window.innerWidth - 300;
             canvas.height = window.innerHeight - 200;
+            enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
+            if (gameState.opponent) {
+                enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
+            }
         }
-        resizeCanvas();
 
         let gameActive = false;
         let socket = null;
@@ -751,6 +754,22 @@
             return (cols * pixel) / 2;                       // half the rendered width
         }
 
+        function clampToSide(x, playerNumber, character) {
+            const midX = canvas.width / 2;
+            const spriteHalf = getSpriteHalfWidth(character);
+            if (Number(playerNumber) === 1) {
+                const maxX = midX - WALL_HALF_WIDTH - spriteHalf;
+                return Math.min(x, maxX);
+            }
+            const minX = midX + WALL_HALF_WIDTH + spriteHalf;
+            return Math.max(x, minX);
+        }
+
+        function enforceBoundaryForPlayer(p, playerNumber) {
+            if (!p) return;
+            p.x = clampToSide(p.x, playerNumber, p.character);
+        }
+
         const gameState = {
             player: {
                 x: 100,
@@ -776,6 +795,8 @@
             targetAimAngle: -Math.PI / 2,
             aimSmoothness: 1.0
         };
+
+        resizeCanvas();
 
         // Check demo mode
         function isDemoMode() {
@@ -1027,6 +1048,7 @@
                     y: canvas.height / 2,
                     size: 35
                 };
+                gameState.opponent.player_number = opponentNumber;
                 // Keep both players on their correct sides of the boundary.
                 if (gameState.playerNumber === 1) {
                     gameState.player.x = 100;
@@ -1035,6 +1057,8 @@
                     gameState.player.x = canvas.width - 100;
                     gameState.opponent.x = 100;
                 }
+                enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
+                enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
                 hideWaitingOverlay();
                 addSystemMessage(`${data.opponent.username} is already in the arena!`);
                 updateOpponentLives();
@@ -1060,6 +1084,7 @@
                     y: canvas.height / 2,
                     size: 35
                 };
+                gameState.opponent.player_number = opponentNumber;
                 if (gameState.playerNumber === 1) {
                     gameState.player.x = 100;
                     gameState.opponent.x = canvas.width - 100;
@@ -1067,6 +1092,8 @@
                     gameState.player.x = canvas.width - 100;
                     gameState.opponent.x = 100;
                 }
+                enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
+                enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
                 console.log('Set opponent:', gameState.opponent);
                 hideWaitingOverlay();
                 addSystemMessage(`${data.opponent.username} has entered the arena!`);
@@ -1109,6 +1136,7 @@
                 if (gameState.opponent) {
                     gameState.opponent.x = data.x;
                     gameState.opponent.y = data.y;
+                    enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
                 }
             });
 
@@ -1184,6 +1212,7 @@
                 if (Math.hypot(dx, dy) > 0.5) {
                     gameState.player.x = data.x;
                     gameState.player.y = data.y;
+                    enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
                 }
             });
 

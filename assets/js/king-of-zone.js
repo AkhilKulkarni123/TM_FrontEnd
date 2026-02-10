@@ -141,8 +141,10 @@
     const state = {
         connected: false,
         joined: false,
+        offline: false,
         roomId: null,
         selfId: null,
+        localId: null,
         map: { width: 2000, height: 1300 },
         rules: {
             targetScore: 180,
@@ -157,13 +159,15 @@
             character: 'knight',
             x: 600,
             y: 600,
-            speed: 4.2,
+            speed: 5.8,
             speedMultiplier: 1,
             zoneHp: 100,
             combatHp: 100,
             bullets: 60,
             outside: false,
-            radius: 18
+            radius: 18,
+            vx: 0,
+            vy: 0
         },
         players: {},
         zone: { x: 900, y: 650, radius: 520, base_radius: 520, core_radius: 180 },
@@ -196,6 +200,7 @@
     let lastFrameAt = 0;
     let zoneEventTimeout = null;
     let saveBulletsTimer = null;
+    let offlineTimer = null;
 
     function playCue(name) {
         if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
@@ -388,6 +393,39 @@
         }
     }
 
+    function ensureLocalId() {
+        if (state.localId) return state.localId;
+        try {
+            const stored = sessionStorage.getItem('koz_local_id');
+            if (stored) {
+                state.localId = stored;
+                return stored;
+            }
+        } catch (e) {}
+        const generated = 'local_' + Math.random().toString(36).slice(2, 10);
+        state.localId = generated;
+        try {
+            sessionStorage.setItem('koz_local_id', generated);
+        } catch (e) {}
+        return generated;
+    }
+
+    function enableOffline(reason) {
+        if (state.offline) return;
+        state.offline = true;
+        state.connected = false;
+        state.joined = true;
+        state.selfId = ensureLocalId();
+        state.roomId = 'LOCAL';
+        state.teamScores = state.teamScores || {};
+        state.teamScores[state.selfId] = state.teamScores[state.selfId] || 0;
+        state.scoreLabels[state.selfId] = state.player.username;
+        if (!state.timeLeft) state.timeLeft = state.rules.timeLimit || 240;
+        if (reason) showZoneEvent(reason, 'wrong');
+        updateStatus();
+        updateScoreboard();
+    }
+
     function loadDemoProgress() {
         try {
             const stored = sessionStorage.getItem('snakes_demo_progress');
@@ -441,7 +479,10 @@
     }
 
     function joinMatch() {
-        if (!socket || !state.connected) return;
+        if (!socket || !state.connected) {
+            enableOffline('Offline training mode');
+            return;
+        }
         socket.emit('koz_join', {
             username: state.player.username,
             character: state.player.character,
@@ -463,10 +504,26 @@
         socket.on('connect', () => {
             state.connected = true;
             state.selfId = socket.id;
+            if (state.offline) {
+                state.offline = false;
+                state.joined = false;
+            }
+            if (offlineTimer) {
+                clearTimeout(offlineTimer);
+                offlineTimer = null;
+            }
             playCue('battle');
             if (!state.joined) {
                 joinMatch();
             }
+        });
+
+        socket.on('connect_error', () => {
+            enableOffline('Server unreachable');
+        });
+
+        socket.on('disconnect', () => {
+            if (!state.offline) enableOffline('Connection lost');
         });
 
         socket.on('koz_room_state', (data) => {
@@ -974,7 +1031,7 @@
             updateStormMeter();
         }
 
-        if (state.joined) {
+        if (state.joined || state.offline) {
             const stormMax = state.rules.stormMax || 100;
             if (state.player.outside) {
                 state.player.zoneHp = clamp(state.player.zoneHp - (state.storm.damage || 8) * dt, 0, stormMax);
@@ -1030,6 +1087,10 @@
             socket.emit('koz_move', { x: state.player.x, y: state.player.y, inZone: !state.player.outside });
         }
 
+        if (state.offline) {
+            updateLocalControl(dt);
+        }
+
         state.fx.pulse = Math.max(0, state.fx.pulse - 0.02);
         state.fx.shake = Math.max(0, state.fx.shake - 0.02);
 
@@ -1041,15 +1102,55 @@
         if (state.player.outside) speed *= 0.85;
         if (state.keys['shift']) speed *= 1.1;
 
-        const dx = (state.keys['d'] || state.keys['arrowright'] ? 1 : 0) - (state.keys['a'] || state.keys['arrowleft'] ? 1 : 0);
-        const dy = (state.keys['s'] || state.keys['arrowdown'] ? 1 : 0) - (state.keys['w'] || state.keys['arrowup'] ? 1 : 0);
-        const mag = Math.hypot(dx, dy) || 1;
-        state.player.x += (dx / mag) * speed * dt;
-        state.player.y += (dy / mag) * speed * dt;
+        const inputX = (state.keys['d'] || state.keys['arrowright'] ? 1 : 0) - (state.keys['a'] || state.keys['arrowleft'] ? 1 : 0);
+        const inputY = (state.keys['s'] || state.keys['arrowdown'] ? 1 : 0) - (state.keys['w'] || state.keys['arrowup'] ? 1 : 0);
+        const mag = Math.hypot(inputX, inputY) || 1;
+        const targetVx = (inputX / mag) * speed;
+        const targetVy = (inputY / mag) * speed;
+        const accel = 18;
+        const lerpFactor = Math.min(1, accel * dt);
+        state.player.vx += (targetVx - state.player.vx) * lerpFactor;
+        state.player.vy += (targetVy - state.player.vy) * lerpFactor;
+
+        state.player.x += state.player.vx * dt;
+        state.player.y += state.player.vy * dt;
 
         const margin = state.player.radius + 6;
         state.player.x = clamp(state.player.x, margin, state.map.width - margin);
         state.player.y = clamp(state.player.y, margin, state.map.height - margin);
+    }
+
+    function updateLocalControl(dt) {
+        if (!state.offline) return;
+        if (!state.selfId) state.selfId = ensureLocalId();
+        if (!state.timeLeft) state.timeLeft = state.rules.timeLimit || 240;
+        const inside = isInsideZone(state.player.x, state.player.y);
+        if (inside) {
+            state.controller = state.selfId;
+            state.controllerName = state.player.username;
+            state.contested = false;
+            const coreRadius = state.zone.core_radius || state.zone.radius * 0.35;
+            const inCore = Math.hypot(state.player.x - state.zone.x, state.player.y - state.zone.y) <= coreRadius;
+            const base = state.rules.scorePerSec || 4;
+            const bonus = inCore ? (state.rules.coreBonus || 2) : 0;
+            const add = (base + bonus) * dt;
+            state.teamScores[state.selfId] = (state.teamScores[state.selfId] || 0) + add;
+        } else {
+            state.controller = null;
+            state.controllerName = null;
+            state.contested = false;
+        }
+        state.timeLeft = Math.max(0, state.timeLeft - dt);
+        updateStatus();
+        updateScoreboard();
+        if (state.timeLeft === 0) {
+            const overlay = document.getElementById('endOverlay');
+            const title = document.getElementById('endTitle');
+            const subtitle = document.getElementById('endSubtitle');
+            if (title) title.textContent = 'Training Complete';
+            if (subtitle) subtitle.textContent = 'Score: ' + Math.round(state.teamScores[state.selfId] || 0);
+            if (overlay) overlay.classList.add('active');
+        }
     }
 
     function getNearestTargetId() {
@@ -1093,7 +1194,7 @@
     }
 
     function shoot() {
-        if (!state.joined || !socket || !socket.connected) return;
+        if (!state.joined && !state.offline) return;
         const now = Date.now();
         if (now - state.lastShotAt < SHOT_COOLDOWN) return;
         if (state.player.bullets <= 0) return;
@@ -1136,14 +1237,16 @@
         updateStatus();
         scheduleBulletSave();
 
-        socket.emit('koz_shoot', {
-            bulletX: spawnX,
-            bulletY: spawnY,
-            dx: Math.cos(shotAngle) * BULLET_SPEED,
-            dy: Math.sin(shotAngle) * BULLET_SPEED,
-            character: state.player.character,
-            target: targetId
-        });
+        if (socket && socket.connected && !state.offline) {
+            socket.emit('koz_shoot', {
+                bulletX: spawnX,
+                bulletY: spawnY,
+                dx: Math.cos(shotAngle) * BULLET_SPEED,
+                dy: Math.sin(shotAngle) * BULLET_SPEED,
+                character: state.player.character,
+                target: targetId
+            });
+        }
     }
 
     function moveBullets() {
@@ -1216,6 +1319,12 @@
         document.addEventListener('keyup', (e) => {
             delete state.keys[e.key.toLowerCase()];
         });
+        window.addEventListener('blur', () => {
+            state.keys = {};
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) state.keys = {};
+        });
 
         canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('mousedown', (e) => {
@@ -1241,7 +1350,11 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         bindInputs();
+        ensureLocalId();
         loadPlayerData().then(connectSocket);
+        offlineTimer = setTimeout(() => {
+            if (!state.connected) enableOffline('Server unavailable');
+        }, 3000);
         updateStatus();
         requestAnimationFrame(gameLoop);
     }
