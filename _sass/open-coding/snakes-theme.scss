@@ -1,28 +1,270 @@
 // Snakes & Ladders theme layer (Sass)
 
-$bg-start: #101624;
-$bg-mid: #1a2133;
-$bg-end: #232b40;
-
-$accent-primary: #2f8f85;
-$accent-secondary: #9b7a35;
-$accent-muted: #5f7280;
-
 $panel: rgba(10, 14, 22, 0.78);
 $panel-border: rgba(255, 255, 255, 0.12);
-$panel-soft: rgba(255, 255, 255, 0.08);
-$text-soft: rgba(255, 255, 255, 0.72);
 
 @mixin glow($color, $blur: 50px) {
   box-shadow: 0 20px $blur rgba($color, 0.35);
 }
 
 @mixin glass-panel {
-  background: $panel;
-  border: 2px solid $panel-border;
+  background: var(--panel-bg, #{$panel});
+  border: 2px solid var(--panel-border, #{$panel-border});
   backdrop-filter: blur(10px);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
   color: #fff;
+}
+
+// Theme tokens shared across all Snakes pages.
+body.snakes-theme,
+.snakes-theme {
+  --bg-1: #0f0c29;
+  --bg-2: #1d2342;
+  --bg-3: #24243e;
+  --accent: #667eea;
+  --accent-rgb: 102, 126, 234;
+  --accent-2: #764ba2;
+  --accent-2-rgb: 118, 75, 162;
+  --card-border: #2ecc71;
+  --card-border-rgb: 46, 204, 113;
+  --muted-text: rgba(230, 236, 255, 0.82);
+  --heading: #f8fbff;
+  --button-bg: linear-gradient(135deg, #334a7a, #2c3d63);
+  --button-bg-hover: linear-gradient(135deg, #3f5b93, #354a77);
+  --button-text: #f4f8ff;
+  --panel-bg: rgba(10, 14, 22, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.16);
+  --panel-soft: rgba(255, 255, 255, 0.08);
+  --focus-ring: rgba(118, 75, 162, 0.42);
+  --mode-boss-border: #e94560;
+  --mode-pvp-border: #4facfe;
+  --mode-koz-border: #f1c40f;
+  --mode-koz-glow: rgba(241, 196, 15, 0.28);
+}
+
+body.snakes-theme[data-theme='aurora-mint'],
+body[data-theme='aurora-mint'] .snakes-theme,
+.snakes-theme[data-theme='aurora-mint'] {
+  --bg-1: #062b2f;
+  --bg-2: #0f2f36;
+  --bg-3: #102a2f;
+  --accent: #3dd6b0;
+  --accent-rgb: 61, 214, 176;
+  --accent-2: #7fffd4;
+  --accent-2-rgb: 127, 255, 212;
+  --card-border: #43f0c2;
+  --card-border-rgb: 67, 240, 194;
+  --muted-text: rgba(225, 255, 246, 0.86);
+  --heading: #ebfffa;
+  --button-bg: linear-gradient(135deg, #1ea78f, #0f766e);
+  --button-bg-hover: linear-gradient(135deg, #2ac1a6, #149486);
+  --button-text: #eafffa;
+  --panel-bg: rgba(6, 25, 24, 0.78);
+  --panel-border: rgba(127, 255, 212, 0.22);
+  --mode-boss-border: #4be8c7;
+  --mode-pvp-border: #42d9f8;
+  --mode-koz-border: #c7ff7b;
+  --mode-koz-glow: rgba(199, 255, 123, 0.3);
+}
+
+body.snakes-theme[data-theme='emberforge'],
+body[data-theme='emberforge'] .snakes-theme,
+.snakes-theme[data-theme='emberforge'] {
+  --bg-1: #2b0f07;
+  --bg-2: #3b140b;
+  --bg-3: #44130f;
+  --accent: #ff7a3d;
+  --accent-rgb: 255, 122, 61;
+  --accent-2: #ffb347;
+  --accent-2-rgb: 255, 179, 71;
+  --card-border: #ff8f5a;
+  --card-border-rgb: 255, 143, 90;
+  --muted-text: rgba(255, 218, 204, 0.88);
+  --heading: #ffe9df;
+  --button-bg: linear-gradient(135deg, #ff6a3d, #c0392b);
+  --button-bg-hover: linear-gradient(135deg, #ff7f52, #d04936);
+  --button-text: #fff4ee;
+  --panel-bg: rgba(33, 10, 7, 0.78);
+  --panel-border: rgba(255, 179, 71, 0.24);
+  --mode-boss-border: #ff7a3d;
+  --mode-pvp-border: #ffb347;
+  --mode-koz-border: #ffd166;
+  --mode-koz-glow: rgba(255, 209, 102, 0.32);
+}
+
+body.snakes-theme[data-theme='midnight-violet'],
+body[data-theme='midnight-violet'] .snakes-theme,
+.snakes-theme[data-theme='midnight-violet'] {
+  --bg-1: #0c0820;
+  --bg-2: #181035;
+  --bg-3: #22113d;
+  --accent: #8b5cf6;
+  --accent-rgb: 139, 92, 246;
+  --accent-2: #c084fc;
+  --accent-2-rgb: 192, 132, 252;
+  --card-border: #a78bfa;
+  --card-border-rgb: 167, 139, 250;
+  --muted-text: rgba(224, 207, 255, 0.86);
+  --heading: #f3edff;
+  --button-bg: linear-gradient(135deg, #7c3aed, #4c1d95);
+  --button-bg-hover: linear-gradient(135deg, #8f4eff, #5a24ac);
+  --button-text: #f8f3ff;
+  --panel-bg: rgba(18, 10, 35, 0.78);
+  --panel-border: rgba(192, 132, 252, 0.24);
+  --mode-boss-border: #b37bff;
+  --mode-pvp-border: #8f9cff;
+  --mode-koz-border: #d5b3ff;
+  --mode-koz-glow: rgba(213, 179, 255, 0.34);
+}
+
+body.snakes-theme[data-theme='solar-flare'],
+body[data-theme='solar-flare'] .snakes-theme,
+.snakes-theme[data-theme='solar-flare'] {
+  --bg-1: #2b1200;
+  --bg-2: #3d1b00;
+  --bg-3: #4f2400;
+  --accent: #ffb703;
+  --accent-rgb: 255, 183, 3;
+  --accent-2: #fb8500;
+  --accent-2-rgb: 251, 133, 0;
+  --card-border: #ffd166;
+  --card-border-rgb: 255, 209, 102;
+  --muted-text: rgba(255, 234, 186, 0.88);
+  --heading: #fff4dd;
+  --button-bg: linear-gradient(135deg, #ff9f1c, #ff6b35);
+  --button-bg-hover: linear-gradient(135deg, #ffb33d, #ff7c47);
+  --button-text: #fff8ea;
+  --panel-bg: rgba(38, 16, 4, 0.78);
+  --panel-border: rgba(255, 183, 3, 0.24);
+  --mode-boss-border: #ff8a00;
+  --mode-pvp-border: #ffb703;
+  --mode-koz-border: #ffe07a;
+  --mode-koz-glow: rgba(255, 224, 122, 0.34);
+}
+
+body.snakes-theme[data-theme='oceanic-depths'],
+body[data-theme='oceanic-depths'] .snakes-theme,
+.snakes-theme[data-theme='oceanic-depths'] {
+  --bg-1: #021b2d;
+  --bg-2: #043041;
+  --bg-3: #063b45;
+  --accent: #00b4d8;
+  --accent-rgb: 0, 180, 216;
+  --accent-2: #48cae4;
+  --accent-2-rgb: 72, 202, 228;
+  --card-border: #90e0ef;
+  --card-border-rgb: 144, 224, 239;
+  --muted-text: rgba(204, 242, 255, 0.88);
+  --heading: #e7fbff;
+  --button-bg: linear-gradient(135deg, #0077b6, #0096c7);
+  --button-bg-hover: linear-gradient(135deg, #178bcb, #12a9da);
+  --button-text: #ecfcff;
+  --panel-bg: rgba(4, 24, 35, 0.8);
+  --panel-border: rgba(72, 202, 228, 0.24);
+  --mode-boss-border: #33bfd9;
+  --mode-pvp-border: #4fd4ff;
+  --mode-koz-border: #9ee9ff;
+  --mode-koz-glow: rgba(158, 233, 255, 0.3);
+}
+
+body.snakes-theme[data-theme='rose-nebula'],
+body[data-theme='rose-nebula'] .snakes-theme,
+.snakes-theme[data-theme='rose-nebula'] {
+  --bg-1: #2a0c1f;
+  --bg-2: #35122b;
+  --bg-3: #3f1533;
+  --accent: #ff5ca8;
+  --accent-rgb: 255, 92, 168;
+  --accent-2: #ff8fab;
+  --accent-2-rgb: 255, 143, 171;
+  --card-border: #ffa8c6;
+  --card-border-rgb: 255, 168, 198;
+  --muted-text: rgba(255, 218, 235, 0.88);
+  --heading: #fff0f6;
+  --button-bg: linear-gradient(135deg, #ff4d8d, #c9184a);
+  --button-bg-hover: linear-gradient(135deg, #ff66a0, #db1f57);
+  --button-text: #fff0f7;
+  --panel-bg: rgba(36, 10, 28, 0.8);
+  --panel-border: rgba(255, 143, 171, 0.24);
+  --mode-boss-border: #ff6f9c;
+  --mode-pvp-border: #ff9cc2;
+  --mode-koz-border: #ffd1e2;
+  --mode-koz-glow: rgba(255, 209, 226, 0.34);
+}
+
+body.snakes-theme[data-theme='cyber-lime'],
+body[data-theme='cyber-lime'] .snakes-theme,
+.snakes-theme[data-theme='cyber-lime'] {
+  --bg-1: #081a05;
+  --bg-2: #11280a;
+  --bg-3: #16310e;
+  --accent: #a3e635;
+  --accent-rgb: 163, 230, 53;
+  --accent-2: #bef264;
+  --accent-2-rgb: 190, 242, 100;
+  --card-border: #d9f99d;
+  --card-border-rgb: 217, 249, 157;
+  --muted-text: rgba(234, 255, 201, 0.9);
+  --heading: #f5ffe9;
+  --button-bg: linear-gradient(135deg, #84cc16, #4d7c0f);
+  --button-bg-hover: linear-gradient(135deg, #98e620, #5a8f14);
+  --button-text: #f7ffe8;
+  --panel-bg: rgba(12, 23, 6, 0.8);
+  --panel-border: rgba(190, 242, 100, 0.24);
+  --mode-boss-border: #8cd93f;
+  --mode-pvp-border: #bbff5a;
+  --mode-koz-border: #e6ffaf;
+  --mode-koz-glow: rgba(230, 255, 175, 0.34);
+}
+
+body.snakes-theme[data-theme='glacier-blue'],
+body[data-theme='glacier-blue'] .snakes-theme,
+.snakes-theme[data-theme='glacier-blue'] {
+  --bg-1: #0a1f33;
+  --bg-2: #10304b;
+  --bg-3: #12395a;
+  --accent: #60a5fa;
+  --accent-rgb: 96, 165, 250;
+  --accent-2: #93c5fd;
+  --accent-2-rgb: 147, 197, 253;
+  --card-border: #bfdbfe;
+  --card-border-rgb: 191, 219, 254;
+  --muted-text: rgba(222, 236, 255, 0.88);
+  --heading: #f1f7ff;
+  --button-bg: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --button-bg-hover: linear-gradient(135deg, #5397ff, #2c5cef);
+  --button-text: #eff6ff;
+  --panel-bg: rgba(10, 25, 44, 0.8);
+  --panel-border: rgba(147, 197, 253, 0.24);
+  --mode-boss-border: #76b0ff;
+  --mode-pvp-border: #9ad2ff;
+  --mode-koz-border: #d0e8ff;
+  --mode-koz-glow: rgba(208, 232, 255, 0.34);
+}
+
+body.snakes-theme[data-theme='sandstone-gold'],
+body[data-theme='sandstone-gold'] .snakes-theme,
+.snakes-theme[data-theme='sandstone-gold'] {
+  --bg-1: #2a1e12;
+  --bg-2: #3a2b1a;
+  --bg-3: #4a3724;
+  --accent: #d4a373;
+  --accent-rgb: 212, 163, 115;
+  --accent-2: #e9c46a;
+  --accent-2-rgb: 233, 196, 106;
+  --card-border: #f4d58d;
+  --card-border-rgb: 244, 213, 141;
+  --muted-text: rgba(250, 232, 202, 0.9);
+  --heading: #fff6e5;
+  --button-bg: linear-gradient(135deg, #c58940, #a97142);
+  --button-bg-hover: linear-gradient(135deg, #d39a52, #b67f50);
+  --button-text: #fff7e8;
+  --panel-bg: rgba(33, 24, 16, 0.8);
+  --panel-border: rgba(233, 196, 106, 0.24);
+  --mode-boss-border: #d59a5f;
+  --mode-pvp-border: #e9c46a;
+  --mode-koz-border: #f6db9f;
+  --mode-koz-glow: rgba(246, 219, 159, 0.36);
 }
 
 .character-select-active {
@@ -46,8 +288,8 @@ $text-soft: rgba(255, 255, 255, 0.72);
 body.snakes-theme,
 .snakes-theme {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: $bg-mid;
-  color: #fff;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
+  color: var(--heading);
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
@@ -57,8 +299,8 @@ body.snakes-theme,
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.08) 0%, transparent 55%),
-      radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.08) 0%, transparent 55%);
+      radial-gradient(circle at 20% 50%, rgba(var(--accent-rgb), 0.14) 0%, transparent 55%),
+      radial-gradient(circle at 80% 80%, rgba(var(--accent-2-rgb), 0.12) 0%, transparent 55%);
     pointer-events: none;
     z-index: 0;
   }
@@ -99,7 +341,7 @@ body.snakes-theme,
   small,
   .mode-description,
   .mode-features li {
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   h1,
@@ -111,14 +353,14 @@ body.snakes-theme,
   .stat-value,
   .player-name-label,
   .mode-title {
-    color: #ffffff;
+    color: var(--heading);
   }
 
   a {
-    color: $accent-primary;
+    color: var(--accent);
 
     &:hover {
-      color: $accent-secondary;
+      color: var(--accent-2);
     }
   }
 
@@ -144,7 +386,7 @@ body.snakes-theme,
   .login-title,
   .page-title,
   .leaderboard-header h2 {
-    color: #f5f7ff;
+    color: var(--heading);
     text-shadow: 0 2px 10px rgba(15, 20, 35, 0.35);
   }
 
@@ -155,7 +397,7 @@ body.snakes-theme,
   .control-hint,
   .question-meta,
   .mode-description {
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .btn,
@@ -177,38 +419,38 @@ body.snakes-theme,
   #controls button,
   .question-submit,
   .game-start-btn {
-    background: linear-gradient(135deg, #2a3b4a, #24303c);
-    color: #f7fafc;
+    background: var(--button-bg);
+    color: var(--button-text);
     border-color: rgba(255, 255, 255, 0.16);
-    @include glow(#1c2430, 14px);
+    box-shadow: 0 12px 24px rgba(var(--accent-rgb), 0.24);
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 22px rgba(20, 28, 40, 0.35);
+      background: var(--button-bg-hover);
+      box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.32);
     }
   }
 
   .primary-login {
-    background: linear-gradient(135deg, #364a5a, #2b3a47);
-    @include glow(#1c2430, 14px);
+    background: var(--button-bg);
   }
 
   .guest-login {
-    background: linear-gradient(135deg, #2a3b4a, #24303c);
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.26), rgba(31, 42, 54, 0.88));
   }
 
   .status-pill {
-    background: linear-gradient(135deg, #3a4f60, #2b3a47);
-    color: #f7fafc;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.4), rgba(var(--accent-2-rgb), 0.35));
+    color: var(--button-text);
     border-radius: 999px;
     padding: 4px 12px;
     font-weight: 700;
-    @include glow(#1c2430, 12px);
+    box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.2);
   }
 
   .active-players-badge {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35);
+    background: linear-gradient(135deg, var(--card-border), var(--accent));
+    box-shadow: 0 6px 16px rgba(var(--card-border-rgb), 0.35);
   }
 
   .board-grid-frame {
@@ -223,13 +465,13 @@ body.snakes-theme,
 
   .question-header,
   .question-body .arcade-zone {
-    background: linear-gradient(135deg, rgba(47, 143, 133, 0.38), rgba(95, 114, 128, 0.38));
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.38), rgba(var(--accent-2-rgb), 0.34));
   }
 
   .question-options label {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    color: $text-soft;
+    color: var(--muted-text);
 
     &:hover {
       background: rgba(255, 255, 255, 0.16);
@@ -237,13 +479,13 @@ body.snakes-theme,
   }
 
   .question-options label:has(input:checked) {
-    background: rgba(47, 143, 133, 0.2);
-    border-color: rgba(47, 143, 133, 0.4);
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: rgba(var(--accent-rgb), 0.45);
     color: #fff;
   }
 
   .question-submit {
-    background: linear-gradient(135deg, #364a5a, #2b3a47);
+    background: var(--button-bg);
   }
 
   .mode-card {
@@ -251,11 +493,11 @@ body.snakes-theme,
     border-width: 3px;
 
     &.boss-mode {
-      border-color: $accent-secondary;
+      border-color: var(--mode-boss-border);
     }
 
     &.pvp-mode {
-      border-color: $accent-primary;
+      border-color: var(--mode-pvp-border);
     }
   }
 
@@ -265,7 +507,7 @@ body.snakes-theme,
   }
 
   .hud .stat-box {
-    background: rgba(38, 52, 64, 0.8);
+    background: rgba(var(--accent-rgb), 0.28);
   }
 
   #locked-overlay {
@@ -275,8 +517,8 @@ body.snakes-theme,
 
   // ── Player name in green for dashboard ──
   .player-name-label {
-    color: #4ade80 !important;
-    text-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+    color: var(--accent-2) !important;
+    text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.32);
   }
 
   // ── Dashboard info-card contrast improvements ──
@@ -296,7 +538,7 @@ body.snakes-theme,
       border-radius: 4px;
       padding: 4px 6px;
       margin: 4px 0;
-      border-left: 2px solid $accent-primary;
+      border-left: 2px solid var(--accent);
     }
 
     p span {
@@ -319,7 +561,7 @@ body.snakes-theme,
   }
 
   .control-hint {
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--muted-text) !important;
     font-style: italic;
   }
 
@@ -395,7 +637,7 @@ body.snakes-theme,
   }
 
   .dice-label {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--muted-text);
     font-size: 0.75em;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -408,7 +650,7 @@ body.snakes-theme,
     }
 
     p {
-      color: rgba(255, 255, 255, 0.85);
+      color: var(--muted-text);
       background: transparent;
       border-left: none;
       padding: 0;
@@ -419,11 +661,11 @@ body.snakes-theme,
   // ── Section 2 instructions overlay contrast ──
   .section2-instructions-content {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 2px solid rgba(74, 222, 128, 0.3);
+    border: 2px solid rgba(var(--accent-rgb), 0.35);
 
     h2 {
-      color: #4ade80;
-      text-shadow: 0 2px 10px rgba(74, 222, 128, 0.3);
+      color: var(--accent);
+      text-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.3);
     }
 
     p {
@@ -434,15 +676,15 @@ body.snakes-theme,
     }
 
     .instructions-list {
-      background: rgba(74, 222, 128, 0.08);
-      border: 1px solid rgba(74, 222, 128, 0.2);
+      background: rgba(var(--accent-rgb), 0.1);
+      border: 1px solid rgba(var(--accent-rgb), 0.24);
 
       li {
         color: rgba(255, 255, 255, 0.92);
       }
 
       li::before {
-        color: #4ade80;
+        color: var(--accent);
       }
     }
 
@@ -451,18 +693,18 @@ body.snakes-theme,
     }
 
     .auto-dismiss-timer {
-      background: rgba(74, 222, 128, 0.2);
-      color: #4ade80;
+      background: rgba(var(--accent-rgb), 0.2);
+      color: var(--accent);
     }
   }
 
   // ── Roll prompt overlay dice contrast ──
   .roll-prompt-content {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 2px solid rgba(251, 191, 36, 0.3);
+    border: 2px solid var(--mode-koz-border);
 
     h2 {
-      color: #fbbf24;
+      color: var(--mode-koz-border);
     }
 
     p {
@@ -478,7 +720,7 @@ body.snakes-theme,
     position: relative;
     min-height: 100vh;
     overflow: hidden;
-    background: linear-gradient(135deg, $bg-start 0%, $bg-mid 55%, $bg-end 100%);
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
   }
 
   .pixel-background {
@@ -502,8 +744,8 @@ body.snakes-theme,
 
     &::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(47, 143, 133, 0.12) 0%, transparent 55%),
-        radial-gradient(circle at 80% 80%, rgba(95, 114, 128, 0.12) 0%, transparent 55%);
+        radial-gradient(circle at 20% 50%, rgba(var(--accent-rgb), 0.14) 0%, transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(var(--accent-2-rgb), 0.12) 0%, transparent 55%);
     }
   }
 
@@ -527,7 +769,7 @@ body.snakes-theme,
 
   .login-subtitle {
     font-size: 1.05rem;
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .login-options {
@@ -560,12 +802,12 @@ body.snakes-theme,
   }
 
   .primary-login {
-    background: linear-gradient(135deg, #2f8f85 0%, #1d6a63 100%);
-    box-shadow: 0 12px 28px rgba(47, 143, 133, 0.4);
+    background: var(--button-bg);
+    box-shadow: 0 12px 28px rgba(var(--accent-rgb), 0.36);
   }
 
   .guest-login {
-    background: linear-gradient(135deg, #2a3b4a 0%, #1f2a36 100%);
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.26), rgba(31, 42, 54, 0.88));
     box-shadow: 0 12px 28px rgba(22, 32, 42, 0.45);
   }
 
@@ -574,12 +816,12 @@ body.snakes-theme,
   }
 
   .btn-description {
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .login-divider span {
     background: rgba(10, 14, 22, 0.85);
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .login-divider::before,
@@ -596,7 +838,7 @@ body.snakes-theme,
     @include glass-panel;
     border-radius: 14px;
     padding: 16px 20px;
-    color: $text-soft;
+    color: var(--muted-text);
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -616,7 +858,7 @@ body.snakes-theme,
 
     p {
       margin: 0 0 12px 0;
-      color: $text-soft;
+      color: var(--muted-text);
     }
 
     input {
@@ -646,7 +888,7 @@ body.snakes-theme,
     }
 
     #guest-name-continue {
-      background: linear-gradient(135deg, #2f8f85, #1f6e65);
+      background: var(--button-bg);
     }
   }
 
@@ -686,9 +928,9 @@ body.snakes-theme,
   }
 
   #character-selection:not(.theme-layout-v2) h2 {
-    color: #f5f7ff;
-    text-shadow: 0 0 30px rgba(47, 143, 133, 0.5);
-    background: linear-gradient(45deg, #f5f7ff, #9bd7d0);
+    color: var(--heading);
+    text-shadow: 0 0 30px rgba(var(--accent-rgb), 0.5);
+    background: linear-gradient(45deg, var(--heading), var(--accent-2));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -708,18 +950,18 @@ body.snakes-theme,
   }
 
   #character-selection:not(.theme-layout-v2) .character-card.center {
-    border-color: rgba(47, 143, 133, 0.7);
-    box-shadow: 0 16px 50px rgba(47, 143, 133, 0.35);
+    border-color: rgba(var(--accent-rgb), 0.72);
+    box-shadow: 0 16px 50px rgba(var(--accent-rgb), 0.35);
   }
 
   #character-selection:not(.theme-layout-v2) .character-card.selected {
-    border-color: rgba(155, 122, 53, 0.9) !important;
+    border-color: var(--mode-koz-border) !important;
     background: rgba(31, 41, 55, 0.9) !important;
-    box-shadow: 0 0 50px rgba(155, 122, 53, 0.6) !important;
+    box-shadow: 0 0 50px var(--mode-koz-glow) !important;
   }
 
   #character-selection:not(.theme-layout-v2) .carousel-btn {
-    background: linear-gradient(145deg, #2a3b4a, #24303c);
+    background: var(--button-bg);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 10px 26px rgba(12, 18, 28, 0.5);
   }
@@ -729,10 +971,10 @@ body.snakes-theme,
   }
 
   #character-selection:not(.theme-layout-v2) .game-start-btn {
-    background: linear-gradient(135deg, #2f8f85, #1f6e65);
-    color: #f7fafc;
+    background: var(--button-bg);
+    color: var(--button-text);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 28px rgba(47, 143, 133, 0.35);
+    box-shadow: 0 12px 28px rgba(var(--accent-rgb), 0.35);
   }
 
   // ── Hint bar theming ──
@@ -743,9 +985,9 @@ body.snakes-theme,
   }
 
   .hint-bar-toggle {
-    background: linear-gradient(135deg, #2a3b4a, #24303c);
+    background: var(--button-bg);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #f7fafc;
+    color: var(--button-text);
   }
 
   .hint-bar-content {
@@ -761,7 +1003,7 @@ body.snakes-theme,
   }
 
   .hint-bar-title p {
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .hint-item {
@@ -780,7 +1022,7 @@ body.snakes-theme,
 
   .hint-item p,
   .hint-item .hint-tip {
-    color: $text-soft;
+    color: var(--muted-text);
   }
 
   .hint-bar-content::-webkit-scrollbar-track {
@@ -788,11 +1030,185 @@ body.snakes-theme,
   }
 
   .hint-bar-content::-webkit-scrollbar-thumb {
-    background: rgba(47, 143, 133, 0.5);
+    background: rgba(var(--accent-rgb), 0.5);
   }
 
   .hint-bar-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(47, 143, 133, 0.7);
+    background: rgba(var(--accent-rgb), 0.7);
+  }
+}
+
+// Cross-page theme application (mode selection, battles, victory, KOZ, lessons).
+body.snakes-theme {
+  .mode-card {
+    background: rgba(5, 9, 18, 0.62);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .mode-card.boss-mode {
+    border-color: var(--mode-boss-border);
+  }
+
+  .mode-card.pvp-mode {
+    border-color: var(--mode-pvp-border);
+  }
+
+  .mode-card.koz-mode {
+    border: 3px solid var(--mode-koz-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .mode-card.boss-mode:hover {
+    box-shadow: 0 24px 48px rgba(var(--accent-rgb), 0.3);
+  }
+
+  .mode-card.pvp-mode:hover {
+    box-shadow: 0 24px 48px rgba(var(--accent-2-rgb), 0.3);
+  }
+
+  .mode-card.koz-mode:hover {
+    box-shadow: 0 22px 48px var(--mode-koz-glow);
+  }
+
+  .boss-mode .mode-title {
+    color: var(--mode-boss-border);
+  }
+
+  .pvp-mode .mode-title {
+    color: var(--mode-pvp-border);
+  }
+
+  .koz-mode .mode-title {
+    color: var(--mode-koz-border);
+  }
+
+  .boss-mode .mode-status,
+  .pvp-mode .mode-status,
+  .koz-mode .mode-status {
+    color: var(--heading);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .boss-mode .mode-status {
+    background: rgba(var(--accent-rgb), 0.22);
+  }
+
+  .pvp-mode .mode-status {
+    background: rgba(var(--accent-2-rgb), 0.2);
+  }
+
+  .koz-mode .mode-status {
+    background: rgba(var(--card-border-rgb), 0.2);
+  }
+
+  #gameCanvas {
+    border-color: var(--accent);
+  }
+
+  .sidebar,
+  .player-stats,
+  .champions-section,
+  .player-hud .stat-box,
+  .hud .stat-box,
+  .overlay .modal,
+  .game-over-content {
+    border-color: rgba(var(--accent-rgb), 0.35);
+  }
+
+  .sidebar {
+    border-left-color: var(--accent);
+  }
+
+  .sidebar-title,
+  .champions-title {
+    color: var(--accent);
+  }
+
+  .stat-box.opponent {
+    background: rgba(var(--accent-2-rgb), 0.34);
+  }
+
+  .hud-hp-fill,
+  .health-fill.player {
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  }
+
+  .hud-hp-fill.opponent {
+    background: linear-gradient(90deg, var(--mode-boss-border) 0%, var(--mode-koz-border) 100%);
+  }
+
+  .victory-title {
+    background: linear-gradient(135deg, var(--mode-koz-border) 0%, var(--accent-2) 50%, var(--mode-koz-border) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 22px rgba(var(--accent-rgb), 0.35));
+  }
+
+  .player-stats {
+    background: rgba(var(--accent-rgb), 0.18);
+    border-color: rgba(var(--accent-rgb), 0.42);
+  }
+
+  .player-stats h3,
+  .stat-value {
+    color: var(--mode-koz-border);
+  }
+
+  .champion-card.you {
+    border-color: var(--mode-koz-border);
+    background: rgba(var(--accent-rgb), 0.18);
+  }
+
+  .page-title {
+    background: linear-gradient(45deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(var(--accent-rgb), 0.28);
+  }
+
+  .page-subtitle,
+  .victory-subtitle,
+  .champion-date {
+    color: var(--muted-text);
+  }
+
+  .spinner {
+    border-top-color: var(--accent);
+  }
+
+  .btn:focus-visible,
+  .back-btn:focus-visible,
+  .carousel-btn:focus-visible,
+  .game-start-btn:focus-visible,
+  .question-submit:focus-visible,
+  .mode-card:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px var(--focus-ring),
+      0 0 0 6px rgba(var(--accent-rgb), 0.26);
+  }
+}
+
+body.snakes-theme.koz-mode {
+  --koz-panel: rgba(8, 12, 22, 0.82);
+  --koz-panel-border: rgba(var(--accent-rgb), 0.35);
+  --koz-accent: var(--accent);
+  --koz-warning: var(--mode-koz-border);
+  --koz-danger: var(--mode-boss-border);
+  --koz-success: var(--card-border);
+  --koz-muted: var(--muted-text);
+
+  #gameCanvas {
+    background: radial-gradient(circle at 30% 20%, rgba(var(--accent-rgb), 0.24), rgba(5, 6, 14, 0.95));
+    border: 2px solid rgba(var(--accent-rgb), 0.35);
+  }
+
+  .modal button {
+    background: var(--button-bg);
+    color: var(--button-text);
   }
 }
 

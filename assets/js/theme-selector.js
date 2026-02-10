@@ -1,4 +1,4 @@
-// Theme selector for the Snakes hero selection screen.
+// Global Snakes theme runtime + hero theme selector interactions.
 (function () {
     'use strict';
 
@@ -36,6 +36,27 @@
         return THEMES_BY_SLUG[slug] ? slug : DEFAULT_SLUG;
     }
 
+    function getStoredTheme() {
+        var storedTheme = '';
+        try {
+            storedTheme = localStorage.getItem(STORAGE_KEY) || localStorage.theme || '';
+        } catch (e) {
+            storedTheme = '';
+        }
+        return normalizeTheme(storedTheme);
+    }
+
+    function setThemeAttribute(slug) {
+        var resolved = THEMES_BY_SLUG[slug] ? slug : DEFAULT_SLUG;
+        if (document.documentElement) {
+            document.documentElement.dataset.theme = resolved;
+        }
+        if (document.body) {
+            document.body.dataset.theme = resolved;
+        }
+        return resolved;
+    }
+
     function updateSelectedState(slug) {
         var options = document.querySelectorAll('.theme-option');
         options.forEach(function (option) {
@@ -57,11 +78,12 @@
 
     function applyTheme(slug, persist) {
         var resolved = THEMES_BY_SLUG[slug] ? slug : DEFAULT_SLUG;
-        document.body.dataset.theme = resolved;
+        setThemeAttribute(resolved);
         updateSelectedState(resolved);
         if (persist !== false) {
             persistTheme(resolved);
         }
+        return resolved;
     }
 
     function moveFocus(current, step) {
@@ -93,21 +115,16 @@
         });
     }
 
-    function getStoredTheme() {
-        var storedTheme = '';
-        try {
-            storedTheme = localStorage.getItem(STORAGE_KEY) || localStorage.theme || '';
-        } catch (e) {
-            storedTheme = '';
+    function initThemeSelector() {
+        var initialTheme = applyTheme(getStoredTheme(), false);
+        if (document.querySelector('.theme-option')) {
+            bindEvents();
+            updateSelectedState(initialTheme);
         }
-        return normalizeTheme(storedTheme);
     }
 
-    function initThemeSelector() {
-        if (!document.getElementById('character-selection')) return;
-        bindEvents();
-        applyTheme(getStoredTheme(), false);
-    }
+    // Apply theme attribute immediately to reduce flash-of-unstyled-theme.
+    setThemeAttribute(getStoredTheme());
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initThemeSelector);

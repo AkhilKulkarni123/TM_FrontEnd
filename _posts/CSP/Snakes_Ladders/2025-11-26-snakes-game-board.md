@@ -97,7 +97,7 @@ microblog: True
 
       <aside class="theme-selector-panel" aria-labelledby="themes-heading">
         <h3 id="themes-heading" class="theme-panel-title">Themes</h3>
-        <p class="theme-panel-subtitle">Pick a style for your hero selection screen.</p>
+        <p class="theme-panel-subtitle">Pick a style for your full adventure.</p>
         <div class="theme-options" role="radiogroup" aria-label="Theme options">
           <button type="button" class="theme-option is-selected" role="radio" aria-checked="true" data-theme="default" data-theme-name="Default" aria-label="Default theme">
             <span class="theme-swatch" style="--swatch-1:#667eea; --swatch-2:#764ba2;" aria-hidden="true"></span>
