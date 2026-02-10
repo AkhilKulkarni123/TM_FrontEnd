@@ -1,3 +1,13 @@
+/*
+ * KOZ network/state client.
+ * Responsibility:
+ * - Owns authoritative client-side game state used for rendering.
+ * - Connects to Socket.IO server, handles KOZ event stream, and updates snapshots.
+ * - Provides local prediction + reconciliation + interpolation helpers for smooth motion.
+ * Fit in overall game:
+ * - `koz_main.js` calls this module for networking and render-state assembly.
+ * - `koz_renderer.js` and `koz_ui.js` consume the state object returned by `getRenderState`.
+ */
 (function (window) {
     'use strict';
 
@@ -10,16 +20,19 @@
         warrior: 296
     };
 
+    // Generic numeric clamping utility for movement/collision interpolation math.
     function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
 
+    // Distance helper used by prediction and zone checks.
     function distance(ax, ay, bx, by) {
         var dx = ax - bx;
         var dy = ay - by;
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    // Circle-vs-rectangle collision helper for player-vs-obstacle resolution.
     function circleRectIntersects(cx, cy, radius, rect) {
         var nearestX = clamp(cx, rect.x, rect.x + rect.w);
         var nearestY = clamp(cy, rect.y, rect.y + rect.h);
@@ -28,12 +41,14 @@
         return (dx * dx + dy * dy) <= (radius * radius);
     }
 
+    // Hero key normalization prevents unknown hero values from breaking speed lookup.
     function normalizeHero(hero) {
         var key = String(hero || '').trim().toLowerCase();
         if (HERO_SPEED[key]) return key;
         return 'knight';
     }
 
+    // Tiny internal pub/sub so KOZ main loop can react to client events without tight coupling.
     function Emitter() {
         this.handlers = {};
     }
@@ -55,6 +70,7 @@
         });
     };
 
+    // Core client state object: socket connection + latest match/world/player snapshots.
     function KOZClient(options) {
         Emitter.call(this);
 
@@ -137,6 +153,7 @@
     KOZClient.prototype = Object.create(Emitter.prototype);
     KOZClient.prototype.constructor = KOZClient;
 
+    // Establish socket connection and bind all server event handlers.
     KOZClient.prototype.connect = function () {
         var self = this;
         if (this.socket) return;
@@ -259,6 +276,7 @@
         });
     };
 
+    // Join lobby with current player profile (hero/weapon/name/avatar).
     KOZClient.prototype.joinLobby = function (profile) {
         if (!this.socket) return;
         this.profile = Object.assign({}, this.profile, profile || {});
@@ -275,6 +293,7 @@
         });
     };
 
+    // Basic lobby lifecycle commands forwarded to server.
     KOZClient.prototype.leaveLobby = function () {
         if (!this.socket) return;
         this.socket.emit('koz:leave_lobby', {});
@@ -290,6 +309,7 @@
         this.socket.emit('koz:request_state', {});
     };
 
+    // Send movement input with sequence number for later reconciliation.
     KOZClient.prototype.sendInput = function (inputState) {
         if (!this.socket || !this.connected) return;
         this.inputSeq += 1;
@@ -302,6 +322,7 @@
         });
     };
 
+    // Send aim target for projectile spawn validation on server.
     KOZClient.prototype.shoot = function (aimX, aimY) {
         if (!this.socket || !this.connected) return;
         this.socket.emit('koz:shoot', {
@@ -310,6 +331,7 @@
         });
     };
 
+    // Apply full world snapshot from server and rebuild interpolation buffers.
     KOZClient.prototype._applySnapshot = function (snapshot) {
         var self = this;
         if (!snapshot) return;
@@ -337,6 +359,7 @@
         var now = Number(snapshot.serverTime || 0);
         var liveSids = {};
 
+        // Store per-player history so renderer can interpolate between snapshots.
         (snapshot.players || []).forEach(function (player) {
             if (!player || !player.sid) return;
             var sid = player.sid;
@@ -385,6 +408,7 @@
             }
         });
 
+        // Remove stale players not present in latest snapshot.
         Object.keys(this.remoteHistory).forEach(function (sid) {
             if (!liveSids[sid]) {
                 delete self.remoteHistory[sid];
@@ -395,6 +419,7 @@
         this.emit('snapshot', snapshot);
     };
 
+    // Reconcile locally predicted self movement toward authoritative server position.
     KOZClient.prototype._reconcileSelf = function (serverPlayer) {
         var sx = Number(serverPlayer.x || 0);
         var sy = Number(serverPlayer.y || 0);
@@ -438,6 +463,7 @@
         this.lastServerAck = Number(serverPlayer.lastInputSeq || 0);
     };
 
+    // Keep local player inside map bounds and push out of blocking obstacle rectangles.
     KOZClient.prototype._resolveLocalObstacleCollision = function () {
         var player = this.local;
         var radius = 22;
@@ -467,6 +493,7 @@
         }
     };
 
+    // Client-side movement prediction for responsive controls between server snapshots.
     KOZClient.prototype.predictLocal = function (inputState, dt) {
         if (this.role === 'spectator') return;
         if (this.match.state !== 'ACTIVE') return;
@@ -506,6 +533,7 @@
         this.local.outside = dist > this.zone.radius;
     };
 
+    // Interpolate remote players to render slightly in the past for smoother motion.
     KOZClient.prototype.getRemotePlayers = function (renderTime) {
         var result = [];
         var self = this;
@@ -543,6 +571,7 @@
         return result;
     };
 
+    // Single render payload consumed by renderer and UI each frame.
     KOZClient.prototype.getRenderState = function (nowSeconds) {
         var renderTime = nowSeconds - this.interpolateDelay;
         var remote = this.getRemotePlayers(renderTime);
@@ -568,5 +597,6 @@
         };
     };
 
+    // Expose client constructor on KOZ namespace.
     KOZ.Client = KOZClient;
 })(window);

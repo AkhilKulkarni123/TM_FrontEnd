@@ -1,3 +1,13 @@
+/*
+ * Snakes & Ladders SFX module.
+ * Responsibility:
+ * - Builds short game sound effects in code (Web Audio) instead of loading audio files.
+ * - Exposes one global API (`window.SnakesSFX`) used by Snakes game screens.
+ * Fit in overall game:
+ * - UI and gameplay modules call `SnakesSFX.play(...)` at key moments (rolls, hits, wins, etc.).
+ * - This keeps audio behavior centralized and easy to toggle on/off for all Snakes modes.
+ */
+
 /* Snakes & Ladders SFX (procedural, no external audio files) */
 (function () {
     var STORAGE_KEY = 'snakes_sfx_enabled';
@@ -8,6 +18,7 @@
     } catch (e) {}
 
     var ctx = null;
+    // Lazily create/resume the audio context to satisfy browser autoplay rules.
     function ensureCtx() {
         if (!ctx) {
             var AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -20,6 +31,7 @@
         return ctx;
     }
 
+    // Generate a single pitched tone with a short fade-in/fade-out envelope.
     function tone(freq, duration, type, gain, startDelay) {
         var audioCtx = ensureCtx();
         if (!audioCtx) return;
@@ -37,6 +49,7 @@
         osc.stop(t + duration + 0.02);
     }
 
+    // Sweep from one frequency to another for "rising/falling" sound cues.
     function sweep(from, to, duration, type, gain) {
         var audioCtx = ensureCtx();
         if (!audioCtx) return;
@@ -55,6 +68,7 @@
         osc.stop(t + duration + 0.02);
     }
 
+    // Map semantic game events to small tone/sweep patterns.
     function play(name) {
         if (!enabled) return;
         switch (name) {
@@ -120,6 +134,7 @@
         }
     }
 
+    // Persist global SFX preference so all Snakes pages share the same setting.
     function setEnabled(next) {
         enabled = !!next;
         try { localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0'); } catch (e) {}
@@ -131,6 +146,7 @@
         setEnabled(!enabled);
     }
 
+    // Keep the floating toggle button label in sync with current state.
     function updateToggle() {
         var btn = document.getElementById('snakes-sfx-toggle');
         if (!btn) return;
@@ -138,6 +154,7 @@
         btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     }
 
+    // Inject a simple on-page SFX toggle so students can mute quickly.
     function initToggle() {
         if (document.getElementById('snakes-sfx-toggle')) return;
         var btn = document.createElement('button');
@@ -165,6 +182,7 @@
         document.body.appendChild(btn);
     }
 
+    // First user gesture unlocks audio in browsers that gate autoplay.
     document.addEventListener('pointerdown', function () {
         ensureCtx();
     }, { once: true });
@@ -173,6 +191,7 @@
         initToggle();
     });
 
+    // Shared global API used by Snakes game modules.
     window.SnakesSFX = {
         play: play,
         toggle: toggle,

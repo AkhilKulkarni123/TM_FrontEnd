@@ -1,3 +1,13 @@
+/*
+ * Snakes helper UI module for hints and enhanced leaderboard rendering.
+ * Responsibility:
+ * - Creates the collapsible in-game "Tips" panel based on current Snakes section.
+ * - Replaces default leaderboard rendering with a richer view (Top 10 + current user context).
+ * Fit in overall game:
+ * - Runs alongside `snakes-game.js` and reads shared globals (`window.snakesGameSection`, `gameState`).
+ * - Keeps user guidance and ranking UX separate from core board movement logic.
+ */
+
 // ============================================
 // HINT BAR SYSTEM
 // ============================================
@@ -86,6 +96,7 @@ var HintBar = (function() {
         ]
     };
     
+    // Build and inject hint bar HTML for the currently active board section.
     function init() {
         // Create hint bar HTML
         var section = window.snakesGameSection || 1;
@@ -144,6 +155,7 @@ var HintBar = (function() {
     
     }
     
+    // Toggle keeps click handler simple while delegating real state updates.
     function toggle() {
         if (isExpanded) {
             collapse();
@@ -152,6 +164,7 @@ var HintBar = (function() {
         }
     }
     
+    // Expand panel and play shared UI click feedback.
     function expand() {
         if (container) {
             container.classList.add('expanded');
@@ -162,6 +175,7 @@ var HintBar = (function() {
         }
     }
     
+    // Collapse panel and play shared UI click feedback.
     function collapse() {
         if (container) {
             container.classList.remove('expanded');
@@ -219,6 +233,7 @@ window.HintBar = HintBar;
 // ENHANCED LEADERBOARD SYSTEM
 // ============================================
 
+// Enhanced leaderboard flow: fetch broad ranking data, then render top + personal context.
 function viewLeaderboardEnhanced() {
     var modal = document.getElementById('leaderboard-modal');
     var tbody = document.querySelector('#leaderboard-table tbody');
@@ -272,7 +287,7 @@ function viewLeaderboardEnhanced() {
             return;
         }
 
-        // Find current user's position
+        // Find current user's position so we can show a personalized section when needed.
         var currentUserId = null;
         var currentUserIndex = -1;
         
@@ -288,7 +303,7 @@ function viewLeaderboardEnhanced() {
             }
         }
 
-        // Show top 10
+        // Always show Top 10 first as the primary competitive view.
         var headerAdded = false;
         for (var i = 0; i < Math.min(10, leaderboardData.length); i++) {
             if (!headerAdded) {
@@ -303,7 +318,7 @@ function viewLeaderboardEnhanced() {
             tbody.appendChild(tr);
         }
 
-        // If user is not in top 10, show divider and their position
+        // If user is outside Top 10, add a focused "Your Position" block for motivation.
         if (currentUserIndex >= 10) {
             // Add divider
             var dividerRow = document.createElement('tr');
@@ -320,7 +335,7 @@ function viewLeaderboardEnhanced() {
             var userRow = createLeaderboardRow(userEntry, currentUserIndex, currentUserId);
             tbody.appendChild(userRow);
 
-            // Optionally show a few players around the user
+            // Add immediate neighbors for local ranking context.
             var contextBefore = Math.max(10, currentUserIndex - 1);
             var contextAfter = Math.min(leaderboardData.length - 1, currentUserIndex + 1);
 
@@ -339,7 +354,7 @@ function viewLeaderboardEnhanced() {
             }
         }
 
-        // If user is not in the leaderboard at all (0 bullets / new player), show them at the bottom
+        // New/zero-score players may be absent from API ranking; synthesize a local row for clarity.
         if (currentUserIndex === -1 && currentUserId) {
             var dividerRow2 = document.createElement('tr');
             dividerRow2.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
@@ -378,6 +393,7 @@ function viewLeaderboardEnhanced() {
     });
 }
 
+// Shared row renderer keeps visual formatting consistent across top/user/context sections.
 function createLeaderboardRow(entry, index, currentUserId) {
     var tr = document.createElement('tr');
     var isCurrentUser = (entry.user_id === currentUserId);

@@ -1,4 +1,16 @@
 /*
+ * Main Snakes game controller.
+ * Responsibility:
+ * - Owns board progression state (position, visited squares, lessons/questions completed, bullets, lives).
+ * - Coordinates login/guest flows, loading/saving progress, and section unlock rules.
+ * - Handles turn flow: roll -> move -> resolve square event (lesson, question, snake/ladder, finish checks).
+ * - Updates multiplayer board presence, leaderboard access, and boss-entry gating.
+ * Fit in overall game:
+ * - Works with `player-loadout.js` for character/weapon/avatar profile data.
+ * - Works with `snakes-game-hint-leaderboard.js` for enhanced hints/leaderboard presentation.
+ * - Uses shared SFX from `snakes/sfx.js` and question mini-game hooks exposed globally.
+ */
+/*
  * Snakes and Ladders – Custom Game Logic for AP CS Principles
  * Integrated version with question modals and all original features
  */
@@ -37,6 +49,7 @@ var AUTOSAVE_EVERY_SECONDS = 10;
 var BASE_MAX_LIVES = 5;
 var DISPLAY_NAME_KEY = 'snakes_display_name';
 
+// Character perks are passive bonuses displayed in the HUD and applied to stats.
 var CHARACTER_PERKS = {
     knight: {
         name: 'Shielded',
@@ -57,6 +70,7 @@ var CHARACTER_PERKS = {
 };
 
 var loadoutApi = window.SnakesLoadout || null;
+// Fallback weapon metadata used when shared loadout utility is unavailable.
 var CHARACTER_WEAPONS = {
     knight: {
         weaponType: 'bulwark-disc',
@@ -93,6 +107,7 @@ function resolveWeaponType(character, explicitWeaponType) {
     return explicitWeaponType || fallback;
 }
 
+// Returns weapon label/description payload for UI tooltips and popups.
 function getWeaponInfo(character, explicitWeaponType) {
     var key = String(character || '').toLowerCase();
     var base = CHARACTER_WEAPONS[key] || CHARACTER_WEAPONS.knight;
@@ -105,6 +120,7 @@ function getWeaponInfo(character, explicitWeaponType) {
     };
 }
 
+// Core game session state used by nearly every flow in this file.
 var gameState = {
     isGuest: false,
     isDemoMode: false,  // Demo mode: data only saved in session, not to backend or leaderboard
@@ -133,6 +149,7 @@ var timerIntervalId = null;
 var autosaveIntervalId = null;
 var bulletRefreshIntervalId = null;
 
+// Perk lookup helpers keep perk logic centralized.
 function getPerkConfig() {
     return CHARACTER_PERKS[gameState.character] || null;
 }
@@ -153,6 +170,7 @@ function applyCharacterPerks() {
     }
 }
 
+// Restore hero/weapon/avatar profile from storage and shared loadout API.
 function loadProfileFromStorage() {
     var storedCharacter = '';
     var storedWeapon = '';
@@ -183,6 +201,7 @@ function loadProfileFromStorage() {
     gameState.avatarUrl = avatarUrl || gameState.avatarUrl || '';
 }
 
+// Persist selected loadout to appropriate storage scope (guest vs logged-in).
 function persistLoadoutToStorage() {
     var useSession = !!gameState.isGuest;
     var storage = useSession ? sessionStorage : localStorage;
@@ -198,6 +217,7 @@ function persistLoadoutToStorage() {
     }
 }
 
+// Avatar/identity helpers are shared by board markers and multiplayer popups.
 function getPlayerInitials(name) {
     if (loadoutApi && typeof loadoutApi.getInitials === 'function') {
         return loadoutApi.getInitials(name);
@@ -271,6 +291,7 @@ function createPlayerMarker(character, username, avatarSource) {
     return marker;
 }
 
+// Small global surface used by UI to show current perk text.
 window.SnakesPerks = {
     getDescription: getPerkDescription
 };
@@ -314,6 +335,7 @@ function saveGuestProgress() {
     }
 }
 
+// Load session-only guest progress; if demo is active, fallback to demo snapshot.
 function loadGuestProgress() {
     try {
         var stored = sessionStorage.getItem('snakes_guest_progress');
@@ -444,6 +466,7 @@ var multiplayerState = {
     MAX_PLAYERS_ON_BOARD: 50
 };
 
+// Lightweight DOM helpers used throughout this script.
 function $(selector) { return document.querySelector(selector); }
 function $all(selector) { return document.querySelectorAll(selector); }
 function playSfx(name) {
@@ -460,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// Centralized event wiring for login, board controls, modals, and name editor.
 function initializeEventListeners() {
     var btnUseLogin = document.getElementById('use-existing-login');
     if (btnUseLogin) btnUseLogin.addEventListener('click', useExistingLogin);
@@ -575,6 +599,7 @@ function initializeEventListeners() {
     });
 }
 
+// Close only question modal panel; board state remains unchanged.
 function closeQuestionModal() {
     var modal = document.getElementById('question-modal');
     if (modal) {
@@ -582,6 +607,7 @@ function closeQuestionModal() {
     }
 }
 
+// Checks active login session and stores ID/name in local gameState.
 function checkExistingLogin() {
     return fetch(API_URL + '/id', {
         method: 'GET',
@@ -600,6 +626,7 @@ function checkExistingLogin() {
         .catch(function () { return null; });
 }
 
+// Logged-in flow: validate user, load progress, and auto-skip character selection for returning users.
 function useExistingLogin() {
     playSfx('click');
     fetch(API_URL + '/id', {
@@ -671,6 +698,7 @@ function useExistingLogin() {
         });
 }
 
+// Guest flow: creates temporary identity and uses session-only persistence.
 function playAsGuest() {
     playSfx('click');
     gameState.isGuest = true;
@@ -690,6 +718,7 @@ function playAsGuest() {
     });
 }
 
+// Fetches or initializes `/snakes/` backend record and hydrates local state.
 function loadOrCreateGameData() {
     if (gameState.isGuest) {
         loadGuestProgress();
@@ -772,6 +801,7 @@ function loadOrCreateGameData() {
         .catch(function (error) { console.error('Error loading game data:', error); });
 }
 
+// Loads progression-focused data (position, bullets, completed lessons/sections).
 function loadProgress() {
     if (gameState.isGuest) {
         loadGuestProgress();
@@ -828,6 +858,7 @@ function loadProgress() {
         .catch(function (error) { console.error('Error loading progress:', error); });
 }
 
+// Persists authoritative progress to backend (skipped for guest/demo).
 function saveProgress() {
     if (gameState.isGuest) {
         saveGuestProgress();
@@ -860,6 +891,7 @@ function saveProgress() {
 
 function saveProgressSilently() { try { saveProgress(); } catch (e) {} }
 
+// Character picker entry point from UI carousel/cards.
 function selectCharacter(card) {
     var cards = $all('.character-card');
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
@@ -968,6 +1000,7 @@ function selectCharacter(card) {
     if (startBtn) startBtn.disabled = false;
 }
 
+// Starts active gameplay once a character is confirmed and state is loaded.
 function startGame() {
     playSfx('click');
     if (!gameState.character) {
@@ -1095,6 +1128,7 @@ function dismissRollPrompt() {
 window.showRollPrompt = showRollPrompt;
 window.dismissRollPrompt = dismissRollPrompt;
 
+// Resume logic for returning logged-in users and returning guest sessions.
 function autoResumeIfReady() {
     var storedName = getStoredDisplayName();
     if (storedName) gameState.username = storedName;
@@ -1332,6 +1366,9 @@ function autoResumeIfReady() {
     return Promise.resolve();
 }
 
+// Board renderer for both sections:
+// - Section 1: linear lesson track.
+// - Section 2: snake/ladder grid with question squares.
 function createGameBoard() {
     var board = document.getElementById('game-board');
     if (!board) return;
@@ -1483,6 +1520,7 @@ function getCharacterDisplayName(character) {
 // MULTIPLAYER FUNCTIONS
 // ============================================
 
+// Pulls leaderboard payload and reuses it as lightweight "players on board" data.
 function fetchAllPlayers() {
     return fetch(API_URL + '/snakes/leaderboard?limit=' + multiplayerState.MAX_PLAYERS_ON_BOARD, {
         method: 'GET',
@@ -1507,6 +1545,7 @@ function fetchAllPlayers() {
     });
 }
 
+// Converts local square index to API square numbering (1-based) for matching.
 function getPlayersOnSquare(squareNum) {
     var apiSquareNum = squareNum + 1;
     return multiplayerState.otherPlayers.filter(function(player) {
@@ -1514,6 +1553,7 @@ function getPlayersOnSquare(squareNum) {
     });
 }
 
+// Adds avatar markers/buttons for other players currently sharing this square.
 function renderOtherPlayersOnSquare(square, squareNum) {
     var playersHere = getPlayersOnSquare(squareNum);
     if (playersHere.length === 0) return;
@@ -1558,6 +1598,7 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     square.appendChild(container);
 }
 
+// Modal list of players on a square with quick drill-down to full profile popup.
 function showSquarePlayersPopup(squareNum, players) {
     // Remove any existing popup
     var existingPopup = document.getElementById('square-players-popup');
@@ -1628,6 +1669,7 @@ function showSquarePlayersPopup(squareNum, players) {
     }, 10);
 }
 
+// Starts periodic multiplayer refresh so board markers stay reasonably current.
 function startMultiplayerRefresh() {
     fetchAllPlayers().then(function() {
         createGameBoard();
@@ -1643,6 +1685,7 @@ function startMultiplayerRefresh() {
     }, multiplayerState.REFRESH_RATE_MS);
 }
 
+// Stops polling when leaving gameplay context.
 function stopMultiplayerRefresh() {
     if (multiplayerState.refreshInterval) {
         clearInterval(multiplayerState.refreshInterval);
@@ -1650,6 +1693,7 @@ function stopMultiplayerRefresh() {
     }
 }
 
+// Detailed player card modal (character, bullets, time, lives, visited count).
 function showPlayerInfoPopup(player) {
     var modal = document.getElementById('player-info-modal');
     if (!modal) return;
@@ -1690,6 +1734,7 @@ function closePlayerInfoPopup() {
     if (modal) modal.classList.add('hidden');
 }
 
+// Sync HUD widgets from canonical gameState values.
 function updatePlayerInfo() {
     var charSpan = document.getElementById('player-character');
     var bulletsSpan = document.getElementById('player-bullets');
@@ -1710,6 +1755,7 @@ function updatePlayerInfo() {
     if (nameSpan) nameSpan.textContent = gameState.username || 'Player';
 }
 
+// Shared m:ss formatter for timers and leaderboard rows.
 function formatTime(totalSeconds) {
     totalSeconds = Number(totalSeconds || 0);
     var minutes = Math.floor(totalSeconds / 60);
@@ -1717,6 +1763,7 @@ function formatTime(totalSeconds) {
     return minutes + ':' + (seconds < 10 ? '0' + seconds : seconds);
 }
 
+// Real-time clock updater for the current run.
 function startTimer() {
     if (timerIntervalId) return;
     timerIntervalId = setInterval(function () {
@@ -1728,6 +1775,7 @@ function startTimer() {
     }, 1000);
 }
 
+// Background autosave loop for logged-in users.
 function startAutosave() {
     if (autosaveIntervalId) return;
     autosaveIntervalId = setInterval(function () {
@@ -1766,6 +1814,7 @@ function rollDice() {
 
     var section = window.snakesGameSection || 1;
     var roll;
+    // Section 1 intentionally advances one lesson at a time.
     if (section === 1) {
         roll = 1;
     } else {
@@ -1779,6 +1828,7 @@ function rollDice() {
     });
 }
 
+// Cosmetic dice animation gate before movement is applied.
 function showDiceAnimation(roll) {
     return new Promise(function(resolve) {
         var overlay = document.getElementById('dice-overlay');
@@ -1826,6 +1876,7 @@ function showDiceAnimation(roll) {
     });
 }
 
+// Core movement update: clamp range, avoid repeats in section 2, persist, then resolve landing.
 function movePlayer(steps) {
     return new Promise(function (resolve) {
         var section = window.snakesGameSection || 1;
@@ -1907,6 +1958,7 @@ function checkLessonProgress() {
     return { completed: completed, incomplete: incomplete, total: FIRST_LESSON_COUNT };
 }
 
+// Landing resolution dispatcher for both board sections.
 function handleSquareEvent() {
     var section = window.snakesGameSection || 1;
     var square = gameState.currentSquare;
@@ -1955,6 +2007,7 @@ function handleSquareEvent() {
         var sectionStart = FIRST_SECTION_SIZE;
         var sectionEnd = FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1;
         var dest = snakesAndLaddersMap[square];
+        // Snake/ladder teleport is animated and then re-enters square resolution.
         if (dest) {
             animateMoveToSquare(square, dest);
             return;
@@ -1989,6 +2042,7 @@ function handleSquareEvent() {
     console.warn('Unhandled square event:', square, 'in section', section);
 }
 
+// Question-square flow: mini-game gate -> answer submit -> bullet reward/progress update.
 function showQuestionModal(square, row, index) {
     var modal = document.getElementById('question-modal');
     if (!modal) {
@@ -2287,6 +2341,7 @@ var snakesAndLaddersMap = {
     54: 44    // Snake 10
 };
 
+// Handles snake/ladder travel animation, then commits destination square and triggers next event.
 function animateMoveToSquare(from, to) {
     var board = document.getElementById('game-board');
     var fromEl = board.querySelector('[data-square="' + from + '"]');
@@ -2355,11 +2410,13 @@ function animateMoveToSquare(from, to) {
     }, 1000);
 }
 
+// Section navigation controls (part1 <-> part2).
 function navigatePrev() {
     var section = window.snakesGameSection || 1;
     if (section === 2) window.location.href = 'game-board-part1.html';
 }
 
+// Gated forward navigation (lesson completion / leaderboard placement checks).
 function navigateNext() {
     var section = window.snakesGameSection || 1;
     var overlay = document.getElementById('locked-overlay');
@@ -2394,6 +2451,7 @@ function navigateNext() {
     }
 }
 
+// Boss access check uses top-10 leaderboard position.
 function checkPlayerTopFive() {
     if (gameState.isGuest || gameState.isDemoMode) return Promise.resolve(true);
 
@@ -2414,6 +2472,7 @@ function checkPlayerTopFive() {
         });
 }
 
+// Locks section access overlays until prerequisites are met.
 function checkSectionLock() {
     var section = window.snakesGameSection || 1;
     var overlay = document.getElementById('locked-overlay');
@@ -2424,6 +2483,7 @@ function checkSectionLock() {
     else overlay.style.display = 'none';
 }
 
+// Baseline leaderboard renderer (enhanced version can override this in companion file).
 function viewLeaderboard() {
     var modal = document.getElementById('leaderboard-modal');
     var tbody = document.querySelector('#leaderboard-table tbody');
@@ -2492,6 +2552,7 @@ function viewLeaderboard() {
     // Display name and dice only; no extra leaderboard rank block
 }
 
+// Opens boss modal only after top-player verification.
 function startBossBattle() {
     checkPlayerTopFive().then(function (isTopFive) {
         if (!isTopFive) {
@@ -2761,6 +2822,7 @@ function startBulletRefresh() {
 // ============================================
 // DISPLAY NAME / THEMES / HINT BAR
 // ============================================
+// Display-name helpers keep identity prompts consistent across guest/auth sessions.
 function getStoredDisplayName() {
     try {
         return gameState.isGuest
@@ -2782,6 +2844,7 @@ function storeDisplayName(name) {
     } catch (e) {}
 }
 
+// Save display name to profile endpoints and local UI state.
 function saveDisplayName(name) {
     gameState.username = name;
     updatePlayerInfo();
@@ -2811,6 +2874,7 @@ function saveDisplayName(name) {
 }
 
 var displayNameResolve = null;
+// Promise gate used during startup so gameplay waits for a valid display name.
 function ensureDisplayName() {
     return new Promise(function (resolve) {
         var modal = document.getElementById('display-name-modal');
@@ -2827,6 +2891,7 @@ function ensureDisplayName() {
     });
 }
 
+// Show/hide modal controls used by initial prompt and manual edit button.
 function showDisplayNameModal(allowCancel) {
     var modal = document.getElementById('display-name-modal');
     var input = document.getElementById('display-name-input');
@@ -2844,6 +2909,7 @@ function hideDisplayNameModal() {
     if (modal) modal.classList.add('hidden');
 }
 
+// Validation path for submit button / Enter key.
 function submitDisplayName() {
     var input = document.getElementById('display-name-input');
     if (!input) return;
@@ -2862,6 +2928,7 @@ function submitDisplayName() {
     });
 }
 
+// Skip uses current fallback username so flow can continue without blocking.
 function skipDisplayName() {
     var fallback = gameState.username || 'Player';
     saveDisplayName(fallback).then(function () {

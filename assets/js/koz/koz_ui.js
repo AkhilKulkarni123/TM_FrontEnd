@@ -1,8 +1,19 @@
+/*
+ * KOZ DOM UI renderer/controller.
+ * Responsibility:
+ * - References HUD/overlay elements and updates them from current match state.
+ * - Renders scoreboard, lobby list, countdown, results, and killfeed.
+ * - Binds button actions (play again/leave/back) to callbacks from main module.
+ * Fit in overall game:
+ * - `koz_main.js` creates this object and calls `render(state)` every frame.
+ * - Keeps UI concerns separate from socket logic (`koz_client`) and canvas drawing (`koz_renderer`).
+ */
 (function (window) {
     'use strict';
 
     var KOZ = window.KOZ = window.KOZ || {};
 
+    // Shared mm:ss formatter for timers in the KOZ HUD.
     function formatClock(totalSeconds) {
         var sec = Math.max(0, Math.floor(totalSeconds || 0));
         var m = Math.floor(sec / 60);
@@ -10,6 +21,7 @@
         return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
+    // Cache all relevant DOM nodes once to avoid repeated queries per frame.
     function KOZUI() {
         this.stateLabel = document.getElementById('kozStateLabel');
         this.matchTimer = document.getElementById('kozMatchTimer');
@@ -46,6 +58,7 @@
         this.killfeedIds = {};
     }
 
+    // Attach externally provided actions to footer/control buttons.
     KOZUI.prototype.bindActions = function (handlers) {
         handlers = handlers || {};
         if (this.playAgainBtn) {
@@ -70,6 +83,7 @@
         }
     };
 
+    // Deduplicated killfeed insertion (server may resend recent entries in snapshots).
     KOZUI.prototype.pushKillfeed = function (entry) {
         if (!entry || this.killfeedIds[entry.id]) return;
         this.killfeedIds[entry.id] = true;
@@ -88,6 +102,7 @@
         }
     };
 
+    // Rebuild compact scoreboard panel from sorted server scoreboard data.
     KOZUI.prototype._renderScoreboard = function (state) {
         var self = this;
         this.scoreboardList.innerHTML = '';
@@ -130,6 +145,7 @@
         });
     };
 
+    // Render lobby roster and waiting/ready messaging before active match begins.
     KOZUI.prototype._renderLobby = function (state) {
         var lobby = state.lobby || {};
         var waiting = (lobby.activePlayers || 0) < (lobby.minPlayers || 4);
@@ -168,6 +184,7 @@
         this.lobbyOverlay.classList.toggle('active', show);
     };
 
+    // Separate countdown overlay for final pre-match start signal.
     KOZUI.prototype._renderCountdown = function (state) {
         var show = state.match.state === 'COUNTDOWN';
         this.countdownOverlay.classList.toggle('active', show);
@@ -176,6 +193,7 @@
         }
     };
 
+    // End-of-match overlay with winner and final ranking rows.
     KOZUI.prototype._renderResults = function (state) {
         if (state.match.state !== 'RESULTS') {
             this.resultsOverlay.classList.remove('active');
@@ -200,10 +218,12 @@
         }, this);
     };
 
+    // Store latest explicit results payload from socket event.
     KOZUI.prototype.handleResults = function (payload) {
         this.latestResults = payload || null;
     };
 
+    // Main UI update entry called once per frame with current render state.
     KOZUI.prototype.render = function (state) {
         this.stateLabel.textContent = state.match.state || 'LOBBY';
         this.matchTimer.textContent = formatClock(state.match.timeLeft || 0);
@@ -227,5 +247,6 @@
         }, this);
     };
 
+    // Expose UI constructor on KOZ namespace.
     KOZ.UI = KOZUI;
 })(window);

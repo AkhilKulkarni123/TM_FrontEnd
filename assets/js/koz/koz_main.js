@@ -1,9 +1,19 @@
+/*
+ * KOZ bootstrap/orchestration module.
+ * Responsibility:
+ * - Detects local player profile (name, hero, weapon, avatar).
+ * - Wires together KOZ client networking, renderer, input, and UI modules.
+ * - Runs the frame loop that sends input, requests state, and renders each frame.
+ * Fit in overall game:
+ * - This is the entry point for King of Zone; other KOZ files expose focused services.
+ */
 (function (window) {
     'use strict';
 
     var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     var SOCKET_URL = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
 
+    // Defensive storage accessor (prevents mode failure when storage is unavailable).
     function safeGet(storage, key) {
         try {
             return storage.getItem(key);
@@ -12,6 +22,7 @@
         }
     }
 
+    // Choose a player name from guest/session data, then authenticated profile, then fallback.
     function detectPlayerName() {
         var name = safeGet(sessionStorage, 'snakes_guest_name') || safeGet(localStorage, 'snakes_guest_name');
         if (name) return name;
@@ -27,6 +38,7 @@
         return 'Guest_' + Math.floor(Math.random() * 1000);
     }
 
+    // Build the profile payload KOZ sends when joining lobby.
     function detectProfile() {
         var profile = {
             name: detectPlayerName(),
@@ -48,6 +60,7 @@
         return profile;
     }
 
+    // Main app bootstrap: validate dependencies, initialize modules, and start loop.
     function boot() {
         if (!window.KOZ || !window.KOZ.Client || !window.KOZ.Input || !window.KOZ.Renderer || !window.KOZ.UI) {
             console.error('[KOZ] Modules not loaded.');
@@ -126,6 +139,7 @@
         var inputAccumulator = 0;
         var statePollAccumulator = 0;
 
+        // Frame loop: local prediction + throttled network sends + render/UI updates.
         function frame(now) {
             var dt = Math.min(0.05, Math.max(0.001, (now - lastFrame) / 1000));
             lastFrame = now;
@@ -136,6 +150,7 @@
             client.predictLocal(movement, dt);
 
             inputAccumulator += dt;
+            // Send movement snapshots at fixed 30 Hz for stable bandwidth/latency behavior.
             while (inputAccumulator >= (1 / 30)) {
                 client.sendInput(movement);
                 inputAccumulator -= (1 / 30);
@@ -150,6 +165,7 @@
             }
 
             statePollAccumulator += dt;
+            // Safety poll in case one-off network events are missed.
             if (statePollAccumulator >= 4) {
                 client.requestState();
                 statePollAccumulator = 0;
@@ -165,6 +181,7 @@
         window.requestAnimationFrame(frame);
     }
 
+    // Boot on DOM readiness so all KOZ canvas/UI elements exist.
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {

@@ -1,8 +1,18 @@
+/*
+ * KOZ canvas renderer.
+ * Responsibility:
+ * - Draws the full King of Zone scene (map, zone, players, projectiles, UI overlays).
+ * - Handles camera tracking, world/screen coordinate conversion, and visual effects.
+ * Fit in overall game:
+ * - Receives normalized render state from `koz_client.js` each animation frame.
+ * - Provides visual-only feedback (hit flash, minimap, indicators) without game authority.
+ */
 (function (window) {
     'use strict';
 
     var KOZ = window.KOZ = window.KOZ || {};
 
+    // Reusable math helpers for rendering, interpolation, and effect calculations.
     function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -17,6 +27,7 @@
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    // Character color identity keeps heroes visually distinct in combat.
     var HERO_COLORS = {
         knight: '#83b8ff',
         wizard: '#f5a25f',
@@ -32,6 +43,7 @@
         ammo: '#ffe189'
     };
 
+    // Renderer stores camera/view state plus lightweight transient visual effects.
     function KOZRenderer(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
@@ -63,6 +75,7 @@
         this.bindResize();
     }
 
+    // Keep backing canvas resolution aligned with viewport changes.
     KOZRenderer.prototype.bindResize = function () {
         var self = this;
         window.addEventListener('resize', function () {
@@ -70,6 +83,7 @@
         });
     };
 
+    // Resize with DPR scaling to keep visuals sharp on high-density displays.
     KOZRenderer.prototype.resize = function () {
         var rect = this.canvas.getBoundingClientRect();
         this.view.width = Math.max(360, Math.round(rect.width || window.innerWidth));
@@ -82,6 +96,7 @@
         this.canvas.style.height = this.view.height + 'px';
     };
 
+    // Convert world coordinates to current camera-relative screen coordinates.
     KOZRenderer.prototype.worldToScreen = function (x, y) {
         return {
             x: (x - this.camera.x) + (this.view.width / 2),
@@ -89,6 +104,7 @@
         };
     };
 
+    // Convert pointer screen coordinates back to world space (for aiming logic).
     KOZRenderer.prototype.screenToWorld = function (x, y) {
         return {
             x: x + this.camera.x - (this.view.width / 2),
@@ -96,6 +112,7 @@
         };
     };
 
+    // Smooth camera follow constrained so view never leaves map bounds.
     KOZRenderer.prototype._updateCamera = function (localPlayer, map) {
         if (!localPlayer) return;
         var halfW = this.view.width / 2;
@@ -108,6 +125,7 @@
         this.camera.y = lerp(this.camera.y, targetY, 0.16);
     };
 
+    // Draw base gradient + moving world grid for spatial orientation.
     KOZRenderer.prototype._drawBackground = function (ctx, state) {
         var grad = ctx.createLinearGradient(0, 0, this.view.width, this.view.height);
         grad.addColorStop(0, '#0f1a2d');
@@ -145,6 +163,7 @@
         ctx.restore();
     };
 
+    // Draw storm overlay and safe zone circle cutout.
     KOZRenderer.prototype._drawStormAndZone = function (ctx, state) {
         var zoneScreen = this.worldToScreen(state.zone.x, state.zone.y);
         var r = Math.max(1, state.zone.radius);
@@ -173,6 +192,7 @@
         ctx.restore();
     };
 
+    // Draw static collision walls only when they are inside/near viewport.
     KOZRenderer.prototype._drawObstacles = function (ctx, obstacles) {
         ctx.save();
         obstacles.forEach(function (wall) {
@@ -193,6 +213,7 @@
         ctx.restore();
     };
 
+    // Draw pulsing powerups with type-based colors for quick readability.
     KOZRenderer.prototype._drawPowerups = function (ctx, powerups, t) {
         ctx.save();
         powerups.forEach(function (powerup) {
@@ -217,6 +238,7 @@
         ctx.restore();
     };
 
+    // Draw active projectiles as simple performant circles.
     KOZRenderer.prototype._drawProjectiles = function (ctx, projectiles) {
         ctx.save();
         projectiles.forEach(function (projectile) {
@@ -232,6 +254,7 @@
         ctx.restore();
     };
 
+    // Cache avatar images so repeated draws avoid re-creating Image objects.
     KOZRenderer.prototype._getAvatar = function (url) {
         if (!url) return null;
         if (this.avatarCache[url] && this.avatarCache[url].complete) return this.avatarCache[url];
@@ -244,6 +267,7 @@
         return null;
     };
 
+    // Draw one player token with hero color, HP bar, labels, and status rings.
     KOZRenderer.prototype._drawPlayer = function (ctx, player, localPlayer) {
         var screen = this.worldToScreen(player.x, player.y);
         var r = 22;
@@ -311,6 +335,7 @@
         ctx.restore();
     };
 
+    // Draw objective core with animated glow.
     KOZRenderer.prototype._drawCore = function (ctx, core, t) {
         var screen = this.worldToScreen(core.x, core.y);
         if (screen.x < -80 || screen.x > this.view.width + 80 || screen.y < -80 || screen.y > this.view.height + 80) return;
@@ -337,6 +362,7 @@
         ctx.restore();
     };
 
+    // Draw aim reticle at world-space target selected by input module.
     KOZRenderer.prototype._drawCrosshair = function (ctx, aimWorld) {
         var screen = this.worldToScreen(aimWorld.x, aimWorld.y);
         ctx.save();
@@ -354,6 +380,7 @@
         ctx.restore();
     };
 
+    // Draw compact minimap with obstacles, zone, core, and player dots.
     KOZRenderer.prototype._drawMinimap = function (ctx, state) {
         var w = 190;
         var h = 132;
@@ -424,6 +451,7 @@
         ctx.restore();
     };
 
+    // Directional damage arrow points toward shooter when local player is hit.
     KOZRenderer.prototype._drawDamageIndicator = function (ctx, now) {
         if (now > this.damageIndicator.until) return;
 
@@ -451,6 +479,7 @@
         ctx.restore();
     };
 
+    // Floating combat text (e.g., damage numbers) fades over short lifetime.
     KOZRenderer.prototype._drawFloatTexts = function (ctx, dt) {
         this.floatTexts.forEach(function (entry) {
             entry.ttl -= dt;
@@ -469,6 +498,7 @@
         ctx.restore();
     };
 
+    // Trigger temporary hit visual effects from client hit events.
     KOZRenderer.prototype.notifyHit = function (payload, localPlayer) {
         this.hitFlash = 0.8;
         this.shake = Math.max(this.shake, 0.9);
@@ -491,6 +521,7 @@
         }
     };
 
+    // Master render pipeline called once per frame by KOZ main loop.
     KOZRenderer.prototype.render = function (state, dt, aimWorld) {
         var ctx = this.ctx;
         var now = performance.now();
@@ -550,5 +581,6 @@
         }
     };
 
+    // Expose renderer constructor on KOZ namespace.
     KOZ.Renderer = KOZRenderer;
 })(window);

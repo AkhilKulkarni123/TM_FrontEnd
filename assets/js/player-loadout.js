@@ -1,6 +1,17 @@
+/*
+ * Snakes player loadout/profile utility.
+ * Responsibility:
+ * - Defines hero identities and weapon presets used across Snakes game modes.
+ * - Reads/writes selected hero, weapon, and avatar data from browser storage.
+ * - Provides safe helper methods for rendering avatar markup in leaderboards/UI.
+ * Fit in overall game:
+ * - `snakes-game.js`, KOZ modules, and other Snakes pages call `window.SnakesLoadout`
+ *   so all modes share the same player identity and equipment configuration.
+ */
 (function (window) {
     'use strict';
 
+    // Canonical storage keys so all Snakes pages read/write the same profile fields.
     var STORAGE_KEYS = {
         hero: 'snakes_selected_character',
         weapon: 'snakes_selected_weapon',
@@ -51,6 +62,7 @@
         }
     };
 
+    // Weapon behavior presets consumed by gameplay/rendering code.
     var WEAPON_PRESETS = {
         'bulwark-disc': {
             id: 'bulwark-disc',
@@ -110,6 +122,7 @@
         }
     };
 
+    // Storage wrappers prevent crashes in private mode / blocked storage contexts.
     function safeStorageRead(storage, key) {
         try {
             return storage.getItem(key);
@@ -127,11 +140,13 @@
         }
     }
 
+    // Normalize hero values so game state never receives unknown character keys.
     function normalizeHero(hero) {
         var key = String(hero || '').toLowerCase().trim();
         return HERO_LOADOUTS[key] ? key : 'knight';
     }
 
+    // Weapon selection is validated against presets, with hero default fallback.
     function normalizeWeaponType(hero, weaponType) {
         var heroKey = normalizeHero(hero);
         var type = String(weaponType || '').toLowerCase().trim();
@@ -139,6 +154,7 @@
         return HERO_LOADOUTS[heroKey].weaponType;
     }
 
+    // Return a clean, read-only-ish copy for UI usage.
     function getLoadoutByHero(hero) {
         var heroKey = normalizeHero(hero);
         var entry = HERO_LOADOUTS[heroKey];
@@ -154,6 +170,7 @@
         };
     }
 
+    // Return a cloned preset so callers cannot mutate the source table by accident.
     function getWeaponPreset(weaponType, hero) {
         var resolved = normalizeWeaponType(hero, weaponType);
         var preset = WEAPON_PRESETS[resolved];
@@ -164,16 +181,19 @@
         return copy;
     }
 
+    // Session value wins during active play; local storage acts as persistent fallback.
     function getSelectedHero() {
         var value = safeStorageRead(sessionStorage, STORAGE_KEYS.hero) || safeStorageRead(localStorage, STORAGE_KEYS.hero);
         return normalizeHero(value);
     }
 
+    // Same fallback order as hero selection, but normalized per current hero.
     function getStoredWeaponType(hero) {
         var value = safeStorageRead(sessionStorage, STORAGE_KEYS.weapon) || safeStorageRead(localStorage, STORAGE_KEYS.weapon);
         return normalizeWeaponType(hero || getSelectedHero(), value);
     }
 
+    // Save loadout to chosen storage scope (guest/session vs signed-in/local).
     function saveLoadout(hero, weaponType, options) {
         var heroKey = normalizeHero(hero);
         var resolvedWeapon = normalizeWeaponType(heroKey, weaponType);
@@ -187,19 +207,23 @@
         };
     }
 
+    // Avatar data URL storage accessor (photo snapshots, generated avatars, etc.).
     function getAvatarData() {
         return safeStorageRead(localStorage, STORAGE_KEYS.avatarData) || safeStorageRead(sessionStorage, STORAGE_KEYS.avatarData) || '';
     }
 
+    // Avatar URL accessor for hosted profile images.
     function getAvatarUrl() {
         return safeStorageRead(localStorage, STORAGE_KEYS.avatarUrl) || safeStorageRead(sessionStorage, STORAGE_KEYS.avatarUrl) || '';
     }
 
+    // Detect plain base64 strings that should be upgraded to data URLs.
     function isLikelyBase64Payload(value) {
         if (!value || value.length < 80) return false;
         return /^[A-Za-z0-9+/=\s]+$/.test(value);
     }
 
+    // Accept only safe/expected avatar source formats and normalize them.
     function normalizeAvatarSource(source) {
         if (source === null || typeof source === 'undefined') return '';
         var value = String(source).trim();
@@ -218,6 +242,7 @@
         return '';
     }
 
+    // Store avatar image payload (or clear both stores when emptied).
     function setAvatarData(dataUrl, useSession) {
         var storage = useSession ? sessionStorage : localStorage;
         var value = String(dataUrl || '');
@@ -228,6 +253,7 @@
         safeStorageWrite(storage, STORAGE_KEYS.avatarData, value);
     }
 
+    // Store avatar URL (or clear both stores when emptied).
     function setAvatarUrl(url, useSession) {
         var storage = useSession ? sessionStorage : localStorage;
         var value = String(url || '');
@@ -238,6 +264,7 @@
         safeStorageWrite(storage, STORAGE_KEYS.avatarUrl, value);
     }
 
+    // Remove avatar data from both scopes to avoid stale fallbacks.
     function clearAvatar() {
         try {
             localStorage.removeItem(STORAGE_KEYS.avatarData);
@@ -245,6 +272,7 @@
         } catch (e) {}
     }
 
+    // Remove avatar URL from both scopes to avoid stale fallbacks.
     function clearAvatarUrl() {
         try {
             localStorage.removeItem(STORAGE_KEYS.avatarUrl);
@@ -252,6 +280,7 @@
         } catch (e) {}
     }
 
+    // Pull avatar candidates from different server/client field naming conventions.
     function getAvatarSourceForPlayer(player) {
         if (player && typeof player === 'object') {
             var candidates = [
@@ -269,6 +298,7 @@
         return '';
     }
 
+    // Build compact initials fallback when avatar image is unavailable.
     function getInitials(name) {
         var text = String(name || 'Player').trim();
         if (!text) return 'P';
@@ -280,6 +310,7 @@
         return (parts[0][0] + parts[1][0]).toUpperCase();
     }
 
+    // Escape user-provided text before injecting into HTML strings.
     function escapeHtml(text) {
         return String(text || '')
             .replace(/&/g, '&amp;')
@@ -289,6 +320,7 @@
             .replace(/'/g, '&#39;');
     }
 
+    // Render shared avatar bubble markup for leaderboard/lobby/player cards.
     function renderAvatarMarkup(player, options) {
         var opts = options || {};
         var className = opts.className || 'player-avatar-bubble';
@@ -309,6 +341,7 @@
             '</span>';
     }
 
+    // One-call profile snapshot used by page boot logic.
     function getFullProfile() {
         var hero = getSelectedHero();
         var loadout = getLoadoutByHero(hero);
@@ -322,6 +355,7 @@
         };
     }
 
+    // Exported API for all Snakes front-end modules.
     window.SnakesLoadout = {
         STORAGE_KEYS: STORAGE_KEYS,
         HERO_LOADOUTS: HERO_LOADOUTS,
