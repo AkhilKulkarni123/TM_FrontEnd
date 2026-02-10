@@ -604,8 +604,14 @@
 
                 // Get win mode from URL params or localStorage
                 const urlParams = new URLSearchParams(window.location.search);
-                const mode = urlParams.get('mode') || localStorage.getItem('snakes_win_mode') || 'Boss Battle';
-                document.getElementById('winMode').textContent = mode === 'pvp' ? 'PVP Arena' : 'Boss Battle';
+                const mode = urlParams.get('mode') || localStorage.getItem('snakes_win_mode') || 'boss';
+                const modeLabels = {
+                    boss: 'Boss Battle',
+                    pvp: 'PVP Arena',
+                    koz: 'King of the Zone',
+                    platformer: 'Platformer Gauntlet'
+                };
+                document.getElementById('winMode').textContent = modeLabels[mode] || 'Boss Battle';
                 if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
                     window.SnakesSFX.play('win');
                 }

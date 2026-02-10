@@ -427,6 +427,20 @@
                 Players online: <span id="kozPlayerCount">0</span> • Arenas active: <span id="kozRoomCount">0</span> • Open slots: <span id="kozOpenSlots">0</span>
             </div>
         </div>
+
+        <!-- Platformer Mode -->
+        <div class="mode-card koz-mode" onclick="selectMode('platformer')" id="platformerCard">
+            <span class="mode-icon"></span>
+            <h2 class="mode-title">Platformer Gauntlet</h2>
+            <p class="mode-description">Race through an obstacle course to reach the exit gate.</p>
+            <ul class="mode-features">
+                <li>Single-player challenge</li>
+                <li>No bullets required</li>
+                <li>Earn bonus bullets for winning</li>
+                <li>Precision jumping</li>
+            </ul>
+            <div class="mode-status">Ready to run!</div>
+        </div>
     </div>
 
     <script src="../../assets/js/theme-selector.js"></script>
@@ -643,6 +657,8 @@
                 window.location.href = 'pvp-arena.html';
             } else if (mode === 'koz') {
                 window.location.href = 'king-of-zone.html';
+            } else if (mode === 'platformer') {
+                window.location.href = 'platformer-arcade.html';
             }
         }
 

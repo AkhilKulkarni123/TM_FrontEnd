@@ -615,6 +615,7 @@
         const DEFAULT_LIVES = 5;
         let lastJoinData = null;
         let lastResyncAt = 0;
+        let lastFrameAt = 0;
 
         // --- Center wall geometry (shared by drawing + collision) ---
         // The wall is a vertical strip at the exact center of the canvas.
@@ -770,6 +771,13 @@
             p.x = clampToSide(p.x, playerNumber, p.character);
         }
 
+        function clampToArena(p, sizeOverride) {
+            if (!p) return;
+            const size = sizeOverride || p.size || 35;
+            p.x = Math.max(size, Math.min(canvas.width - size, p.x));
+            p.y = Math.max(size, Math.min(canvas.height - size, p.y));
+        }
+
         const gameState = {
             player: {
                 x: 100,
@@ -909,6 +917,10 @@
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
+        window.addEventListener('blur', () => { gameState.keys = {}; });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) gameState.keys = {};
+        });
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && gameActive) {
                 e.preventDefault();
@@ -1137,11 +1149,15 @@
                     gameState.opponent.x = data.x;
                     gameState.opponent.y = data.y;
                     enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
+                    clampToArena(gameState.opponent);
                 }
             });
 
             // Opponent shot
             socket.on('pvp_opponent_shot', (data) => {
+                if (!data || typeof data.bulletX !== 'number' || typeof data.bulletY !== 'number') {
+                    return;
+                }
                 const isWizard = data.character === 'wizard';
                 const isArcher = data.character === 'archer';
                 gameState.opponentBullets.push({
@@ -1213,6 +1229,7 @@
                     gameState.player.x = data.x;
                     gameState.player.y = data.y;
                     enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
+                    clampToArena(gameState.player);
                 }
             });
 
@@ -1349,9 +1366,14 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            const now = performance.now();
+            const dt = Math.min(0.05, Math.max(0.008, (now - (lastFrameAt || now)) / 1000));
+            lastFrameAt = now;
+            const step = gameState.player.speed * dt * 60;
+
             gameState.aimAngle = lerpAngle(gameState.aimAngle, gameState.targetAimAngle, gameState.aimSmoothness);
 
-            movePlayer();
+            movePlayer(step);
             moveBullets();
             checkCollisions();
             drawGame();
@@ -1359,8 +1381,8 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function movePlayer() {
-            const speed = gameState.player.speed;
+        function movePlayer(step) {
+            const speed = step || gameState.player.speed;
             if (gameState.keys['a'] || gameState.keys['arrowleft']) {
                 gameState.player.x = Math.max(gameState.player.size, gameState.player.x - speed);
             }
@@ -1390,6 +1412,7 @@
                 const minX = midX + WALL_HALF_WIDTH + spriteHalf;
                 gameState.player.x = Math.max(gameState.player.x, minX);
             }
+            clampToArena(gameState.player);
         }
 
         function shoot() {

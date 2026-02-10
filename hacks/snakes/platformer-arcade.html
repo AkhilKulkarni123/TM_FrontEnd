@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Platformer</title>
+    <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pf-bg: #05060e;
+            --pf-panel: rgba(10, 14, 26, 0.8);
+            --pf-panel-border: rgba(255, 255, 255, 0.12);
+            --pf-accent: #30d7ff;
+            --pf-warning: #f1c40f;
+            --pf-success: #2ecc71;
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Rajdhani', 'Oxanium', system-ui, sans-serif;
+            background: var(--pf-bg);
+            color: #f7f7fb;
+        }
+        #pfContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #pfCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: radial-gradient(circle at 30% 20%, rgba(18,24,48,0.9), rgba(5,6,14,0.95));
+        }
+        .hud {
+            position: absolute;
+            inset: 18px 18px auto 18px;
+            display: grid;
+            grid-template-columns: 1.1fr 1.2fr 1fr;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .panel {
+            background: var(--pf-panel);
+            border: 1px solid var(--pf-panel-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            box-shadow: 0 18px 36px rgba(3, 6, 18, 0.6);
+            backdrop-filter: blur(12px);
+            pointer-events: auto;
+        }
+        .hud-title {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 6px 0;
+        }
+        .hud-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            margin: 0;
+        }
+        .stat-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .controls button {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(4, 6, 16, 0.8);
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        .controls button:hover { background: rgba(255,255,255,0.15); }
+        .goal-banner {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            width: 280px;
+        }
+        .goal-banner h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+        .goal-banner p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+        }
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(4, 6, 12, 0.75);
+            z-index: 10;
+        }
+        .overlay.active { display: flex; }
+        .modal {
+            background: rgba(10, 14, 26, 0.92);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 24px 28px;
+            max-width: 380px;
+            text-align: center;
+        }
+        .modal h2 {
+            margin: 0 0 10px 0;
+            font-family: 'Oxanium', sans-serif;
+        }
+        .modal p { margin: 0 0 16px 0; color: rgba(255,255,255,0.8); }
+        .modal button {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(4, 6, 16, 0.8);
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="pfContainer">
+        <canvas id="pfCanvas"></canvas>
+
+        <div class="hud">
+            <div class="panel">
+                <h1 class="hud-title">Platformer Gauntlet</h1>
+                <p class="hud-sub">Traverse the obstacles and reach the exit gate.</p>
+                <div class="stat-row">
+                    <span class="stat-pill">Player: <strong id="playerName">Player</strong></span>
+                    <span class="stat-pill">Bullets: <strong id="bulletCount">0</strong></span>
+                    <span class="stat-pill">Mode: Solo</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h1 class="hud-title">Controls</h1>
+                <p class="hud-sub">Move: WASD / Arrows • Jump: Space</p>
+                <div class="stat-row">
+                    <span class="stat-pill">Checkpoint: <strong id="checkpointLabel">Start</strong></span>
+                    <span class="stat-pill">Bonus: <strong id="bonusLabel">+25 bullets</strong></span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="controls">
+                    <button id="restartBtn">Restart</button>
+                    <button id="leaveBtn">Back to Arcade</button>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-pill">Goal: Reach the gate</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel goal-banner">
+            <h3>Finish Line</h3>
+            <p>Cross the glowing gate to claim your reward.</p>
+        </div>
+
+        <div class="overlay" id="winOverlay">
+            <div class="modal">
+                <h2>Victory!</h2>
+                <p>You cleared the course and earned extra bullets.</p>
+                <button id="victoryBtn">Go to Victory Page</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/theme-selector.js"></script>
+    <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/platformer-arcade.js"></script>
+</body>
+</html>
