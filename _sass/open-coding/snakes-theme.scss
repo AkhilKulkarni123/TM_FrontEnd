@@ -308,7 +308,7 @@ body.snakes-theme,
   .container,
   #game-container,
   #login-container,
-  #character-selection {
+  #character-selection:not(.theme-layout-v2) {
     position: relative;
     z-index: 1;
     background: transparent !important;
