@@ -129,22 +129,22 @@
             box-shadow: 0 30px 70px rgba(79, 172, 254, 0.62), 0 0 120px rgba(79, 172, 254, 0.35), 0 0 28px rgba(79, 172, 254, 0.5);
         }
 
-        /* Keep KOZ border visible by default (theme stylesheet loads later) */
-        .snakes-theme .mode-card.koz-mode {
+        /* Keep SLITHERRUSH border visible by default (theme stylesheet loads later) */
+        .snakes-theme .mode-card.slitherrush-mode {
             border: 3px solid #f1c40f;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        .snakes-theme #platformerCard.mode-card.koz-mode {
+        .snakes-theme #platformerCard.mode-card.platformer-mode {
             border-color: #2ecc71;
         }
 
-        .snakes-theme #platformerCard.mode-card.koz-mode:hover {
+        .snakes-theme #platformerCard.mode-card.platformer-mode:hover {
             border-color: #2ecc71;
             box-shadow: 0 30px 70px rgba(46, 204, 113, 0.62), 0 0 120px rgba(46, 204, 113, 0.35), 0 0 28px rgba(46, 204, 113, 0.5);
         }
 
-        .snakes-theme .mode-card.koz-mode:hover {
+        .snakes-theme .mode-card.slitherrush-mode:hover {
             box-shadow: 0 30px 70px rgba(243, 156, 18, 0.62), 0 0 120px rgba(241, 196, 15, 0.35), 0 0 28px rgba(243, 156, 18, 0.5);
         }
 
@@ -187,7 +187,7 @@
             color: #4facfe;
         }
 
-        .koz-mode .mode-title {
+        .slitherrush-mode .mode-title {
             color: #f39c12;
         }
 
@@ -234,7 +234,7 @@
             color: #4facfe;
         }
 
-        .koz-mode .mode-features li::before {
+        .slitherrush-mode .mode-features li::before {
             color: #f39c12;
         }
 
@@ -260,7 +260,7 @@
             color: #7fc8ff;
         }
 
-        .koz-mode .mode-status {
+        .slitherrush-mode .mode-status {
             background: rgba(243, 156, 18, 0.2);
             color: #ffd08a;
         }
@@ -429,24 +429,24 @@
             </div>
         </div>
 
-        <!-- King of the Zone Mode -->
-        <div class="mode-card koz-mode" onclick="selectMode('koz')" id="kozCard">
+        <!-- SLITHERRUSH Mode -->
+        <div class="mode-card slitherrush-mode" onclick="selectMode('slitherrush')" id="slitherrushCard">
             <span class="mode-icon"></span>
-            <h2 class="mode-title">King of the Zone</h2>
-            <p class="mode-description">Control the shrinking zone and rack up points before time runs out.</p>
+            <h2 class="mode-title">SLITHERRUSH</h2>
+            <p class="mode-description">Out-steer rivals, grow your slither, and survive to become the last one alive.</p>
             <ul class="mode-features">
-                <li>Shrinking capture zone</li>
-                <li>Contested control denies points</li>
-                <li>Timed matches + score limit</li>
-                <li>Dynamic relocations keep it fresh</li>
+                <li>Server-authoritative slither combat</li>
+                <li>Head-to-body and head-to-head eliminations</li>
+                <li>Death converts bodies into high-value energy</li>
+                <li>Instant spectator follow after elimination</li>
             </ul>
-            <div class="mode-status" id="kozStatus">
-                Players online: <span id="kozPlayerCount">0</span> • Arenas active: <span id="kozRoomCount">0</span> • Open slots: <span id="kozOpenSlots">0</span>
+            <div class="mode-status" id="slitherrushStatus">
+                Players online: <span id="slitherrushPlayerCount">0</span> • Arenas active: <span id="slitherrushRoomCount">0</span> • Open slots: <span id="slitherrushOpenSlots">0</span>
             </div>
         </div>
 
         <!-- Platformer Mode -->
-        <div class="mode-card koz-mode" onclick="selectMode('platformer')" id="platformerCard">
+        <div class="mode-card platformer-mode" onclick="selectMode('platformer')" id="platformerCard">
             <span class="mode-icon"></span>
             <h2 class="mode-title">Platformer Gauntlet</h2>
             <p class="mode-description">Race through an obstacle course to reach the exit gate.</p>
@@ -489,7 +489,7 @@
             lives: 3
         };
         let pvpStatusState = { totalPlayers: 0, activeRooms: 0, openSlots: 2 };
-        let kozStatusState = { totalPlayers: 0, activeRooms: 0, openSlots: 0 };
+        let slitherrushStatusState = { totalPlayers: 0, activeRooms: 0, openSlots: 0 };
 
         // Check for demo mode
         function isDemoMode() {
@@ -609,7 +609,7 @@
                 console.log('Socket connected for mode selection');
                 // Request PVP room status
                 socket.emit('pvp_get_status', {});
-                socket.emit('koz_get_status', {});
+                socket.emit('slitherrush_get_status', {});
             });
 
             socket.on('pvp_status', (data) => {
@@ -620,12 +620,12 @@
                 updatePVPStatus();
             });
 
-            socket.on('koz_status', (data) => {
+            socket.on('slitherrush_status', (data) => {
                 if (!data) return;
-                kozStatusState.totalPlayers = data.totalPlayers || 0;
-                kozStatusState.activeRooms = data.activeRooms || 0;
-                kozStatusState.openSlots = data.openSlots || 0;
-                updateKOZStatus();
+                slitherrushStatusState.totalPlayers = data.totalPlayers || 0;
+                slitherrushStatusState.activeRooms = data.activeRooms || 0;
+                slitherrushStatusState.openSlots = data.openSlots || 0;
+                updateSlitherRushStatus();
             });
         }
 
@@ -649,13 +649,13 @@
             }
         }
 
-        function updateKOZStatus() {
-            const kozStatusEl = document.getElementById('kozStatus');
-            if (kozStatusEl) {
-                kozStatusEl.innerHTML =
-                    'Players online: <span id=\"kozPlayerCount\">' + kozStatusState.totalPlayers +
-                    '</span> • Arenas active: <span id=\"kozRoomCount\">' + kozStatusState.activeRooms +
-                    '</span> • Open slots: <span id=\"kozOpenSlots\">' + kozStatusState.openSlots + '</span>';
+        function updateSlitherRushStatus() {
+            const slitherrushStatusEl = document.getElementById('slitherrushStatus');
+            if (slitherrushStatusEl) {
+                slitherrushStatusEl.innerHTML =
+                    'Players online: <span id=\"slitherrushPlayerCount\">' + slitherrushStatusState.totalPlayers +
+                    '</span> • Arenas active: <span id=\"slitherrushRoomCount\">' + slitherrushStatusState.activeRooms +
+                    '</span> • Open slots: <span id=\"slitherrushOpenSlots\">' + slitherrushStatusState.openSlots + '</span>';
             }
         }
 
@@ -672,8 +672,8 @@
                 window.location.href = 'boss-battle.html';
             } else if (mode === 'pvp') {
                 window.location.href = 'pvp-arena.html';
-            } else if (mode === 'koz') {
-                window.location.href = 'king-of-zone.html';
+            } else if (mode === 'slitherrush') {
+                window.location.href = 'slitherrush.html';
             } else if (mode === 'platformer') {
                 window.location.href = 'platformer-arcade.html';
             }
@@ -698,7 +698,7 @@
         setInterval(() => {
             if (socket && socket.connected) {
                 socket.emit('pvp_get_status', {});
-                socket.emit('koz_get_status', {});
+                socket.emit('slitherrush_get_status', {});
             }
         }, 3000);
     </script>
