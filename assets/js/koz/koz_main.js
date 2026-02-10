@@ -81,6 +81,13 @@
         var input = new window.KOZ.Input(canvas, function (sx, sy) {
             return renderer.screenToWorld(sx, sy);
         });
+        var exitingToModes = false;
+
+        function goToModeSelection() {
+            if (exitingToModes) return;
+            exitingToModes = true;
+            window.location.href = './mode-selection.html';
+        }
 
         input.bind();
 
@@ -91,9 +98,11 @@
             },
             onLeave: function () {
                 client.leaveLobby();
+                // Brief delay gives socket emit a chance to flush before page navigation.
+                setTimeout(goToModeSelection, 80);
             },
             onBack: function () {
-                window.location.href = './mode-selection.html';
+                goToModeSelection();
             }
         });
 
