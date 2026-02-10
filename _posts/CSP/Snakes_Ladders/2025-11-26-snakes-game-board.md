@@ -92,6 +92,29 @@ microblog: True
           <div class="perk-name" id="perk-name-display">Shielded</div>
           <div class="perk-description" id="perk-desc-display">+1 Max Life (starts with 6)</div>
         </div>
+        <div id="character-weapon-display" class="character-weapon-display">
+          <div class="weapon-header">Weapon</div>
+          <div class="weapon-name" id="weapon-name-display">Bulwark Disc</div>
+          <div class="weapon-description" id="weapon-desc-display">Throws a reinforced shield-disc that ricochets off one wall before fading.</div>
+          <div class="weapon-effect">Effect: <span id="weapon-effect-display">Bounce</span></div>
+        </div>
+        <div id="avatar-upload-panel" class="avatar-upload-panel" aria-labelledby="avatar-upload-title">
+          <div id="avatar-upload-title" class="avatar-upload-title">Upload Profile Picture</div>
+          <div class="avatar-upload-row">
+            <div id="avatar-preview" class="avatar-preview" aria-label="Profile picture preview">
+              <span id="avatar-preview-fallback" class="avatar-preview-fallback">P</span>
+            </div>
+            <div class="avatar-upload-meta">
+              <p>Shown in PvP, board tiles, and player lists.</p>
+              <p class="avatar-upload-help">PNG/JPG/WEBP up to 2MB.</p>
+            </div>
+          </div>
+          <input id="avatar-file-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <div class="avatar-upload-actions">
+            <button type="button" id="avatar-upload-btn" class="avatar-btn" aria-label="Upload profile picture">Upload</button>
+            <button type="button" id="avatar-reset-btn" class="avatar-btn secondary" aria-label="Remove profile picture">Remove</button>
+          </div>
+        </div>
         <button id="start-game-btn" class="game-start-btn" disabled>START ADVENTURE</button>
       </section>
 
@@ -155,6 +178,7 @@ microblog: True
   </div>
 </div>
 
+<script src="{{site.baseurl}}/assets/js/player-loadout.js"></script>
 <script src="{{site.baseurl}}/assets/js/theme-selector.js"></script>
 <script>
   // ---- Config ----
@@ -167,14 +191,178 @@ microblog: True
   }
   var fetchOpts = { mode: 'cors', cache: 'default', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-Origin': 'client' } };
   var DISPLAY_NAME_KEY = 'snakes_display_name';
+  var loadoutApi = window.SnakesLoadout || null;
   var CHARACTER_PERKS = {
     knight: { name: 'Shielded', desc: '+1 Max Life' },
     wizard: { name: 'Firebrand', desc: 'Double shot' },
     archer: { name: 'Keen Aim', desc: 'Homing bullets' },
     warrior: { name: 'Bravery', desc: 'Increased damage + Bleeding effect' }
   };
+  var CHARACTER_WEAPONS = {
+    knight: {
+      weaponType: 'bulwark-disc',
+      name: 'Bulwark Disc',
+      desc: 'Throws a reinforced shield-disc that ricochets off one wall before fading.',
+      effect: 'Bounce'
+    },
+    wizard: {
+      weaponType: 'arcane-orb',
+      name: 'Arcane Orb',
+      desc: 'Launches volatile magic that bursts on impact and splashes nearby targets.',
+      effect: 'Splash'
+    },
+    archer: {
+      weaponType: 'piercing-arrow',
+      name: 'Piercing Arrow',
+      desc: 'Fires a fast precision bolt with light guidance and excellent travel speed.',
+      effect: 'Piercing'
+    },
+    warrior: {
+      weaponType: 'rage-axe',
+      name: 'Rage Axe',
+      desc: 'Hurls a heavy axe that hits hard and tears through front-line defenses.',
+      effect: 'Cleave'
+    }
+  };
 
-  var gameState = { isGuest: false, userId: null, username: '', character: '' };
+  var gameState = {
+    isGuest: false,
+    userId: null,
+    username: '',
+    character: '',
+    weaponType: '',
+    avatarData: '',
+    avatarUrl: ''
+  };
+
+  function getHeroLoadout(character) {
+    var hero = String(character || '').toLowerCase();
+    if (loadoutApi && typeof loadoutApi.getLoadoutByHero === 'function') {
+      return loadoutApi.getLoadoutByHero(hero);
+    }
+    var fallback = CHARACTER_WEAPONS[hero] || CHARACTER_WEAPONS.knight;
+    return {
+      hero: hero || 'knight',
+      weaponType: fallback.weaponType,
+      weaponName: fallback.name,
+      weaponDescription: fallback.desc,
+      weaponEffect: fallback.effect
+    };
+  }
+
+  function resolveWeaponType(character, explicitWeapon) {
+    if (loadoutApi && typeof loadoutApi.normalizeWeaponType === 'function') {
+      return loadoutApi.normalizeWeaponType(character, explicitWeapon);
+    }
+    var hero = String(character || '').toLowerCase();
+    if (CHARACTER_WEAPONS[hero]) {
+      return explicitWeapon || CHARACTER_WEAPONS[hero].weaponType;
+    }
+    return explicitWeapon || 'bulwark-disc';
+  }
+
+  function persistAvatarData(dataUrl) {
+    gameState.avatarData = dataUrl || '';
+    try {
+      if (gameState.isGuest) sessionStorage.setItem('snakes_avatar_data', gameState.avatarData);
+      else localStorage.setItem('snakes_avatar_data', gameState.avatarData);
+    } catch (e) {}
+    if (loadoutApi && typeof loadoutApi.setAvatarData === 'function') {
+      loadoutApi.setAvatarData(gameState.avatarData, !!gameState.isGuest);
+    }
+  }
+
+  function persistAvatarUrl(url) {
+    gameState.avatarUrl = url || '';
+    try {
+      if (gameState.isGuest) sessionStorage.setItem('snakes_avatar_url', gameState.avatarUrl);
+      else localStorage.setItem('snakes_avatar_url', gameState.avatarUrl);
+    } catch (e) {}
+    if (loadoutApi && typeof loadoutApi.setAvatarUrl === 'function') {
+      loadoutApi.setAvatarUrl(gameState.avatarUrl, !!gameState.isGuest);
+    }
+  }
+
+  function clearAvatarStorage() {
+    gameState.avatarData = '';
+    gameState.avatarUrl = '';
+    try {
+      localStorage.removeItem('snakes_avatar_data');
+      localStorage.removeItem('snakes_avatar_url');
+      sessionStorage.removeItem('snakes_avatar_data');
+      sessionStorage.removeItem('snakes_avatar_url');
+    } catch (e) {}
+    if (loadoutApi && typeof loadoutApi.clearAvatar === 'function') loadoutApi.clearAvatar();
+    if (loadoutApi && typeof loadoutApi.clearAvatarUrl === 'function') loadoutApi.clearAvatarUrl();
+  }
+
+  function loadStoredAvatar() {
+    var avatarData = '';
+    var avatarUrl = '';
+    try { avatarData = localStorage.getItem('snakes_avatar_data') || sessionStorage.getItem('snakes_avatar_data') || ''; } catch(e) {}
+    try { avatarUrl = localStorage.getItem('snakes_avatar_url') || sessionStorage.getItem('snakes_avatar_url') || ''; } catch(e) {}
+    if (loadoutApi && typeof loadoutApi.getAvatarData === 'function') avatarData = avatarData || loadoutApi.getAvatarData();
+    if (loadoutApi && typeof loadoutApi.getAvatarUrl === 'function') avatarUrl = avatarUrl || loadoutApi.getAvatarUrl();
+    gameState.avatarData = avatarData || '';
+    gameState.avatarUrl = avatarUrl || '';
+  }
+
+  function getAvatarSource() {
+    return gameState.avatarUrl || gameState.avatarData || '';
+  }
+
+  function getInitials(name) {
+    var text = String(name || 'Player').trim();
+    if (!text) return 'P';
+    var parts = text.split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'P';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function updateWeaponDisplay(character) {
+    var loadout = getHeroLoadout(character);
+    var weaponName = document.getElementById('weapon-name-display');
+    var weaponDesc = document.getElementById('weapon-desc-display');
+    var weaponEffect = document.getElementById('weapon-effect-display');
+    if (weaponName) weaponName.textContent = loadout.weaponName || 'Bulwark Disc';
+    if (weaponDesc) weaponDesc.textContent = loadout.weaponDescription || 'Defensive projectile';
+    if (weaponEffect) weaponEffect.textContent = loadout.weaponEffect || 'Balanced';
+  }
+
+  function updatePerkDisplay(character) {
+    var pn = document.getElementById('perk-name-display');
+    var pd = document.getElementById('perk-desc-display');
+    var perk = CHARACTER_PERKS[character];
+    if (pn && pd && perk) {
+      pn.textContent = perk.name;
+      pd.textContent = perk.desc;
+    }
+  }
+
+  function updateHeroDetails(character) {
+    updatePerkDisplay(character);
+    updateWeaponDisplay(character);
+  }
+
+  function updateAvatarPreview(source) {
+    var preview = document.getElementById('avatar-preview');
+    var fallback = document.getElementById('avatar-preview-fallback');
+    if (!preview || !fallback) return;
+
+    var avatarSource = source || getAvatarSource();
+    if (avatarSource) {
+      preview.style.backgroundImage = 'url(\"' + avatarSource + '\")';
+      preview.classList.add('has-image');
+      fallback.style.display = 'none';
+      return;
+    }
+
+    preview.style.backgroundImage = '';
+    preview.classList.remove('has-image');
+    fallback.style.display = '';
+    fallback.textContent = getInitials(gameState.username || 'Player');
+  }
 
   // ---- Auto-redirect if already started ----
   (function() {
@@ -225,14 +413,32 @@ microblog: True
           .then(function(r) { return r.ok ? r.json() : null; })
           .then(function(data) {
             var hasChar = data && data.selected_character && data.selected_character !== 'default' && data.selected_character !== '';
+            if (data && data.selected_character) {
+              gameState.character = data.selected_character;
+              gameState.weaponType = resolveWeaponType(data.selected_character, data.weapon_type || data.selected_weapon);
+            }
+            if (data && (data.avatar_url || data.avatar_data)) {
+              if (data.avatar_url) persistAvatarUrl(data.avatar_url);
+              if (data.avatar_data) persistAvatarData(data.avatar_data);
+            }
             if (hasChar) {
-              try { localStorage.setItem('snakes_selected_character', data.selected_character); localStorage.setItem('snakes_started', '1'); localStorage.setItem('snakes_user_id', String(gameState.userId)); } catch(e) {}
+              try {
+                localStorage.setItem('snakes_selected_character', data.selected_character);
+                localStorage.setItem('snakes_selected_weapon', gameState.weaponType || resolveWeaponType(data.selected_character));
+                localStorage.setItem('snakes_started', '1');
+                localStorage.setItem('snakes_user_id', String(gameState.userId));
+              } catch(e) {}
+              if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+                loadoutApi.saveLoadout(data.selected_character, gameState.weaponType || resolveWeaponType(data.selected_character), { useSession: false });
+              }
               window.location.href = GAME_URL;
               return;
             }
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('character-selection').classList.remove('hidden');
             document.body.classList.add('character-select-active');
+            updateHeroDetails(gameState.character || 'knight');
+            updateAvatarPreview();
           });
       })
       .catch(function(err) { console.error('Login error:', err); alert('Error connecting to server.'); });
@@ -256,17 +462,63 @@ microblog: True
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
+    gameState.weaponType = resolveWeaponType(gameState.character);
+    updateHeroDetails(gameState.character);
     try {
-      if (gameState.isGuest) { sessionStorage.setItem('snakes_selected_character', gameState.character); }
-      else { localStorage.setItem('snakes_selected_character', gameState.character); if (gameState.userId) localStorage.setItem('snakes_user_id', String(gameState.userId)); }
+      if (gameState.isGuest) {
+        sessionStorage.setItem('snakes_selected_character', gameState.character);
+        sessionStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+      } else {
+        localStorage.setItem('snakes_selected_character', gameState.character);
+        localStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+        if (gameState.userId) localStorage.setItem('snakes_user_id', String(gameState.userId));
+      }
     } catch(e) {}
+    if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+      loadoutApi.saveLoadout(gameState.character, gameState.weaponType, { useSession: !!gameState.isGuest });
+    }
     var charName = card.querySelector('.character-name').textContent;
     alert(charName + ' selected! Click START ADVENTURE to begin.');
     if (!gameState.isGuest && gameState.userId) {
       fetch(API_URL + '/snakes/', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
         .then(function(r) {
-          if (r.status === 404) return fetch(API_URL + '/snakes/', { method: 'POST', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers, body: JSON.stringify({ selected_character: gameState.character }) });
-          else return fetch(API_URL + '/snakes/', { method: 'PUT', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers, body: JSON.stringify({ selected_character: gameState.character, current_square: 1, visited_squares: [1], total_bullets: 0, time_played: 0, lives: 5, boss_battle_attempts: 0 }) });
+          var sharedPayload = {
+            selected_character: gameState.character,
+            weapon_type: gameState.weaponType,
+            selected_weapon: gameState.weaponType,
+            avatar_url: gameState.avatarUrl || null,
+            avatar_data: gameState.avatarData || null
+          };
+          if (r.status === 404) {
+            return fetch(API_URL + '/snakes/', {
+              method: 'POST',
+              mode: fetchOpts.mode,
+              cache: fetchOpts.cache,
+              credentials: fetchOpts.credentials,
+              headers: fetchOpts.headers,
+              body: JSON.stringify(sharedPayload)
+            });
+          }
+          return fetch(API_URL + '/snakes/', {
+            method: 'PUT',
+            mode: fetchOpts.mode,
+            cache: fetchOpts.cache,
+            credentials: fetchOpts.credentials,
+            headers: fetchOpts.headers,
+            body: JSON.stringify({
+              selected_character: gameState.character,
+              weapon_type: gameState.weaponType,
+              selected_weapon: gameState.weaponType,
+              avatar_url: gameState.avatarUrl || null,
+              avatar_data: gameState.avatarData || null,
+              current_square: 1,
+              visited_squares: [1],
+              total_bullets: 0,
+              time_played: 0,
+              lives: 5,
+              boss_battle_attempts: 0
+            })
+          });
         }).catch(function(e) { console.error('Save character error:', e); });
     }
     var startBtn = document.getElementById('start-game-btn');
@@ -275,15 +527,136 @@ microblog: True
 
   function startGame() {
     if (!gameState.character) { alert('Please select a character!'); return; }
+    if (!gameState.weaponType) gameState.weaponType = resolveWeaponType(gameState.character);
     try {
-      if (gameState.isGuest) { sessionStorage.setItem('snakes_started', '1'); }
-      else { localStorage.setItem('snakes_started', '1'); if (gameState.userId) localStorage.setItem('snakes_user_id', String(gameState.userId)); }
+      if (gameState.isGuest) {
+        sessionStorage.setItem('snakes_started', '1');
+        sessionStorage.setItem('snakes_selected_character', gameState.character);
+        sessionStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+      } else {
+        localStorage.setItem('snakes_started', '1');
+        localStorage.setItem('snakes_selected_character', gameState.character);
+        localStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+        if (gameState.userId) localStorage.setItem('snakes_user_id', String(gameState.userId));
+      }
     } catch(e) {}
+    if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+      loadoutApi.saveLoadout(gameState.character, gameState.weaponType, { useSession: !!gameState.isGuest });
+    }
     window.location.href = GAME_URL;
+  }
+
+  function uploadAvatarToBackend(file, dataUrl) {
+    if (gameState.isGuest || !gameState.userId) return Promise.resolve(null);
+    var fd = new FormData();
+    fd.append('avatar', file);
+    return fetch(API_URL + '/profile/avatar', {
+      method: 'POST',
+      mode: fetchOpts.mode,
+      cache: fetchOpts.cache,
+      credentials: fetchOpts.credentials,
+      headers: { 'X-Origin': 'client' },
+      body: fd
+    }).then(function(res) {
+      if (!res.ok) return null;
+      return res.json();
+    }).then(function(data) {
+      if (data && data.avatar_url) {
+        persistAvatarUrl(data.avatar_url);
+      } else if (dataUrl) {
+        persistAvatarData(dataUrl);
+      }
+      return data;
+    }).catch(function() {
+      if (dataUrl) persistAvatarData(dataUrl);
+      return null;
+    });
+  }
+
+  function cropFileToSquareDataUrl(file, done) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var side = Math.min(img.width, img.height);
+        var sx = Math.floor((img.width - side) / 2);
+        var sy = Math.floor((img.height - side) / 2);
+        var canvas = document.createElement('canvas');
+        var size = 256;
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        done(canvas.toDataURL('image/webp', 0.92));
+      };
+      img.onerror = function() {
+        done('');
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() { done(''); };
+    reader.readAsDataURL(file);
+  }
+
+  function initAvatarUpload() {
+    var input = document.getElementById('avatar-file-input');
+    var uploadBtn = document.getElementById('avatar-upload-btn');
+    var resetBtn = document.getElementById('avatar-reset-btn');
+    if (!input || !uploadBtn || !resetBtn) return;
+
+    uploadBtn.addEventListener('click', function() {
+      input.click();
+    });
+
+    resetBtn.addEventListener('click', function() {
+      clearAvatarStorage();
+      updateAvatarPreview('');
+    });
+
+    input.addEventListener('change', function() {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+      if (validTypes.indexOf(file.type) === -1) {
+        alert('Please upload a PNG, JPG, or WEBP image.');
+        input.value = '';
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image must be 2MB or smaller.');
+        input.value = '';
+        return;
+      }
+
+      cropFileToSquareDataUrl(file, function(dataUrl) {
+        if (!dataUrl) {
+          alert('Could not process image. Please try another file.');
+          return;
+        }
+        persistAvatarData(dataUrl);
+        updateAvatarPreview(dataUrl);
+        uploadAvatarToBackend(file, dataUrl);
+      });
+    });
   }
 
   // ---- Event Listeners ----
   document.addEventListener('DOMContentLoaded', function() {
+    loadStoredAvatar();
+    var storedCharacter = '';
+    var storedWeapon = '';
+    try { storedCharacter = localStorage.getItem('snakes_selected_character') || sessionStorage.getItem('snakes_selected_character') || ''; } catch(e) {}
+    try { storedWeapon = localStorage.getItem('snakes_selected_weapon') || sessionStorage.getItem('snakes_selected_weapon') || ''; } catch(e) {}
+    if (storedCharacter && CHARACTER_PERKS[storedCharacter]) {
+      gameState.character = storedCharacter;
+      gameState.weaponType = resolveWeaponType(storedCharacter, storedWeapon);
+    } else {
+      gameState.character = 'knight';
+      gameState.weaponType = resolveWeaponType('knight');
+    }
+    updateHeroDetails(gameState.character);
+    initAvatarUpload();
+
     var useLoginBtn = document.getElementById('use-existing-login');
     if (useLoginBtn) useLoginBtn.addEventListener('click', useExistingLogin);
     var guestBtn = document.getElementById('play-as-guest');
@@ -305,6 +678,7 @@ microblog: True
         document.getElementById('login-container').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
         document.body.classList.add('character-select-active');
+        updateAvatarPreview();
       });
     }
     var guestDefault = document.getElementById('guest-name-default');
@@ -315,6 +689,7 @@ microblog: True
         document.getElementById('login-container').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
         document.body.classList.add('character-select-active');
+        updateAvatarPreview();
       });
     }
     var guestInput = document.getElementById('guest-display-name');
@@ -328,7 +703,13 @@ microblog: True
     }
     fetch(API_URL + '/id', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
       .then(function(r) { return r.ok ? r.json() : null; })
-      .then(function(u) { if (u) { gameState.userId = u.id; gameState.username = u.name; } })
+      .then(function(u) {
+        if (u) {
+          gameState.userId = u.id;
+          gameState.username = u.name;
+        }
+        updateAvatarPreview();
+      })
       .catch(function() {});
     initCarousel();
   });
@@ -341,14 +722,19 @@ microblog: True
     var nextBtn = document.getElementById('next-character');
     var lastClickedIndex = -1, clickTimer = null;
     if (!cards.length || !prevBtn || !nextBtn) return;
-    function updatePerkDisplay(charType) {
-      var pn = document.getElementById('perk-name-display'), pd = document.getElementById('perk-desc-display');
-      if (pn && pd && CHARACTER_PERKS[charType]) { pn.textContent = CHARACTER_PERKS[charType].name; pd.textContent = CHARACTER_PERKS[charType].desc; }
+    if (gameState.character) {
+      cards.forEach(function(card, index) {
+        if (card.getAttribute('data-character') === gameState.character) currentIndex = index;
+      });
     }
+
     function updateCarousel() {
       cards.forEach(function(card, index) {
         card.classList.remove('center', 'left', 'right');
-        if (index === currentIndex) { card.classList.add('center'); updatePerkDisplay(card.getAttribute('data-character')); }
+        if (index === currentIndex) {
+          card.classList.add('center');
+          updateHeroDetails(card.getAttribute('data-character'));
+        }
         else if (index === currentIndex - 1 || (currentIndex === 0 && index === cards.length - 1)) card.classList.add('left');
         else if (index === currentIndex + 1 || (currentIndex === cards.length - 1 && index === 0)) card.classList.add('right');
       });

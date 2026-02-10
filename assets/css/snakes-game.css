@@ -1383,10 +1383,81 @@ body {
     top: 2px;
     right: 2px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    max-width: 70%;
+    align-items: center;
+    justify-content: flex-end;
+    max-width: calc(100% - 8px);
     z-index: 5;
+}
+
+.tile-avatars {
+    display: flex;
+    align-items: center;
+    max-width: 64px;
+    overflow: hidden;
+    padding-left: 2px;
+}
+
+.tile-avatar-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 0 0 -5px;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.tile-avatar-btn:first-child {
+    margin-left: 0;
+}
+
+.tile-avatar-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.85);
+    outline-offset: 1px;
+    border-radius: 50%;
+}
+
+.tile-avatar-bubble,
+.square-player-icon,
+.online-player-avatar,
+.player-list-avatar,
+.player-info-avatar {
+    --avatar-size: 20px;
+    --avatar-ring: rgba(255, 255, 255, 0.7);
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid var(--avatar-ring);
+    background: rgba(20, 30, 50, 0.85);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.tile-avatar-bubble img,
+.square-player-icon img,
+.online-player-avatar img,
+.player-list-avatar img,
+.player-info-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-fallback {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #f3f7ff;
+    text-transform: uppercase;
+}
+
+.tile-avatar-count {
+    min-width: 28px;
+    padding: 0 6px;
+    border-radius: 999px;
 }
 
 .other-player-marker {
@@ -1411,6 +1482,19 @@ body {
     padding: 1px;
     background: rgba(255, 215, 0, 0.4);
     font-size: 1.1em !important;
+}
+
+.player-marker.player-avatar-marker {
+    width: 26px;
+    height: 26px;
+    font-size: 0;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(20, 30, 46, 0.95);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    padding: 0;
 }
 
 .player-count-badge {
@@ -1560,14 +1644,9 @@ body {
 }
 
 .square-player-icon {
-    font-size: 1.8em;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(102, 126, 234, 0.2);
-    border-radius: 50%;
+    --avatar-size: 44px;
+    --avatar-ring: rgba(102, 126, 234, 0.65);
+    flex-shrink: 0;
 }
 
 .square-player-info {
@@ -1584,6 +1663,12 @@ body {
 .square-player-stats {
     font-size: 0.8em;
     color: #a0a0c0;
+}
+
+.square-player-meta {
+    font-size: 0.78em;
+    color: rgba(180, 214, 255, 0.92);
+    margin-bottom: 2px;
 }
 
 .square-player-arrow {
@@ -1611,6 +1696,20 @@ body {
     background: rgba(102, 126, 234, 0.7);
 }
 
+@media (max-width: 700px) {
+    .tile-avatar-bubble {
+        --avatar-size: 16px;
+    }
+
+    .tile-avatar-btn {
+        margin-left: -4px;
+    }
+
+    .tile-avatars {
+        max-width: 52px;
+    }
+}
+
 /* ============================================
    PLAYER INFO POPUP MODAL
 ============================================ */
@@ -1633,6 +1732,12 @@ body {
     font-size: 4em;
     margin-bottom: 10px;
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+.player-info-avatar {
+    --avatar-size: 74px;
+    --avatar-ring: rgba(255, 255, 255, 0.9);
+    margin: 0 auto 10px;
 }
 
 .player-info-header h2 {

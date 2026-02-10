@@ -56,12 +56,64 @@ var CHARACTER_PERKS = {
     }
 };
 
+var loadoutApi = window.SnakesLoadout || null;
+var CHARACTER_WEAPONS = {
+    knight: {
+        weaponType: 'bulwark-disc',
+        weaponName: 'Bulwark Disc',
+        weaponDescription: 'Throws a reinforced shield-disc that ricochets off one wall before fading.',
+        weaponEffect: 'Bounce'
+    },
+    wizard: {
+        weaponType: 'arcane-orb',
+        weaponName: 'Arcane Orb',
+        weaponDescription: 'Launches volatile magic that bursts on impact and splashes nearby targets.',
+        weaponEffect: 'Splash'
+    },
+    archer: {
+        weaponType: 'piercing-arrow',
+        weaponName: 'Piercing Arrow',
+        weaponDescription: 'Fires a fast precision bolt with light guidance and excellent travel speed.',
+        weaponEffect: 'Piercing'
+    },
+    warrior: {
+        weaponType: 'rage-axe',
+        weaponName: 'Rage Axe',
+        weaponDescription: 'Hurls a heavy axe that hits hard and tears through front-line defenses.',
+        weaponEffect: 'Cleave'
+    }
+};
+
+function resolveWeaponType(character, explicitWeaponType) {
+    if (loadoutApi && typeof loadoutApi.normalizeWeaponType === 'function') {
+        return loadoutApi.normalizeWeaponType(character, explicitWeaponType);
+    }
+    var key = String(character || '').toLowerCase();
+    var fallback = CHARACTER_WEAPONS[key] ? CHARACTER_WEAPONS[key].weaponType : 'bulwark-disc';
+    return explicitWeaponType || fallback;
+}
+
+function getWeaponInfo(character, explicitWeaponType) {
+    var key = String(character || '').toLowerCase();
+    var base = CHARACTER_WEAPONS[key] || CHARACTER_WEAPONS.knight;
+    var resolvedWeaponType = resolveWeaponType(key, explicitWeaponType);
+    return {
+        weaponType: resolvedWeaponType,
+        weaponName: base.weaponName,
+        weaponDescription: base.weaponDescription,
+        weaponEffect: base.weaponEffect
+    };
+}
+
 var gameState = {
     isGuest: false,
     isDemoMode: false,  // Demo mode: data only saved in session, not to backend or leaderboard
     userId: null,
     username: '',
     character: '',
+    weaponType: '',
+    avatarData: '',
+    avatarUrl: '',
     bullets: 0,
     lives: BASE_MAX_LIVES,
     maxLives: BASE_MAX_LIVES,
@@ -101,6 +153,124 @@ function applyCharacterPerks() {
     }
 }
 
+function loadProfileFromStorage() {
+    var storedCharacter = '';
+    var storedWeapon = '';
+    var avatarData = '';
+    var avatarUrl = '';
+
+    try { storedCharacter = localStorage.getItem('snakes_selected_character') || ''; } catch (e) {}
+    try { if (!storedCharacter) storedCharacter = sessionStorage.getItem('snakes_selected_character') || ''; } catch (e) {}
+    try { storedWeapon = localStorage.getItem('snakes_selected_weapon') || ''; } catch (e) {}
+    try { if (!storedWeapon) storedWeapon = sessionStorage.getItem('snakes_selected_weapon') || ''; } catch (e) {}
+    try { avatarData = localStorage.getItem('snakes_avatar_data') || ''; } catch (e) {}
+    try { if (!avatarData) avatarData = sessionStorage.getItem('snakes_avatar_data') || ''; } catch (e) {}
+    try { avatarUrl = localStorage.getItem('snakes_avatar_url') || ''; } catch (e) {}
+    try { if (!avatarUrl) avatarUrl = sessionStorage.getItem('snakes_avatar_url') || ''; } catch (e) {}
+
+    if (loadoutApi && typeof loadoutApi.getAvatarData === 'function') {
+        avatarData = avatarData || loadoutApi.getAvatarData();
+    }
+    if (loadoutApi && typeof loadoutApi.getAvatarUrl === 'function') {
+        avatarUrl = avatarUrl || loadoutApi.getAvatarUrl();
+    }
+
+    if (storedCharacter) {
+        gameState.character = storedCharacter;
+    }
+    gameState.weaponType = resolveWeaponType(gameState.character || storedCharacter, storedWeapon || gameState.weaponType);
+    gameState.avatarData = avatarData || gameState.avatarData || '';
+    gameState.avatarUrl = avatarUrl || gameState.avatarUrl || '';
+}
+
+function persistLoadoutToStorage() {
+    var useSession = !!gameState.isGuest;
+    var storage = useSession ? sessionStorage : localStorage;
+    try {
+        storage.setItem('snakes_selected_character', gameState.character || 'knight');
+        storage.setItem('snakes_selected_weapon', gameState.weaponType || resolveWeaponType(gameState.character));
+        if (gameState.avatarData) storage.setItem('snakes_avatar_data', gameState.avatarData);
+        if (gameState.avatarUrl) storage.setItem('snakes_avatar_url', gameState.avatarUrl);
+    } catch (e) {}
+
+    if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+        loadoutApi.saveLoadout(gameState.character || 'knight', gameState.weaponType || resolveWeaponType(gameState.character), { useSession: useSession });
+    }
+}
+
+function getPlayerInitials(name) {
+    if (loadoutApi && typeof loadoutApi.getInitials === 'function') {
+        return loadoutApi.getInitials(name);
+    }
+    var text = String(name || 'Player').trim();
+    if (!text) return 'P';
+    var parts = text.split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'P';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function getPlayerAvatarSource(player) {
+    var source = '';
+    if (loadoutApi && typeof loadoutApi.getAvatarSourceForPlayer === 'function') {
+        source = loadoutApi.getAvatarSourceForPlayer(player);
+    } else if (player && typeof player === 'object') {
+        source = player.avatar_url || player.avatar_data || player.avatarUrl || player.avatarData || '';
+    }
+
+    var sameUser = false;
+    if (player && gameState.userId && typeof player.user_id !== 'undefined') {
+        sameUser = String(player.user_id) === String(gameState.userId);
+    }
+    if (!source && sameUser) {
+        source = gameState.avatarUrl || gameState.avatarData || '';
+    }
+    return source || '';
+}
+
+function escapeHtml(text) {
+    return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderAvatarMarkup(player, className, sizePx, ringColor) {
+    var size = Number(sizePx || 20);
+    var ring = ringColor || 'rgba(255, 255, 255, 0.65)';
+    if (loadoutApi && typeof loadoutApi.renderAvatarMarkup === 'function') {
+        return loadoutApi.renderAvatarMarkup(player, {
+            className: className || 'tile-avatar-bubble',
+            size: size,
+            ringColor: ring
+        });
+    }
+
+    var avatar = getPlayerAvatarSource(player);
+    var username = (player && player.username) || gameState.username || 'Player';
+    var classes = className || 'tile-avatar-bubble';
+    if (avatar) {
+        return '<span class=\"' + escapeHtml(classes) + ' has-image\" style=\"--avatar-size:' + size + 'px;--avatar-ring:' + escapeHtml(ring) + ';\"><img src=\"' + escapeHtml(avatar) + '\" alt=\"' + escapeHtml(username) + ' avatar\"></span>';
+    }
+    return '<span class=\"' + escapeHtml(classes) + ' no-image\" style=\"--avatar-size:' + size + 'px;--avatar-ring:' + escapeHtml(ring) + ';\"><span class=\"avatar-fallback\">' + escapeHtml(getPlayerInitials(username)) + '</span></span>';
+}
+
+function createPlayerMarker(character, username, avatarSource) {
+    var marker = document.createElement('div');
+    marker.className = 'player-marker';
+    if (avatarSource) {
+        marker.classList.add('player-avatar-marker');
+        marker.style.backgroundImage = 'url(\"' + avatarSource + '\")';
+        marker.title = (username || 'Player') + ' avatar';
+    } else {
+        marker.textContent = getCharacterIcon(character);
+        marker.title = (username || 'Player') + ' marker';
+    }
+    return marker;
+}
+
 window.SnakesPerks = {
     getDescription: getPerkDescription
 };
@@ -133,7 +303,10 @@ function saveGuestProgress() {
             unlockedSections: gameState.unlockedSections,
             lives: gameState.lives,
             timeElapsed: gameState.timeElapsed,
-            character: gameState.character
+            character: gameState.character,
+            weaponType: gameState.weaponType,
+            avatarData: gameState.avatarData,
+            avatarUrl: gameState.avatarUrl
         };
         sessionStorage.setItem('snakes_guest_progress', JSON.stringify(guestData));
     } catch (e) {
@@ -155,6 +328,9 @@ function loadGuestProgress() {
             gameState.lives = guestData.lives || BASE_MAX_LIVES;
             gameState.timeElapsed = guestData.timeElapsed || 0;
             if (guestData.character) gameState.character = guestData.character;
+            gameState.weaponType = resolveWeaponType(gameState.character, guestData.weaponType);
+            if (guestData.avatarData) gameState.avatarData = guestData.avatarData;
+            if (guestData.avatarUrl) gameState.avatarUrl = guestData.avatarUrl;
             applyCharacterPerks();
             return true;
         }
@@ -176,6 +352,9 @@ function loadGuestProgress() {
                 gameState.lives = demoData.lives || BASE_MAX_LIVES;
                 gameState.timeElapsed = demoData.timeElapsed || 0;
                 if (demoData.character) gameState.character = demoData.character;
+                gameState.weaponType = resolveWeaponType(gameState.character, demoData.weaponType);
+                if (demoData.avatarData) gameState.avatarData = demoData.avatarData;
+                if (demoData.avatarUrl) gameState.avatarUrl = demoData.avatarUrl;
                 applyCharacterPerks();
                 return true;
             }
@@ -200,7 +379,10 @@ function saveDemoProgress() {
             unlockedSections: gameState.unlockedSections,
             lives: gameState.lives,
             timeElapsed: gameState.timeElapsed,
-            character: gameState.character
+            character: gameState.character,
+            weaponType: gameState.weaponType,
+            avatarData: gameState.avatarData,
+            avatarUrl: gameState.avatarUrl
         };
         sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
         console.log('Demo progress saved to session');
@@ -228,6 +410,9 @@ function loadDemoProgress() {
             gameState.lives = demoData.lives || BASE_MAX_LIVES;
             gameState.timeElapsed = demoData.timeElapsed || 0;
             if (demoData.character) gameState.character = demoData.character;
+            gameState.weaponType = resolveWeaponType(gameState.character, demoData.weaponType);
+            if (demoData.avatarData) gameState.avatarData = demoData.avatarData;
+            if (demoData.avatarUrl) gameState.avatarUrl = demoData.avatarUrl;
             console.log('Demo progress loaded from session:', demoData);
             return true;
         }
@@ -250,6 +435,7 @@ function checkDemoModeSession() {
 
 // Call on load to restore demo mode state
 checkDemoModeSession();
+loadProfileFromStorage();
 
 var multiplayerState = {
     otherPlayers: [],
@@ -452,12 +638,17 @@ function useExistingLogin() {
 
             if (hasValidCharacter) {
                 console.log('Returning user with character from backend:', gameState.character);
+                gameState.weaponType = resolveWeaponType(gameState.character, gameState.weaponType);
                 // Store in localStorage for future auto-resume (include user ID for multi-account support)
                 try {
                     localStorage.setItem('snakes_selected_character', gameState.character);
+                    localStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+                    if (gameState.avatarData) localStorage.setItem('snakes_avatar_data', gameState.avatarData);
+                    if (gameState.avatarUrl) localStorage.setItem('snakes_avatar_url', gameState.avatarUrl);
                     localStorage.setItem('snakes_started', '1');
                     localStorage.setItem('snakes_user_id', String(gameState.userId));
                 } catch (e) {}
+                persistLoadoutToStorage();
 
                 // Skip character selection and go directly to game
                 if (loginContainer) loginContainer.classList.add('hidden');
@@ -523,7 +714,13 @@ function loadOrCreateGameData() {
                         cache: fetchOptions.cache,
                         credentials: fetchOptions.credentials,
                         headers: fetchOptions.headers,
-                        body: JSON.stringify({ selected_character: gameState.character })
+                        body: JSON.stringify({
+                            selected_character: gameState.character,
+                            weapon_type: gameState.weaponType || resolveWeaponType(gameState.character),
+                            selected_weapon: gameState.weaponType || resolveWeaponType(gameState.character),
+                            avatar_url: gameState.avatarUrl || null,
+                            avatar_data: gameState.avatarData || null
+                        })
                     });
                 } else {
                     // No character selected yet - don't create game data
@@ -557,6 +754,10 @@ function loadOrCreateGameData() {
             } else if (gameState.character) {
                 console.log('Keeping locally selected character:', gameState.character);
             }
+            gameState.weaponType = resolveWeaponType(gameState.character || data.selected_character, data.weapon_type || data.selected_weapon || gameState.weaponType);
+            if (data.avatar_url) gameState.avatarUrl = data.avatar_url;
+            if (data.avatar_data) gameState.avatarData = data.avatar_data;
+            persistLoadoutToStorage();
 
             if (gameState.timeStarted === null) {
                 gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
@@ -608,6 +809,10 @@ function loadProgress() {
             } else if (gameState.character) {
                 console.log('Preserving selected character:', gameState.character);
             }
+            gameState.weaponType = resolveWeaponType(gameState.character || data.selected_character, data.weapon_type || data.selected_weapon || gameState.weaponType);
+            if (data.avatar_url) gameState.avatarUrl = data.avatar_url;
+            if (data.avatar_data) gameState.avatarData = data.avatar_data;
+            persistLoadoutToStorage();
 
             if (typeof data.time_played !== 'undefined' && data.time_played !== null) {
                 gameState.timeElapsed = Math.floor(Number(data.time_played || gameState.timeElapsed));
@@ -645,7 +850,10 @@ function saveProgress() {
             time_played: gameState.timeElapsed,
             lives: gameState.lives,
             boss_battle_attempts: gameState.bossAttempts,
-            selected_character: gameState.character
+            selected_character: gameState.character,
+            weapon_type: gameState.weaponType || resolveWeaponType(gameState.character),
+            selected_weapon: gameState.weaponType || resolveWeaponType(gameState.character),
+            avatar_url: gameState.avatarUrl || null
         })
     }).catch(function (error) { console.error('Error saving progress:', error); });
 }
@@ -657,21 +865,25 @@ function selectCharacter(card) {
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
     card.classList.add('selected');
     gameState.character = card.getAttribute('data-character');
+    gameState.weaponType = resolveWeaponType(gameState.character);
     applyCharacterPerks();
     // Save selection for resume (localStorage for logged-in, sessionStorage for guest)
     try {
         if (gameState.isGuest) {
             sessionStorage.setItem('snakes_selected_character', gameState.character);
+            sessionStorage.setItem('snakes_selected_weapon', gameState.weaponType);
             if (gameState.userId) {
                 sessionStorage.setItem('snakes_user_id', String(gameState.userId));
             }
         } else {
             localStorage.setItem('snakes_selected_character', gameState.character);
+            localStorage.setItem('snakes_selected_weapon', gameState.weaponType);
             if (gameState.userId) {
                 localStorage.setItem('snakes_user_id', String(gameState.userId));
             }
         }
     } catch (e) {}
+    persistLoadoutToStorage();
 
     console.log('======================');
     console.log('CHARACTER SELECTED:', gameState.character);
@@ -707,7 +919,13 @@ function selectCharacter(card) {
                         cache: fetchOptions.cache,
                         credentials: fetchOptions.credentials,
                         headers: fetchOptions.headers,
-                        body: JSON.stringify({ selected_character: gameState.character })
+                        body: JSON.stringify({
+                            selected_character: gameState.character,
+                            weapon_type: gameState.weaponType,
+                            selected_weapon: gameState.weaponType,
+                            avatar_url: gameState.avatarUrl || null,
+                            avatar_data: gameState.avatarData || null
+                        })
                     });
                 } else {
                     // Update existing game entry with selected character
@@ -720,6 +938,10 @@ function selectCharacter(card) {
                         headers: fetchOptions.headers,
                         body: JSON.stringify({
                             selected_character: gameState.character,
+                            weapon_type: gameState.weaponType,
+                            selected_weapon: gameState.weaponType,
+                            avatar_url: gameState.avatarUrl || null,
+                            avatar_data: gameState.avatarData || null,
                             current_square: gameState.currentSquare + 1,
                             visited_squares: gameState.visitedSquares.map(function (s) { return s + 1; }),
                             total_bullets: gameState.bullets,
@@ -754,6 +976,8 @@ function startGame() {
     }
 
     console.log('Starting game with character:', gameState.character);
+    gameState.weaponType = resolveWeaponType(gameState.character, gameState.weaponType);
+    persistLoadoutToStorage();
     applyCharacterPerks();
 
     loadOrCreateGameData()
@@ -876,7 +1100,9 @@ function autoResumeIfReady() {
     if (storedName) gameState.username = storedName;
     // Check if user has previously selected a character AND started the game
     var storedChar = null;
+    var storedWeapon = null;
     try { storedChar = localStorage.getItem('snakes_selected_character'); } catch (e) {}
+    try { storedWeapon = localStorage.getItem('snakes_selected_weapon'); } catch (e) {}
 
     var hasStarted = false;
     try { hasStarted = (localStorage.getItem('snakes_started') === '1'); } catch (e) {}
@@ -892,6 +1118,7 @@ function autoResumeIfReady() {
     if (isGuestStored) {
         gameState.isGuest = true;
         try { storedChar = sessionStorage.getItem('snakes_selected_character'); } catch (e) {}
+        try { storedWeapon = sessionStorage.getItem('snakes_selected_weapon'); } catch (e) {}
         try { hasStarted = (sessionStorage.getItem('snakes_started') === '1'); } catch (e) {}
         var guestUserId = null;
         try { guestUserId = sessionStorage.getItem('snakes_user_id'); } catch (e) {}
@@ -904,7 +1131,9 @@ function autoResumeIfReady() {
 
         if (storedChar && hasStarted) {
             gameState.character = storedChar;
+            gameState.weaponType = resolveWeaponType(storedChar, storedWeapon);
             loadGuestProgress();
+            persistLoadoutToStorage();
 
             var guestCharacterSelection = document.getElementById('character-selection');
             var guestGameContainer = document.getElementById('game-container');
@@ -943,6 +1172,9 @@ function autoResumeIfReady() {
     if (shouldClearStorage) {
         try {
             localStorage.removeItem('snakes_selected_character');
+            localStorage.removeItem('snakes_selected_weapon');
+            localStorage.removeItem('snakes_avatar_data');
+            localStorage.removeItem('snakes_avatar_url');
             localStorage.removeItem('snakes_started');
             localStorage.removeItem('snakes_user_id');
             sessionStorage.removeItem('snakes_isGuest');
@@ -957,7 +1189,9 @@ function autoResumeIfReady() {
     // Only auto-resume if BOTH character is selected AND game was started AND same user
     if (storedChar && hasStarted && gameState.userId && storedUserId === String(gameState.userId)) {
         gameState.character = storedChar;
+        gameState.weaponType = resolveWeaponType(storedChar, storedWeapon);
         gameState.isGuest = false;
+        loadProfileFromStorage();
 
         return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
             var characterSelection = document.getElementById('character-selection');
@@ -987,7 +1221,14 @@ function autoResumeIfReady() {
                 // No game data exists - this is a NEW user
                 // Redirect to landing page for login + character selection
                 console.log('New user detected - redirecting to landing page');
-                try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
+                try {
+                    localStorage.removeItem('snakes_selected_character');
+                    localStorage.removeItem('snakes_selected_weapon');
+                    localStorage.removeItem('snakes_avatar_data');
+                    localStorage.removeItem('snakes_avatar_url');
+                    localStorage.removeItem('snakes_started');
+                    localStorage.removeItem('snakes_user_id');
+                } catch(e) {}
                 var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
                 window.location.replace(base + '/snakes-game');
                 return null;
@@ -1012,6 +1253,7 @@ function autoResumeIfReady() {
                 // Valid character exists AND user previously started - auto-resume
                 console.log('Auto-resuming with backend character:', serverCharacter);
                 gameState.character = serverCharacter;
+                gameState.weaponType = resolveWeaponType(serverCharacter, data.weapon_type || data.selected_weapon || storedWeapon);
                 gameState.bullets = Number(data.total_bullets || 0);
                 if (typeof data.current_square !== 'undefined' && data.current_square !== null) {
                     gameState.currentSquare = Number(data.current_square) - 1;
@@ -1026,6 +1268,9 @@ function autoResumeIfReady() {
                 // Store in localStorage for future (include user ID for multi-account support)
                 try {
                     localStorage.setItem('snakes_selected_character', serverCharacter);
+                    localStorage.setItem('snakes_selected_weapon', gameState.weaponType);
+                    if (data.avatar_url) localStorage.setItem('snakes_avatar_url', data.avatar_url);
+                    if (data.avatar_data) localStorage.setItem('snakes_avatar_data', data.avatar_data);
                     localStorage.setItem('snakes_started', '1');
                     localStorage.setItem('snakes_user_id', String(gameState.userId));
                 } catch (e) {}
@@ -1044,7 +1289,14 @@ function autoResumeIfReady() {
             } else {
                 // User needs to select character - clear stale data and redirect to landing page
                 console.log('Redirecting to landing page - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
-                try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
+                try {
+                    localStorage.removeItem('snakes_selected_character');
+                    localStorage.removeItem('snakes_selected_weapon');
+                    localStorage.removeItem('snakes_avatar_data');
+                    localStorage.removeItem('snakes_avatar_url');
+                    localStorage.removeItem('snakes_started');
+                    localStorage.removeItem('snakes_user_id');
+                } catch(e) {}
                 var base2 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
                 window.location.replace(base2 + '/snakes-game');
             }
@@ -1053,7 +1305,14 @@ function autoResumeIfReady() {
             console.error('Error checking game data:', error);
             // On error, clear stale data and redirect to landing page as fallback
             console.log('Error occurred - redirecting to landing page');
-            try { localStorage.removeItem('snakes_selected_character'); localStorage.removeItem('snakes_started'); localStorage.removeItem('snakes_user_id'); } catch(e) {}
+            try {
+                localStorage.removeItem('snakes_selected_character');
+                localStorage.removeItem('snakes_selected_weapon');
+                localStorage.removeItem('snakes_avatar_data');
+                localStorage.removeItem('snakes_avatar_url');
+                localStorage.removeItem('snakes_started');
+                localStorage.removeItem('snakes_user_id');
+            } catch(e) {}
             var base3 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
             window.location.replace(base3 + '/snakes-game');
         });
@@ -1062,6 +1321,9 @@ function autoResumeIfReady() {
     // No valid session found - clear stale data and redirect to landing page
     try {
         localStorage.removeItem('snakes_selected_character');
+        localStorage.removeItem('snakes_selected_weapon');
+        localStorage.removeItem('snakes_avatar_data');
+        localStorage.removeItem('snakes_avatar_url');
         localStorage.removeItem('snakes_started');
         localStorage.removeItem('snakes_user_id');
     } catch(e) {}
@@ -1126,9 +1388,7 @@ function createGameBoard() {
             square.appendChild(icon);
 
             if (squareNum === gameState.currentSquare) {
-                var marker = document.createElement('div');
-                marker.className = 'player-marker';
-                marker.textContent = getCharacterIcon(gameState.character);
+                var marker = createPlayerMarker(gameState.character, gameState.username, gameState.avatarUrl || gameState.avatarData);
                 square.appendChild(marker);
             }
 
@@ -1192,9 +1452,7 @@ function createGameBoard() {
             square.appendChild(icon);
 
             if (squareNum === gameState.currentSquare) {
-                var marker = document.createElement('div');
-                marker.className = 'player-marker';
-                marker.textContent = getCharacterIcon(gameState.character);
+                var marker = createPlayerMarker(gameState.character, gameState.username, gameState.avatarUrl || gameState.avatarData);
                 square.appendChild(marker);
             }
 
@@ -1263,18 +1521,40 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     var container = document.createElement('div');
     container.className = 'other-players-container';
 
-    // Create a button that shows the number of players on this square
-    var playersBtn = document.createElement('button');
-    playersBtn.className = 'square-players-btn';
-    playersBtn.textContent = playersHere.length;
-    playersBtn.title = playersHere.length + ' player' + (playersHere.length > 1 ? 's' : '') + ' on this square';
+    if (playersHere.length <= 3) {
+        var avatarsWrap = document.createElement('div');
+        avatarsWrap.className = 'tile-avatars';
 
-    playersBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        showSquarePlayersPopup(squareNum, playersHere);
-    });
+        playersHere.forEach(function(player) {
+            var avatarBtn = document.createElement('button');
+            avatarBtn.type = 'button';
+            avatarBtn.className = 'tile-avatar-btn';
+            avatarBtn.setAttribute('aria-label', 'View player details for ' + (player.username || 'Unknown'));
+            avatarBtn.title = (player.username || 'Unknown') + ' • ' + getCharacterDisplayName(player.selected_character);
+            avatarBtn.innerHTML = renderAvatarMarkup(player, 'tile-avatar-bubble', 18, 'rgba(255,255,255,0.6)');
+            avatarBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showSquarePlayersPopup(squareNum, playersHere);
+            });
+            avatarsWrap.appendChild(avatarBtn);
+        });
 
-    container.appendChild(playersBtn);
+        container.appendChild(avatarsWrap);
+    } else {
+        var playersBtn = document.createElement('button');
+        playersBtn.className = 'square-players-btn tile-avatar-count';
+        playersBtn.textContent = '+' + playersHere.length;
+        playersBtn.title = playersHere.length + ' players on this square';
+        playersBtn.setAttribute('aria-label', 'View ' + playersHere.length + ' players on this square');
+
+        playersBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showSquarePlayersPopup(squareNum, playersHere);
+        });
+
+        container.appendChild(playersBtn);
+    }
+
     square.appendChild(container);
 }
 
@@ -1304,13 +1584,16 @@ function showSquarePlayersPopup(squareNum, players) {
     list.className = 'square-players-list';
 
     players.forEach(function(player) {
+        var heroName = getCharacterDisplayName(player.selected_character);
+        var weaponInfo = getWeaponInfo(player.selected_character, player.weapon_type || player.selected_weapon);
         var playerItem = document.createElement('div');
         playerItem.className = 'square-player-item';
         playerItem.innerHTML =
-            '<span class="square-player-icon">' + getCharacterIcon(player.selected_character) + '</span>' +
+            renderAvatarMarkup(player, 'square-player-icon', 40, 'rgba(255,255,255,0.68)') +
             '<div class="square-player-info">' +
-                '<div class="square-player-name">' + (player.username || 'Unknown') + '</div>' +
-                '<div class="square-player-stats">' + (player.total_bullets || 0) + ' bullets</div>' +
+                '<div class="square-player-name">' + escapeHtml(player.username || 'Unknown') + '</div>' +
+                '<div class="square-player-meta">' + escapeHtml(heroName) + ' • ' + escapeHtml(weaponInfo.weaponName) + '</div>' +
+                '<div class="square-player-stats">' + (player.total_bullets || 0) + ' bullets • Effect: ' + escapeHtml(weaponInfo.weaponEffect) + '</div>' +
             '</div>' +
             '<span class="square-player-arrow">›</span>';
 
@@ -1379,15 +1662,19 @@ function showPlayerInfoPopup(player) {
     var time = document.getElementById('popup-time');
     var lives = document.getElementById('popup-lives');
     var visited = document.getElementById('popup-visited');
+    var weaponInfo = getWeaponInfo(player.selected_character, player.weapon_type || player.selected_weapon);
 
-    if (characterIcon) characterIcon.textContent = getCharacterIcon(player.selected_character);
+    if (characterIcon) {
+        characterIcon.innerHTML = renderAvatarMarkup(player, 'player-info-avatar', 64, 'rgba(255,255,255,0.82)');
+    }
     if (playerName) playerName.textContent = player.username || 'Unknown Player';
     if (characterName) {
         var charNames = { knight: 'Knight', wizard: 'Wizard', archer: 'Archer', warrior: 'Warrior' };
-        characterName.textContent = charNames[player.selected_character] || 'Unknown';
+        var heroName = charNames[player.selected_character] || 'Unknown';
+        characterName.textContent = heroName + ' • ' + weaponInfo.weaponName;
     }
     if (position) position.textContent = 'Square ' + (player.current_square || 1);
-    if (bullets) bullets.textContent = (player.total_bullets || 0) + ' bullets';
+    if (bullets) bullets.textContent = (player.total_bullets || 0) + ' bullets • ' + weaponInfo.weaponEffect;
     if (time) time.textContent = formatTime(player.time_played || 0);
     if (lives) lives.textContent = (player.lives || 0) + ' remaining';
     if (visited) {
@@ -1413,6 +1700,7 @@ function updatePlayerInfo() {
     var nameSpan = document.getElementById('player-name-display');
 
     console.log('Updating player info with character:', gameState.character);
+    if (!gameState.weaponType) gameState.weaponType = resolveWeaponType(gameState.character);
     if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character) + ' ' + getCharacterDisplayName(gameState.character);
     if (bulletsSpan) bulletsSpan.textContent = gameState.bullets;
     if (livesSpan) livesSpan.textContent = gameState.lives;

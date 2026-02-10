@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+git add hacks/snakes/boss-battle.html<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -158,8 +158,32 @@
             margin-bottom: 5px;
         }
 
-        .player-icon {
+        .player-icon,
+        .player-avatar {
             font-size: 1.5em;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            background: rgba(20, 30, 50, 0.8);
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-avatar .avatar-fallback {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #f8fbff;
+            letter-spacing: 0.03em;
         }
 
         .player-info {
@@ -722,6 +746,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -765,6 +790,108 @@
             archer: { icon: '🏹', color: '#2ecc71', glow: '#27ae60', name: 'Archer' },
             warrior: { icon: '⚔️', color: '#f39c12', glow: '#f1c40f', name: 'Warrior' }
         };
+        const loadoutApi = window.SnakesLoadout || null;
+        const HERO_WEAPON_FALLBACK = {
+            knight: 'bulwark-disc',
+            wizard: 'arcane-orb',
+            archer: 'piercing-arrow',
+            warrior: 'rage-axe'
+        };
+
+        function resolveWeaponType(character, explicitWeaponType) {
+            if (loadoutApi && typeof loadoutApi.normalizeWeaponType === 'function') {
+                return loadoutApi.normalizeWeaponType(character, explicitWeaponType);
+            }
+            const key = String(character || 'knight').toLowerCase();
+            return explicitWeaponType || HERO_WEAPON_FALLBACK[key] || 'bulwark-disc';
+        }
+
+        function getWeaponPreset(character, explicitWeaponType) {
+            const weaponType = resolveWeaponType(character, explicitWeaponType);
+            if (loadoutApi && typeof loadoutApi.getWeaponPreset === 'function') {
+                return loadoutApi.getWeaponPreset(weaponType, character);
+            }
+            const fallbackMap = {
+                'bulwark-disc': { id: 'bulwark-disc', displayName: 'Bulwark Disc', shape: 'disc', speed: 10, size: 8, damage: 1, effect: 'bounce', maxBounces: 1, splashRadius: 0, homing: false, color: '#8ed7ff', glow: '#5bc7ff' },
+                'arcane-orb': { id: 'arcane-orb', displayName: 'Arcane Orb', shape: 'orb', speed: 11, size: 8, damage: 1, effect: 'splash', maxBounces: 0, splashRadius: 24, homing: false, color: '#ff9f5a', glow: '#ff6b6b' },
+                'piercing-arrow': { id: 'piercing-arrow', displayName: 'Piercing Arrow', shape: 'arrow', speed: 13.5, size: 5, damage: 1, effect: 'piercing', maxBounces: 0, splashRadius: 0, homing: true, color: '#8ef7cc', glow: '#4de8af' },
+                'rage-axe': { id: 'rage-axe', displayName: 'Rage Axe', shape: 'axe', speed: 9, size: 10, damage: 2, effect: 'cleave', maxBounces: 0, splashRadius: 0, homing: false, color: '#ffc46b', glow: '#ffb347' }
+            };
+            return fallbackMap[weaponType] || fallbackMap['bulwark-disc'];
+        }
+
+        function getAvatarSource(player) {
+            if (!player) return '';
+            if (loadoutApi && typeof loadoutApi.getAvatarSourceForPlayer === 'function') {
+                return loadoutApi.getAvatarSourceForPlayer(player) || '';
+            }
+            return player.avatar_url || player.avatar_data || player.avatarUrl || player.avatarData || '';
+        }
+
+        function renderAvatarHtml(player, className, size, ring) {
+            if (loadoutApi && typeof loadoutApi.renderAvatarMarkup === 'function') {
+                return loadoutApi.renderAvatarMarkup(player, {
+                    className: className || 'player-avatar',
+                    size: size || 38,
+                    ringColor: ring || 'rgba(255,255,255,0.72)'
+                });
+            }
+            return '<span class=\"player-icon\">?</span>';
+        }
+
+        function getInitials(name) {
+            if (loadoutApi && typeof loadoutApi.getInitials === 'function') {
+                return loadoutApi.getInitials(name);
+            }
+            const text = String(name || 'Player').trim();
+            if (!text) return 'P';
+            const parts = text.split(/\s+/).filter(Boolean);
+            if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+
+        const avatarImageCache = {};
+
+        function getAvatarImage(src) {
+            if (!src) return null;
+            if (avatarImageCache[src]) return avatarImageCache[src];
+            const img = new Image();
+            img.src = src;
+            avatarImageCache[src] = img;
+            return img;
+        }
+
+        function drawAvatarToken(player, x, y, ringColor) {
+            const source = getAvatarSource(player);
+            const radius = 11;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+            ctx.fillStyle = ringColor || 'rgba(255,255,255,0.9)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.clip();
+            if (source) {
+                const img = getAvatarImage(source);
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+                } else {
+                    ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
+                    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                }
+            } else {
+                ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
+                ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                ctx.fillStyle = '#f4f7ff';
+                ctx.font = 'bold 8px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(getInitials(player.username), x, y + 0.5);
+            }
+            ctx.restore();
+        }
 
         const PLAYER_SPRITES = {
             knight: {
@@ -889,8 +1016,11 @@
                 lives: DEFAULT_LIVES,
                 bullets: 50,
                 character: 'knight',
+                weaponType: 'bulwark-disc',
                 color: '#4facfe',
-                username: 'Player'
+                username: 'Player',
+                avatarData: '',
+                avatarUrl: ''
             },
             boss: {
                 x: canvas.width / 2,
@@ -1032,8 +1162,28 @@
             return null;
         }
 
+        function loadLocalProfile() {
+            try {
+                const localCharacter = localStorage.getItem('snakes_selected_character') || sessionStorage.getItem('snakes_selected_character');
+                const localWeapon = localStorage.getItem('snakes_selected_weapon') || sessionStorage.getItem('snakes_selected_weapon');
+                const localAvatarData = localStorage.getItem('snakes_avatar_data') || sessionStorage.getItem('snakes_avatar_data');
+                const localAvatarUrl = localStorage.getItem('snakes_avatar_url') || sessionStorage.getItem('snakes_avatar_url');
+                if (localCharacter) gameState.player.character = localCharacter;
+                gameState.player.weaponType = resolveWeaponType(gameState.player.character, localWeapon || gameState.player.weaponType);
+                if (localAvatarData) gameState.player.avatarData = localAvatarData;
+                if (localAvatarUrl) gameState.player.avatarUrl = localAvatarUrl;
+            } catch (e) {}
+            if (loadoutApi && typeof loadoutApi.getAvatarData === 'function') {
+                gameState.player.avatarData = gameState.player.avatarData || loadoutApi.getAvatarData();
+            }
+            if (loadoutApi && typeof loadoutApi.getAvatarUrl === 'function') {
+                gameState.player.avatarUrl = gameState.player.avatarUrl || loadoutApi.getAvatarUrl();
+            }
+        }
+
         // Load player data from server (or sessionStorage if in demo mode)
         function loadPlayerData() {
+            loadLocalProfile();
             // Check for demo mode first
             if (isDemoMode()) {
                 const demoData = loadDemoProgress();
@@ -1047,6 +1197,9 @@
                             gameState.player.color = charConfig.color;
                         }
                     }
+                    gameState.player.weaponType = resolveWeaponType(gameState.player.character, demoData.weaponType || demoData.selected_weapon || gameState.player.weaponType);
+                    if (demoData.avatarData) gameState.player.avatarData = demoData.avatarData;
+                    if (demoData.avatarUrl) gameState.player.avatarUrl = demoData.avatarUrl;
 
                     if (typeof demoData.bullets !== 'undefined') {
                         gameState.player.bullets = Number(demoData.bullets || 0);
@@ -1075,6 +1228,9 @@
                             gameState.player.color = charConfig.color;
                         }
                     }
+                    gameState.player.weaponType = resolveWeaponType(gameState.player.character, guestData.weaponType || guestData.selected_weapon || gameState.player.weaponType);
+                    if (guestData.avatarData) gameState.player.avatarData = guestData.avatarData;
+                    if (guestData.avatarUrl) gameState.player.avatarUrl = guestData.avatarUrl;
                     if (typeof guestData.bullets !== 'undefined') {
                         gameState.player.bullets = Number(guestData.bullets || 0);
                         updateBulletsDisplay();
@@ -1107,6 +1263,9 @@
                             gameState.player.color = charConfig.color;
                         }
                     }
+                    gameState.player.weaponType = resolveWeaponType(gameState.player.character, data.weapon_type || data.selected_weapon || gameState.player.weaponType);
+                    if (data.avatar_url) gameState.player.avatarUrl = data.avatar_url;
+                    if (data.avatar_data) gameState.player.avatarData = data.avatar_data;
 
                     if (typeof data.total_bullets !== 'undefined') {
                         gameState.player.bullets = Number(data.total_bullets || 0);
@@ -1117,6 +1276,16 @@
                         updateLives();
                     }
                     applyMaxLives();
+                    updatePlayersList();
+                    try {
+                        localStorage.setItem('snakes_selected_character', gameState.player.character);
+                        localStorage.setItem('snakes_selected_weapon', gameState.player.weaponType);
+                        if (gameState.player.avatarData) localStorage.setItem('snakes_avatar_data', gameState.player.avatarData);
+                        if (gameState.player.avatarUrl) localStorage.setItem('snakes_avatar_url', gameState.player.avatarUrl);
+                    } catch (e) {}
+                    if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+                        loadoutApi.saveLoadout(gameState.player.character, gameState.player.weaponType, { useSession: false });
+                    }
                 })
                 .catch(err => console.error('Could not load player progress', err));
         }
@@ -1275,6 +1444,9 @@
                         player: {
                             username: gameState.player.username,
                             character: gameState.player.character,
+                            weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                            avatar_url: gameState.player.avatarUrl || null,
+                            avatar_data: gameState.player.avatarData || null,
                             x: gameState.player.x,
                             y: gameState.player.y,
                             bullets: gameState.player.bullets,
@@ -1285,7 +1457,10 @@
                     // Join lobby for pre-battle chat
                     socket.emit('boss_join_lobby', {
                         username: gameState.player.username,
-                        character: gameState.player.character
+                        character: gameState.player.character,
+                        weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                        avatar_url: gameState.player.avatarUrl || null,
+                        avatar_data: gameState.player.avatarData || null
                     });
                     // Show room badge for lobby
                     document.getElementById('roomBadge').style.display = 'block';
@@ -1314,6 +1489,11 @@
                 if (data.self) {
                     if (typeof data.self.x === 'number') gameState.player.x = data.self.x;
                     if (typeof data.self.y === 'number') gameState.player.y = data.self.y;
+                    if (data.self.weapon_type || data.self.selected_weapon) {
+                        gameState.player.weaponType = resolveWeaponType(gameState.player.character, data.self.weapon_type || data.self.selected_weapon);
+                    }
+                    if (data.self.avatar_url) gameState.player.avatarUrl = data.self.avatar_url;
+                    if (data.self.avatar_data) gameState.player.avatarData = data.self.avatar_data;
                     if (typeof data.self.lives === 'number') {
                         gameState.player.lives = data.self.lives;
                         updateLives();
@@ -1329,7 +1509,11 @@
                     // Add players with their socket sid as key
                     data.players.forEach(p => {
                         if (p.sid && p.sid !== socket.id) {
-                            gameState.otherPlayers[p.sid] = p;
+                            gameState.otherPlayers[p.sid] = Object.assign({}, p, {
+                                weaponType: resolveWeaponType(p.character, p.weapon_type || p.selected_weapon),
+                                avatarUrl: p.avatar_url || p.avatarUrl || '',
+                                avatarData: p.avatar_data || p.avatarData || ''
+                            });
                         }
                     });
                     updatePlayersList();
@@ -1346,7 +1530,11 @@
             socket.on('boss_player_joined', (data) => {
                 console.log('Player joined:', data);
                 if (data.player && data.player.sid !== socket.id) {
-                    gameState.otherPlayers[data.player.sid] = data.player;
+                    gameState.otherPlayers[data.player.sid] = Object.assign({}, data.player, {
+                        weaponType: resolveWeaponType(data.player.character, data.player.weapon_type || data.player.selected_weapon),
+                        avatarUrl: data.player.avatar_url || data.player.avatarUrl || '',
+                        avatarData: data.player.avatar_data || data.player.avatarData || ''
+                    });
                     updatePlayersList();
                     addSystemMessage(`${data.player.username} joined the battle!`);
                     showNotification(`${data.player.username} joined the battle!`, 'join');
@@ -1382,35 +1570,17 @@
             // Other player shot a bullet
             socket.on('boss_player_bullet', (data) => {
                 const charConfig = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
-                const isWizard = data.character === 'wizard';
-                const isArcher = data.character === 'archer';
-                gameState.otherPlayerBullets.push({
-                    x: data.bulletX,
-                    y: data.bulletY,
-                    dx: data.dx,
-                    dy: data.dy,
-                    size: 8,
-                    color: isWizard ? '#ff3b30' : charConfig.color,
-                    glow: isWizard ? '#ff6b6b' : charConfig.glow,
-                    isFireball: isWizard,
-                    homing: isArcher
+                const weaponType = resolveWeaponType(data.character, data.weapon_type || data.weaponType || data.selected_weapon);
+                const spawned = createWeaponProjectiles({
+                    weaponType: weaponType,
+                    character: data.character,
+                    baseX: data.bulletX,
+                    baseY: data.bulletY,
+                    baseDx: data.dx,
+                    baseDy: data.dy,
+                    ownerColor: charConfig.glow
                 });
-                if (isWizard) {
-                    const angle = Math.atan2(data.dy, data.dx);
-                    const speed = Math.hypot(data.dx, data.dy) || 10;
-                    const offset = 0.1;
-                    gameState.otherPlayerBullets.push({
-                        x: data.bulletX,
-                        y: data.bulletY,
-                        dx: Math.cos(angle + offset) * speed,
-                        dy: Math.sin(angle + offset) * speed,
-                        size: 8,
-                        color: '#ff3b30',
-                        glow: '#ff6b6b',
-                        isFireball: true,
-                        homing: isArcher
-                    });
-                }
+                spawned.forEach((proj) => gameState.otherPlayerBullets.push(proj));
             });
 
             // Boss health update
@@ -1494,6 +1664,9 @@
                             gameState.otherPlayers[member.sid] = {
                                 username: member.username,
                                 character: member.character,
+                                weaponType: resolveWeaponType(member.character, member.weapon_type || member.selected_weapon),
+                                avatarUrl: member.avatar_url || '',
+                                avatarData: member.avatar_data || '',
                                 lives: '?',
                                 bullets: '?'
                             };
@@ -1522,6 +1695,9 @@
                             gameState.otherPlayers[member.sid] = {
                                 username: member.username,
                                 character: member.character,
+                                weaponType: resolveWeaponType(member.character, member.weapon_type || member.selected_weapon),
+                                avatarUrl: member.avatar_url || '',
+                                avatarData: member.avatar_data || '',
                                 lives: '?',
                                 bullets: '?'
                             };
@@ -1610,6 +1786,9 @@
                     bullets: gameState.player.bullets,
                     lives: gameState.player.lives,
                     character: gameState.player.character,
+                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    avatar_url: gameState.player.avatarUrl || null,
+                    avatar_data: gameState.player.avatarData || null,
                     dev_mode: true  // Skip square 25 requirement for testing
                 };
                 if (isGuestSession()) {
@@ -1672,6 +1851,9 @@
                                     user_id: data.player?.user_id,
                                     username: data.player?.username || gameState.player.username,
                                     character: gameState.player.character,
+                                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                                    avatar_url: gameState.player.avatarUrl || null,
+                                    avatar_data: gameState.player.avatarData || null,
                                     x: gameState.player.x,
                                     y: gameState.player.y,
                                     bullets: gameState.player.bullets,
@@ -1744,6 +1926,9 @@
                 })(),
                 bullets: gameState.player.bullets,
                 character: gameState.player.character,
+                weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                avatar_url: gameState.player.avatarUrl || null,
+                avatar_data: gameState.player.avatarData || null,
                 bounds: getBattleBounds()
             };
 
@@ -1899,6 +2084,7 @@
         function savePlayerState(overrides) {
             const bullets = Math.max(0, Math.floor(gameState.player.bullets));
             const lives = Math.max(0, Math.floor(gameState.player.lives));
+            gameState.player.weaponType = resolveWeaponType(gameState.player.character, gameState.player.weaponType);
 
             // If in demo mode, save to sessionStorage instead of server
             if (isDemoMode()) {
@@ -1907,6 +2093,10 @@
                     let demoData = stored ? JSON.parse(stored) : {};
                     demoData.bullets = overrides?.total_bullets ?? bullets;
                     demoData.lives = overrides?.lives ?? lives;
+                    demoData.character = gameState.player.character;
+                    demoData.weaponType = gameState.player.weaponType;
+                    if (gameState.player.avatarData) demoData.avatarData = gameState.player.avatarData;
+                    if (gameState.player.avatarUrl) demoData.avatarUrl = gameState.player.avatarUrl;
                     sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
                     console.log('Demo mode: saved player state to session', demoData);
                 } catch (e) {
@@ -1922,6 +2112,10 @@
                     let guestData = stored ? JSON.parse(stored) : {};
                     guestData.bullets = overrides?.total_bullets ?? bullets;
                     guestData.lives = overrides?.lives ?? lives;
+                    guestData.character = gameState.player.character;
+                    guestData.weaponType = gameState.player.weaponType;
+                    if (gameState.player.avatarData) guestData.avatarData = gameState.player.avatarData;
+                    if (gameState.player.avatarUrl) guestData.avatarUrl = gameState.player.avatarUrl;
                     sessionStorage.setItem('snakes_guest_progress', JSON.stringify(guestData));
                     console.log('Guest session: saved player state to session', guestData);
                 } catch (e) {
@@ -1932,8 +2126,19 @@
 
             const payload = Object.assign({
                 total_bullets: bullets,
-                lives: lives
+                lives: lives,
+                selected_character: gameState.player.character,
+                weapon_type: gameState.player.weaponType,
+                selected_weapon: gameState.player.weaponType,
+                avatar_url: gameState.player.avatarUrl || null
             }, overrides || {});
+
+            try {
+                localStorage.setItem('snakes_selected_character', gameState.player.character);
+                localStorage.setItem('snakes_selected_weapon', gameState.player.weaponType);
+                if (gameState.player.avatarData) localStorage.setItem('snakes_avatar_data', gameState.player.avatarData);
+                if (gameState.player.avatarUrl) localStorage.setItem('snakes_avatar_url', gameState.player.avatarUrl);
+            } catch (e) {}
 
             return fetch(`${GAME_API_ROOT}/snakes/`, {
                 method: 'PUT',
@@ -2079,50 +2284,112 @@ function getDamageMultiplier() {
             }
         }
 
-        function getBulletStyle() {
-            if (gameState.player.character === 'wizard') {
-                return { color: '#ff3b30', glow: '#ff6b6b', isFireball: true };
+        function createProjectile(character, weaponType, x, y, dx, dy, ownerColor) {
+            const preset = getWeaponPreset(character, weaponType);
+            return {
+                x: x,
+                y: y,
+                dx: dx,
+                dy: dy,
+                speed: Math.hypot(dx, dy) || preset.speed || 10,
+                size: preset.size || 8,
+                color: preset.color || ownerColor || '#FFD700',
+                glow: preset.glow || ownerColor || '#FFD700',
+                shape: preset.shape || 'disc',
+                weaponType: preset.id || weaponType,
+                effect: preset.effect || '',
+                homing: !!preset.homing,
+                maxBounces: Number(preset.maxBounces || 0),
+                bounceCount: 0,
+                damage: Number(preset.damage || 1),
+                splashRadius: Number(preset.splashRadius || 0),
+                isFireball: preset.id === 'arcane-orb'
+            };
+        }
+
+        function createWeaponProjectiles(options) {
+            const weaponType = resolveWeaponType(options.character, options.weaponType);
+            const preset = getWeaponPreset(options.character, weaponType);
+            const baseSpeed = Math.hypot(options.baseDx || 0, options.baseDy || 0) || preset.speed || 10;
+            const baseAngle = typeof options.shotAngle === 'number'
+                ? options.shotAngle
+                : Math.atan2(options.baseDy || 0, options.baseDx || baseSpeed);
+            const spread = weaponType === 'arcane-orb' ? [-0.1, 0.1] : [0];
+            return spread.map((offset) => {
+                const angle = baseAngle + offset;
+                const dx = Math.cos(angle) * baseSpeed;
+                const dy = Math.sin(angle) * baseSpeed;
+                return createProjectile(
+                    options.character,
+                    weaponType,
+                    options.baseX,
+                    options.baseY,
+                    dx,
+                    dy,
+                    options.ownerColor
+                );
+            });
+        }
+
+        function advanceProjectile(projectile, homingTarget) {
+            if (projectile.homing && homingTarget) {
+                const desired = Math.atan2(homingTarget.y - projectile.y, homingTarget.x - projectile.x);
+                const current = Math.atan2(projectile.dy, projectile.dx);
+                const adjusted = lerpAngle(current, desired, 0.045);
+                const speed = Math.hypot(projectile.dx, projectile.dy) || projectile.speed || 10;
+                projectile.dx = Math.cos(adjusted) * speed;
+                projectile.dy = Math.sin(adjusted) * speed;
             }
-            return { color: '#FFD700', glow: '#FFD700', isFireball: false };
+
+            projectile.x += projectile.dx;
+            projectile.y += projectile.dy;
+
+            if (projectile.maxBounces > 0 && projectile.bounceCount < projectile.maxBounces) {
+                let bounced = false;
+                if (projectile.x <= 1 || projectile.x >= canvas.width - 1) {
+                    projectile.dx *= -1;
+                    projectile.x = Math.max(1, Math.min(canvas.width - 1, projectile.x));
+                    projectile.bounceCount += 1;
+                    bounced = true;
+                }
+                if (projectile.y <= 1 || projectile.y >= canvas.height - 1) {
+                    projectile.dy *= -1;
+                    projectile.y = Math.max(1, Math.min(canvas.height - 1, projectile.y));
+                    projectile.bounceCount += 1;
+                    bounced = true;
+                }
+                if (bounced) return true;
+            }
+
+            return projectile.y > 0 && projectile.y < canvas.height && projectile.x > 0 && projectile.x < canvas.width;
         }
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                gameState.player.weaponType = resolveWeaponType(gameState.player.character, gameState.player.weaponType);
+                const weaponPreset = getWeaponPreset(gameState.player.character, gameState.player.weaponType);
                 if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                    window.SnakesSFX.play(gameState.player.character === 'wizard' ? 'fireball' : 'shoot');
+                    window.SnakesSFX.play(weaponPreset.id === 'arcane-orb' ? 'fireball' : 'shoot');
                 }
                 let shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
-                // Calculate bullet direction based on aim angle
-                const bulletSpeed = 10;
-                const dx = Math.cos(shotAngle) * bulletSpeed;
-                const dy = Math.sin(shotAngle) * bulletSpeed;
 
                 // Spawn bullet slightly ahead of player in the aim direction
                 const spawnOffset = gameState.player.size + 5;
                 const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
                 const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
-
-                const style = getBulletStyle();
-                const isWizard = gameState.player.character === 'wizard';
-                const isArcher = gameState.player.character === 'archer';
-                const shots = isWizard ? [-0.1, 0.1] : [0];
-                shots.forEach((offset) => {
-                    const angle = shotAngle + offset;
-                    const bdx = Math.cos(angle) * bulletSpeed;
-                    const bdy = Math.sin(angle) * bulletSpeed;
-                    gameState.playerBullets.push({
-                        x: spawnX,
-                        y: spawnY,
-                        size: 8,
-                        speed: bulletSpeed,
-                        dx: bdx,
-                        dy: bdy,
-                        color: style.color,
-                        glow: style.glow,
-                        isFireball: style.isFireball,
-                        homing: isArcher
-                    });
+                const baseDx = Math.cos(shotAngle) * (weaponPreset.speed || 10);
+                const baseDy = Math.sin(shotAngle) * (weaponPreset.speed || 10);
+                const shots = createWeaponProjectiles({
+                    weaponType: gameState.player.weaponType,
+                    character: gameState.player.character,
+                    shotAngle: shotAngle,
+                    baseX: spawnX,
+                    baseY: spawnY,
+                    baseDx: baseDx,
+                    baseDy: baseDy,
+                    ownerColor: CHARACTER_CONFIG[gameState.player.character]?.glow || '#FFD700'
                 });
+                shots.forEach((projectile) => gameState.playerBullets.push(projectile));
                 gameState.player.bullets--;
                 updateBulletsDisplay();
                 savePlayerState();
@@ -2136,9 +2403,10 @@ function getDamageMultiplier() {
                         room_id: roomId,
                         bulletX: spawnX,
                         bulletY: spawnY,
-                        dx: dx,
-                        dy: dy,
+                        dx: baseDx,
+                        dy: baseDy,
                         character: gameState.player.character,
+                        weapon_type: gameState.player.weaponType,
                         bullets: gameState.player.bullets
                     });
                 }
@@ -2147,44 +2415,12 @@ function getDamageMultiplier() {
 
         function moveBullets() {
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
-                // Use directional movement if available, otherwise move upward
-                if (bullet.dx !== undefined && bullet.dy !== undefined) {
-                    if (bullet.homing) {
-                        const desired = Math.atan2(gameState.boss.y - bullet.y, gameState.boss.x - bullet.x);
-                        const current = Math.atan2(bullet.dy, bullet.dx);
-                        const adjusted = lerpAngle(current, desired, 0.04);
-                        const speed = Math.hypot(bullet.dx, bullet.dy) || 10;
-                        bullet.dx = Math.cos(adjusted) * speed;
-                        bullet.dy = Math.sin(adjusted) * speed;
-                    }
-                    bullet.x += bullet.dx;
-                    bullet.y += bullet.dy;
-                } else {
-                    bullet.y -= bullet.speed;
-                }
-                // Remove bullets that go off-screen (any edge)
-                return bullet.y > 0 && bullet.y < canvas.height &&
-                       bullet.x > 0 && bullet.x < canvas.width;
+                return advanceProjectile(bullet, gameState.boss);
             });
 
             // Move other players' bullets
             gameState.otherPlayerBullets = gameState.otherPlayerBullets.filter(bullet => {
-                if (bullet.dx !== undefined && bullet.dy !== undefined) {
-                    if (bullet.homing) {
-                        const desired = Math.atan2(gameState.boss.y - bullet.y, gameState.boss.x - bullet.x);
-                        const current = Math.atan2(bullet.dy, bullet.dx);
-                        const adjusted = lerpAngle(current, desired, 0.04);
-                        const speed = Math.hypot(bullet.dx, bullet.dy) || 10;
-                        bullet.dx = Math.cos(adjusted) * speed;
-                        bullet.dy = Math.sin(adjusted) * speed;
-                    }
-                    bullet.x += bullet.dx;
-                    bullet.y += bullet.dy;
-                } else {
-                    bullet.y -= 10; // default speed
-                }
-                return bullet.y > 0 && bullet.y < canvas.height &&
-                       bullet.x > 0 && bullet.x < canvas.width;
+                return advanceProjectile(bullet, gameState.boss);
             });
         }
 
@@ -2279,20 +2515,22 @@ function getDamageMultiplier() {
                 const distance = Math.hypot(bullet.x - gameState.boss.x, bullet.y - gameState.boss.y);
                 if (distance < gameState.boss.size) {
                     // Apply damage multiplier from powerups
-                    const baseDamage = 10;
+                    const baseDamage = 8 * Math.max(1, Number(bullet.damage || 1));
                     const damage = Math.round(baseDamage * gameState.playerBuffs.damageMultiplier * getDamageMultiplier());
-                    gameState.boss.health = Math.max(0, gameState.boss.health - damage);
+                    const splashBonus = (bullet.splashRadius > 0 && distance <= bullet.splashRadius) ? 3 : 0;
+                    const totalDamage = damage + splashBonus;
+                    gameState.boss.health = Math.max(0, gameState.boss.health - totalDamage);
                     updateBossHealthBar();
 
                     // Track stats
                     gameState.battleStats.bulletsHit++;
-                    gameState.battleStats.damageDealt += damage;
+                    gameState.battleStats.damageDealt += totalDamage;
 
                     // Broadcast damage
                     if (socket && socket.connected && roomId) {
                         socket.emit('boss_damage', {
                             room_id: roomId,
-                            damage: damage
+                            damage: totalDamage
                         });
                     }
 
@@ -2305,6 +2543,12 @@ function getDamageMultiplier() {
 
                     if (gameState.boss.health <= 0) {
                         endGame(true);
+                    }
+                    if (bullet.effect === 'piercing' && !bullet.piercedOnce) {
+                        bullet.piercedOnce = true;
+                        bullet.x += bullet.dx * 0.4;
+                        bullet.y += bullet.dy * 0.4;
+                        return true;
                     }
                     return false;
                 }
@@ -2558,7 +2802,12 @@ function getDamageMultiplier() {
 
                 // Pixel character
                 ctx.shadowBlur = 0;
+<<<<<<< Updated upstream
                 drawCharacter(ctx, player.x, player.y, 52, player.character);
+=======
+                drawPixelSprite(ctx, player.x, player.y, 52, sprite);
+                drawAvatarToken(player, player.x, player.y - 47, 'rgba(255, 255, 255, 0.88)');
+>>>>>>> Stashed changes
 
                 // Player name
                 ctx.shadowBlur = 0;
@@ -2616,7 +2865,12 @@ function getDamageMultiplier() {
             }
 
             ctx.shadowBlur = 0;
+<<<<<<< Updated upstream
             drawCharacter(ctx, gameState.player.x, gameState.player.y, gameState.player.size * 1.7, gameState.player.character);
+=======
+            drawPixelSprite(ctx, gameState.player.x, gameState.player.y, gameState.player.size * 1.7, playerSprite);
+            drawAvatarToken(gameState.player, gameState.player.x, gameState.player.y - 47, 'rgba(79, 172, 254, 0.95)');
+>>>>>>> Stashed changes
 
             // "You" label
             ctx.shadowBlur = 0;
@@ -2627,7 +2881,40 @@ function getDamageMultiplier() {
             ctx.shadowBlur = 0;
 
             function drawBullet(bullet) {
-                if (bullet.isFireball) {
+                if (bullet.shape === 'arrow') {
+                    const angle = Math.atan2(bullet.dy, bullet.dx);
+                    ctx.save();
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = bullet.color || '#8ef7cc';
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = bullet.glow || '#4de8af';
+                    ctx.beginPath();
+                    ctx.moveTo(bullet.size + 3, 0);
+                    ctx.lineTo(-bullet.size, -bullet.size * 0.8);
+                    ctx.lineTo(-bullet.size, bullet.size * 0.8);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                    return;
+                }
+
+                if (bullet.shape === 'axe') {
+                    const angle = Math.atan2(bullet.dy, bullet.dx) + (performance.now() * 0.015);
+                    ctx.save();
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = bullet.color || '#ffc46b';
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = bullet.glow || '#ffb347';
+                    ctx.fillRect(-bullet.size * 0.8, -bullet.size * 0.8, bullet.size * 1.6, bullet.size * 1.6);
+                    ctx.fillStyle = '#3b3b3b';
+                    ctx.fillRect(-2, -bullet.size, 4, bullet.size * 2);
+                    ctx.restore();
+                    return;
+                }
+
+                if (bullet.isFireball || bullet.shape === 'orb') {
                     const grd = ctx.createRadialGradient(bullet.x, bullet.y, 2, bullet.x, bullet.y, 10);
                     grd.addColorStop(0, '#fff2a8');
                     grd.addColorStop(0.4, '#ff9f1c');
@@ -2919,11 +3206,13 @@ function getDamageMultiplier() {
 
             // Current player first
             const myConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            const myWeapon = getWeaponPreset(gameState.player.character, gameState.player.weaponType);
             html += `
                 <div class="player-item" style="border-left: 3px solid ${myConfig.color};">
-                    <span class="player-icon">${myConfig.icon}</span>
+                    ${renderAvatarHtml(gameState.player, 'player-avatar', 38, 'rgba(79, 172, 254, 0.85)')}
                     <div class="player-info">
                         <div class="player-name">${gameState.player.username} (You)</div>
+                        <div class="player-stats">${myConfig.name} • ${myWeapon.displayName || myWeapon.id}</div>
                         <div class="player-stats">Lives: ${gameState.player.lives} | Bullets: ${gameState.player.bullets}</div>
                     </div>
                 </div>
@@ -2932,11 +3221,13 @@ function getDamageMultiplier() {
             // Other players
             players.forEach(player => {
                 const config = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
+                const weapon = getWeaponPreset(player.character, player.weaponType || player.weapon_type || player.selected_weapon);
                 html += `
                     <div class="player-item">
-                        <span class="player-icon">${config.icon}</span>
+                        ${renderAvatarHtml(player, 'player-avatar', 38, 'rgba(233, 69, 96, 0.8)')}
                         <div class="player-info">
                             <div class="player-name">${player.username || 'Player'}</div>
+                            <div class="player-stats">${config.name} • ${weapon.displayName || weapon.id}</div>
                             <div class="player-stats">Lives: ${player.lives || 0} | Bullets: ${player.bullets || 0}</div>
                         </div>
                     </div>
@@ -2978,6 +3269,8 @@ function getDamageMultiplier() {
             addChatMessage({
                 username: gameState.player.username,
                 character: gameState.player.character,
+                weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                avatar_url: gameState.player.avatarUrl || null,
                 content: content
             });
 
@@ -2987,7 +3280,9 @@ function getDamageMultiplier() {
                     room_id: roomId || 'boss_lobby',
                     content: content,
                     username: gameState.player.username,
-                    character: gameState.player.character
+                    character: gameState.player.character,
+                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    avatar_url: gameState.player.avatarUrl || null
                 });
             }
 

@@ -170,8 +170,32 @@
             border-left: 3px solid #e94560;
         }
 
-        .player-icon {
+        .player-icon,
+        .player-avatar {
             font-size: 1.8em;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            background: rgba(20, 30, 50, 0.8);
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-avatar .avatar-fallback {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #f8fbff;
+            letter-spacing: 0.03em;
         }
 
         .player-info {
@@ -584,6 +608,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -629,6 +654,112 @@
             archer: { icon: '', color: '#2ecc71', glow: '#27ae60', name: 'Archer' },
             warrior: { icon: '', color: '#f39c12', glow: '#f1c40f', name: 'Warrior' }
         };
+        const loadoutApi = window.SnakesLoadout || null;
+        const HERO_WEAPON_FALLBACK = {
+            knight: 'bulwark-disc',
+            wizard: 'arcane-orb',
+            archer: 'piercing-arrow',
+            warrior: 'rage-axe'
+        };
+
+        function resolveWeaponType(character, explicitWeaponType) {
+            if (loadoutApi && typeof loadoutApi.normalizeWeaponType === 'function') {
+                return loadoutApi.normalizeWeaponType(character, explicitWeaponType);
+            }
+            const key = String(character || 'knight').toLowerCase();
+            return explicitWeaponType || HERO_WEAPON_FALLBACK[key] || 'bulwark-disc';
+        }
+
+        function getWeaponPreset(character, explicitWeaponType) {
+            const weaponType = resolveWeaponType(character, explicitWeaponType);
+            if (loadoutApi && typeof loadoutApi.getWeaponPreset === 'function') {
+                return loadoutApi.getWeaponPreset(weaponType, character);
+            }
+            const fallbackMap = {
+                'bulwark-disc': { id: 'bulwark-disc', displayName: 'Bulwark Disc', shape: 'disc', speed: 10, size: 8, damage: 1, effect: 'bounce', maxBounces: 1, splashRadius: 0, homing: false, color: '#8ed7ff', glow: '#5bc7ff' },
+                'arcane-orb': { id: 'arcane-orb', displayName: 'Arcane Orb', shape: 'orb', speed: 11, size: 8, damage: 1, effect: 'splash', maxBounces: 0, splashRadius: 24, homing: false, color: '#ff9f5a', glow: '#ff6b6b' },
+                'piercing-arrow': { id: 'piercing-arrow', displayName: 'Piercing Arrow', shape: 'arrow', speed: 13.5, size: 5, damage: 1, effect: 'piercing', maxBounces: 0, splashRadius: 0, homing: true, color: '#8ef7cc', glow: '#4de8af' },
+                'rage-axe': { id: 'rage-axe', displayName: 'Rage Axe', shape: 'axe', speed: 9, size: 10, damage: 2, effect: 'cleave', maxBounces: 0, splashRadius: 0, homing: false, color: '#ffc46b', glow: '#ffb347' }
+            };
+            return fallbackMap[weaponType] || fallbackMap['bulwark-disc'];
+        }
+
+        function getAvatarSource(player) {
+            if (!player) return '';
+            if (loadoutApi && typeof loadoutApi.getAvatarSourceForPlayer === 'function') {
+                return loadoutApi.getAvatarSourceForPlayer(player) || '';
+            }
+            return player.avatar_url || player.avatar_data || player.avatarUrl || player.avatarData || '';
+        }
+
+        function renderAvatarHtml(player, className, size, ring) {
+            if (loadoutApi && typeof loadoutApi.renderAvatarMarkup === 'function') {
+                return loadoutApi.renderAvatarMarkup(player, {
+                    className: className || 'player-avatar',
+                    size: size || 38,
+                    ringColor: ring || 'rgba(255,255,255,0.72)'
+                });
+            }
+            return '<span class=\"player-icon\">?</span>';
+        }
+
+        function getInitials(name) {
+            if (loadoutApi && typeof loadoutApi.getInitials === 'function') {
+                return loadoutApi.getInitials(name);
+            }
+            const text = String(name || 'Player').trim();
+            if (!text) return 'P';
+            const parts = text.split(/\s+/).filter(Boolean);
+            if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+
+        const avatarImageCache = {};
+
+        function getAvatarImage(src) {
+            if (!src) return null;
+            if (avatarImageCache[src]) return avatarImageCache[src];
+            const img = new Image();
+            img.src = src;
+            avatarImageCache[src] = img;
+            return img;
+        }
+
+        function drawAvatarToken(player, isLocalPlayer) {
+            const source = getAvatarSource(player);
+            const radius = 11;
+            const x = player.x;
+            const y = player.y - (player.size || 35) - 31;
+            const ring = isLocalPlayer ? 'rgba(79, 172, 254, 0.92)' : 'rgba(233, 69, 96, 0.92)';
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+            ctx.fillStyle = ring;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.clip();
+            if (source) {
+                const img = getAvatarImage(source);
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+                } else {
+                    ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
+                    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                }
+            } else {
+                ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
+                ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                ctx.fillStyle = '#f4f7ff';
+                ctx.font = 'bold 8px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(getInitials(player.username), x, y + 0.5);
+            }
+            ctx.restore();
+        }
 
         const PLAYER_SPRITES = {
             knight: {
@@ -787,8 +918,11 @@
                 lives: DEFAULT_LIVES,
                 bullets: 50,
                 character: 'knight',
+                weaponType: 'bulwark-disc',
                 color: '#4facfe',
                 username: 'Player',
+                avatarData: '',
+                avatarUrl: '',
                 isReady: false
             },
             playerNumber: 1,
@@ -824,9 +958,29 @@
             return null;
         }
 
+        function loadLocalProfile() {
+            try {
+                const localCharacter = localStorage.getItem('snakes_selected_character') || sessionStorage.getItem('snakes_selected_character');
+                const localWeapon = localStorage.getItem('snakes_selected_weapon') || sessionStorage.getItem('snakes_selected_weapon');
+                const localAvatarData = localStorage.getItem('snakes_avatar_data') || sessionStorage.getItem('snakes_avatar_data');
+                const localAvatarUrl = localStorage.getItem('snakes_avatar_url') || sessionStorage.getItem('snakes_avatar_url');
+                if (localCharacter) gameState.player.character = localCharacter;
+                gameState.player.weaponType = resolveWeaponType(gameState.player.character, localWeapon || gameState.player.weaponType);
+                if (localAvatarData) gameState.player.avatarData = localAvatarData;
+                if (localAvatarUrl) gameState.player.avatarUrl = localAvatarUrl;
+            } catch (e) {}
+            if (loadoutApi && typeof loadoutApi.getAvatarData === 'function') {
+                gameState.player.avatarData = gameState.player.avatarData || loadoutApi.getAvatarData();
+            }
+            if (loadoutApi && typeof loadoutApi.getAvatarUrl === 'function') {
+                gameState.player.avatarUrl = gameState.player.avatarUrl || loadoutApi.getAvatarUrl();
+            }
+        }
+
         // Load player data
         async function loadPlayerData() {
             let loadedFromServer = false;
+            loadLocalProfile();
 
             // Try to load from server first (prioritize logged-in users)
             try {
@@ -839,6 +993,12 @@
                             const charConfig = CHARACTER_CONFIG[data.selected_character];
                             if (charConfig) gameState.player.color = charConfig.color;
                         }
+                        gameState.player.weaponType = resolveWeaponType(
+                            gameState.player.character,
+                            data.weapon_type || data.selected_weapon || gameState.player.weaponType
+                        );
+                        if (data.avatar_url) gameState.player.avatarUrl = data.avatar_url;
+                        if (data.avatar_data) gameState.player.avatarData = data.avatar_data;
                         if (typeof data.total_bullets !== 'undefined') {
                             gameState.player.bullets = Number(data.total_bullets || 0);
                             updateBulletsDisplay();
@@ -864,6 +1024,9 @@
                         const charConfig = CHARACTER_CONFIG[demoData.character];
                         if (charConfig) gameState.player.color = charConfig.color;
                     }
+                    gameState.player.weaponType = resolveWeaponType(gameState.player.character, demoData.weaponType || demoData.selected_weapon || gameState.player.weaponType);
+                    if (demoData.avatarData) gameState.player.avatarData = demoData.avatarData;
+                    if (demoData.avatarUrl) gameState.player.avatarUrl = demoData.avatarUrl;
                     if (typeof demoData.bullets !== 'undefined') {
                         gameState.player.bullets = Number(demoData.bullets || 0);
                         updateBulletsDisplay();
@@ -877,6 +1040,17 @@
                 if (!loadedFromServer && gameState.player.username === 'Player') {
                     gameState.player.username = 'Guest_' + Math.floor(Math.random() * 1000);
                 }
+            }
+
+            gameState.player.weaponType = resolveWeaponType(gameState.player.character, gameState.player.weaponType);
+            try {
+                localStorage.setItem('snakes_selected_character', gameState.player.character);
+                localStorage.setItem('snakes_selected_weapon', gameState.player.weaponType);
+                if (gameState.player.avatarData) localStorage.setItem('snakes_avatar_data', gameState.player.avatarData);
+                if (gameState.player.avatarUrl) localStorage.setItem('snakes_avatar_url', gameState.player.avatarUrl);
+            } catch (e) {}
+            if (loadoutApi && typeof loadoutApi.saveLoadout === 'function') {
+                loadoutApi.saveLoadout(gameState.player.character, gameState.player.weaponType, { useSession: false });
             }
 
             updatePlayersList();
@@ -1005,6 +1179,9 @@
                 const joinData = {
                     username: gameState.player.username,
                     character: gameState.player.character,
+                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    avatar_url: gameState.player.avatarUrl || null,
+                    avatar_data: gameState.player.avatarData || null,
                     bullets: gameState.player.bullets,
                     lives: gameState.player.lives
                 };
@@ -1051,6 +1228,7 @@
                 gameState.player.y = canvas.height / 2;
             }
 
+<<<<<<< Updated upstream
             if (data.opponent) {
                 console.log('Opponent already in room:', data.opponent);
                 const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
@@ -1061,6 +1239,20 @@
                     size: 35
                 };
                 gameState.opponent.player_number = opponentNumber;
+=======
+                if (data.opponent) {
+                    console.log('Opponent already in room:', data.opponent);
+                    const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
+                    gameState.opponent = {
+                        ...data.opponent,
+                        weaponType: resolveWeaponType(data.opponent.character, data.opponent.weapon_type || data.opponent.selected_weapon),
+                        avatarUrl: data.opponent.avatar_url || '',
+                        avatarData: data.opponent.avatar_data || '',
+                        x: opponentNumber === 1 ? 100 : canvas.width - 100,
+                        y: canvas.height / 2,
+                        size: 35
+                    };
+>>>>>>> Stashed changes
                 // Keep both players on their correct sides of the boundary.
                 if (gameState.playerNumber === 1) {
                     gameState.player.x = 100;
@@ -1092,6 +1284,9 @@
                 const opponentNumber = Number(data.opponent.player_number) || (gameState.playerNumber === 1 ? 2 : 1);
                 gameState.opponent = {
                     ...data.opponent,
+                    weaponType: resolveWeaponType(data.opponent.character, data.opponent.weapon_type || data.opponent.selected_weapon),
+                    avatarUrl: data.opponent.avatar_url || '',
+                    avatarData: data.opponent.avatar_data || '',
                     x: opponentNumber === 1 ? 100 : canvas.width - 100,
                     y: canvas.height / 2,
                     size: 35
@@ -1155,6 +1350,7 @@
 
             // Opponent shot
             socket.on('pvp_opponent_shot', (data) => {
+<<<<<<< Updated upstream
                 if (!data || typeof data.bulletX !== 'number' || typeof data.bulletY !== 'number') {
                     return;
                 }
@@ -1170,23 +1366,22 @@
                     glow: isWizard ? '#ff6b6b' : '#ff6b6b',
                     isFireball: isWizard,
                     homing: isArcher
+=======
+                const opponentWeaponType = resolveWeaponType(data.character, data.weapon_type || data.weaponType || data.selected_weapon);
+                const spawned = createWeaponProjectiles({
+                    weaponType: opponentWeaponType,
+                    character: data.character,
+                    baseX: data.bulletX,
+                    baseY: data.bulletY,
+                    baseDx: data.dx,
+                    baseDy: data.dy,
+                    ownerColor: '#e94560',
+                    isRemote: true
                 });
-                if (isWizard) {
-                    const angle = Math.atan2(data.dy, data.dx);
-                    const speed = Math.hypot(data.dx, data.dy) || 12;
-                    const offset = 0.12;
-                    gameState.opponentBullets.push({
-                        x: data.bulletX,
-                        y: data.bulletY,
-                        dx: Math.cos(angle + offset) * speed,
-                        dy: Math.sin(angle + offset) * speed,
-                        size: 8,
-                        color: '#ff3b30',
-                        glow: '#ff6b6b',
-                        isFireball: true,
-                        homing: isArcher
-                    });
-                }
+                spawned.forEach((proj) => {
+                    gameState.opponentBullets.push(proj);
+>>>>>>> Stashed changes
+                });
             });
 
             // Player hit
@@ -1214,6 +1409,11 @@
                 if (gameState.opponent) {
                     gameState.opponent.bullets = data.bullets;
                     gameState.opponent.lives = data.lives;
+                    if (data.weapon_type || data.selected_weapon) {
+                        gameState.opponent.weaponType = resolveWeaponType(gameState.opponent.character, data.weapon_type || data.selected_weapon);
+                    }
+                    if (data.avatar_url) gameState.opponent.avatarUrl = data.avatar_url;
+                    if (data.avatar_data) gameState.opponent.avatarData = data.avatar_data;
                     updateOpponentLives();
                     document.getElementById('opponentBullets').textContent = data.bullets;
                 }
@@ -1361,6 +1561,86 @@
             updateLives();
         }
 
+        function createProjectile(character, weaponType, x, y, dx, dy, ownerColor) {
+            const preset = getWeaponPreset(character, weaponType);
+            return {
+                x: x,
+                y: y,
+                dx: dx,
+                dy: dy,
+                speed: Math.hypot(dx, dy) || preset.speed || 12,
+                size: preset.size || 8,
+                color: preset.color || ownerColor || '#4facfe',
+                glow: preset.glow || ownerColor || '#4facfe',
+                shape: preset.shape || 'disc',
+                weaponType: preset.id || weaponType,
+                effect: preset.effect || '',
+                homing: !!preset.homing,
+                maxBounces: Number(preset.maxBounces || 0),
+                bounceCount: 0,
+                damage: Number(preset.damage || 1),
+                splashRadius: Number(preset.splashRadius || 0),
+                isFireball: preset.id === 'arcane-orb'
+            };
+        }
+
+        function createWeaponProjectiles(options) {
+            const weaponType = resolveWeaponType(options.character, options.weaponType);
+            const preset = getWeaponPreset(options.character, weaponType);
+            const baseSpeed = Math.hypot(options.baseDx || 0, options.baseDy || 0) || preset.speed || 12;
+            const baseAngle = typeof options.shotAngle === 'number'
+                ? options.shotAngle
+                : Math.atan2(options.baseDy || 0, options.baseDx || baseSpeed);
+            const spread = weaponType === 'arcane-orb' ? [-0.08, 0.08] : [0];
+            return spread.map((offset) => {
+                const angle = baseAngle + offset;
+                const dx = Math.cos(angle) * baseSpeed;
+                const dy = Math.sin(angle) * baseSpeed;
+                return createProjectile(
+                    options.character,
+                    weaponType,
+                    options.baseX,
+                    options.baseY,
+                    dx,
+                    dy,
+                    options.ownerColor
+                );
+            });
+        }
+
+        function advanceProjectile(projectile, homingTarget) {
+            if (projectile.homing && homingTarget) {
+                const desired = Math.atan2(homingTarget.y - projectile.y, homingTarget.x - projectile.x);
+                const current = Math.atan2(projectile.dy, projectile.dx);
+                const adjusted = lerpAngle(current, desired, 0.045);
+                const speed = Math.hypot(projectile.dx, projectile.dy) || projectile.speed || 12;
+                projectile.dx = Math.cos(adjusted) * speed;
+                projectile.dy = Math.sin(adjusted) * speed;
+            }
+
+            projectile.x += projectile.dx;
+            projectile.y += projectile.dy;
+
+            if (projectile.maxBounces > 0 && projectile.bounceCount < projectile.maxBounces) {
+                let bounced = false;
+                if (projectile.x <= 1 || projectile.x >= canvas.width - 1) {
+                    projectile.dx *= -1;
+                    projectile.x = Math.max(1, Math.min(canvas.width - 1, projectile.x));
+                    projectile.bounceCount += 1;
+                    bounced = true;
+                }
+                if (projectile.y <= 1 || projectile.y >= canvas.height - 1) {
+                    projectile.dy *= -1;
+                    projectile.y = Math.max(1, Math.min(canvas.height - 1, projectile.y));
+                    projectile.bounceCount += 1;
+                    bounced = true;
+                }
+                if (bounced) return true;
+            }
+
+            return projectile.y > 0 && projectile.y < canvas.height && projectile.x > 0 && projectile.x < canvas.width;
+        }
+
         function gameLoop() {
             if (!gameActive) return;
 
@@ -1417,37 +1697,29 @@
 
         function shoot() {
             if (gameState.player.bullets > 0) {
+                gameState.player.weaponType = resolveWeaponType(gameState.player.character, gameState.player.weaponType);
+                const weaponPreset = getWeaponPreset(gameState.player.character, gameState.player.weaponType);
                 if (window.SnakesSFX && typeof window.SnakesSFX.play === 'function') {
-                    window.SnakesSFX.play(gameState.player.character === 'wizard' ? 'fireball' : 'shoot');
+                    window.SnakesSFX.play(weaponPreset.id === 'arcane-orb' ? 'fireball' : 'shoot');
                 }
                 let shotAngle = gameState.mouseInCanvas ? gameState.targetAimAngle : gameState.aimAngle;
-                const bulletSpeed = 12;
-                const dx = Math.cos(shotAngle) * bulletSpeed;
-                const dy = Math.sin(shotAngle) * bulletSpeed;
                 const spawnOffset = gameState.player.size + 5;
                 const spawnX = gameState.player.x + Math.cos(shotAngle) * spawnOffset;
                 const spawnY = gameState.player.y + Math.sin(shotAngle) * spawnOffset;
+                const baseDx = Math.cos(shotAngle) * (weaponPreset.speed || 12);
+                const baseDy = Math.sin(shotAngle) * (weaponPreset.speed || 12);
 
-                const isWizard = gameState.player.character === 'wizard';
-                const isArcher = gameState.player.character === 'archer';
-                const shots = isWizard ? [-0.12, 0.12] : [0];
-                shots.forEach((offset) => {
-                    const angle = shotAngle + offset;
-                    const bdx = Math.cos(angle) * bulletSpeed;
-                    const bdy = Math.sin(angle) * bulletSpeed;
-                    gameState.playerBullets.push({
-                        x: spawnX,
-                        y: spawnY,
-                        size: 8,
-                        speed: bulletSpeed,
-                        dx: bdx,
-                        dy: bdy,
-                        color: isWizard ? '#ff3b30' : gameState.player.color,
-                        glow: isWizard ? '#ff6b6b' : (CHARACTER_CONFIG[gameState.player.character]?.glow || '#4facfe'),
-                        isFireball: isWizard,
-                        homing: isArcher
-                    });
+                const shots = createWeaponProjectiles({
+                    weaponType: gameState.player.weaponType,
+                    character: gameState.player.character,
+                    shotAngle: shotAngle,
+                    baseX: spawnX,
+                    baseY: spawnY,
+                    baseDx: baseDx,
+                    baseDy: baseDy,
+                    ownerColor: CHARACTER_CONFIG[gameState.player.character]?.glow || '#4facfe'
                 });
+                shots.forEach((projectile) => gameState.playerBullets.push(projectile));
 
                 gameState.player.bullets--;
                 updateBulletsDisplay();
@@ -1457,9 +1729,10 @@
                     socket.emit('pvp_shoot', {
                         bulletX: spawnX,
                         bulletY: spawnY,
-                        dx: dx,
-                        dy: dy,
-                        character: gameState.player.character
+                        dx: baseDx,
+                        dy: baseDy,
+                        character: gameState.player.character,
+                        weapon_type: gameState.player.weaponType
                     });
                 }
             }
@@ -1467,31 +1740,11 @@
 
         function moveBullets() {
             gameState.playerBullets = gameState.playerBullets.filter(bullet => {
-                if (bullet.homing && gameState.opponent) {
-                    const desired = Math.atan2(gameState.opponent.y - bullet.y, gameState.opponent.x - bullet.x);
-                    const current = Math.atan2(bullet.dy, bullet.dx);
-                    const adjusted = lerpAngle(current, desired, 0.04);
-                    const speed = Math.hypot(bullet.dx, bullet.dy) || 12;
-                    bullet.dx = Math.cos(adjusted) * speed;
-                    bullet.dy = Math.sin(adjusted) * speed;
-                }
-                bullet.x += bullet.dx;
-                bullet.y += bullet.dy;
-                return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
+                return advanceProjectile(bullet, gameState.opponent);
             });
 
             gameState.opponentBullets = gameState.opponentBullets.filter(bullet => {
-                if (bullet.homing) {
-                    const desired = Math.atan2(gameState.player.y - bullet.y, gameState.player.x - bullet.x);
-                    const current = Math.atan2(bullet.dy, bullet.dx);
-                    const adjusted = lerpAngle(current, desired, 0.04);
-                    const speed = Math.hypot(bullet.dx, bullet.dy) || 12;
-                    bullet.dx = Math.cos(adjusted) * speed;
-                    bullet.dy = Math.sin(adjusted) * speed;
-                }
-                bullet.x += bullet.dx;
-                bullet.y += bullet.dy;
-                return bullet.y > 0 && bullet.y < canvas.height && bullet.x > 0 && bullet.x < canvas.width;
+                return advanceProjectile(bullet, gameState.player);
             });
         }
 
@@ -1500,7 +1753,13 @@
                 gameState.playerBullets = gameState.playerBullets.filter(bullet => {
                     const distance = Math.hypot(bullet.x - gameState.opponent.x, bullet.y - gameState.opponent.y);
                     if (distance < gameState.opponent.size || distance < 35) {
-                        socket.emit('pvp_hit_opponent', {});
+                        const hitCount = Math.max(1, Number(bullet.damage || 1));
+                        for (let i = 0; i < hitCount; i++) {
+                            socket.emit('pvp_hit_opponent', {});
+                        }
+                        if (bullet.splashRadius > 0 && distance <= bullet.splashRadius) {
+                            socket.emit('pvp_hit_opponent', {});
+                        }
                         if (getDamageBonusRoll()) {
                             setTimeout(() => {
                                 socket.emit('pvp_hit_opponent', {});
@@ -1514,6 +1773,12 @@
                                     }
                                 }, delay);
                             });
+                        }
+                        if (bullet.effect === 'piercing' && !bullet.piercedOnce) {
+                            bullet.piercedOnce = true;
+                            bullet.x += bullet.dx * 0.35;
+                            bullet.y += bullet.dy * 0.35;
+                            return true;
                         }
                         return false;
                     }
@@ -1584,7 +1849,42 @@
             }
 
             function drawBullet(bullet) {
-                if (bullet.isFireball) {
+                if (bullet.shape === 'arrow') {
+                    const angle = Math.atan2(bullet.dy, bullet.dx);
+                    ctx.save();
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = bullet.color;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = bullet.glow;
+                    ctx.beginPath();
+                    ctx.moveTo(bullet.size + 3, 0);
+                    ctx.lineTo(-bullet.size, -bullet.size * 0.8);
+                    ctx.lineTo(-bullet.size, bullet.size * 0.8);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                    ctx.shadowBlur = 0;
+                    return;
+                }
+
+                if (bullet.shape === 'axe') {
+                    const angle = Math.atan2(bullet.dy, bullet.dx) + (performance.now() * 0.015);
+                    ctx.save();
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = bullet.color;
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = bullet.glow;
+                    ctx.fillRect(-bullet.size * 0.8, -bullet.size * 0.8, bullet.size * 1.6, bullet.size * 1.6);
+                    ctx.fillStyle = '#3b3b3b';
+                    ctx.fillRect(-2, -bullet.size, 4, bullet.size * 2);
+                    ctx.restore();
+                    ctx.shadowBlur = 0;
+                    return;
+                }
+
+                if (bullet.isFireball || bullet.shape === 'orb') {
                     const grd = ctx.createRadialGradient(bullet.x, bullet.y, 2, bullet.x, bullet.y, 10);
                     grd.addColorStop(0, '#fff2a8');
                     grd.addColorStop(0.4, '#ff9f1c');
@@ -1645,7 +1945,13 @@
         }
 
         function drawPlayer(player, isLocalPlayer) {
+<<<<<<< Updated upstream
             drawCharacter(ctx, player.x, player.y, player.size || 35, player.character);
+=======
+            const sprite = PLAYER_SPRITES[player.character] || PLAYER_SPRITES.knight;
+            drawPixelSprite(ctx, player.x, player.y, player.size || 35, sprite);
+            drawAvatarToken(player, isLocalPlayer);
+>>>>>>> Stashed changes
 
             // Health bar above player
             const barWidth = 60;
@@ -1656,7 +1962,10 @@
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(barX, barY, barWidth, barHeight);
 
-            const healthPercent = (player.lives || 0) / DEFAULT_LIVES;
+            const maxLives = isLocalPlayer
+                ? (gameState.player.maxLives || getMaxLivesFor(player.character))
+                : getMaxLivesFor(player.character);
+            const healthPercent = (player.lives || 0) / Math.max(1, maxLives);
             const healthColor = isLocalPlayer ? '#4facfe' : '#e94560';
             ctx.fillStyle = healthColor;
             ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
@@ -1735,11 +2044,13 @@
             let html = '';
 
             const myConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
+            const myWeapon = getWeaponPreset(gameState.player.character, gameState.player.weaponType);
             html += `
                 <div class="player-item you">
-                    <span class="player-icon">${myConfig.icon}</span>
+                    ${renderAvatarHtml(gameState.player, 'player-avatar', 38, 'rgba(79, 172, 254, 0.8)')}
                     <div class="player-info">
                         <div class="player-name">${gameState.player.username} (You)</div>
+                        <div class="player-stats">${myConfig.name} • ${myWeapon.displayName || myWeapon.id}</div>
                         <div class="player-stats">Lives: ${gameState.player.lives} | Bullets: ${gameState.player.bullets}</div>
                     </div>
                 </div>
@@ -1747,11 +2058,13 @@
 
             if (gameState.opponent) {
                 const oppConfig = CHARACTER_CONFIG[gameState.opponent.character] || CHARACTER_CONFIG.knight;
+                const oppWeapon = getWeaponPreset(gameState.opponent.character, gameState.opponent.weaponType);
                 html += `
                     <div class="player-item opponent">
-                        <span class="player-icon">${oppConfig.icon}</span>
+                        ${renderAvatarHtml(gameState.opponent, 'player-avatar', 38, 'rgba(233, 69, 96, 0.8)')}
                         <div class="player-info">
                             <div class="player-name">${gameState.opponent.username || 'Opponent'}</div>
+                            <div class="player-stats">${oppConfig.name} • ${oppWeapon.displayName || oppWeapon.id}</div>
                             <div class="player-stats">Lives: ${gameState.opponent.lives || '?'} | Bullets: ${gameState.opponent.bullets || '?'}</div>
                         </div>
                     </div>
@@ -1798,6 +2111,8 @@
             addChatMessage({
                 username: gameState.player.username,
                 character: gameState.player.character,
+                weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                avatar_url: gameState.player.avatarUrl || null,
                 content: content
             });
 
@@ -1805,7 +2120,9 @@
                 socket.emit('pvp_chat_send', {
                     content: content,
                     username: gameState.player.username,
-                    character: gameState.player.character
+                    character: gameState.player.character,
+                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    avatar_url: gameState.player.avatarUrl || null
                 });
             }
 
@@ -1841,10 +2158,21 @@
                     let demoData = stored ? JSON.parse(stored) : {};
                     demoData.bullets = gameState.player.bullets;
                     demoData.lives = gameState.player.lives;
+                    demoData.character = gameState.player.character;
+                    demoData.weaponType = gameState.player.weaponType;
+                    if (gameState.player.avatarData) demoData.avatarData = gameState.player.avatarData;
+                    if (gameState.player.avatarUrl) demoData.avatarUrl = gameState.player.avatarUrl;
                     sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
                 } catch (e) {}
                 return Promise.resolve();
             }
+
+            try {
+                localStorage.setItem('snakes_selected_character', gameState.player.character);
+                localStorage.setItem('snakes_selected_weapon', gameState.player.weaponType || resolveWeaponType(gameState.player.character));
+                if (gameState.player.avatarData) localStorage.setItem('snakes_avatar_data', gameState.player.avatarData);
+                if (gameState.player.avatarUrl) localStorage.setItem('snakes_avatar_url', gameState.player.avatarUrl);
+            } catch (e) {}
 
             return fetch(`${GAME_API_ROOT}/snakes/`, {
                 method: 'PUT',
@@ -1852,7 +2180,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     total_bullets: Math.max(0, gameState.player.bullets),
-                    lives: Math.max(0, gameState.player.lives)
+                    lives: Math.max(0, gameState.player.lives),
+                    selected_character: gameState.player.character,
+                    weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    selected_weapon: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                    avatar_url: gameState.player.avatarUrl || null
                 })
             }).catch(err => console.error('Failed to save player state', err));
         }

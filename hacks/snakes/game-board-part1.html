@@ -427,7 +427,8 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .online-player-icon {
+        .online-player-icon,
+        .online-player-avatar {
             font-size: 24px;
             width: 40px;
             height: 40px;
@@ -436,6 +437,22 @@
             justify-content: center;
             background: rgba(79, 172, 254, 0.2);
             border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .online-player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .online-player-avatar .avatar-fallback {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #f8fbff;
+            text-transform: uppercase;
         }
 
         .online-player-info {
@@ -1319,6 +1336,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/player-loadout.js"></script>
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="../../assets/js/mini-games.js"></script>
     <script src="../../assets/js/lesson-arcade.js"></script>
@@ -2131,6 +2149,7 @@ console.log(student.name); // 'Ada'</code></pre>
             var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
             var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
             var cachedPlayers = [];
+            var loadoutApi = window.SnakesLoadout || null;
 
             var CHARACTER_ICONS = {
                 knight: '🛡️',
@@ -2142,6 +2161,22 @@ console.log(student.name); // 'Ada'</code></pre>
 
             function getCharacterIcon(character) {
                 return CHARACTER_ICONS[character] || CHARACTER_ICONS.default;
+            }
+
+            function getHeroName(character) {
+                var names = { knight: 'Knight', wizard: 'Wizard', archer: 'Archer', warrior: 'Warrior' };
+                return names[character] || 'Unknown';
+            }
+
+            function renderOnlineAvatar(player) {
+                if (loadoutApi && typeof loadoutApi.renderAvatarMarkup === 'function') {
+                    return loadoutApi.renderAvatarMarkup(player, {
+                        className: 'online-player-avatar',
+                        size: 40,
+                        ringColor: 'rgba(79, 172, 254, 0.65)'
+                    });
+                }
+                return '<div class=\"online-player-icon\">' + getCharacterIcon(player.selected_character) + '</div>';
             }
 
             function fetchActivePlayers() {
@@ -2174,12 +2209,13 @@ console.log(student.name); // 'Ada'</code></pre>
                 } else {
                     cachedPlayers.forEach(function(player) {
                         var li = document.createElement('li');
+                        var heroName = getHeroName(player.selected_character);
                         li.className = 'online-player-item';
                         li.innerHTML =
-                            '<div class="online-player-icon">' + getCharacterIcon(player.selected_character) + '</div>' +
+                            renderOnlineAvatar(player) +
                             '<div class="online-player-info">' +
                                 '<div class="online-player-name">' + (player.username || 'Unknown') + '</div>' +
-                                '<div class="online-player-details">Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
+                                '<div class="online-player-details">' + heroName + ' • Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
                             '</div>' +
                             '<div class="online-player-status"></div>';
                         list.appendChild(li);
