@@ -920,6 +920,28 @@
         </div>
     </div>
 
+    <!-- Display Name Modal -->
+    <div id="display-name-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content" style="max-width: 420px; z-index: 1001;">
+            <span class="close-modal">&times;</span>
+            <h2 style="margin-top: 0;">Edit Screen Name</h2>
+            <p style="margin: 0 0 12px 0; color: #666;">This name is shown to other players on the board.</p>
+            <input
+                id="display-name-input"
+                type="text"
+                maxlength="20"
+                placeholder="Enter screen name"
+                autocomplete="nickname"
+                style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 1rem; box-sizing: border-box;"
+            />
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                <button id="display-name-skip" type="button" class="btn btn-secondary">Cancel</button>
+                <button id="display-name-save" type="button" class="btn">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Dice Animation Overlay -->
     <div id="dice-overlay" class="dice-overlay hidden">
         <div class="dice-container">

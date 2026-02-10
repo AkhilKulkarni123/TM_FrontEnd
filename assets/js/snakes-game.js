@@ -2884,11 +2884,32 @@ function showDisplayNameModal(allowCancel) {
     var modal = document.getElementById('display-name-modal');
     var input = document.getElementById('display-name-input');
     var skipBtn = document.getElementById('display-name-skip');
-    if (!modal || !input) return;
+    if (!modal || !input) {
+        var fallbackCurrent = String(gameState.username || 'Player').trim() || 'Player';
+        var entered = window.prompt('Enter screen name (2–20 characters):', fallbackCurrent);
+
+        if (entered === null) {
+            if (allowCancel) return;
+            entered = fallbackCurrent;
+        }
+
+        var name = String(entered || '').trim();
+        if (name.length < 2) name = fallbackCurrent;
+        if (name.length > 20) name = name.slice(0, 20);
+
+        saveDisplayName(name).then(function () {
+            if (displayNameResolve) {
+                displayNameResolve();
+                displayNameResolve = null;
+            }
+        });
+        return;
+    }
 
     modal.classList.remove('hidden');
     input.value = gameState.username || '';
     input.focus();
+    input.select();
     if (skipBtn) skipBtn.style.display = allowCancel ? 'inline-block' : 'none';
 }
 
