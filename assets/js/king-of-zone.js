@@ -24,6 +24,120 @@
         default: '🙂'
     };
 
+    const PLAYER_IMAGES = {
+        knight: new Image(),
+        wizard: new Image(),
+        archer: new Image(),
+        warrior: new Image()
+    };
+
+    Object.entries(PLAYER_IMAGES).forEach(([key, img]) => {
+        img.src = `../../images/snakes/characters/${key}.png`;
+    });
+
+    const PLAYER_SPRITES = {
+        knight: {
+            colors: { m: '#c7cdd4', d: '#6b7785', b: '#2e5caa', r: '#b23b3b', s: '#f5cdaa', h: '#eef2f6', k: '#3b3b3b', y: '#f1c40f', o: '#4a4a4a' },
+            pattern: [
+                "........rrr.........",
+                ".......rrrrr........",
+                "......rmmhhmr.......",
+                ".....rmmhhhhhmr.....",
+                ".....mmhkkkkhmm.....",
+                ".....mmhskkshmm.....",
+                ".....mmhssssshm.....",
+                ".....mmhbddbhmm.....",
+                ".....bbbdddbbb......",
+                "....bbbbbdbbbbb.....",
+                "....bbbbbdbbbbb.....",
+                "....bbbbbdbbbbb.....",
+                "....bbybbdbybb......",
+                ".....bbddddbb.......",
+                ".....dd....dd.......",
+                "....ddd....ddd......",
+                "...ddddd..ddddd.....",
+                "...ddddd..ddddd.....",
+                "....dd......dd......",
+                "...................."
+            ]
+        },
+        wizard: {
+            colors: { p: '#7d3c98', v: '#9b59b6', s: '#f5cdaa', g: '#f1c40f', b: '#4e342e', l: '#c39bd3', k: '#3b3b3b', t: '#a569bd', w: '#e6e6e6' },
+            pattern: [
+                "........ggg.........",
+                ".......gpppg........",
+                "......gpppppg.......",
+                ".....gpppppppg......",
+                ".....ppplppppp......",
+                ".....pppskksp.......",
+                ".....pppssssp.......",
+                ".....ppvvvvlp.......",
+                "....ppvvvvvvp.......",
+                "....ppvvvvvvp.......",
+                "....ppvv..vvp.......",
+                "....wvvv..vvw.......",
+                "....wwwwwwwww.......",
+                "....vvv....vv.......",
+                "....vv......vv......",
+                "....vv..gg..vv......",
+                "....vv..gg..vv......",
+                "....vv......vv......",
+                "...vvvv....vvvv.....",
+                "...................."
+            ]
+        },
+        archer: {
+            colors: { g: '#2ecc71', d: '#1e9e5a', s: '#f5cdaa', b: '#8e6b3e', k: '#3d3d3d', l: '#7bdca3', t: '#2c3e50', q: '#9b7653', h: '#1b5e3a' },
+            pattern: [
+                "........hhhh........",
+                ".......hggggh.......",
+                "......hggggggh......",
+                "......hggssggh......",
+                "......hgskkggh......",
+                "......hgsqqsgh......",
+                "......hddddddh..q...",
+                "......hddddddh..q...",
+                "......hdd..ddh..q...",
+                ".......dd..dd...q...",
+                "......tdd..ddt..q...",
+                "......tddddddt..q...",
+                "......tdd..ddt..q...",
+                ".......d....d.......",
+                ".......d....d.......",
+                ".......d....d.......",
+                "......bb....bb......",
+                ".....bbb....bbb.....",
+                "....................",
+                "...................."
+            ]
+        },
+        warrior: {
+            colors: { o: '#e67e22', d: '#b05b16', s: '#f5cdaa', k: '#5d6d7e', r: '#7f8c8d', h: '#f2a460', t: '#3b3b3b', a: '#95a5a6' },
+            pattern: [
+                "........oooo........",
+                ".......oooooo.......",
+                "......ooohhhoo......",
+                "......oohkkhoo......",
+                "......oohskkso......",
+                "......oohssssso.....",
+                "......odddddd..a....",
+                "......odddddd..a....",
+                "......odr..rdo.a....",
+                ".......dr..rd..a....",
+                "......tdr..rdt.a....",
+                "......tddddddt.a....",
+                "......tdd..ddt.a....",
+                ".......d....d.......",
+                ".......d....d.......",
+                ".......d....d.......",
+                "......rr....rr......",
+                ".....rrr....rrr.....",
+                "....................",
+                "...................."
+            ]
+        }
+    };
+
     const state = {
         connected: false,
         joined: false,
@@ -78,7 +192,8 @@
     const BULLET_MAX_LIFE = 220;
 
     let socket = null;
-    let moveInterval = null;
+    let lastMoveSentAt = 0;
+    let lastFrameAt = 0;
     let zoneEventTimeout = null;
     let saveBulletsTimer = null;
 
@@ -305,7 +420,10 @@
                     state.player.character = gameData.selected_character;
                 }
                 if (typeof gameData.total_bullets !== 'undefined') {
-                    state.player.bullets = Number(gameData.total_bullets || 0);
+                    const fetchedBullets = Number(gameData.total_bullets);
+                    if (Number.isFinite(fetchedBullets)) {
+                        state.player.bullets = Math.max(state.player.bullets, fetchedBullets);
+                    }
                 }
             }
         } catch (e) {}
@@ -346,6 +464,9 @@
             state.connected = true;
             state.selfId = socket.id;
             playCue('battle');
+            if (!state.joined) {
+                joinMatch();
+            }
         });
 
         socket.on('koz_room_state', (data) => {
@@ -603,49 +724,107 @@
         ctx.restore();
     }
 
+    function drawPixelSprite(ctx, x, y, size, sprite) {
+        const rows = sprite.pattern.length;
+        const cols = sprite.pattern[0].length;
+        const pixel = Math.max(2, Math.round(size / cols));
+        const startX = Math.round(x - (cols * pixel) / 2);
+        const startY = Math.round(y - (rows * pixel) / 2);
+
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        const outline = '#1c1c1c';
+
+        for (let row = 0; row < rows; row++) {
+            const line = sprite.pattern[row];
+            for (let col = 0; col < cols; col++) {
+                const code = line[col];
+                if (code === '.') continue;
+                const neighbors = [
+                    [row - 1, col],
+                    [row + 1, col],
+                    [row, col - 1],
+                    [row, col + 1]
+                ];
+                for (const [nr, nc] of neighbors) {
+                    if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || sprite.pattern[nr][nc] === '.') {
+                        ctx.fillStyle = outline;
+                        ctx.fillRect(startX + nc * pixel, startY + nr * pixel, pixel, pixel);
+                    }
+                }
+            }
+        }
+
+        for (let row = 0; row < rows; row++) {
+            const line = sprite.pattern[row];
+            for (let col = 0; col < cols; col++) {
+                const code = line[col];
+                if (code === '.') continue;
+                const color = sprite.colors[code];
+                if (!color) continue;
+                ctx.fillStyle = color;
+                ctx.fillRect(startX + col * pixel, startY + row * pixel, pixel, pixel);
+            }
+        }
+        ctx.restore();
+    }
+
     function drawPlayer(p, isSelf) {
         const screen = worldToScreen(p.x, p.y);
         const inside = isInsideZone(p.x, p.y);
-        const radius = isSelf ? state.player.radius + 2 : state.player.radius;
-        const color = isSelf ? '#ffffff' : getColor(p.sid || p.id || p.playerId || p._id || p.username || 'player');
-        const icon = CHARACTER_ICONS[p.character] || CHARACTER_ICONS.default;
+        const sprite = PLAYER_SPRITES[p.character] || PLAYER_SPRITES.knight;
+        const spriteImg = PLAYER_IMAGES[p.character];
+        const cols = sprite.pattern[0].length;
+        const rows = sprite.pattern.length;
+        const size = state.player.radius * 2.2;
+        const pixel = Math.max(2, Math.round(size / cols));
+        const spriteW = cols * pixel;
+        const spriteH = rows * pixel;
 
         ctx.save();
+        if (!inside) ctx.globalAlpha = 0.65;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctx.beginPath();
-        ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = inside ? color : 'rgba(120, 120, 120, 0.7)';
-        ctx.shadowBlur = inside ? 18 : 8;
-        ctx.shadowColor = color;
+        ctx.ellipse(screen.x, screen.y + spriteH * 0.35, spriteW * 0.28, spriteH * 0.14, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.lineWidth = isSelf ? 3 : 2;
-        ctx.strokeStyle = inside ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)';
-        ctx.stroke();
+        if (spriteImg && spriteImg.complete && spriteImg.naturalWidth) {
+            const target = size * 2;
+            ctx.drawImage(spriteImg, Math.round(screen.x - target / 2), Math.round(screen.y - target / 2), target, target);
+        } else {
+            drawPixelSprite(ctx, screen.x, screen.y, size, sprite);
+        }
+        ctx.restore();
 
-        ctx.fillStyle = '#fff';
-        ctx.font = '14px Rajdhani, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(icon, screen.x, screen.y + 1);
+        if (inside && isSelf) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y + 2, spriteW * 0.35, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
 
         const label = p.username || 'Player';
         ctx.font = '12px Rajdhani, sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillText(label, screen.x + radius + 8, screen.y + 1);
+        ctx.fillText(label, screen.x + spriteW / 2 + 10, screen.y + 2);
 
         const hp = typeof p.combatHp !== 'undefined' ? p.combatHp : 100;
-        const barWidth = 48;
+        const barWidth = Math.max(42, spriteW * 0.7);
         const barHeight = 6;
         const barX = screen.x - barWidth / 2;
-        const barY = screen.y - radius - 14;
+        const barY = screen.y - spriteH * 0.6;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(barX, barY, barWidth, barHeight);
         ctx.fillStyle = 'rgba(255, 77, 90, 0.9)';
         ctx.fillRect(barX, barY, barWidth * clamp(hp / 100, 0, 1), barHeight);
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
         ctx.strokeRect(barX, barY, barWidth, barHeight);
-        ctx.restore();
     }
 
     function drawDirectionalArrow() {
@@ -782,10 +961,26 @@
         ctx.setTransform(state.view.dpr, 0, 0, state.view.dpr, 0, 0);
         ctx.clearRect(0, 0, state.view.width, state.view.height);
 
+        const now = time || performance.now();
+        const dt = Math.min(0.05, Math.max(0.001, (now - (lastFrameAt || now)) / 1000));
+        lastFrameAt = now;
+
+        movePlayer(dt);
+
         updateCamera();
         const localOutside = !isInsideZone(state.player.x, state.player.y);
         if (localOutside !== state.player.outside) {
             state.player.outside = localOutside;
+            updateStormMeter();
+        }
+
+        if (state.joined) {
+            const stormMax = state.rules.stormMax || 100;
+            if (state.player.outside) {
+                state.player.zoneHp = clamp(state.player.zoneHp - (state.storm.damage || 8) * dt, 0, stormMax);
+            } else {
+                state.player.zoneHp = clamp(state.player.zoneHp + (state.storm.regen || 4) * dt, 0, stormMax);
+            }
             updateStormMeter();
         }
 
@@ -830,21 +1025,27 @@
         moveBullets();
         checkBulletHits();
 
+        if (socket && state.connected && state.joined && now - lastMoveSentAt > 60) {
+            lastMoveSentAt = now;
+            socket.emit('koz_move', { x: state.player.x, y: state.player.y, inZone: !state.player.outside });
+        }
+
         state.fx.pulse = Math.max(0, state.fx.pulse - 0.02);
         state.fx.shake = Math.max(0, state.fx.shake - 0.02);
 
         requestAnimationFrame(gameLoop);
     }
 
-    function movePlayer() {
-        let speed = state.player.speed * (state.player.speedMultiplier || 1);
+    function movePlayer(dt) {
+        let speed = state.player.speed * 20 * (state.player.speedMultiplier || 1);
         if (state.player.outside) speed *= 0.85;
         if (state.keys['shift']) speed *= 1.1;
 
-        if (state.keys['w'] || state.keys['arrowup']) state.player.y -= speed;
-        if (state.keys['s'] || state.keys['arrowdown']) state.player.y += speed;
-        if (state.keys['a'] || state.keys['arrowleft']) state.player.x -= speed;
-        if (state.keys['d'] || state.keys['arrowright']) state.player.x += speed;
+        const dx = (state.keys['d'] || state.keys['arrowright'] ? 1 : 0) - (state.keys['a'] || state.keys['arrowleft'] ? 1 : 0);
+        const dy = (state.keys['s'] || state.keys['arrowdown'] ? 1 : 0) - (state.keys['w'] || state.keys['arrowup'] ? 1 : 0);
+        const mag = Math.hypot(dx, dy) || 1;
+        state.player.x += (dx / mag) * speed * dt;
+        state.player.y += (dy / mag) * speed * dt;
 
         const margin = state.player.radius + 6;
         state.player.x = clamp(state.player.x, margin, state.map.width - margin);
@@ -990,16 +1191,6 @@
         });
     }
 
-    function startMoveBroadcast() {
-        if (moveInterval) clearInterval(moveInterval);
-        moveInterval = setInterval(() => {
-            movePlayer();
-            if (socket && state.connected && state.joined) {
-                socket.emit('koz_move', { x: state.player.x, y: state.player.y });
-            }
-        }, 50);
-    }
-
     function handleMouseMove(e) {
         const rect = canvas.getBoundingClientRect();
         const sx = e.clientX - rect.left;
@@ -1051,9 +1242,8 @@
         window.addEventListener('resize', resizeCanvas);
         bindInputs();
         loadPlayerData().then(connectSocket);
-        startMoveBroadcast();
         updateStatus();
-        gameLoop();
+        requestAnimationFrame(gameLoop);
     }
 
     init();

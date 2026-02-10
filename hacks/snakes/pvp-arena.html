@@ -630,25 +630,25 @@
             knight: {
                 colors: { m: '#c7cdd4', d: '#6b7785', b: '#2e5caa', r: '#b23b3b', s: '#f5cdaa', h: '#eef2f6', k: '#3b3b3b', y: '#f1c40f', o: '#4a4a4a' },
                 pattern: [
-                    "........rrrr........",
-                    ".......rrrrrr.......",
-                    "......rmmhhmmr......",
-                    "......mmmhmmmmd.....",
-                    "......msskkssmd.....",
-                    "......mmhkmmdm......",
-                    ".......mmddmm.......",
-                    "......bbmmddb.......",
-                    ".....bbbmmddbb......",
-                    ".....bbmmmmmbb......",
-                    ".....bbmmhmmmb......",
-                    ".....bbmmmmmbb......",
-                    "....rbbbdd..ddbr....",
-                    "....rbbbdd..ddbr....",
-                    "....rbbbb..bbbbr....",
-                    "....rr........rr....",
-                    "....dd........dd....",
-                    "...ddd........ddd...",
-                    "....d..........d....",
+                    "........rrr.........",
+                    ".......rrrrr........",
+                    "......rmmhhmr.......",
+                    ".....rmmhhhhhmr.....",
+                    ".....mmhkkkkhmm.....",
+                    ".....mmhskkshmm.....",
+                    ".....mmhssssshm.....",
+                    ".....mmhbddbhmm.....",
+                    ".....bbbdddbbb......",
+                    "....bbbbbdbbbbb.....",
+                    "....bbbbbdbbbbb.....",
+                    "....bbbbbdbbbbb.....",
+                    "....bbybbdbybb......",
+                    ".....bbddddbb.......",
+                    ".....dd....dd.......",
+                    "....ddd....ddd......",
+                    "...ddddd..ddddd.....",
+                    "...ddddd..ddddd.....",
+                    "....dd......dd......",
                     "...................."
                 ]
             },
@@ -660,20 +660,20 @@
                     "......gpppppg.......",
                     ".....gpppppppg......",
                     ".....ppplppppp......",
-                    "......pskksp........",
-                    "......pskksp........",
-                    ".....ppvvvlpp.......",
-                    ".....ppvvvvpp.......",
-                    ".....ppvvvvpp.......",
-                    "......vv..vv........",
-                    ".....wvv..vvw.......",
-                    ".....wwwwwwww.......",
-                    ".....vvv..vvv.......",
-                    "......v....v........",
-                    "......v....v........",
-                    "......v....v........",
-                    "......v....v........",
-                    ".....vv....vv.......",
+                    ".....pppskksp.......",
+                    ".....pppssssp.......",
+                    ".....ppvvvvlp.......",
+                    "....ppvvvvvvp.......",
+                    "....ppvvvvvvp.......",
+                    "....ppvv..vvp.......",
+                    "....wvvv..vvw.......",
+                    "....wwwwwwwww.......",
+                    "....vvv....vv.......",
+                    "....vv......vv......",
+                    "....vv..gg..vv......",
+                    "....vv..gg..vv......",
+                    "....vv......vv......",
+                    "...vvvv....vvvv.....",
                     "...................."
                 ]
             },
@@ -685,14 +685,14 @@
                     "......hggggggh......",
                     "......hggssggh......",
                     "......hgskkggh......",
-                    ".......hddldh.......",
-                    "......hddddddh......",
-                    "......hddddddh......",
-                    "......hdd..ddh......",
-                    ".......dd..dd.......",
-                    "......tdd..ddt......",
-                    "......tddddddt......",
-                    "......tdd..ddt......",
+                    "......hgsqqsgh......",
+                    "......hddddddh..q...",
+                    "......hddddddh..q...",
+                    "......hdd..ddh..q...",
+                    ".......dd..dd...q...",
+                    "......tdd..ddt..q...",
+                    "......tddddddt..q...",
+                    "......tdd..ddt..q...",
                     ".......d....d.......",
                     ".......d....d.......",
                     ".......d....d.......",
@@ -707,17 +707,17 @@
                 pattern: [
                     "........oooo........",
                     ".......oooooo.......",
-                    "......oooshhoo......",
-                    "......ooosksoo......",
-                    "......ooosksso......",
-                    ".......odhddo.......",
-                    "......oddddddo......",
-                    "......oddddddo......",
-                    "......odr..rdo......",
-                    ".......dr..rd.......",
-                    "......tdr..rdt......",
-                    "......tdddddddt.....",
-                    "......tdd..dddt.....",
+                    "......ooohhhoo......",
+                    "......oohkkhoo......",
+                    "......oohskkso......",
+                    "......oohssssso.....",
+                    "......odddddd..a....",
+                    "......odddddd..a....",
+                    "......odr..rdo.a....",
+                    ".......dr..rd..a....",
+                    "......tdr..rdt.a....",
+                    "......tddddddt.a....",
+                    "......tdd..ddt.a....",
                     ".......d....d.......",
                     ".......d....d.......",
                     ".......d....d.......",
@@ -728,6 +728,17 @@
                 ]
             }
         };
+
+        const PLAYER_IMAGES = {
+            knight: new Image(),
+            wizard: new Image(),
+            archer: new Image(),
+            warrior: new Image()
+        };
+
+        Object.entries(PLAYER_IMAGES).forEach(([key, img]) => {
+            img.src = `../../images/snakes/characters/${key}.png`;
+        });
 
         // ---------------------------------------------------------------------------
         // Compute the actual pixel half-width of a sprite so the boundary clamp
@@ -1582,8 +1593,7 @@
         }
 
         function drawPlayer(player, isLocalPlayer) {
-            const sprite = PLAYER_SPRITES[player.character] || PLAYER_SPRITES.knight;
-            drawPixelSprite(ctx, player.x, player.y, player.size || 35, sprite);
+            drawCharacter(ctx, player.x, player.y, player.size || 35, player.character);
 
             // Health bar above player
             const barWidth = 60;
@@ -1631,6 +1641,17 @@
                 }
             }
             ctx.restore();
+        }
+
+        function drawCharacter(ctx, x, y, size, character) {
+            const img = PLAYER_IMAGES[character];
+            if (img && img.complete && img.naturalWidth) {
+                const target = size * 1.3;
+                ctx.drawImage(img, Math.round(x - target / 2), Math.round(y - target / 2), target, target);
+                return;
+            }
+            const sprite = PLAYER_SPRITES[character] || PLAYER_SPRITES.knight;
+            drawPixelSprite(ctx, x, y, size, sprite);
         }
 
         function updateLives() {
