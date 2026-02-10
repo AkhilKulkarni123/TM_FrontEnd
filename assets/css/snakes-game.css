@@ -1929,7 +1929,6 @@ body {
   .leaderboard-entry,
   .quiz-option,
   .memory-card.flipped,
-  .hint-card,
   .leaderboard-table-container
 ) {
   color: #111111;
@@ -1943,7 +1942,6 @@ body {
   .leaderboard-entry,
   .quiz-option,
   .memory-card.flipped,
-  .hint-card,
   .leaderboard-table-container
 ) :is(h1, h2, h3, h4, h5, h6, p, li, label, small) {
   color: #111111;
