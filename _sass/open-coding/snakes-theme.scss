@@ -654,7 +654,7 @@ body.snakes-theme,
     z-index: 10003;
   }
 
-  #character-selection {
+  #character-selection:not(.theme-layout-v2) {
     text-align: center;
     padding: 0;
     margin: 0;
@@ -673,11 +673,11 @@ body.snakes-theme,
     background: #15181f !important;
   }
 
-  #character-selection::before {
+  #character-selection:not(.theme-layout-v2)::before {
     background: transparent;
   }
 
-  #character-selection::after {
+  #character-selection:not(.theme-layout-v2)::after {
     content: '';
     position: fixed;
     inset: 0;
@@ -685,7 +685,7 @@ body.snakes-theme,
     z-index: 0;
   }
 
-  #character-selection h2 {
+  #character-selection:not(.theme-layout-v2) h2 {
     color: #f5f7ff;
     text-shadow: 0 0 30px rgba(47, 143, 133, 0.5);
     background: linear-gradient(45deg, #f5f7ff, #9bd7d0);
@@ -694,41 +694,41 @@ body.snakes-theme,
     background-clip: text;
   }
 
-  .character-carousel {
+  #character-selection:not(.theme-layout-v2) .character-carousel {
     background: #15181f;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
     padding: 24px 18px;
   }
 
-  .character-card {
+  #character-selection:not(.theme-layout-v2) .character-card {
     background: rgba(10, 14, 22, 0.75);
     border: 2px solid rgba(255, 255, 255, 0.18);
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
   }
 
-  .character-card.center {
+  #character-selection:not(.theme-layout-v2) .character-card.center {
     border-color: rgba(47, 143, 133, 0.7);
     box-shadow: 0 16px 50px rgba(47, 143, 133, 0.35);
   }
 
-  .character-card.selected {
+  #character-selection:not(.theme-layout-v2) .character-card.selected {
     border-color: rgba(155, 122, 53, 0.9) !important;
     background: rgba(31, 41, 55, 0.9) !important;
     box-shadow: 0 0 50px rgba(155, 122, 53, 0.6) !important;
   }
 
-  .carousel-btn {
+  #character-selection:not(.theme-layout-v2) .carousel-btn {
     background: linear-gradient(145deg, #2a3b4a, #24303c);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 10px 26px rgba(12, 18, 28, 0.5);
   }
 
-  .carousel-btn:hover {
+  #character-selection:not(.theme-layout-v2) .carousel-btn:hover {
     box-shadow: 0 14px 32px rgba(12, 18, 28, 0.6);
   }
 
-  .game-start-btn {
+  #character-selection:not(.theme-layout-v2) .game-start-btn {
     background: linear-gradient(135deg, #2f8f85, #1f6e65);
     color: #f7fafc;
     border: 1px solid rgba(255, 255, 255, 0.2);

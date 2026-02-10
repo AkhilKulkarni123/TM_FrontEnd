@@ -54,7 +54,7 @@ microblog: True
     </div>
   </div>
 
-  <div id="character-selection" class="hidden">
+  <div id="character-selection" class="hidden theme-layout-v2">
     <div class="hero-selection-layout">
       <section class="hero-selector-main" aria-labelledby="hero-selection-title">
         <h2 id="hero-selection-title">Choose Your Hero</h2>
