@@ -3,400 +3,710 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>King of the Zone</title>
+    <title>King of the Zone 2.0</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --koz-panel: rgba(10, 14, 26, 0.8);
-            --koz-panel-border: rgba(255, 255, 255, 0.12);
-            --koz-accent: #30d7ff;
-            --koz-warning: #f1c40f;
-            --koz-danger: #ff4d5a;
-            --koz-success: #2ecc71;
-            --koz-muted: rgba(255, 255, 255, 0.7);
+            --bg: #070d18;
+            --panel: rgba(8, 16, 30, 0.76);
+            --panel-border: rgba(174, 220, 255, 0.28);
+            --text: #eef8ff;
+            --muted: rgba(221, 237, 255, 0.72);
+            --danger: #ff7070;
+            --accent: #79d9ff;
+            --highlight: #ffd877;
+            --ok: #8bf3c2;
         }
-        * { box-sizing: border-box; }
-        html, body {
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
             margin: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: 'Rajdhani', 'Oxanium', system-ui, sans-serif;
-            background: #05060e;
-            color: #f7f7fb;
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at 20% 10%, #1a2b4a 0%, #070d18 55%);
         }
-        #kozContainer {
+
+        #kozRoot {
             position: relative;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
+
         #gameCanvas {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             display: block;
-            background: radial-gradient(circle at 30% 20%, rgba(18,24,48,0.9), rgba(5,6,14,0.9));
+            background: #0f1b2f;
         }
+
         .panel {
-            background: var(--koz-panel);
-            border: 1px solid var(--koz-panel-border);
+            border: 1px solid var(--panel-border);
+            background: var(--panel);
             border-radius: 14px;
-            padding: 12px 14px;
-            box-shadow: 0 18px 36px rgba(3, 6, 18, 0.6);
-            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 38px rgba(3, 9, 18, 0.6);
+            backdrop-filter: blur(10px);
         }
-        .hud {
+
+        .top-hud {
             position: absolute;
-            inset: 18px 18px auto 18px;
+            top: 14px;
+            left: 14px;
+            right: 14px;
             display: grid;
-            grid-template-columns: 1.2fr 1.6fr 1fr;
+            grid-template-columns: 300px minmax(360px, 1fr) 300px;
             gap: 12px;
             pointer-events: none;
         }
-        .hud .panel { pointer-events: auto; }
+
+        .top-hud > .panel {
+            pointer-events: auto;
+            padding: 10px 12px;
+        }
+
         .hud-title {
-            font-family: 'Oxanium', sans-serif;
-            font-size: 22px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0 0 6px 0;
-        }
-        .hud-sub {
-            font-size: 13px;
-            color: var(--koz-muted);
             margin: 0;
+            font-family: 'Oxanium', sans-serif;
+            letter-spacing: 1.3px;
+            font-size: 18px;
         }
-        .hud-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
+
+        .hud-sub {
+            margin: 2px 0 0 0;
+            color: var(--muted);
             font-size: 13px;
+            letter-spacing: 0.5px;
         }
-        .hud-meta span {
-            padding: 6px 10px;
+
+        .state-pill {
+            margin-top: 8px;
+            display: inline-flex;
+            padding: 5px 10px;
             border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-        }
-        .control-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .badge {
-            padding: 6px 12px;
-            border-radius: 999px;
+            background: rgba(121, 217, 255, 0.15);
+            border: 1px solid rgba(121, 217, 255, 0.5);
             font-weight: 700;
             letter-spacing: 1px;
             font-size: 12px;
-            text-transform: uppercase;
-            border: 1px solid transparent;
-            background: rgba(255,255,255,0.12);
         }
-        .badge.contested { border-color: rgba(241,196,15,0.7); color: #fbe390; }
-        .badge.controlled { border-color: rgba(48,215,255,0.7); color: #a7f1ff; }
-        .badge.neutral { border-color: rgba(255,255,255,0.2); }
-        .hud-right {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-end;
-        }
-        .hud-right .controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-        .hud-right button {
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(4, 6, 16, 0.8);
-            color: #fff;
-            cursor: pointer;
-            font-family: 'Rajdhani', sans-serif;
-        }
-        .hud-right button:hover { background: rgba(255,255,255,0.15); }
-        .stat-grid {
+
+        .timers {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .stat {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
-            padding: 6px 8px;
-            font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .stat strong { font-size: 14px; }
-        .storm-meter {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
             margin-top: 6px;
         }
-        .storm-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 999px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        .storm-bar span {
-            display: block;
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #2ecc71 0%, #f1c40f 55%, #ff4d5a 100%);
-            transition: width 0.3s ease;
-        }
-        #scoreBoard {
-            position: absolute;
-            top: 150px;
-            left: 18px;
-            width: 240px;
-            max-height: 60vh;
-            overflow: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: auto;
-        }
-        #scoreBoard h3 {
-            margin: 0 0 6px 0;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--koz-muted);
-        }
-        .score-row {
-            padding: 8px 10px;
+
+        .timer-box {
+            padding: 9px 10px;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.04);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            font-size: 13px;
+            border: 1px solid rgba(218, 238, 255, 0.18);
+            background: rgba(15, 28, 47, 0.55);
         }
-        .score-row .row-top {
+
+        .timer-label {
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .timer-value {
+            font-size: 26px;
+            line-height: 1;
+            font-family: 'Oxanium', sans-serif;
+        }
+
+        .player-stats {
+            display: grid;
+            gap: 8px;
+        }
+
+        .stat-row {
             display: flex;
             justify-content: space-between;
-            font-weight: 600;
+            border: 1px solid rgba(218, 238, 255, 0.16);
+            border-radius: 10px;
+            padding: 7px 10px;
+            background: rgba(15, 28, 47, 0.45);
+            font-size: 14px;
         }
-        .score-row .progress {
-            height: 6px;
-            background: rgba(255,255,255,0.12);
+
+        .stat-row strong {
+            font-family: 'Oxanium', sans-serif;
+            letter-spacing: 0.4px;
+        }
+
+        .overclock-track {
+            height: 10px;
             border-radius: 999px;
             overflow: hidden;
+            border: 1px solid rgba(255, 216, 119, 0.65);
+            background: rgba(255, 216, 119, 0.15);
         }
-        .score-row .progress span {
-            display: block;
+
+        .overclock-fill {
             height: 100%;
-            width: 0%;
-            background: var(--koz-accent);
-            transition: width 0.4s ease;
+            width: 0;
+            background: linear-gradient(90deg, #ffe286, #ff9c52);
+            transition: width 0.2s linear;
         }
-        .score-row.active {
-            border-color: rgba(48,215,255,0.6);
-            box-shadow: 0 0 18px rgba(48,215,255,0.2);
+
+        .hud-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
         }
-        .info-panel {
-            position: absolute;
-            right: 18px;
-            bottom: 18px;
-            width: 260px;
-            pointer-events: auto;
-        }
-        .info-panel h3 {
-            margin: 0 0 6px 0;
+
+        .hud-actions button {
+            flex: 1;
+            border: 1px solid rgba(216, 236, 255, 0.35);
+            background: rgba(14, 26, 44, 0.85);
+            color: var(--text);
+            border-radius: 9px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--koz-muted);
-        }
-        .info-panel p {
-            font-size: 13px;
-            color: rgba(255,255,255,0.75);
-            margin: 0 0 8px 0;
-        }
-        .zone-warning {
-            position: absolute;
-            top: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 77, 90, 0.2);
-            border: 1px solid rgba(255, 77, 90, 0.6);
-            color: #ffe2e2;
-            padding: 8px 16px;
-            border-radius: 999px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: none;
-            pointer-events: none;
+            letter-spacing: 0.4px;
         }
-        .zone-warning.active { display: inline-flex; }
-        .zone-event {
-            position: absolute;
-            bottom: 24px;
-            left: 24px;
-            padding: 8px 14px;
+
+        .hud-actions button:hover {
+            background: rgba(42, 68, 103, 0.8);
+        }
+
+        .scoreboard-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            max-height: 210px;
+            overflow: auto;
+        }
+
+        .score-row {
+            border: 1px solid rgba(219, 237, 255, 0.16);
             border-radius: 10px;
-            background: rgba(0,0,0,0.55);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #fff;
-            font-size: 13px;
-            opacity: 0;
-            transform: translateY(8px);
-            transition: all 0.3s ease;
-            pointer-events: none;
+            padding: 8px;
+            background: rgba(11, 22, 39, 0.58);
         }
-        .zone-event.show {
-            opacity: 1;
-            transform: translateY(0);
+
+        .score-row.self {
+            border-color: rgba(255, 216, 119, 0.7);
+            box-shadow: 0 0 14px rgba(255, 216, 119, 0.22);
         }
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
+
+        .score-top {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            z-index: 20;
+            font-size: 14px;
         }
-        .overlay.active { display: flex; }
-        .overlay .modal {
-            background: #111326;
-            border: 1px solid rgba(255,255,255,0.12);
-            padding: 20px;
-            border-radius: 14px;
-            width: min(420px, 90vw);
+
+        .score-left {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .score-rank {
+            color: var(--muted);
+            width: 24px;
             text-align: center;
         }
-        .modal h2 { margin: 0 0 8px 0; }
-        .modal p { margin: 6px 0; }
-        .modal button {
-            margin-top: 12px;
-            padding: 10px 14px;
+
+        .score-name {
+            font-weight: 700;
+        }
+
+        .score-value {
+            font-family: 'Oxanium', sans-serif;
+            color: var(--highlight);
+        }
+
+        .score-sub {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .killfeed {
+            position: absolute;
+            right: 18px;
+            top: 180px;
+            width: 250px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .killfeed-item {
+            border: 1px solid rgba(223, 236, 255, 0.2);
             border-radius: 8px;
-            border: none;
-            background: #f39c12;
-            color: #101010;
+            padding: 7px 8px;
+            background: rgba(10, 20, 35, 0.8);
+            font-size: 13px;
+        }
+
+        .outside-warning {
+            position: absolute;
+            left: 50%;
+            top: 126px;
+            transform: translateX(-50%);
+            border: 1px solid rgba(255, 120, 120, 0.7);
+            background: rgba(255, 120, 120, 0.22);
+            padding: 9px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+
+        .outside-warning.active {
+            opacity: 1;
+        }
+
+        /* Simple mode intro popup */
+        .mode-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 45;
+            padding: 18px;
+            animation: introFadeIn 0.28s ease;
+        }
+
+        .mode-intro-overlay.fade-out {
+            animation: introFadeOut 0.28s ease forwards;
+            pointer-events: none;
+        }
+
+        .mode-intro-card {
+            width: min(560px, 95vw);
+            border-radius: 20px;
+            padding: 30px 34px;
+            position: relative;
+            text-align: center;
+            border: 3px solid #ffd877;
+            background: linear-gradient(135deg, #2a223b 0%, #1d1830 100%);
+            box-shadow: 0 14px 40px rgba(255, 216, 119, 0.42);
+        }
+
+        .mode-intro-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 1em;
             font-weight: 700;
             cursor: pointer;
         }
-        @media (max-width: 900px) {
-            .hud { grid-template-columns: 1fr; }
-            #scoreBoard { width: 200px; }
-            .info-panel { width: 220px; }
+
+        .mode-intro-close:hover {
+            background: rgba(255, 216, 119, 0.55);
+            border-color: rgba(255, 216, 119, 0.9);
+        }
+
+        .mode-intro-title {
+            margin: 0;
+            font-size: 2.5em;
+            color: #fff2cd;
+            text-shadow: 0 0 16px rgba(255, 219, 132, 0.55);
+        }
+
+        .mode-intro-icon {
+            font-size: 3.3em;
+            margin: 8px 0 12px;
+        }
+
+        .mode-intro-text {
+            font-size: 1.08em;
+            color: #fff8e8;
+            margin: 0 0 10px;
+            line-height: 1.55;
+        }
+
+        .mode-intro-highlight {
+            color: #ffe8ad;
+            font-weight: 700;
+        }
+
+        .mode-intro-controls {
+            margin: 16px 0;
+            background: rgba(21, 17, 30, 0.58);
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: left;
+        }
+
+        .mode-intro-controls h3 {
+            text-align: center;
+            margin: 0 0 8px;
+            color: #ffe8ad;
+            font-size: 1.25em;
+        }
+
+        .mode-intro-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.04em;
+        }
+
+        .mode-intro-row:last-child {
+            border-bottom: none;
+        }
+
+        .mode-intro-key {
+            background: #f39c12;
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .mode-intro-tip {
+            color: rgba(255, 247, 227, 0.72);
+            font-size: 0.95em;
+            margin-top: 8px;
+        }
+
+        @keyframes introFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes introFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(3, 8, 14, 0.72);
+            z-index: 30;
+            padding: 18px;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .overlay-card {
+            width: min(560px, 96vw);
+            max-height: 84vh;
+            overflow: auto;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(220, 239, 255, 0.3);
+            background: rgba(10, 19, 34, 0.92);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+        }
+
+        .overlay-title {
+            margin: 0;
+            font-family: 'Oxanium', sans-serif;
+            font-size: 26px;
+            letter-spacing: 1.2px;
+        }
+
+        .overlay-sub {
+            color: var(--muted);
+            margin: 6px 0 12px;
+            font-size: 15px;
+        }
+
+        .lobby-player-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .lobby-player-row {
+            border: 1px solid rgba(220, 239, 255, 0.18);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(9, 18, 32, 0.7);
+        }
+
+        .lobby-player-row.spectator {
+            opacity: 0.75;
+            border-style: dashed;
+        }
+
+        .lobby-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(221, 236, 255, 0.4);
+            background: rgba(67, 90, 117, 0.8);
+            background-size: cover;
+            background-position: center;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+        }
+
+        .lobby-player-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .lobby-player-text span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .countdown-shell {
+            text-align: center;
+            border-radius: 22px;
+            padding: 28px 34px;
+            border: 1px solid rgba(255, 217, 119, 0.6);
+            background: rgba(16, 27, 45, 0.92);
+        }
+
+        .countdown-shell .label {
+            color: var(--muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .countdown-shell .value {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 72px;
+            color: var(--highlight);
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .result-list {
+            display: grid;
+            gap: 7px;
+            margin-top: 12px;
+        }
+
+        .result-row {
+            border: 1px solid rgba(220, 239, 255, 0.2);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(9, 18, 32, 0.7);
+        }
+
+        .results-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .results-actions button {
+            flex: 1;
+            border: 1px solid rgba(220, 239, 255, 0.4);
+            border-radius: 9px;
+            padding: 9px 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
+            background: rgba(20, 35, 56, 0.9);
+        }
+
+        .results-actions button:hover {
+            background: rgba(42, 66, 97, 0.85);
+        }
+
+        @media (max-width: 1080px) {
+            .top-hud {
+                grid-template-columns: 1fr;
+            }
+
+            .killfeed {
+                top: auto;
+                bottom: 16px;
+                right: 16px;
+                width: min(280px, calc(100vw - 28px));
+            }
+
+            .outside-warning {
+                top: 92px;
+                width: max-content;
+                max-width: calc(100vw - 26px);
+                text-align: center;
+            }
         }
     </style>
 </head>
-<body class="snakes-theme koz-mode">
-    <div id="kozContainer">
-        <canvas id="gameCanvas" width="1100" height="680"></canvas>
-
-        <div class="hud">
-            <div class="panel">
-                <h1 class="hud-title">King of the Zone</h1>
-                <p class="hud-sub">Hold the core. Survive the storm. Rule the arena.</p>
-                <div class="hud-meta">
-                    <span>Room: <strong id="roomId">--</strong></span>
-                    <span>Phase: <strong id="phaseBadge">1</strong></span>
-                    <span>Zone: <strong id="zoneRadius">--</strong></span>
+<body>
+    <div id="kozRoot">
+        <!-- Intro Popup -->
+        <div class="mode-intro-overlay" id="kozIntroOverlay">
+            <div class="mode-intro-card">
+                <button class="mode-intro-close" id="kozIntroCloseBtn" aria-label="Close intro">x</button>
+                <h1 class="mode-intro-title">👑 King of the Zone 👑</h1>
+                <div class="mode-intro-icon">⚡</div>
+                <p class="mode-intro-text">Welcome to the <span class="mode-intro-highlight">multiplayer arena showdown</span>!</p>
+                <p class="mode-intro-text">Capture the Core, survive the storm, and outscore everyone.</p>
+                <div class="mode-intro-controls">
+                    <h3>Controls</h3>
+                    <div class="mode-intro-row"><span>Move</span><span class="mode-intro-key">WASD / Arrow Keys</span></div>
+                    <div class="mode-intro-row"><span>Aim</span><span class="mode-intro-key">Mouse</span></div>
+                    <div class="mode-intro-row"><span>Shoot</span><span class="mode-intro-key">SPACE / Click</span></div>
+                    <div class="mode-intro-row"><span>Leave Arena</span><span class="mode-intro-key">Leave / Back</span></div>
                 </div>
-            </div>
-
-            <div class="panel">
-                <div class="control-status">
-                    <div id="controlStatus" class="badge neutral">Neutral</div>
-                    <span id="controlDetail" class="hud-sub">No player holds the zone.</span>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat">
-                        <span>Time Left</span>
-                        <strong id="timeLeft">--</strong>
-                    </div>
-                    <div class="stat">
-                        <span>Storm Level</span>
-                        <strong id="stormLevel">--</strong>
-                    </div>
-                    <div class="stat">
-                        <span>Integrity</span>
-                        <strong id="stormValue">100%</strong>
-                    </div>
-                    <div class="stat">
-                        <span>Next Shrink</span>
-                        <strong id="nextShrink">--</strong>
-                    </div>
-                </div>
-                <div class="storm-meter">
-                    <div class="storm-bar"><span id="stormFill"></span></div>
-                </div>
-            </div>
-
-            <div class="panel hud-right">
-                <div class="controls">
-                    <button id="joinBtn">Join Match</button>
-                    <button id="leaveBtn">Leave</button>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat">
-                        <span>Bullets</span>
-                        <strong id="bulletCount">--</strong>
-                    </div>
-                    <div class="stat">
-                        <span>Combat HP</span>
-                        <strong id="hpCount">--</strong>
-                    </div>
-                    <div class="stat">
-                        <span>Shield</span>
-                        <strong id="shieldCount">0</strong>
-                    </div>
-                    <div class="stat">
-                        <span>You</span>
-                        <strong id="playerName">--</strong>
-                    </div>
-                </div>
+                <p class="mode-intro-text"><span class="mode-intro-highlight">Click anywhere</span> to continue.</p>
+                <p class="mode-intro-tip">Tip: You can also close with the <span class="mode-intro-highlight">x</span> button.</p>
             </div>
         </div>
 
-        <div class="panel" id="scoreBoard">
-            <h3>Scoreboard</h3>
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="top-hud">
+            <section class="panel">
+                <h1 class="hud-title">King of the Zone 2.0</h1>
+                <p class="hud-sub">Eliminate rivals, carry the Core, and survive the storm.</p>
+                <div class="scoreboard-list" id="kozScoreboardList"></div>
+            </section>
+
+            <section class="panel">
+                <h2 class="hud-title">Match Control</h2>
+                <p class="hud-sub">Server-authoritative arena. Minimum 4 players to start.</p>
+                <div class="state-pill" id="kozStateLabel">LOBBY</div>
+                <div class="timers">
+                    <div class="timer-box">
+                        <div class="timer-label">Match Timer</div>
+                        <div class="timer-value" id="kozMatchTimer">00:00</div>
+                    </div>
+                    <div class="timer-box">
+                        <div class="timer-label">Next Shrink</div>
+                        <div class="timer-value" id="kozShrinkTimer">00:00</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2 class="hud-title">Loadout</h2>
+                <div class="player-stats">
+                    <div class="stat-row"><span>Player</span><strong id="kozPlayerName">--</strong></div>
+                    <div class="stat-row"><span>Health</span><strong id="kozHpValue">100</strong></div>
+                    <div class="stat-row"><span>Ammo</span><strong id="kozAmmoValue">3</strong></div>
+                    <div class="stat-row"><span>Overclock</span><strong id="kozOverclockValue">0%</strong></div>
+                    <div class="overclock-track"><div class="overclock-fill" id="kozOverclockFill"></div></div>
+                </div>
+                <div class="hud-actions">
+                    <button id="kozLeaveBtn">Leave Lobby</button>
+                    <button id="kozBackBtn">Back</button>
+                </div>
+            </section>
         </div>
 
-        <div class="panel info-panel">
-            <h3>Objective</h3>
-            <p>Secure the safe zone and eliminate rivals. Contested zones score nothing.</p>
-            <p>Storm damage stacks fast. Grab the core for bonus points.</p>
+        <div class="panel killfeed" id="kozKillfeedList"></div>
+
+        <div class="outside-warning" id="kozOutsideWarning">Outside safe zone: storm damage active</div>
+
+        <div class="overlay active" id="kozLobbyOverlay">
+            <div class="overlay-card">
+                <h2 class="overlay-title">Arena Lobby</h2>
+                <p class="overlay-sub" id="kozLobbyText">Waiting for players (0/4)</p>
+                <div class="lobby-player-list" id="kozLobbyPlayers"></div>
+            </div>
         </div>
 
-        <div id="zoneWarning" class="zone-warning">Storm pressure detected - return to safe zone</div>
-        <div id="zoneEvent" class="zone-event"></div>
-    </div>
+        <div class="overlay" id="kozCountdownOverlay">
+            <div class="countdown-shell">
+                <div class="label">Match starts in</div>
+                <div class="value" id="kozCountdownValue">10</div>
+            </div>
+        </div>
 
-    <div class="overlay" id="endOverlay">
-        <div class="modal">
-            <h2 id="endTitle">Match Ended</h2>
-            <p id="endSubtitle">Winner: --</p>
-            <button id="endBack">Back to Modes</button>
+        <div class="overlay" id="kozResultsOverlay">
+            <div class="overlay-card">
+                <h2 class="overlay-title">Match Results</h2>
+                <p class="overlay-sub" id="kozResultsWinner">Winner: --</p>
+                <div class="result-list" id="kozResultsList"></div>
+                <div class="results-actions">
+                    <button id="kozPlayAgainBtn">Play Again</button>
+                    <button id="kozBackResultsBtn">Back to Modes</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="../../assets/js/player-loadout.js"></script>
-    <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
-    <script src="../../assets/js/king-of-zone.js"></script>
+    <script src="../../assets/js/koz/koz_client.js"></script>
+    <script src="../../assets/js/koz/koz_input.js"></script>
+    <script src="../../assets/js/koz/koz_renderer.js"></script>
+    <script src="../../assets/js/koz/koz_ui.js"></script>
+    <script src="../../assets/js/koz/koz_main.js"></script>
+    <script>
+        (function setupIntroPopup() {
+            const overlay = document.getElementById('kozIntroOverlay');
+            const closeBtn = document.getElementById('kozIntroCloseBtn');
+            if (!overlay) return;
+
+            let dismissed = false;
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
+                overlay.classList.add('fade-out');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 280);
+            }
+
+            overlay.addEventListener('click', dismissIntro);
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    dismissIntro();
+                });
+            }
+            document.addEventListener('keydown', (event) => {
+                if (dismissed) return;
+                if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                    dismissIntro();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

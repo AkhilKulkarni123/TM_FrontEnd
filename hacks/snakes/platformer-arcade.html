@@ -147,10 +147,140 @@
             color: #fff;
             cursor: pointer;
         }
+
+        /* Simple mode intro popup */
+        .mode-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 18px;
+            animation: introFadeIn 0.28s ease;
+        }
+        .mode-intro-overlay.fade-out {
+            animation: introFadeOut 0.28s ease forwards;
+            pointer-events: none;
+        }
+        .mode-intro-card {
+            width: min(560px, 95vw);
+            border-radius: 20px;
+            padding: 30px 34px;
+            position: relative;
+            text-align: center;
+            border: 3px solid #2ecc71;
+            background: linear-gradient(135deg, #143126 0%, #10261f 100%);
+            box-shadow: 0 14px 40px rgba(46, 204, 113, 0.42);
+        }
+        .mode-intro-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .mode-intro-close:hover {
+            background: rgba(46, 204, 113, 0.55);
+            border-color: rgba(46, 204, 113, 0.9);
+        }
+        .mode-intro-title {
+            margin: 0;
+            font-size: 2.5em;
+            color: #d8ffe8;
+            text-shadow: 0 0 16px rgba(139, 243, 194, 0.55);
+        }
+        .mode-intro-icon {
+            font-size: 3.3em;
+            margin: 8px 0 12px;
+        }
+        .mode-intro-text {
+            font-size: 1.05em;
+            color: #e8fff0;
+            margin: 0 0 10px;
+            line-height: 1.55;
+        }
+        .mode-intro-highlight {
+            color: #9ef7c8;
+            font-weight: 700;
+        }
+        .mode-intro-controls {
+            margin: 16px 0;
+            background: rgba(7, 22, 16, 0.58);
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: left;
+        }
+        .mode-intro-controls h3 {
+            text-align: center;
+            margin: 0 0 8px;
+            color: #9ef7c8;
+            font-size: 1.25em;
+        }
+        .mode-intro-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.04em;
+        }
+        .mode-intro-row:last-child {
+            border-bottom: none;
+        }
+        .mode-intro-key {
+            background: #2ecc71;
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        .mode-intro-tip {
+            color: rgba(230, 255, 241, 0.72);
+            font-size: 0.95em;
+            margin-top: 8px;
+        }
+        @keyframes introFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes introFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
 </head>
 <body>
     <div id="pfContainer">
+        <!-- Intro Popup -->
+        <div class="mode-intro-overlay" id="pfIntroOverlay">
+            <div class="mode-intro-card">
+                <button class="mode-intro-close" id="pfIntroCloseBtn" aria-label="Close intro">x</button>
+                <h1 class="mode-intro-title">🟩 Platformer Gauntlet 🟩</h1>
+                <div class="mode-intro-icon">🏁</div>
+                <p class="mode-intro-text">Welcome to the <span class="mode-intro-highlight">Arcade Platformer</span>!</p>
+                <p class="mode-intro-text">Clear jumps, dodge hazards, and reach the finish gate.</p>
+                <div class="mode-intro-controls">
+                    <h3>Controls</h3>
+                    <div class="mode-intro-row"><span>Move</span><span class="mode-intro-key">A / D or ← / →</span></div>
+                    <div class="mode-intro-row"><span>Jump</span><span class="mode-intro-key">W / ↑</span></div>
+                    <div class="mode-intro-row"><span>Restart Run</span><span class="mode-intro-key">Restart Button</span></div>
+                    <div class="mode-intro-row"><span>Leave Arcade</span><span class="mode-intro-key">Back Button</span></div>
+                </div>
+                <p class="mode-intro-text"><span class="mode-intro-highlight">Click anywhere</span> to continue.</p>
+                <p class="mode-intro-tip">Tip: You can also close with the <span class="mode-intro-highlight">x</span> button.</p>
+            </div>
+        </div>
+
         <canvas id="pfCanvas"></canvas>
 
         <div class="hud">
@@ -201,5 +331,36 @@
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
     <script src="../../assets/js/platformer-arcade.js"></script>
+    <script>
+        (function setupIntroPopup() {
+            const overlay = document.getElementById('pfIntroOverlay');
+            const closeBtn = document.getElementById('pfIntroCloseBtn');
+            if (!overlay) return;
+
+            let dismissed = false;
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
+                overlay.classList.add('fade-out');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 280);
+            }
+
+            overlay.addEventListener('click', dismissIntro);
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    dismissIntro();
+                });
+            }
+            document.addEventListener('keydown', (event) => {
+                if (dismissed) return;
+                if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                    dismissIntro();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

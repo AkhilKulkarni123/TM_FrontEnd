@@ -383,6 +383,132 @@
             font-weight: bold;
         }
 
+        /* Simple mode intro popup */
+        .mode-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 260;
+            padding: 18px;
+            animation: introFadeIn 0.28s ease;
+        }
+
+        .mode-intro-overlay.fade-out {
+            animation: introFadeOut 0.28s ease forwards;
+            pointer-events: none;
+        }
+
+        .mode-intro-card {
+            width: min(560px, 95vw);
+            border-radius: 20px;
+            padding: 30px 34px;
+            position: relative;
+            text-align: center;
+            border: 3px solid #4facfe;
+            background: linear-gradient(135deg, #1a1f3f 0%, #121e3d 100%);
+            box-shadow: 0 14px 40px rgba(79, 172, 254, 0.42);
+        }
+
+        .mode-intro-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mode-intro-close:hover {
+            background: rgba(79, 172, 254, 0.55);
+            border-color: rgba(79, 172, 254, 0.9);
+        }
+
+        .mode-intro-title {
+            margin: 0;
+            font-size: 2.7em;
+            color: #d8ecff;
+            text-shadow: 0 0 16px rgba(121, 210, 255, 0.6);
+        }
+
+        .mode-intro-icon {
+            font-size: 3.6em;
+            margin: 8px 0 12px;
+        }
+
+        .mode-intro-text {
+            font-size: 1.1em;
+            color: #e8f6ff;
+            margin: 0 0 10px;
+            line-height: 1.55;
+        }
+
+        .mode-intro-highlight {
+            color: #7fd0ff;
+            font-weight: 700;
+        }
+
+        .mode-intro-controls {
+            margin: 16px 0;
+            background: rgba(7, 13, 28, 0.58);
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: left;
+        }
+
+        .mode-intro-controls h3 {
+            text-align: center;
+            margin: 0 0 8px;
+            color: #7fd0ff;
+            font-size: 1.25em;
+        }
+
+        .mode-intro-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.04em;
+        }
+
+        .mode-intro-row:last-child {
+            border-bottom: none;
+        }
+
+        .mode-intro-key {
+            background: #4facfe;
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .mode-intro-tip {
+            color: rgba(230, 243, 255, 0.7);
+            font-size: 0.95em;
+            margin-top: 8px;
+        }
+
+        @keyframes introFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes introFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
         /* Waiting overlay */
         .waiting-overlay {
             position: fixed;
@@ -510,6 +636,26 @@
     <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
 </head>
 <body class="snakes-theme">
+    <!-- Intro Popup -->
+    <div class="mode-intro-overlay" id="pvpIntroOverlay">
+        <div class="mode-intro-card">
+            <button class="mode-intro-close" id="pvpIntroCloseBtn" aria-label="Close intro">x</button>
+            <h1 class="mode-intro-title">⚔️ PVP Arena ⚔️</h1>
+            <div class="mode-intro-icon">🔥</div>
+            <p class="mode-intro-text">Welcome to the <span class="mode-intro-highlight">Multiplayer 1v1 Arena</span>!</p>
+            <p class="mode-intro-text">Outplay your opponent with movement, aim, and timing.</p>
+            <div class="mode-intro-controls">
+                <h3>Controls</h3>
+                <div class="mode-intro-row"><span>Move</span><span class="mode-intro-key">WASD / Arrow Keys</span></div>
+                <div class="mode-intro-row"><span>Aim</span><span class="mode-intro-key">Mouse</span></div>
+                <div class="mode-intro-row"><span>Shoot</span><span class="mode-intro-key">SPACE / Click</span></div>
+                <div class="mode-intro-row"><span>Leave Arena</span><span class="mode-intro-key">X Key</span></div>
+            </div>
+            <p class="mode-intro-text"><span class="mode-intro-highlight">Click anywhere</span> to continue.</p>
+            <p class="mode-intro-tip">Tip: You can also close with the <span class="mode-intro-highlight">x</span> button.</p>
+        </div>
+    </div>
+
     <!-- Waiting for opponent overlay -->
     <div class="waiting-overlay" id="waitingOverlay">
         <div class="waiting-text">Waiting for opponent...</div>
@@ -622,6 +768,37 @@
         console.log('PVP Arena - API Base:', GAME_API_BASE);
         console.log('PVP Arena - Socket URL:', SOCKET_URL);
         console.log('PVP Arena - Is Local:', IS_LOCAL);
+
+        function setupIntroPopup() {
+            const overlay = document.getElementById('pvpIntroOverlay');
+            const closeBtn = document.getElementById('pvpIntroCloseBtn');
+            if (!overlay) return;
+
+            let dismissed = false;
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
+                overlay.classList.add('fade-out');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 280);
+            }
+
+            overlay.addEventListener('click', dismissIntro);
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    dismissIntro();
+                });
+            }
+            document.addEventListener('keydown', (event) => {
+                if (dismissed) return;
+                if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                    dismissIntro();
+                }
+            });
+        }
+        setupIntroPopup();
 
         // Resize canvas
         function resizeCanvas() {
