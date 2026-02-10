@@ -55,45 +55,107 @@ microblog: True
   </div>
 
   <div id="character-selection" class="hidden">
-    <h2>Choose Your Hero</h2>
-    <p class="character-select-instruction">Click arrows to browse - Click centered character twice to select</p>
-    <div class="character-carousel">
-      <button class="carousel-btn prev-btn" id="prev-character">&#9668;</button>
-      <div class="carousel-container">
-        <div class="carousel-track">
-          <div class="character-card" data-character="knight" data-index="0">
-            <div class="pixel-character knight-pixel"></div>
-            <span class="character-name">Knight</span>
-            <p class="character-description">Defensive Specialist</p>
+    <div class="hero-selection-layout">
+      <section class="hero-selector-main" aria-labelledby="hero-selection-title">
+        <h2 id="hero-selection-title">Choose Your Hero</h2>
+        <p class="character-select-instruction">Click arrows to browse - Click centered character twice to select</p>
+        <div class="character-carousel">
+          <button class="carousel-btn prev-btn" id="prev-character" aria-label="Previous hero">&#9668;</button>
+          <div class="carousel-container">
+            <div class="carousel-track">
+              <div class="character-card" data-character="knight" data-index="0">
+                <div class="pixel-character knight-pixel"></div>
+                <span class="character-name">Knight</span>
+                <p class="character-description">Defensive Specialist</p>
+              </div>
+              <div class="character-card" data-character="wizard" data-index="1">
+                <div class="pixel-character wizard-pixel"></div>
+                <span class="character-name">Wizard</span>
+                <p class="character-description">Magic Master</p>
+              </div>
+              <div class="character-card" data-character="archer" data-index="2">
+                <div class="pixel-character archer-pixel"></div>
+                <span class="character-name">Archer</span>
+                <p class="character-description">Ranged Expert</p>
+              </div>
+              <div class="character-card" data-character="warrior" data-index="3">
+                <div class="pixel-character warrior-pixel"></div>
+                <span class="character-name">Warrior</span>
+                <p class="character-description">Melee Berserker</p>
+              </div>
+            </div>
           </div>
-          <div class="character-card" data-character="wizard" data-index="1">
-            <div class="pixel-character wizard-pixel"></div>
-            <span class="character-name">Wizard</span>
-            <p class="character-description">Magic Master</p>
-          </div>
-          <div class="character-card" data-character="archer" data-index="2">
-            <div class="pixel-character archer-pixel"></div>
-            <span class="character-name">Archer</span>
-            <p class="character-description">Ranged Expert</p>
-          </div>
-          <div class="character-card" data-character="warrior" data-index="3">
-            <div class="pixel-character warrior-pixel"></div>
-            <span class="character-name">Warrior</span>
-            <p class="character-description">Melee Berserker</p>
-          </div>
+          <button class="carousel-btn next-btn" id="next-character" aria-label="Next hero">&#9658;</button>
         </div>
-      </div>
-      <button class="carousel-btn next-btn" id="next-character">&#9658;</button>
+        <div id="character-perk-display" class="character-perk-display">
+          <div class="perk-header">Character Perk</div>
+          <div class="perk-name" id="perk-name-display">Shielded</div>
+          <div class="perk-description" id="perk-desc-display">+1 Max Life (starts with 6)</div>
+        </div>
+        <button id="start-game-btn" class="game-start-btn" disabled>START ADVENTURE</button>
+      </section>
+
+      <aside class="theme-selector-panel" aria-labelledby="themes-heading">
+        <h3 id="themes-heading" class="theme-panel-title">Themes</h3>
+        <p class="theme-panel-subtitle">Pick a style for your hero selection screen.</p>
+        <div class="theme-options" role="radiogroup" aria-label="Theme options">
+          <button type="button" class="theme-option is-selected" role="radio" aria-checked="true" data-theme="default" data-theme-name="Default" aria-label="Default theme">
+            <span class="theme-swatch" style="--swatch-1:#667eea; --swatch-2:#764ba2;" aria-hidden="true"></span>
+            <span class="theme-option-label">Default</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="aurora-mint" data-theme-name="Aurora Mint" aria-label="Aurora Mint theme">
+            <span class="theme-swatch" style="--swatch-1:#3dd6b0; --swatch-2:#0f766e;" aria-hidden="true"></span>
+            <span class="theme-option-label">Aurora Mint</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="emberforge" data-theme-name="Emberforge" aria-label="Emberforge theme">
+            <span class="theme-swatch" style="--swatch-1:#ff7a3d; --swatch-2:#c0392b;" aria-hidden="true"></span>
+            <span class="theme-option-label">Emberforge</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="midnight-violet" data-theme-name="Midnight Violet" aria-label="Midnight Violet theme">
+            <span class="theme-swatch" style="--swatch-1:#8b5cf6; --swatch-2:#4c1d95;" aria-hidden="true"></span>
+            <span class="theme-option-label">Midnight Violet</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="solar-flare" data-theme-name="Solar Flare" aria-label="Solar Flare theme">
+            <span class="theme-swatch" style="--swatch-1:#ffb703; --swatch-2:#fb8500;" aria-hidden="true"></span>
+            <span class="theme-option-label">Solar Flare</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="oceanic-depths" data-theme-name="Oceanic Depths" aria-label="Oceanic Depths theme">
+            <span class="theme-swatch" style="--swatch-1:#00b4d8; --swatch-2:#0077b6;" aria-hidden="true"></span>
+            <span class="theme-option-label">Oceanic Depths</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="rose-nebula" data-theme-name="Rose Nebula" aria-label="Rose Nebula theme">
+            <span class="theme-swatch" style="--swatch-1:#ff5ca8; --swatch-2:#c9184a;" aria-hidden="true"></span>
+            <span class="theme-option-label">Rose Nebula</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="cyber-lime" data-theme-name="Cyber Lime" aria-label="Cyber Lime theme">
+            <span class="theme-swatch" style="--swatch-1:#a3e635; --swatch-2:#4d7c0f;" aria-hidden="true"></span>
+            <span class="theme-option-label">Cyber Lime</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="glacier-blue" data-theme-name="Glacier Blue" aria-label="Glacier Blue theme">
+            <span class="theme-swatch" style="--swatch-1:#60a5fa; --swatch-2:#1d4ed8;" aria-hidden="true"></span>
+            <span class="theme-option-label">Glacier Blue</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" role="radio" aria-checked="false" data-theme="sandstone-gold" data-theme-name="Sandstone Gold" aria-label="Sandstone Gold theme">
+            <span class="theme-swatch" style="--swatch-1:#d4a373; --swatch-2:#a97142;" aria-hidden="true"></span>
+            <span class="theme-option-label">Sandstone Gold</span>
+            <span class="theme-check" aria-hidden="true">✓</span>
+          </button>
+        </div>
+      </aside>
     </div>
-    <div id="character-perk-display" class="character-perk-display">
-      <div class="perk-header">Character Perk</div>
-      <div class="perk-name" id="perk-name-display">Shielded</div>
-      <div class="perk-description" id="perk-desc-display">+1 Max Life (starts with 6)</div>
-    </div>
-    <button id="start-game-btn" class="game-start-btn" disabled>START ADVENTURE</button>
   </div>
 </div>
 
+<script src="{{site.baseurl}}/assets/js/theme-selector.js"></script>
 <script>
   // ---- Config ----
   var GAME_URL = '{{ site.baseurl }}/hacks/snakes/game-board-part1.html';
