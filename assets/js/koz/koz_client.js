@@ -184,13 +184,40 @@
             self.selfId = payload.sid || self.selfId;
             self.role = payload.role || 'spectator';
             if (payload.map) self.map = payload.map;
-            if (payload.minPlayers) self.match.minPlayers = payload.minPlayers;
+            if (typeof payload.minPlayers !== 'undefined') {
+                self.match.minPlayers = Number(payload.minPlayers) || self.match.minPlayers;
+            }
+            if (typeof payload.activePlayers !== 'undefined') {
+                self.match.activePlayers = Math.max(0, Number(payload.activePlayers) || 0);
+            }
+            if (payload.lobby && typeof payload.lobby === 'object') {
+                self.lobby = Object.assign({}, self.lobby, payload.lobby);
+            }
             self.local.sid = self.selfId;
             self.emit('joined', payload);
+            self.requestState();
         });
 
         this.socket.on('koz:lobby_update', function (payload) {
-            self.lobby = payload || self.lobby;
+            var nextLobby = Object.assign({}, self.lobby, payload || {});
+            if (typeof nextLobby.activePlayers === 'undefined' && typeof nextLobby.active_players !== 'undefined') {
+                nextLobby.activePlayers = nextLobby.active_players;
+            }
+            if (typeof nextLobby.minPlayers === 'undefined' && typeof nextLobby.min_players !== 'undefined') {
+                nextLobby.minPlayers = nextLobby.min_players;
+            }
+            if (!Array.isArray(nextLobby.players)) {
+                nextLobby.players = Array.isArray(self.lobby.players) ? self.lobby.players : [];
+            }
+            var derivedActive = nextLobby.players.filter(function (player) {
+                return !player || !player.spectator;
+            }).length;
+            var parsedActive = Number(nextLobby.activePlayers);
+            if (!isFinite(parsedActive) || parsedActive < derivedActive) {
+                parsedActive = derivedActive;
+            }
+            nextLobby.activePlayers = Math.max(0, parsedActive);
+            self.lobby = nextLobby;
             self.emit('lobby_update', self.lobby);
         });
 

@@ -155,12 +155,22 @@
     // Render lobby roster and waiting/ready messaging before active match begins.
     KOZUI.prototype._renderLobby = function (state) {
         var lobby = state.lobby || {};
-        var activePlayers = (lobby.activePlayers || 0);
+        var roster = Array.isArray(lobby.players) ? lobby.players : [];
+        var derivedActivePlayers = roster.filter(function (player) {
+            return !player || !player.spectator;
+        }).length;
+        var activePlayers = Number(lobby.activePlayers || 0);
+        if (!isFinite(activePlayers) || activePlayers < 0 || activePlayers < derivedActivePlayers) {
+            activePlayers = derivedActivePlayers;
+        }
+        if (activePlayers === 0 && state.role === 'player') {
+            activePlayers = Math.max(1, derivedActivePlayers);
+        }
         var minPlayers = (lobby.minPlayers || 4);
         var waiting = activePlayers < minPlayers;
 
         this.lobbyPlayerList.innerHTML = '';
-        (lobby.players || []).forEach(function (player) {
+        roster.forEach(function (player) {
             var row = document.createElement('div');
             row.className = 'lobby-player-row' + (player.spectator ? ' spectator' : '');
 
