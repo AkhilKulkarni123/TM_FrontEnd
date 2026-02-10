@@ -141,18 +141,7 @@ var HintBar = (function() {
         if (toggleBtn) {
             toggleBtn.addEventListener('click', toggle);
         }
-        
-        // Check if user wants to auto-show on first visit
-        try {
-            var hasSeenHints = localStorage.getItem('snakes_seen_hints_section' + section);
-            if (!hasSeenHints) {
-                // Auto-show hints on first visit after a short delay
-                setTimeout(function() {
-                    expand();
-                    localStorage.setItem('snakes_seen_hints_section' + section, '1');
-                }, 2000);
-            }
-        } catch (e) {}
+    
     }
     
     function toggle() {

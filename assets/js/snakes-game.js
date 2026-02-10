@@ -1213,6 +1213,12 @@ function getCharacterIcon(character) {
         console.warn('Character not recognized:', character, '- available characters:', Object.keys(icons));
     }
     return icon;
+    
+}
+
+function getCharacterDisplayName(character) {
+    var names = { knight: 'Knight', wizard: 'Wizard', archer: 'Archer', warrior: 'Warrior' };
+    return names[character] || 'Unknown';
 }
 
 // ============================================
@@ -1407,8 +1413,7 @@ function updatePlayerInfo() {
     var nameSpan = document.getElementById('player-name-display');
 
     console.log('Updating player info with character:', gameState.character);
-    
-    if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character);
+    if (charSpan) charSpan.textContent = getCharacterIcon(gameState.character) + ' ' + getCharacterDisplayName(gameState.character);
     if (bulletsSpan) bulletsSpan.textContent = gameState.bullets;
     if (livesSpan) livesSpan.textContent = gameState.lives;
     if (squareSpan) squareSpan.textContent = (gameState.currentSquare === 0) ? 'START' : gameState.currentSquare;
