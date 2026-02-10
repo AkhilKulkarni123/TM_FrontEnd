@@ -267,41 +267,40 @@
 
         <div class="content">
             <div class="section">
-                <h2>Arrays</h2>
-                <p>An array stores an ordered collection of values. Think of it as a numbered list where each item has a position (index). In JavaScript, you declare an array with square brackets:</p>
-                <pre><code>const fruits = ['apple', 'banana', 'cherry'];
-console.log(fruits[1]); // 'banana'</code></pre>
-                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Arrays are zero-indexed, meaning the first item is at position 0!</p>
+                <h2>Lists & Data Abstraction</h2>
+                <p>AP CSP emphasizes lists for managing complexity. A list groups related items so you can process them with a loop rather than many separate variables.</p>
+                <pre><code>scores ← [85, 92, 78, 90]
+DISPLAY(scores[2])</code></pre>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Lists are indexed; the first item is at index 0.</p>
             </div>
 
             <div class="section">
-                <h2>Objects</h2>
-                <p>An object stores data as key-value pairs. Keys are strings that act like labels, and values can be any type. This structure is perfect for representing real-world entities:</p>
-                <pre><code>const student = { name: 'Ada', age: 17 };
-console.log(student.name); // 'Ada'</code></pre>
-                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Access object values using dot notation (student.name) or brackets (student['name'])!</p>
+                <h2>Data, Metadata, and Cleaning</h2>
+                <p>Data is the content itself, while metadata is information about the data (time, author, location). Cleaning data (e.g., removing duplicates) helps ensure accuracy.</p>
+                <pre><code>postText ← "Hello world"
+postTime ← "10:30 AM"</code></pre>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Large data sets can reveal patterns but may include errors or bias.</p>
             </div>
 
             <div class="question">
                 <h3>💡 Interactive Quiz</h3>
-                <p>Complete the mini-game above, then test your knowledge! Which code correctly accesses the value <code style="background: rgba(0,0,0,0.3); color: white;">42</code> in the array below?</p>
-                <pre><code>const nums = [7, 42, 99];</code></pre>
+                <p>Complete the mini-game above, then test your knowledge! Which goal is best answered by analyzing data instead of metadata?</p>
                 <div class="options">
                     <label class="disabled">
                         <input type="radio" name="q1" value="wrong1" disabled>
-                        <span>nums['1']</span>
+                        <span>Finding the time of day most posts are made</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="correct" disabled>
-                        <span>nums[1]</span>
+                        <span>Finding common topics in messages</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="wrong2" disabled>
-                        <span>nums(2)</span>
+                        <span>Counting how many comments each post has</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="wrong3" disabled>
-                        <span>nums.1</span>
+                        <span>Identifying which users post most often</span>
                     </label>
                 </div>
             </div>

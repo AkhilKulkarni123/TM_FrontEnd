@@ -267,38 +267,46 @@
 
         <div class="content">
             <div class="section">
-                <h2>Variables</h2>
-                <p>A variable is a named location in memory used to store a value. Think of it as a labeled box where you can keep information. In JavaScript, you can declare variables using <code>let</code> or <code>const</code>:</p>
-                <pre><code>let score = 0;
-const name = 'Ada';</code></pre>
+                <h2>Algorithms & Sequencing</h2>
+                <p>An algorithm is a finite, step-by-step process for solving a problem. Programs execute steps in order (sequencing) unless a decision or loop changes the flow. On the AP CSP exam, you should be able to describe what an algorithm does and predict its output.</p>
+                <pre><code>score ← 0
+score ← score + 5
+DISPLAY(score)</code></pre>
             </div>
 
             <div class="section">
-                <h2>Conditionals</h2>
-                <p>Conditionals allow your program to make decisions and choose different paths of execution. The simplest conditional is the <code>if</code> statement, which acts like a fork in the road:</p>
-                <pre><code>if (score > 10) {
-    console.log('You win!');
-} else {
-    console.log('Keep trying!');
+                <h2>Selection & Boolean Logic</h2>
+                <p>Selection uses Boolean expressions to choose between paths. You should recognize operators like <code>AND</code>, <code>OR</code>, and comparisons, and be able to trace which branch runs.</p>
+                <pre><code>IF (score &gt;= 10)
+{
+  DISPLAY("You win!")
+}
+ELSE
+{
+  DISPLAY("Keep trying!")
 }</code></pre>
             </div>
 
             <div class="section">
-                <h2>Loops</h2>
-                <p>Loops repeat instructions multiple times, saving you from writing repetitive code. A <code>for</code> loop repeats a block of code a specified number of times:</p>
-                <pre><code>for (let i = 0; i < 5; i++) {
-    console.log('Iteration ' + i);
-}</code></pre>
+                <h2>Iteration & Procedures</h2>
+                <p>Iteration repeats steps and is essential for processing lists and data. Procedures (with parameters) are an example of abstraction: they hide details and make code reusable.</p>
+                <pre><code>count ← 0
+REPEAT 5 TIMES
+{
+  count ← count + 1
+}
+DISPLAY(count)</code></pre>
             </div>
 
             <div class="question">
                 <h3>💡 Interactive Quiz</h3>
-                <p>Complete the mini-game above, then test your knowledge! What does the following JavaScript code output?</p>
-                <pre><code>let total = 0;
-for (let i = 1; i <= 3; i++) {
-    total += i;
+                <p>Complete the mini-game above, then test your knowledge! What is displayed?</p>
+                <pre><code>total ← 0
+REPEAT 3 TIMES
+{
+  total ← total + 2
 }
-console.log(total);</code></pre>
+DISPLAY(total)</code></pre>
                 <div class="options">
                     <label class="disabled">
                         <input type="radio" name="q1" value="3" disabled>

@@ -259,46 +259,47 @@
 
         <div class="content">
             <div class="section">
-                <p>The internet is a global network of networks. Computers communicate over the internet using unique numerical addresses called Internet Protocol (IP) addresses. To make it easier for humans, domain names map to IP addresses via the Domain Name System (DNS).</p>
+                <h2>Packets & Routing</h2>
+                <p>The Internet is a network of networks. Data is split into packets that can take different paths to the destination. Routers forward packets, and redundancy helps keep communication working even if one path fails.</p>
             </div>
 
             <div class="section">
-                <h2>IP Addresses</h2>
-                <p>An IPv4 address consists of four numbers between 0 and 255 separated by periods. Each device on a network has a unique IP address so that data can be routed to the correct destination.</p>
+                <h2>IP Addresses & Protocols</h2>
+                <p>An IP address identifies a device on a network. IPv4 uses four numbers separated by periods, while IPv6 uses a longer format to allow more addresses. Protocols like HTTP and HTTPS define rules for communication.</p>
                 <div class="highlight-box">
-                    <p><strong>Example:</strong> <code>192.168.1.1</code> is a common IP address for home routers. The numbers identify the specific device on the network.</p>
+                    <p><strong>Example:</strong> <code>192.168.1.1</code> is a common IPv4 address for home routers.</p>
                 </div>
-                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Think of an IP address like a mailing address—it tells the network exactly where to deliver data!</p>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 Think of an IP address like a mailing address—it tells the network exactly where to deliver packets!</p>
             </div>
 
             <div class="section">
-                <h2>DNS (Domain Name System)</h2>
-                <p>DNS translates human-readable domain names (like <code>www.example.com</code>) into IP addresses. DNS servers respond to queries and help your browser locate websites.</p>
+                <h2>DNS & URLs</h2>
+                <p>DNS translates human-readable domain names (like <code>www.example.com</code>) into IP addresses. URLs include a protocol, a domain, and a path to a specific resource.</p>
                 <div class="highlight-box">
-                    <p><strong>How it works:</strong> When you type a website address, your computer asks a DNS server "What's the IP address for this domain?" The DNS server responds with the numeric address, and your browser connects to that IP.</p>
+                    <p><strong>How it works:</strong> Your device asks a DNS server for the IP address of a domain. Once it receives the IP, the browser connects and requests a resource.</p>
                 </div>
-                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 DNS is like a phone book for the internet—it helps you find the right "number" (IP address) for any website!</p>
+                <p style="margin-top: 0.5rem; font-style: italic; color: #666;">💡 DNS is like a phone book for the internet—it helps you find the right IP for any website.</p>
             </div>
 
             <div class="question">
                 <h3>💡 Interactive Quiz</h3>
-                <p>Complete the mini-game above, then test your knowledge! Which of the following best describes the role of DNS on the internet?</p>
+                <p>Complete the mini-game above, then test your knowledge! Which statement best describes how data travels on the Internet?</p>
                 <div class="options">
                     <label class="disabled">
                         <input type="radio" name="q1" value="0" disabled>
-                        <span>It encrypts all communications.</span>
+                        <span>Data travels as a single continuous stream over one path.</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="1" disabled>
-                        <span>It provides physical cables for the network.</span>
+                        <span>Data is split into packets that can take different paths.</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="2" disabled>
-                        <span>It translates domain names into IP addresses.</span>
+                        <span>Data is stored only on DNS servers.</span>
                     </label>
                     <label class="disabled">
                         <input type="radio" name="q1" value="3" disabled>
-                        <span>It stores webpages on servers.</span>
+                        <span>Data can only move across a single cable.</span>
                     </label>
                 </div>
             </div>
