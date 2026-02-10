@@ -148,7 +148,9 @@
     // Render lobby roster and waiting/ready messaging before active match begins.
     KOZUI.prototype._renderLobby = function (state) {
         var lobby = state.lobby || {};
-        var waiting = (lobby.activePlayers || 0) < (lobby.minPlayers || 4);
+        var activePlayers = (lobby.activePlayers || 0);
+        var minPlayers = (lobby.minPlayers || 4);
+        var waiting = activePlayers < minPlayers;
 
         this.lobbyPlayerList.innerHTML = '';
         (lobby.players || []).forEach(function (player) {
@@ -173,11 +175,11 @@
         }, this);
 
         if (waiting) {
-            this.lobbyText.textContent = 'Waiting for players (' + (lobby.activePlayers || 0) + '/' + (lobby.minPlayers || 4) + ')';
+            this.lobbyText.textContent = 'Waiting for players (' + activePlayers + ' joined, ' + minPlayers + ' minimum to start)';
         } else if ((state.match || {}).state === 'COUNTDOWN') {
-            this.lobbyText.textContent = 'Lobby full. Match starting soon.';
+            this.lobbyText.textContent = 'Minimum reached. Match starting soon.';
         } else {
-            this.lobbyText.textContent = 'Lobby ready.';
+            this.lobbyText.textContent = 'Lobby ready. More players can still join.';
         }
 
         var show = (state.match.state === 'LOBBY' || state.match.state === 'COUNTDOWN');
