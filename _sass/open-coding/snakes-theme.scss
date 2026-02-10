@@ -333,26 +333,26 @@ body.snakes-theme,
   .dice-widget .physical-dice {
     position: relative;
     overflow: hidden;
-    width: 52px !important;
-    height: 52px !important;
-    min-width: 52px !important;
-    max-width: 52px !important;
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
     padding: 0 !important;
-    flex: 0 0 52px;
+    flex: 0 0 60px;
     border-radius: 12px;
   }
 
   .dice-widget .physical-dice::before {
     content: '';
     position: absolute;
-    inset: 6px;
+    inset: 7px;
     border-radius: 10px;
     background:
-      radial-gradient(circle at 28% 28%, #111827 0 4px, transparent 5px),
-      radial-gradient(circle at 72% 72%, #111827 0 4px, transparent 5px),
-      radial-gradient(circle at 28% 72%, #111827 0 4px, transparent 5px),
-      radial-gradient(circle at 72% 28%, #111827 0 4px, transparent 5px),
-      radial-gradient(circle at 50% 50%, #111827 0 4px, transparent 5px),
+      radial-gradient(circle at 28% 28%, #111827 0 5px, transparent 6px),
+      radial-gradient(circle at 72% 72%, #111827 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 72%, #111827 0 5px, transparent 6px),
+      radial-gradient(circle at 72% 28%, #111827 0 5px, transparent 6px),
+      radial-gradient(circle at 50% 50%, #111827 0 5px, transparent 6px),
       linear-gradient(145deg, #ffffff 0%, #f0f0f0 60%, #e2e2e2 100%);
     box-shadow:
       inset 0 1px 2px rgba(255, 255, 255, 0.8),
@@ -733,6 +733,66 @@ body.snakes-theme,
     color: #f7fafc;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 12px 28px rgba(47, 143, 133, 0.35);
+  }
+
+  // ── Hint bar theming ──
+  .hint-bar {
+    @include glass-panel;
+    border-radius: 16px;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .hint-bar-toggle {
+    background: linear-gradient(135deg, #2a3b4a, #24303c);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f7fafc;
+  }
+
+  .hint-bar-content {
+    background: transparent;
+  }
+
+  .hint-bar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .hint-bar-title h3 {
+    color: #f5f7ff;
+  }
+
+  .hint-bar-title p {
+    color: $text-soft;
+  }
+
+  .hint-item {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  .hint-item h4 {
+    color: #ffffff;
+  }
+
+  .hint-item p,
+  .hint-item .hint-tip {
+    color: $text-soft;
+  }
+
+  .hint-bar-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .hint-bar-content::-webkit-scrollbar-thumb {
+    background: rgba(47, 143, 133, 0.5);
+  }
+
+  .hint-bar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(47, 143, 133, 0.7);
   }
 }
 
