@@ -1,286 +1,283 @@
 
-
 (function () {
   const QUESTIONS = {
     // =====================================================
-    // ROW 1 (Squares 6-15) – Programming Basics
+    // ROW 1 (Squares 6-15) – Lesson 1: Algorithms & Programming Basics
     // =====================================================
     1: [
-      { 
-        prompt: "Which keyword declares a constant in JavaScript?", 
-        options: ["var", "const", "let", "static"], 
-        answer: 1 
+      {
+        prompt: "Which statement best describes an algorithm?",
+        options: ["A random guess", "A finite set of steps to solve a problem", "A type of hardware", "A programming language"],
+        answer: 1
       },
-      { 
-        prompt: "What does an if statement do?", 
-        options: ["Repeats code", "Makes a decision", "Stores data", "Runs at end"], 
-        answer: 1 
+      {
+        prompt: "A loop that repeats until a condition becomes true is an example of:",
+        options: ["Sequencing", "Iteration", "Abstraction", "Parallelism"],
+        answer: 1
       },
-      { 
-        prompt: "Which loop is best when count is unknown?", 
-        options: ["for", "while", "print", "end"], 
-        answer: 1 
+      {
+        prompt: "Selection in a program is used to:",
+        options: ["Run statements in order", "Choose a path based on a condition", "Repeat code a fixed number of times", "Store data"],
+        answer: 1
       },
-      { 
-        prompt: "What type is: 3 < 5?", 
-        options: ["Number", "String", "Boolean", "List"], 
-        answer: 2 
+      {
+        prompt: "Which operator tests equality in AP CSP pseudocode?",
+        options: ["=", "==", "<-", "!="],
+        answer: 1
       },
-      { 
-        prompt: "An algorithm is:", 
-        options: ["Random guess", "Step-by-step process", "Computer type", "Data file"], 
-        answer: 1 
+      {
+        prompt: "A Boolean expression evaluates to:",
+        options: ["Any number", "true or false", "A list", "A string"],
+        answer: 1
       },
-      { 
-        prompt: "Which type stores true/false?", 
-        options: ["String", "Boolean", "Number", "Array"], 
-        answer: 1 
+      {
+        prompt: "A procedure with parameters is most useful for:",
+        options: ["Duplicating code", "Reusing a task with different inputs", "Hiding output", "Storing images"],
+        answer: 1
       },
-      { 
-        prompt: "Exit a loop early with:", 
-        options: ["break", "stop", "exit", "end"], 
-        answer: 0 
+      {
+        prompt: "Which change most improves a program's readability?",
+        options: ["Remove all comments", "Use meaningful variable names", "Shorten all identifiers", "Remove whitespace"],
+        answer: 1
       },
-      { 
-        prompt: "Comments are for:", 
-        options: ["Speed", "Documentation", "Hiding errors", "Storage"], 
-        answer: 1 
+      {
+        prompt: "If x starts at 0 and the loop repeats while (x < 4) and x increases by 1 each time, how many times does the loop run?",
+        options: ["3", "4", "5", "Depends on input"],
+        answer: 1
       },
-      { 
-        prompt: "Equality (value only):", 
-        options: ["=", "===", "==", "!=="], 
-        answer: 2 
+      {
+        prompt: "Which is an example of abstraction?",
+        options: ["Using a function without knowing its inner details", "Tracing every line of code manually", "Writing the same code twice", "Removing variables"],
+        answer: 0
       },
-      { 
-        prompt: "console.log() does what?", 
-        options: ["Stores vars", "Prints to console", "Creates loops", "Deletes"], 
-        answer: 1 
+      {
+        prompt: "In a conditional statement, the condition is typically:",
+        options: ["A loop", "A Boolean expression", "A list", "A comment"],
+        answer: 1
       }
-    
     ],
 
     // =====================================================
-    // ROW 2 (Squares 16-25) – Data Structures
+    // ROW 2 (Squares 16-25) – Lesson 2: Data Structures
     // =====================================================
     2: [
-      { 
-        prompt: "First array element index:", 
-        options: ["0", "1", "-1", "10"], 
-        answer: 0 
+      {
+        prompt: "Which statement about data abstraction is true?",
+        options: ["It hides complexity and shows essential features", "It removes the need for algorithms", "It only applies to hardware", "It makes data less useful"],
+        answer: 0
       },
-      { 
-        prompt: "Add to array end:", 
-        options: ["push()", "pop()", "shift()", "splice()"], 
-        answer: 0 
+      {
+        prompt: "A list is most helpful when you need to:",
+        options: ["Store a single value", "Store many related values", "Encrypt text", "Control program flow"],
+        answer: 1
       },
-      { 
-        prompt: "array.length returns:", 
-        options: ["Last value", "First index", "Element count", "Sum"], 
-        answer: 2 
+      {
+        prompt: "A list has 8 items. In AP CSP pseudocode, the last valid index is:",
+        options: ["7", "8", "0", "9"],
+        answer: 0
       },
-      { 
-        prompt: "Objects store as:", 
-        options: ["Key-value pairs", "Numbers only", "Strings only", "Indexes only"], 
-        answer: 0 
+      {
+        prompt: "Which is an example of metadata?",
+        options: ["The text of a post", "The time a post was created", "A video itself", "A list of images"],
+        answer: 1
       },
-      { 
-        prompt: "Why use lists?", 
-        options: ["Store many items", "Avoid variables", "Run faster", "Stop loops"], 
-        answer: 0 
+      {
+        prompt: "Which task is best answered by analyzing data instead of metadata?",
+        options: ["Finding which users post most often", "Finding the most active time of day", "Finding common topics in messages", "Counting how many comments a post has"],
+        answer: 2
       },
-      { 
-        prompt: "Remove first element:", 
-        options: ["push()", "shift()", "unshift()", "pop()"], 
-        answer: 1 
+      {
+        prompt: "Which is a common data-cleaning step?",
+        options: ["Removing duplicates", "Adding randomness", "Encrypting the screen", "Changing the font"],
+        answer: 0
       },
-      { 
-        prompt: "JSON is for:", 
-        options: ["Styling", "Data interchange", "Compiling", "Servers"], 
-        answer: 1 
+      {
+        prompt: "Why are lists often better than many separate variables?",
+        options: ["Lists are private", "Lists allow iteration over many items", "Lists only store numbers", "Lists remove the need for procedures"],
+        answer: 1
       },
-      { 
-        prompt: "Associative structure:", 
-        options: ["Array", "Object", "String", "Number"], 
-        answer: 1 
+      {
+        prompt: "A program averages values in a list. This is an example of:",
+        options: ["Data abstraction and algorithmic processing", "Physical computing", "Network routing", "Cybersecurity"],
+        answer: 0
       },
-      { 
-        prompt: "Out-of-bounds returns:", 
-        options: ["undefined", "0", "NaN", "Error"], 
-        answer: 0 
+      {
+        prompt: "Which data type is most appropriate for storing a student's age?",
+        options: ["String", "Number", "Boolean", "List"],
+        answer: 1
       },
-      { 
-        prompt: "Get array portion:", 
-        options: ["slice()", "splice()", "shift()", "pop()"], 
-        answer: 0 
+      {
+        prompt: "Large data sets are useful because they can:",
+        options: ["Guarantee accuracy", "Reveal patterns not visible in small samples", "Remove bias", "Avoid storage needs"],
+        answer: 1
       }
-    
     ],
 
     // =====================================================
-    // ROW 3 (Squares 26-35) – Internet
+    // ROW 3 (Squares 26-35) – Lesson 3: Internet & Networking
     // =====================================================
     3: [
-      { 
-        prompt: "Web page protocol:", 
-        options: ["HTTP", "SMTP", "FTP", "Bluetooth"], 
-        answer: 0 
+      {
+        prompt: "Which protocol is commonly used to access Web pages?",
+        options: ["HTTP", "SMTP", "FTP", "GPS"],
+        answer: 0
       },
-      { 
-        prompt: "DNS does what:", 
-        options: ["Encrypt", "Translate domains to IP", "Store passwords", "Speed RAM"], 
-        answer: 1 
+      {
+        prompt: "DNS is used to:",
+        options: ["Translate domain names to IP addresses", "Encrypt data", "Store passwords", "Block ads"],
+        answer: 0
       },
-      { 
-        prompt: "IP address identifies:", 
-        options: ["Language", "Device", "Search engine", "Password"], 
-        answer: 1 
+      {
+        prompt: "On the Internet, data is typically transmitted as:",
+        options: ["A single stream", "Packets that may take different paths", "One file per router", "Only over cables"],
+        answer: 1
       },
-      { 
-        prompt: "Forwards packets:", 
-        options: ["Monitor", "Router", "Speaker", "Keyboard"], 
-        answer: 1 
+      {
+        prompt: "Which device forwards packets between networks?",
+        options: ["Router", "Monitor", "Printer", "Keyboard"],
+        answer: 0
       },
-      { 
-        prompt: "Retrieve data method:", 
-        options: ["POST", "PUT", "GET", "PATCH"], 
-        answer: 2 
+      {
+        prompt: "Latency refers to:",
+        options: ["The amount of data", "The delay before data transfer begins", "Encryption strength", "Storage capacity"],
+        answer: 1
       },
-      { 
-        prompt: "HTTP port:", 
-        options: ["21", "80", "443", "25"], 
-        answer: 1 
+      {
+        prompt: "Which improves availability if one network path fails?",
+        options: ["Redundancy", "Compression", "Caching", "Looping"],
+        answer: 0
       },
-      { 
-        prompt: "Latency is:", 
-        options: ["Data amount", "Delay", "Encryption", "Disk speed"], 
-        answer: 1 
+      {
+        prompt: "HTTPS provides:",
+        options: ["Encrypted communication", "Faster storage", "Shorter URLs", "Free hosting"],
+        answer: 0
       },
-      { 
-        prompt: "CDN helps by:", 
-        options: ["Global hosting", "Storing passwords", "Encrypting", "Blocking"], 
-        answer: 0 
+      {
+        prompt: "Which is a subdomain of example.com?",
+        options: ["about.example.com", "example.co.uk", "example.com.org", "example.org"],
+        answer: 0
       },
-      { 
-        prompt: "HTTPS provides:", 
-        options: ["No caching", "Encrypted transport", "Faster DB", "File storage"], 
-        answer: 1 
+      {
+        prompt: "A CDN helps Web performance by:",
+        options: ["Serving content from locations closer to users", "Encrypting passwords", "Blocking malware", "Replacing DNS"],
+        answer: 0
       },
-      { 
-        prompt: "URL resource part:", 
-        options: ["Protocol", "Domain", "Path", "Port"], 
-        answer: 2 
+      {
+        prompt: "Which HTTP method is primarily used to request data?",
+        options: ["GET", "POST", "PUT", "PATCH"],
+        answer: 0
       }
     ],
 
     // =====================================================
-    // ROW 4 (Squares 36-45) – Cybersecurity
+    // ROW 4 (Squares 36-45) – Lesson 4: Cybersecurity & Encryption
     // =====================================================
     4: [
-      { 
-        prompt: "Store passwords as:", 
-        options: ["Plain text", "Hash", "Email", "Same everywhere"], 
-        answer: 1 
+      {
+        prompt: "Storing passwords securely usually involves:",
+        options: ["Plain text", "Hashing", "Emailing them", "Reusing them"],
+        answer: 1
       },
-      { 
-        prompt: "HTTPS does:", 
-        options: ["Slows sites", "Secures traffic", "Disables cookies", "Speeds DNS"], 
-        answer: 1 
+      {
+        prompt: "Which practice best protects data in transit?",
+        options: ["Encryption", "Compression", "Caching", "Duplication"],
+        answer: 0
       },
-      { 
-        prompt: "Phishing defense:", 
-        options: ["Click all", "Verify sender", "Share passwords", "Respond fast"], 
-        answer: 1 
+      {
+        prompt: "A common defense against phishing is to:",
+        options: ["Verify the sender and URL", "Click links quickly", "Share passwords", "Disable updates"],
+        answer: 0
       },
-      { 
-        prompt: "2FA improves security by:", 
-        options: ["Two proofs", "Same password twice", "No passwords", "Faster"], 
-        answer: 0 
+      {
+        prompt: "Two-factor authentication requires:",
+        options: ["Two different forms of verification", "Two passwords only", "No password", "A faster device"],
+        answer: 0
       },
-      { 
-        prompt: "Malware example:", 
-        options: ["Antivirus", "Ransomware", "Firewall", "VPN"], 
-        answer: 1 
+      {
+        prompt: "Which is an example of malware?",
+        options: ["Firewall", "Ransomware", "Password manager", "Proxy"],
+        answer: 1
       },
-      { 
-        prompt: "Strong password has:", 
-        options: ["Letters only", "Short words", "Letters+numbers+symbols", "Guessable"], 
-        answer: 2 
+      {
+        prompt: "A strong password should:",
+        options: ["Be short and simple", "Use only letters", "Combine letters, numbers, and symbols", "Be reused"],
+        answer: 2
       },
-      { 
-        prompt: "Ransomware does:", 
-        options: ["Speeds PC", "Encrypts for payment", "Cleans viruses", "Updates"], 
-        answer: 1 
+      {
+        prompt: "Digital certificates in browsers are used to:",
+        options: ["Verify site identity and encryption keys", "Speed up downloads", "Store cookies", "Block ads"],
+        answer: 0
       },
-      { 
-        prompt: "Confidentiality means:", 
-        options: ["Always available", "Authorized access only", "Never changed", "Public"], 
-        answer: 1 
+      {
+        prompt: "In the CIA triad, confidentiality means:",
+        options: ["Data is accessible only to authorized users", "Data is always available", "Data is never changed", "Data is public"],
+        answer: 0
       },
-      { 
-        prompt: "Hashing is:", 
-        options: ["Reversible", "One-way", "For images", "Compression"], 
-        answer: 1 
+      {
+        prompt: "Hashing is best described as:",
+        options: ["A reversible encryption method", "A one-way transformation", "Image compression", "Network routing"],
+        answer: 1
       },
-      { 
-        prompt: "Secure login:", 
-        options: ["Reuse passwords", "Short passwords", "2FA", "Share accounts"], 
-        answer: 2 
+      {
+        prompt: "Which action most improves account security?",
+        options: ["Reuse passwords", "Enable 2FA", "Share accounts", "Shorten passwords"],
+        answer: 1
       }
     ],
 
     // =====================================================
-    // ROW 5 (Squares 46-55) – Data & Ethics
+    // ROW 5 (Squares 46-55) – Lesson 5: Computing Impacts & Data Analysis
     // =====================================================
     5: [
-      { 
-        prompt: "Big data benefit:", 
-        options: ["Less info", "Pattern detection", "No privacy risk", "No power"], 
-        answer: 1 
+      {
+        prompt: "A benefit of large data sets is that they can:",
+        options: ["Eliminate bias", "Reveal patterns and trends", "Guarantee privacy", "Remove the need for algorithms"],
+        answer: 1
       },
-      { 
-        prompt: "Bias happens when:", 
-        options: ["Unfair training data", "Fast computers", "Loops used", "Encryption"], 
-        answer: 0 
+      {
+        prompt: "Algorithmic bias is most likely when:",
+        options: ["Training data is unrepresentative", "Programs run quickly", "Data is encrypted", "The UI is colorful"],
+        answer: 0
       },
-      { 
-        prompt: "Data risk:", 
-        options: ["Strong privacy", "Breaches", "Unlimited storage", "Accuracy"], 
-        answer: 1 
+      {
+        prompt: "A major risk of collecting personal data is:",
+        options: ["Data breaches", "Faster computation", "Guaranteed security", "Less storage"],
+        answer: 0
       },
-      { 
-        prompt: "Ethics emphasizes:", 
-        options: ["Transparency", "Hiding use", "No security", "Unlimited collection"], 
-        answer: 0 
+      {
+        prompt: "Ethical computing practices emphasize:",
+        options: ["Transparency and informed consent", "Unlimited data collection", "Hiding data use", "Ignoring user impact"],
+        answer: 0
       },
-      { 
-        prompt: "Anonymization means:", 
-        options: ["Add details", "Remove identifiers", "Post publicly", "Delete internet"], 
-        answer: 1 
+      {
+        prompt: "Anonymization is the process of:",
+        options: ["Removing identifying information", "Adding personal details", "Posting data publicly", "Deleting all records"],
+        answer: 0
       },
-      { 
-        prompt: "Reduce bias:", 
-        options: ["Diverse data", "Single source", "Ignore outliers", "Old data"], 
-        answer: 0 
+      {
+        prompt: "Which question can NOT be answered using only time, date, and location data from animal trackers?",
+        options: ["How far the animal traveled in a week", "Whether animals travel together", "How movement changes with weather", "Where the animal usually travels"],
+        answer: 2
       },
-      { 
-        prompt: "Transparency for:", 
-        options: ["Understanding decisions", "Hiding", "Speed", "Less memory"], 
-        answer: 0 
+      {
+        prompt: "A key trade-off of data compression is:",
+        options: ["It always increases file size", "Some techniques reduce quality to save space", "It prevents interception", "It requires the Internet"],
+        answer: 1
       },
-      { 
-        prompt: "Privacy practice:", 
-        options: ["Collect all", "Minimize collection", "Sell data", "Store forever"], 
-        answer: 1 
+      {
+        prompt: "A simulation is limited because it:",
+        options: ["Cannot be changed", "Always needs real-world data", "Uses simplifying assumptions", "Only runs on supercomputers"],
+        answer: 2
       },
-      { 
-        prompt: "Misused data causes:", 
-        options: ["Better UX", "Wrongful profiling", "Faster CPU", "More disk"], 
-        answer: 1 
+      {
+        prompt: "Which is an example of a positive impact of computing?",
+        options: ["Easier access to information", "Guaranteed privacy", "No bias", "No energy use"],
+        answer: 0
       },
-      { 
-        prompt: "AI ethics involves:", 
-        options: ["Fairness", "Performance only", "Ignoring users", "More collection"], 
-        answer: 0 
+      {
+        prompt: "Which statement about data use is most accurate?",
+        options: ["More data always means better decisions", "Data can be misused and cause harm", "Data is always objective", "Data never contains errors"],
+        answer: 1
       }
     ]
   };
@@ -288,25 +285,25 @@
   // =====================================================
   // VALIDATION & LOGGING
   // =====================================================
-  
+
   console.log('%c=== Questions Bank Loaded ===', 'color: green; font-weight: bold; font-size: 14px');
-  
+
   let totalQuestions = 0;
   let isValid = true;
-  
+
   Object.keys(QUESTIONS).forEach(row => {
     const rowNum = parseInt(row);
     const questions = QUESTIONS[row];
     const count = questions.length;
     totalQuestions += count;
-    
+
     if (count !== 10) {
       console.error(`❌ Row ${row} has ${count} questions (expected 10)`);
       isValid = false;
     } else {
       console.log(`✅ Row ${row}: ${count} questions`);
     }
-    
+
     // Validate each question structure
     questions.forEach((q, idx) => {
       if (!q.prompt || !q.options || q.answer === undefined) {
@@ -323,7 +320,7 @@
       }
     });
   });
-  
+
   if (isValid) {
     console.log(`%c✅ All questions valid!`, 'color: green; font-weight: bold');
     console.log(`📊 Total: ${totalQuestions} questions`);
@@ -331,7 +328,7 @@
   } else {
     console.error('❌ Questions bank has validation errors!');
   }
-  
+
   // Test the mapping formula
   console.log('%c=== Testing Square Mapping ===', 'color: blue; font-weight: bold');
   const testSquares = [6, 15, 16, 25, 26, 35, 36, 45, 46, 55];
@@ -340,9 +337,9 @@
     const index = (square - 6) % 10;
     console.log(`Square ${square} → Row ${row}, Index ${index}`);
   });
-  
+
   // Make available globally
   window.QUESTIONS_BANK = QUESTIONS;
-  
+
   console.log('%c=== Ready to use! ===', 'color: green; font-weight: bold; font-size: 14px');
 })();

@@ -472,6 +472,11 @@ body.snakes-theme,
     background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.38), rgba(var(--accent-2-rgb), 0.34));
   }
 
+  #question-prompt,
+  .question-prompt {
+    color: var(--heading);
+  }
+
   .question-options label {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -486,6 +491,13 @@ body.snakes-theme,
     background: rgba(var(--accent-rgb), 0.2);
     border-color: rgba(var(--accent-rgb), 0.45);
     color: #fff;
+  }
+
+  #question-options,
+  .question-options,
+  .question-meta,
+  #question-meta {
+    color: var(--muted-text);
   }
 
   .question-submit {
