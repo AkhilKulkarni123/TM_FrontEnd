@@ -651,9 +651,19 @@
         let nextX = state.player.x + state.player.vx * dt;
         let nextY = state.player.y + state.player.vy * dt;
 
+        // Prevent "snap-back" when landing on thin/moving bars:
+        // if we're essentially above/below a platform, let Y-resolution handle it.
+        const sideCollisionVerticalTolerance = 10;
         const rectX = { x: nextX, y: state.player.y, w: state.player.w, h: state.player.h };
         state.platforms.forEach((platform) => {
             if (!rectsOverlap(rectX, platform)) return;
+            const playerTop = state.player.y;
+            const playerBottom = state.player.y + state.player.h;
+            const nearTopSurface = playerBottom <= platform.y + sideCollisionVerticalTolerance;
+            const nearBottomSurface = playerTop >= platform.y + platform.h - sideCollisionVerticalTolerance;
+            if (nearTopSurface || nearBottomSurface) {
+                return;
+            }
             if (state.player.vx > 0) {
                 nextX = platform.x - state.player.w;
             } else if (state.player.vx < 0) {

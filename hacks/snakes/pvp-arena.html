@@ -641,6 +641,9 @@
         let lastJoinData = null;
         let lastResyncAt = 0;
         let lastFrameAt = 0;
+        const SELF_RECONCILE_SOFT_PX = 6;
+        const SELF_RECONCILE_HARD_PX = 72;
+        const REMOTE_INTERPOLATION_RATE = 11;
 
         // --- Center wall geometry (shared by drawing + collision) ---
         // The wall is a vertical strip at the exact center of the canvas.
@@ -684,12 +687,60 @@
             return fallbackMap[weaponType] || fallbackMap['bulwark-disc'];
         }
 
-        function getAvatarSource(player) {
-            if (!player) return '';
-            if (loadoutApi && typeof loadoutApi.getAvatarSourceForPlayer === 'function') {
-                return loadoutApi.getAvatarSourceForPlayer(player) || '';
+        function normalizeAvatarSource(source) {
+            if (loadoutApi && typeof loadoutApi.normalizeAvatarSource === 'function') {
+                return loadoutApi.normalizeAvatarSource(source);
             }
-            return player.avatar_url || player.avatar_data || player.avatarUrl || player.avatarData || '';
+            if (source === null || typeof source === 'undefined') return '';
+            const value = String(source).trim();
+            if (!value) return '';
+            const lower = value.toLowerCase();
+            if (lower === 'null' || lower === 'none' || lower === 'undefined' || lower === '[object object]') {
+                return '';
+            }
+            if (/^data:image\//i.test(value)) return value;
+            if (/^(https?:\/\/|blob:|\/\/|\/|\.\/|\.\.\/)/i.test(value)) return value;
+            if (value.length > 80 && /^[A-Za-z0-9+/=\s]+$/.test(value)) {
+                return 'data:image/png;base64,' + value.replace(/\s+/g, '');
+            }
+            return '';
+        }
+
+        function getAvatarSource(player, allowLocalFallback) {
+            if (!player) return '';
+            const seen = new Set();
+            function take(candidate) {
+                const normalized = normalizeAvatarSource(candidate);
+                if (!normalized || seen.has(normalized)) return '';
+                seen.add(normalized);
+                return normalized;
+            }
+            if (loadoutApi && typeof loadoutApi.getAvatarSourceForPlayer === 'function') {
+                const fromApi = take(loadoutApi.getAvatarSourceForPlayer(player));
+                if (fromApi) return fromApi;
+            }
+            const candidates = [
+                player.avatar_data,
+                player.avatarData,
+                player.avatar_data_url,
+                player.avatar_url,
+                player.avatarUrl
+            ];
+            for (let i = 0; i < candidates.length; i++) {
+                const source = take(candidates[i]);
+                if (source) return source;
+            }
+            if (allowLocalFallback && loadoutApi) {
+                if (typeof loadoutApi.getAvatarData === 'function') {
+                    const localData = take(loadoutApi.getAvatarData());
+                    if (localData) return localData;
+                }
+                if (typeof loadoutApi.getAvatarUrl === 'function') {
+                    const localUrl = take(loadoutApi.getAvatarUrl());
+                    if (localUrl) return localUrl;
+                }
+            }
+            return '';
         }
 
         function renderAvatarHtml(player, className, size, ring) {
@@ -725,8 +776,18 @@
             return img;
         }
 
+        function drawAvatarFallback(player, x, y, radius) {
+            ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+            ctx.fillStyle = '#f4f7ff';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(getInitials(player && player.username), x, y + 0.5);
+        }
+
         function drawAvatarToken(player, isLocalPlayer) {
-            const source = getAvatarSource(player);
+            const source = getAvatarSource(player, !!isLocalPlayer);
             const radius = 11;
             const x = player.x;
             const y = player.y - (player.size || 35) - 31;
@@ -746,19 +807,21 @@
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
                 } else {
-                    ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
-                    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                    drawAvatarFallback(player, x, y, radius);
                 }
             } else {
-                ctx.fillStyle = 'rgba(24, 32, 54, 0.95)';
-                ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-                ctx.fillStyle = '#f4f7ff';
-                ctx.font = 'bold 8px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(getInitials(player.username), x, y + 0.5);
+                drawAvatarFallback(player, x, y, radius);
             }
             ctx.restore();
+        }
+
+        function isMovementInputActive() {
+            return !!(
+                gameState.keys['a'] || gameState.keys['arrowleft'] ||
+                gameState.keys['d'] || gameState.keys['arrowright'] ||
+                gameState.keys['w'] || gameState.keys['arrowup'] ||
+                gameState.keys['s'] || gameState.keys['arrowdown']
+            );
         }
 
         const PLAYER_SPRITES = {
@@ -1247,6 +1310,8 @@
                         avatarData: data.opponent.avatar_data || data.opponent.avatarData || '',
                         x: resolvedOpponentNumber === 1 ? 100 : canvas.width - 100,
                         y: canvas.height / 2,
+                        targetX: resolvedOpponentNumber === 1 ? 100 : canvas.width - 100,
+                        targetY: canvas.height / 2,
                         size: 35
                     };
                     gameState.opponent.player_number = resolvedOpponentNumber;
@@ -1295,6 +1360,8 @@
                     avatarData: data.opponent.avatar_data || data.opponent.avatarData || '',
                     x: resolvedOpponentNumber === 1 ? 100 : canvas.width - 100,
                     y: canvas.height / 2,
+                    targetX: resolvedOpponentNumber === 1 ? 100 : canvas.width - 100,
+                    targetY: canvas.height / 2,
                     size: 35
                 };
                 gameState.opponent.player_number = resolvedOpponentNumber;
@@ -1346,11 +1413,27 @@
 
             // Opponent position update
             socket.on('pvp_opponent_position', (data) => {
-                if (gameState.opponent) {
-                    gameState.opponent.x = data.x;
-                    gameState.opponent.y = data.y;
-                    enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
-                    clampToArena(gameState.opponent);
+                if (!gameState.opponent || !data) return;
+                const serverX = Number(data.x);
+                const serverY = Number(data.y);
+                if (!Number.isFinite(serverX) || !Number.isFinite(serverY)) return;
+
+                const size = gameState.opponent.size || 35;
+                const clampedX = clampToSide(serverX, gameState.opponent.player_number, gameState.opponent.character);
+                const clampedY = Math.max(size, Math.min(canvas.height - size, serverY));
+
+                gameState.opponent.targetX = clampedX;
+                gameState.opponent.targetY = clampedY;
+
+                if (!Number.isFinite(gameState.opponent.x) || !Number.isFinite(gameState.opponent.y)) {
+                    gameState.opponent.x = clampedX;
+                    gameState.opponent.y = clampedY;
+                    return;
+                }
+
+                if (Math.hypot(clampedX - gameState.opponent.x, clampedY - gameState.opponent.y) > 220) {
+                    gameState.opponent.x = clampedX;
+                    gameState.opponent.y = clampedY;
                 }
             });
 
@@ -1417,14 +1500,28 @@
             // Authoritative correction for local player (server-side collision)
             socket.on('pvp_self_position', (data) => {
                 if (!data) return;
-                const dx = (data.x || 0) - gameState.player.x;
-                const dy = (data.y || 0) - gameState.player.y;
-                if (Math.hypot(dx, dy) > 0.5) {
-                    gameState.player.x = data.x;
-                    gameState.player.y = data.y;
-                    enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
-                    clampToArena(gameState.player);
+                const serverX = Number(data.x);
+                const serverY = Number(data.y);
+                if (!Number.isFinite(serverX) || !Number.isFinite(serverY)) return;
+
+                const size = gameState.player.size || 35;
+                const clampedServerX = clampToSide(serverX, gameState.playerNumber, gameState.player.character);
+                const clampedServerY = Math.max(size, Math.min(canvas.height - size, serverY));
+                const dx = clampedServerX - gameState.player.x;
+                const dy = clampedServerY - gameState.player.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > SELF_RECONCILE_HARD_PX) {
+                    gameState.player.x = clampedServerX;
+                    gameState.player.y = clampedServerY;
+                } else if (dist > SELF_RECONCILE_SOFT_PX) {
+                    const blend = isMovementInputActive() ? 0.12 : 0.24;
+                    gameState.player.x += dx * blend;
+                    gameState.player.y += dy * blend;
                 }
+
+                enforceBoundaryForPlayer(gameState.player, gameState.playerNumber);
+                clampToArena(gameState.player);
             });
 
             // Chat message
@@ -1648,11 +1745,39 @@
             gameState.aimAngle = lerpAngle(gameState.aimAngle, gameState.targetAimAngle, gameState.aimSmoothness);
 
             movePlayer(step);
+            smoothOpponentPosition(dt);
             moveBullets();
             checkCollisions();
             drawGame();
 
             requestAnimationFrame(gameLoop);
+        }
+
+        function smoothOpponentPosition(dt) {
+            if (!gameState.opponent) return;
+            const targetX = Number(gameState.opponent.targetX);
+            const targetY = Number(gameState.opponent.targetY);
+            if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return;
+
+            if (!Number.isFinite(gameState.opponent.x) || !Number.isFinite(gameState.opponent.y)) {
+                gameState.opponent.x = targetX;
+                gameState.opponent.y = targetY;
+                return;
+            }
+
+            const dx = targetX - gameState.opponent.x;
+            const dy = targetY - gameState.opponent.y;
+            if (Math.hypot(dx, dy) > 180) {
+                gameState.opponent.x = targetX;
+                gameState.opponent.y = targetY;
+            } else {
+                const factor = Math.max(0.08, Math.min(1, (dt || 0.016) * REMOTE_INTERPOLATION_RATE));
+                gameState.opponent.x += dx * factor;
+                gameState.opponent.y += dy * factor;
+            }
+
+            enforceBoundaryForPlayer(gameState.opponent, gameState.opponent.player_number);
+            clampToArena(gameState.opponent);
         }
 
         function movePlayer(step) {

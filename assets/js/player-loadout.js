@@ -195,6 +195,29 @@
         return safeStorageRead(localStorage, STORAGE_KEYS.avatarUrl) || safeStorageRead(sessionStorage, STORAGE_KEYS.avatarUrl) || '';
     }
 
+    function isLikelyBase64Payload(value) {
+        if (!value || value.length < 80) return false;
+        return /^[A-Za-z0-9+/=\s]+$/.test(value);
+    }
+
+    function normalizeAvatarSource(source) {
+        if (source === null || typeof source === 'undefined') return '';
+        var value = String(source).trim();
+        if (!value) return '';
+
+        var lower = value.toLowerCase();
+        if (lower === 'null' || lower === 'none' || lower === 'undefined' || lower === '[object object]') {
+            return '';
+        }
+
+        if (/^data:image\//i.test(value)) return value;
+        if (/^(https?:\/\/|blob:|\/\/|\/|\.\/|\.\.\/)/i.test(value)) return value;
+        if (isLikelyBase64Payload(value)) {
+            return 'data:image/png;base64,' + value.replace(/\s+/g, '');
+        }
+        return '';
+    }
+
     function setAvatarData(dataUrl, useSession) {
         var storage = useSession ? sessionStorage : localStorage;
         var value = String(dataUrl || '');
@@ -231,7 +254,17 @@
 
     function getAvatarSourceForPlayer(player) {
         if (player && typeof player === 'object') {
-            return player.avatar_url || player.avatarUrl || player.avatar_data || player.avatarData || player.avatar_data_url || '';
+            var candidates = [
+                player.avatar_data,
+                player.avatarData,
+                player.avatar_data_url,
+                player.avatar_url,
+                player.avatarUrl
+            ];
+            for (var i = 0; i < candidates.length; i++) {
+                var normalized = normalizeAvatarSource(candidates[i]);
+                if (normalized) return normalized;
+            }
         }
         return '';
     }
@@ -302,6 +335,7 @@
         saveLoadout: saveLoadout,
         getAvatarData: getAvatarData,
         getAvatarUrl: getAvatarUrl,
+        normalizeAvatarSource: normalizeAvatarSource,
         setAvatarData: setAvatarData,
         setAvatarUrl: setAvatarUrl,
         clearAvatar: clearAvatar,
