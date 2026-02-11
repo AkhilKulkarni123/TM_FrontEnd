@@ -574,7 +574,7 @@ function initializeEventListeners() {
     var playerInfoModal = document.getElementById('player-info-modal');
     if (playerInfoModal) {
         playerInfoModal.addEventListener('click', function(e) {
-            if (e.target === playerInfoModal) {
+            if (e.target === playerInfoModal || (e.target && e.target.classList && e.target.classList.contains('modal-overlay'))) {
                 closePlayerInfoPopup();
             }
         });
@@ -1587,6 +1587,33 @@ function renderOtherPlayersOnSquare(square, squareNum) {
     square.appendChild(container);
 }
 
+function toSocialProfilePayload(player) {
+    if (!player) return null;
+    var weaponInfo = getWeaponInfo(player.selected_character, player.weapon_type || player.selected_weapon || player.weaponType);
+    return {
+        id: Number(player.user_id || player.id || 0) || null,
+        user_id: Number(player.user_id || player.id || 0) || null,
+        username: player.username || 'Player',
+        avatar_url: player.avatar_url || player.avatarUrl || null,
+        character: getCharacterDisplayName(player.selected_character || player.character || ''),
+        weapon_name: weaponInfo.weaponName,
+        weapon_effect: weaponInfo.weaponEffect,
+        current_square: player.current_square || null,
+        total_bullets: player.total_bullets || player.bullets || 0,
+        time_played: player.time_played || 0,
+        presence: player.presence || 'online'
+    };
+}
+
+function openSocialProfileForPlayer(player) {
+    var social = window.SnakesSocial;
+    if (!social || typeof social.openPlayerProfile !== 'function') return false;
+    var payload = toSocialProfilePayload(player);
+    if (!payload) return false;
+    social.openPlayerProfile(payload);
+    return true;
+}
+
 // Modal list of players on a square with quick drill-down to full profile popup.
 function showSquarePlayersPopup(squareNum, players) {
     // Remove any existing popup
@@ -1630,7 +1657,9 @@ function showSquarePlayersPopup(squareNum, players) {
         playerItem.addEventListener('click', function(e) {
             e.stopPropagation();
             popup.remove();
-            showPlayerInfoPopup(player);
+            if (!openSocialProfileForPlayer(player)) {
+                showPlayerInfoPopup(player);
+            }
         });
 
         list.appendChild(playerItem);
@@ -1683,6 +1712,53 @@ function stopMultiplayerRefresh() {
 }
 
 // Detailed player card modal (character, bullets, time, lives, visited count).
+function renderPlayerInfoActions(modal, player) {
+    var body = modal ? modal.querySelector('.player-info-body') : null;
+    if (!body) return;
+
+    var actions = modal.querySelector('.player-info-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'player-info-actions';
+        body.appendChild(actions);
+    }
+
+    var social = window.SnakesSocial || null;
+    var userId = Number(player.user_id || player.id || 0) || 0;
+    var canSocial = !!(social && typeof social.openPlayerProfile === 'function');
+    var canFriend = !!(canSocial && userId > 0 && typeof social.sendFriendRequest === 'function');
+    var canDm = !!(canSocial && userId > 0 && typeof social.openDmWithUser === 'function');
+
+    actions.innerHTML =
+        '<button type="button" class="player-info-action-btn primary" data-profile-action="social"' + (canSocial ? '' : ' disabled') + '>Open Social Profile</button>' +
+        '<button type="button" class="player-info-action-btn" data-profile-action="friend"' + (canFriend ? '' : ' disabled') + '>Add Friend</button>' +
+        '<button type="button" class="player-info-action-btn" data-profile-action="message"' + (canDm ? '' : ' disabled') + '>Message</button>';
+
+    var socialBtn = actions.querySelector('[data-profile-action="social"]');
+    if (socialBtn) {
+        socialBtn.addEventListener('click', function () {
+            if (!openSocialProfileForPlayer(player)) return;
+            closePlayerInfoPopup();
+        });
+    }
+    var friendBtn = actions.querySelector('[data-profile-action="friend"]');
+    if (friendBtn) {
+        friendBtn.addEventListener('click', function () {
+            if (!canFriend) return;
+            social.sendFriendRequest(userId);
+            closePlayerInfoPopup();
+        });
+    }
+    var messageBtn = actions.querySelector('[data-profile-action="message"]');
+    if (messageBtn) {
+        messageBtn.addEventListener('click', function () {
+            if (!canDm) return;
+            social.openDmWithUser(userId);
+            closePlayerInfoPopup();
+        });
+    }
+}
+
 function showPlayerInfoPopup(player) {
     var modal = document.getElementById('player-info-modal');
     if (!modal) return;
@@ -1714,6 +1790,8 @@ function showPlayerInfoPopup(player) {
         var visitedCount = (player.visited_squares || []).length;
         visited.textContent = visitedCount + ' squares';
     }
+
+    renderPlayerInfoActions(modal, player);
 
     modal.classList.remove('hidden');
 }

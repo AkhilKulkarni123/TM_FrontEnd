@@ -5,8 +5,14 @@
         return;
     }
 
-    var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    var API_BASE = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+    var HOSTNAME = window.location.hostname || '';
+    var IS_LOCAL = (
+        HOSTNAME === 'localhost' ||
+        HOSTNAME === '127.0.0.1' ||
+        HOSTNAME === '0.0.0.0' ||
+        /\.local$/i.test(HOSTNAME)
+    );
+    var API_BASE = window.GAME_API_BASE || window.SNAKES_API_BASE || (IS_LOCAL ? (window.location.protocol + '//' + HOSTNAME + ':8306') : 'https://snakes.opencodingsociety.com');
     var API_ROOT = API_BASE + '/api';
     var SOCKET_NAMESPACE = '/social';
     var PAGE_NAME = (window.location.pathname || '').split('/').pop() || '';
@@ -34,7 +40,8 @@
         activity: null,
         lastOpenedDmUserId: null,
         loadHistoryLock: {},
-        drawerOpen: false
+        drawerOpen: false,
+        profileCard: { open: false, target: null }
     };
 
     var ui = {};
@@ -95,6 +102,142 @@
             total += Number(state.conversations[i].unread_count || 0);
         }
         state.unreadTotal = total;
+    }
+
+    function relationForUserId(userId) {
+        var targetId = Number(userId || 0);
+        if (!targetId) return 'unknown';
+        if (state.user && Number(state.user.id) === targetId) return 'self';
+
+        var i = 0;
+        var friends = state.friendsState.friends || [];
+        for (i = 0; i < friends.length; i += 1) {
+            if (Number(friends[i].id) === targetId) return 'friend';
+        }
+        var pendingIn = state.friendsState.pending_in || [];
+        for (i = 0; i < pendingIn.length; i += 1) {
+            if (Number(pendingIn[i].id) === targetId) return 'pending_in';
+        }
+        var pendingOut = state.friendsState.pending_out || [];
+        for (i = 0; i < pendingOut.length; i += 1) {
+            if (Number(pendingOut[i].id) === targetId) return 'pending_out';
+        }
+        var blocked = state.friendsState.blocked || [];
+        for (i = 0; i < blocked.length; i += 1) {
+            if (Number(blocked[i].id) === targetId) return 'blocked';
+        }
+        return 'none';
+    }
+
+    function normalizeProfileInput(profile) {
+        profile = profile || {};
+        var id = Number(profile.id || profile.user_id || profile.target_user_id || 0) || null;
+        var username = String(profile.username || profile.name || profile.uid || 'Player');
+        var character = String(profile.character || profile.selected_character || '').trim();
+        var weaponName = String(profile.weapon_name || profile.weaponName || '').trim();
+        var weaponEffect = String(profile.weapon_effect || profile.weaponEffect || '').trim();
+        var square = Number(profile.current_square || profile.currentSquare || 0) || null;
+        var bullets = Number(profile.total_bullets || profile.bullets || 0) || 0;
+        var presence = String(profile.presence || profile.status || 'offline').trim().toLowerCase();
+        var activity = profile.activity || null;
+        var avatarUrl = profile.avatar_url || profile.avatarUrl || null;
+        return {
+            id: id,
+            username: username,
+            uid: profile.uid || null,
+            character: character || null,
+            weapon_name: weaponName || null,
+            weapon_effect: weaponEffect || null,
+            current_square: square,
+            total_bullets: bullets,
+            presence: presence || 'offline',
+            activity: activity,
+            last_seen: profile.last_seen || null,
+            avatar_url: avatarUrl || null
+        };
+    }
+
+    function closeProfileCard() {
+        state.profileCard.open = false;
+        state.profileCard.target = null;
+        renderProfileCard();
+    }
+
+    function renderProfileCard() {
+        if (!ui.profileModal || !ui.profileBody) return;
+        if (!state.profileCard.open || !state.profileCard.target) {
+            ui.profileModal.classList.remove('open');
+            ui.profileBody.innerHTML = '';
+            return;
+        }
+        var target = state.profileCard.target;
+        var relation = relationForUserId(target.id);
+        var subtitleParts = [];
+        if (target.character) subtitleParts.push(target.character);
+        if (target.weapon_name) subtitleParts.push(target.weapon_name);
+        if (target.weapon_effect) subtitleParts.push(target.weapon_effect);
+        var subtitle = subtitleParts.join(' • ');
+        var activity = target.activity && (target.activity.label || target.activity.mode || target.activity.target);
+        var presenceText = activity || (target.presence === 'offline' ? (formatLastSeen(target.last_seen) || 'Offline') : target.presence.replace('-', ' '));
+
+        var relationLabel = 'Unknown';
+        if (relation === 'self') relationLabel = 'You';
+        else if (relation === 'friend') relationLabel = 'Friends';
+        else if (relation === 'pending_in') relationLabel = 'Incoming request';
+        else if (relation === 'pending_out') relationLabel = 'Request pending';
+        else if (relation === 'blocked') relationLabel = 'Blocked';
+        else if (relation === 'none') relationLabel = 'Not friends';
+
+        var canAddFriend = relation === 'none' && !!target.id;
+        var canMessage = relation === 'friend' && !!target.id;
+        var canPartyInvite = !!(state.partyState.party && target.id && relation === 'friend');
+        var pendingRequestId = 0;
+        if (relation === 'pending_in') {
+            var pendingIn = state.friendsState.pending_in || [];
+            for (var p = 0; p < pendingIn.length; p += 1) {
+                if (Number(pendingIn[p].id) === Number(target.id)) {
+                    pendingRequestId = Number(pendingIn[p].friendship_id || 0) || 0;
+                    break;
+                }
+            }
+        }
+
+        var html = '' +
+            '<div class="ss-profile-head">' +
+            '<div class="ss-avatar ss-profile-avatar">' + baseAvatar(target) + '</div>' +
+            '<div class="ss-profile-copy">' +
+            '<strong>' + escapeHtml(target.username) + '</strong>' +
+            (subtitle ? '<div class="ss-profile-subtitle">' + escapeHtml(subtitle) + '</div>' : '') +
+            '<div class="ss-profile-meta"><span class="ss-presence-dot ss-presence-' + escapeHtml(target.presence || 'offline') + '"></span>' + escapeHtml(presenceText || 'offline') + '</div>' +
+            '</div>' +
+            '<button class="ss-btn danger" data-action="profile-close">Close</button>' +
+            '</div>' +
+            '<div class="ss-profile-grid">' +
+            (target.current_square ? '<div><small>Square</small><strong>' + escapeHtml(String(target.current_square)) + '</strong></div>' : '') +
+            '<div><small>Bullets</small><strong>' + escapeHtml(String(target.total_bullets || 0)) + '</strong></div>' +
+            '<div><small>Relation</small><strong>' + escapeHtml(relationLabel) + '</strong></div>' +
+            '</div>' +
+            '<div class="ss-profile-actions">' +
+            (relation === 'pending_in' && pendingRequestId
+                ? ('<button class="ss-btn success" data-action="accept-friend" data-request-id="' + pendingRequestId + '">Accept</button>' +
+                   '<button class="ss-btn danger" data-action="decline-friend" data-request-id="' + pendingRequestId + '">Decline</button>')
+                : ('<button class="ss-btn primary" data-action="profile-add-friend" data-user-id="' + Number(target.id || 0) + '"' + (canAddFriend ? '' : ' disabled') + '>Add Friend</button>')) +
+            '<button class="ss-btn" data-action="profile-message" data-user-id="' + Number(target.id || 0) + '"' + (canMessage ? '' : ' disabled') + '>Message</button>' +
+            '<button class="ss-btn" data-action="profile-invite-party" data-user-id="' + Number(target.id || 0) + '"' + (canPartyInvite ? '' : ' disabled') + '>Invite Party</button>' +
+            '<button class="ss-btn" data-action="profile-open-social">Open Social</button>' +
+            '</div>';
+
+        ui.profileBody.innerHTML = html;
+        ui.profileModal.classList.add('open');
+    }
+
+    function openProfileCard(profile) {
+        var normalized = normalizeProfileInput(profile);
+        if (!normalized.username) return false;
+        state.profileCard.open = true;
+        state.profileCard.target = normalized;
+        renderProfileCard();
+        return true;
     }
 
     function ensureStyles() {
@@ -181,6 +324,19 @@
             '#ssLightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:91000;}',
             '#ssLightbox.open{display:flex;}',
             '#ssLightbox img{max-width:min(90vw,1100px);max-height:90vh;border-radius:12px;}',
+            '#ssProfileModal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:90900;padding:12px;}',
+            '#ssProfileModal.open{display:flex;}',
+            '#ssProfileCard{width:min(560px,100%);background:linear-gradient(180deg,rgba(11,18,30,.98),rgba(8,14,24,.98));border:1px solid var(--ss-border);border-radius:16px;box-shadow:var(--ss-shadow);padding:14px;}',
+            '.ss-profile-head{display:flex;align-items:center;gap:10px;}',
+            '.ss-profile-avatar{width:52px;height:52px;flex:0 0 52px;}',
+            '.ss-profile-copy{flex:1;min-width:0;}',
+            '.ss-profile-copy strong{display:block;font-size:16px;color:var(--ss-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ss-profile-subtitle{font-size:12px;color:var(--ss-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ss-profile-meta{margin-top:4px;font-size:12px;color:var(--ss-muted);display:flex;align-items:center;gap:4px;}',
+            '.ss-profile-grid{margin-top:12px;padding:10px;border:1px solid var(--ss-border);border-radius:10px;background:rgba(255,255,255,.02);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}',
+            '.ss-profile-grid small{display:block;color:var(--ss-muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;}',
+            '.ss-profile-grid strong{display:block;color:var(--ss-text);font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ss-profile-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}',
             '#ssToasts{position:fixed;right:18px;bottom:92px;display:flex;flex-direction:column;gap:8px;z-index:90500;width:min(340px,calc(100vw - 28px));}',
             '.ss-toast{background:rgba(9,14,23,.96);border:1px solid var(--ss-border);border-radius:12px;padding:10px;box-shadow:var(--ss-shadow);}',
             '.ss-toast strong{display:block;color:var(--ss-text);font-size:13px;margin-bottom:3px;}',
@@ -194,7 +350,7 @@
             '#ssMiniInput{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--ss-border);color:var(--ss-text);padding:8px;border-radius:8px;font-size:12px;}',
             '#ssMiniChat.minimized{height:auto;}',
             '#ssMiniChat.minimized #ssMiniBody,#ssMiniChat.minimized #ssMiniComposer,#ssMiniChat.minimized #ssMiniTyping{display:none;}',
-            '@media (max-width:920px){#ssMessagesPanel{grid-template-columns:1fr;}#ssConversationList{max-height:170px;border-right:none;border-bottom:1px solid var(--ss-border);}#ssSocialDrawer{right:10px;left:10px;width:auto;bottom:84px;height:min(740px,calc(100vh - 100px));}#ssSocialToggle{right:14px;bottom:14px;}#ssToasts{right:10px;left:10px;width:auto;bottom:84px;}#ssMiniChat{right:10px;left:10px;width:auto;}}'
+            '@media (max-width:920px){#ssMessagesPanel{grid-template-columns:1fr;}#ssConversationList{max-height:170px;border-right:none;border-bottom:1px solid var(--ss-border);}#ssSocialDrawer{right:10px;left:10px;width:auto;bottom:84px;height:min(740px,calc(100vh - 100px));}#ssSocialToggle{right:14px;bottom:14px;}#ssToasts{right:10px;left:10px;width:auto;bottom:84px;}#ssMiniChat{right:10px;left:10px;width:auto;}#ssProfileCard{padding:12px;} .ss-profile-grid{grid-template-columns:1fr 1fr;}}'
         ].join('');
         document.head.appendChild(style);
     }
@@ -219,7 +375,11 @@
 
     function baseAvatar(summary) {
         if (summary && summary.avatar_url) {
-            return '<img src="' + escapeHtml(API_BASE + summary.avatar_url) + '" alt="">';
+            var avatarSrc = summary.avatar_url;
+            if (avatarSrc.indexOf('http://') !== 0 && avatarSrc.indexOf('https://') !== 0) {
+                avatarSrc = API_BASE + avatarSrc;
+            }
+            return '<img src="' + escapeHtml(avatarSrc) + '" alt="">';
         }
         var source = (summary && (summary.username || summary.uid)) || '?';
         return '<span>' + escapeHtml(source.charAt(0).toUpperCase()) + '</span>';
@@ -696,6 +856,7 @@
         renderConversationList();
         renderChatPane();
         renderMiniChat();
+        renderProfileCard();
     }
 
     function markConversationRead(conversationId) {
@@ -907,6 +1068,26 @@
                     ui.lightboxImg.src = src;
                     ui.lightbox.classList.add('open');
                 }
+            } else if (action === 'profile-close') {
+                closeProfileCard();
+            } else if (action === 'profile-add-friend') {
+                if (!socket || !userId) return;
+                socket.emit('friends_request_send', { target_user_id: userId });
+                showToast('Friend Request', 'Friend request sent.', []);
+                renderProfileCard();
+            } else if (action === 'profile-message') {
+                if (!userId) return;
+                openDmWithFriend(userId);
+                closeProfileCard();
+            } else if (action === 'profile-invite-party') {
+                if (socket && state.partyState.party && userId) {
+                    socket.emit('party_invite', { party_id: Number(state.partyState.party.id), invitee_user_id: userId });
+                    showToast('Party Invite', 'Party invite sent.', []);
+                    renderProfileCard();
+                }
+            } else if (action === 'profile-open-social') {
+                setDrawerOpen(true);
+                setTab('friends');
             } else if (action === 'open-mini-chat') {
                 openMiniChatForConversation(conversationId || state.activeConversationId);
             }
@@ -977,9 +1158,15 @@
         ui.lightbox.addEventListener('click', function (event) {
             if (event.target === ui.lightbox) ui.lightbox.classList.remove('open');
         });
+        if (ui.profileModal) {
+            ui.profileModal.addEventListener('click', function (event) {
+                if (event.target === ui.profileModal) closeProfileCard();
+            });
+        }
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 if (ui.lightbox.classList.contains('open')) ui.lightbox.classList.remove('open');
+                else if (state.profileCard.open) closeProfileCard();
                 else if (state.drawerOpen) setDrawerOpen(false);
             }
         });
@@ -1059,6 +1246,7 @@
             '</div>' +
             '<div id="ssToasts"></div>' +
             '<div id="ssMiniChat"><div id="ssMiniHeader"><strong id="ssMiniTitle">Chat</strong><div><button class="ss-btn" id="ssMiniMin" data-mini-control="1">_</button> <button class="ss-btn danger" id="ssMiniClose" data-mini-control="1">X</button></div></div><div id="ssMiniBody"></div><div id="ssMiniTyping" style="padding:0 10px 6px;font-size:11px;color:var(--ss-muted);"></div><div id="ssMiniComposer"><button class="ss-btn" id="ssMiniEmoji">🙂</button><button class="ss-btn" id="ssMiniImage">Img</button><input id="ssMiniImageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;"><input id="ssMiniInput" type="text" placeholder="Message..."><button class="ss-btn primary" id="ssMiniSend">Send</button></div></div>' +
+            '<div id="ssProfileModal"><div id="ssProfileCard"><div id="ssProfileBody"></div></div></div>' +
             '<div id="ssLightbox"><img alt="chat image" id="ssLightboxImg"></div>';
         document.body.appendChild(wrapper);
 
@@ -1078,6 +1266,8 @@
         ui.lightbox = wrapper.querySelector('#ssLightbox');
         ui.lightboxImg = wrapper.querySelector('#ssLightboxImg');
         ui.mini = wrapper.querySelector('#ssMiniChat');
+        ui.profileModal = wrapper.querySelector('#ssProfileModal');
+        ui.profileBody = wrapper.querySelector('#ssProfileBody');
 
         bindStaticUiEvents();
         bindGlobalActions();
@@ -1337,6 +1527,25 @@
         };
         window.SnakesSocial.openMiniChatWithUser = function (userId) {
             openDmWithFriend(userId);
+        };
+        window.SnakesSocial.openPlayerProfile = function (profile) {
+            return openProfileCard(profile || {});
+        };
+        window.SnakesSocial.closePlayerProfile = function () {
+            closeProfileCard();
+        };
+        window.SnakesSocial.sendFriendRequest = function (userId) {
+            if (!socket || !state.socketConnected) return false;
+            var targetId = Number(userId || 0);
+            if (!targetId) return false;
+            socket.emit('friends_request_send', { target_user_id: targetId });
+            return true;
+        };
+        window.SnakesSocial.openDmWithUser = function (userId) {
+            var targetId = Number(userId || 0);
+            if (!targetId) return false;
+            openDmWithFriend(targetId);
+            return true;
         };
         window.SnakesSocial.getState = function () {
             return JSON.parse(JSON.stringify({

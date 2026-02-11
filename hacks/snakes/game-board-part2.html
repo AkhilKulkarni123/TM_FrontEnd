@@ -1087,6 +1087,27 @@
                 return '<div class=\"online-player-icon\">' + getCharacterIcon(player.selected_character) + '</div>';
             }
 
+            function openPlayerSocialProfile(player) {
+                var social = window.SnakesSocial || null;
+                if (social && typeof social.openPlayerProfile === 'function') {
+                    social.openPlayerProfile({
+                        id: Number(player.user_id || player.id || 0) || null,
+                        user_id: Number(player.user_id || player.id || 0) || null,
+                        username: player.username || 'Player',
+                        avatar_url: player.avatar_url || player.avatarUrl || null,
+                        character: getHeroName(player.selected_character),
+                        current_square: player.current_square || null,
+                        total_bullets: player.total_bullets || 0
+                    });
+                    return true;
+                }
+                if (typeof showPlayerInfoPopup === 'function') {
+                    showPlayerInfoPopup(player);
+                    return true;
+                }
+                return false;
+            }
+
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
                     .then(function(res) { return res.ok ? res.json() : null; })
@@ -1126,6 +1147,18 @@
                                 '<div class="online-player-details">' + heroName + ' • Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
                             '</div>' +
                             '<div class="online-player-status"></div>';
+                        li.setAttribute('tabindex', '0');
+                        li.addEventListener('click', function () {
+                            hideOnlinePlayersModal();
+                            openPlayerSocialProfile(player);
+                        });
+                        li.addEventListener('keydown', function (event) {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                hideOnlinePlayersModal();
+                                openPlayerSocialProfile(player);
+                            }
+                        });
                         list.appendChild(li);
                     });
                 }

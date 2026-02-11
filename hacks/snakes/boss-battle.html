@@ -346,6 +346,23 @@
             margin-right: 5px;
         }
 
+        .chat-message .sender.sender-profile-btn {
+            border: none;
+            background: transparent;
+            color: #67b6ff;
+            margin-right: 5px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            text-decoration-color: rgba(103, 182, 255, 0.55);
+            text-underline-offset: 2px;
+        }
+
+        .chat-message .sender.sender-profile-btn:hover {
+            color: #9bd1ff;
+        }
+
         .chat-message .sender-icon {
             margin-right: 3px;
         }
@@ -1268,6 +1285,7 @@
                 weaponType: 'bulwark-disc',
                 color: '#4facfe',
                 username: 'Player',
+                userId: null,
                 avatarData: '',
                 avatarUrl: ''
             },
@@ -1598,6 +1616,7 @@
                 .then(data => {
                     if (data && data.name) {
                         gameState.player.username = data.name;
+                        gameState.player.userId = Number(data.id || 0) || null;
                     }
                 })
                 .catch(err => console.error('Could not load user info', err));
@@ -1747,6 +1766,7 @@
                         max_boss_health: gameState.boss.maxHealth,
                         bounds: getBattleBounds(),
                         player: {
+                            user_id: gameState.player.userId || null,
                             username: gameState.player.username,
                             character: gameState.player.character,
                             weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
@@ -1761,6 +1781,7 @@
                 } else {
                     // Join lobby for pre-battle chat
                     socket.emit('boss_join_lobby', {
+                        user_id: gameState.player.userId || null,
                         username: gameState.player.username,
                         character: gameState.player.character,
                         weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
@@ -2196,7 +2217,7 @@
                                 max_boss_health: gameState.boss.maxHealth,
                                 bounds: getBattleBounds(),
                                 player: {
-                                    user_id: data.player?.user_id,
+                                    user_id: data.player?.user_id || gameState.player.userId || null,
                                     username: data.player?.username || gameState.player.username,
                                     character: gameState.player.character,
                                     weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
@@ -4502,16 +4523,96 @@ function getDamageMultiplier() {
             list.innerHTML = html;
         }
 
+        function findBossPlayerProfile(data) {
+            if (!data) return null;
+            const profile = {
+                id: Number(data.user_id || 0) || null,
+                user_id: Number(data.user_id || 0) || null,
+                username: data.username || 'Player',
+                character: data.character ? (CHARACTER_CONFIG[data.character] ? CHARACTER_CONFIG[data.character].name : data.character) : null,
+                avatar_url: data.avatar_url || null,
+                total_bullets: 0
+            };
+
+            if (data.sid && gameState.otherPlayers[data.sid]) {
+                const row = gameState.otherPlayers[data.sid];
+                profile.id = Number(row.user_id || row.id || profile.id || 0) || null;
+                profile.user_id = profile.id;
+                profile.avatar_url = row.avatar_url || row.avatarUrl || profile.avatar_url || null;
+                profile.total_bullets = Number(row.bullets || row.total_bullets || 0) || 0;
+                profile.weapon_name = getWeaponPreset(row.character, row.weaponType || row.weapon_type || row.selected_weapon).displayName;
+                return profile;
+            }
+
+            if (data.username && data.username === gameState.player.username) {
+                profile.id = Number(gameState.player.userId || profile.id || 0) || null;
+                profile.user_id = profile.id;
+                profile.avatar_url = gameState.player.avatarUrl || profile.avatar_url || null;
+                profile.total_bullets = Number(gameState.player.bullets || 0) || 0;
+                profile.weapon_name = getWeaponPreset(gameState.player.character, gameState.player.weaponType).displayName;
+                return profile;
+            }
+
+            var matchedSid = null;
+            Object.keys(gameState.otherPlayers).some(function (sid) {
+                var row = gameState.otherPlayers[sid];
+                if (row && row.username === data.username) {
+                    matchedSid = sid;
+                    return true;
+                }
+                return false;
+            });
+            if (matchedSid) {
+                const row = gameState.otherPlayers[matchedSid];
+                profile.id = Number(row.user_id || row.id || profile.id || 0) || null;
+                profile.user_id = profile.id;
+                profile.avatar_url = row.avatar_url || row.avatarUrl || profile.avatar_url || null;
+                profile.total_bullets = Number(row.bullets || row.total_bullets || 0) || 0;
+                profile.weapon_name = getWeaponPreset(row.character, row.weaponType || row.weapon_type || row.selected_weapon).displayName;
+            }
+            return profile;
+        }
+
+        function openBossSocialProfile(data) {
+            if (!window.SnakesSocial || typeof window.SnakesSocial.openPlayerProfile !== 'function') return false;
+            var profile = findBossPlayerProfile(data);
+            if (!profile) return false;
+            window.SnakesSocial.openPlayerProfile(profile);
+            return true;
+        }
+
         function addChatMessage(data) {
             const container = document.getElementById('chatMessages');
             const config = CHARACTER_CONFIG[data.character] || CHARACTER_CONFIG.knight;
             const div = document.createElement('div');
             div.className = 'chat-message';
-            div.innerHTML = `
-                <span class="sender-icon">${config.icon}</span>
-                <span class="sender">${data.username}:</span>
-                ${escapeHtml(data.content)}
-            `;
+            const icon = document.createElement('span');
+            icon.className = 'sender-icon';
+            icon.textContent = config.icon;
+            div.appendChild(icon);
+
+            const senderName = data.username || 'Player';
+            if (senderName === 'System') {
+                const senderSpan = document.createElement('span');
+                senderSpan.className = 'sender';
+                senderSpan.textContent = senderName + ':';
+                div.appendChild(senderSpan);
+            } else {
+                const senderBtn = document.createElement('button');
+                senderBtn.type = 'button';
+                senderBtn.className = 'sender sender-profile-btn';
+                senderBtn.textContent = senderName + ':';
+                senderBtn.title = 'View social profile';
+                senderBtn.addEventListener('click', function () {
+                    openBossSocialProfile(data);
+                });
+                div.appendChild(senderBtn);
+            }
+
+            const textNode = document.createElement('span');
+            textNode.className = 'chat-content';
+            textNode.innerHTML = ' ' + escapeHtml(data.content || '');
+            div.appendChild(textNode);
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
@@ -4533,6 +4634,7 @@ function getDamageMultiplier() {
             // Always show own message locally immediately
             addChatMessage({
                 username: gameState.player.username,
+                user_id: gameState.player.userId || null,
                 character: gameState.player.character,
                 weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
                 avatar_url: gameState.player.avatarUrl || null,
@@ -4545,6 +4647,7 @@ function getDamageMultiplier() {
                     room_id: roomId || 'boss_lobby',
                     content: content,
                     username: gameState.player.username,
+                    user_id: gameState.player.userId || null,
                     character: gameState.player.character,
                     weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
                     avatar_url: gameState.player.avatarUrl || null
