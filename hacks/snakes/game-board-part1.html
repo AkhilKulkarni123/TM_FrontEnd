@@ -814,46 +814,49 @@
 
         /* TRADITIONAL BOARD APPEARANCE */
         #game-board {
-            background: linear-gradient(145deg, #e67e22, #f39c12) !important;
-            padding: 6px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
-            border: 3px solid #d35400 !important;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 218, 120, 0.16), transparent 42%),
+                linear-gradient(145deg, #d97808, #f0a522) !important;
+            padding: 7px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.28) !important;
+            border: 3px solid #b45d00 !important;
             position: relative;
         }
 
         .game-board .square {
-            background: linear-gradient(135deg, #f9e79f 0%, #f7dc6f 50%, #f9e79f 100%) !important;
-            border: 1px solid #d4af37 !important;
+            background: linear-gradient(140deg, #faefbe 0%, #f6df86 50%, #faefbe 100%) !important;
+            border: 1px solid #cfad4d !important;
             position: relative;
             transition: all 0.3s ease;
             min-height: 40px;
             max-height: 45px;
             font-size: 0.75em;
+            box-shadow: inset 0 0 0 1px rgba(255, 247, 213, 0.55);
         }
 
         .game-board .square:hover {
-            background: linear-gradient(135deg, #fef9e7 0%, #fcf3cf 50%, #fef9e7 100%) !important;
-            transform: scale(1.03);
+            background: linear-gradient(140deg, #fff6d9 0%, #fcecae 50%, #fff6d9 100%) !important;
+            transform: scale(1.02);
             z-index: 10;
         }
 
         .game-board .square .square-number {
             position: absolute;
-            top: 2px;
-            left: 3px;
-            font-size: 9px;
+            top: 3px;
+            left: 4px;
+            font-size: 8px;
             font-weight: bold;
-            color: #7d6608;
+            color: #73580f;
             z-index: 2;
         }
         
         .game-board .square .square-icon {
-            font-size: 16px;
+            font-size: 15px;
         }
-        
+
         .game-board .player-marker {
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .game-board .square.lesson {
@@ -1358,6 +1361,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="../../assets/js/mini-games.js"></script>
@@ -2201,6 +2205,27 @@ console.log(student.name); // 'Ada'</code></pre>
                 return '<div class=\"online-player-icon\">' + getCharacterIcon(player.selected_character) + '</div>';
             }
 
+            function openPlayerSocialProfile(player) {
+                var social = window.SnakesSocial || null;
+                if (social && typeof social.openPlayerProfile === 'function') {
+                    var opened = social.openPlayerProfile({
+                        id: Number(player.user_id || player.id || 0) || null,
+                        user_id: Number(player.user_id || player.id || 0) || null,
+                        username: player.username || 'Player',
+                        avatar_url: player.avatar_url || player.avatarUrl || null,
+                        character: getHeroName(player.selected_character),
+                        current_square: player.current_square || null,
+                        total_bullets: player.total_bullets || 0
+                    });
+                    if (opened !== false) return true;
+                }
+                if (typeof showPlayerInfoPopup === 'function') {
+                    showPlayerInfoPopup(player);
+                    return true;
+                }
+                return false;
+            }
+
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
                     .then(function(res) { return res.ok ? res.json() : null; })
@@ -2240,6 +2265,18 @@ console.log(student.name); // 'Ada'</code></pre>
                                 '<div class="online-player-details">' + heroName + ' • Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
                             '</div>' +
                             '<div class="online-player-status"></div>';
+                        li.setAttribute('tabindex', '0');
+                        li.addEventListener('click', function () {
+                            hideOnlinePlayersModal();
+                            openPlayerSocialProfile(player);
+                        });
+                        li.addEventListener('keydown', function (event) {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                hideOnlinePlayersModal();
+                                openPlayerSocialProfile(player);
+                            }
+                        });
                         list.appendChild(li);
                     });
                 }

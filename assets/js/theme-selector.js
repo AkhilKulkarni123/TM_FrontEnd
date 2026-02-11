@@ -124,6 +124,73 @@
         });
     }
 
+    function ensureWidgetDockStyles() {
+        if (document.getElementById('snakes-widget-dock-style')) return;
+        var style = document.createElement('style');
+        style.id = 'snakes-widget-dock-style';
+        style.textContent =
+            '#snakes-widget-dock{position:fixed;right:clamp(12px,2vw,24px);bottom:calc(env(safe-area-inset-bottom,0px) + clamp(12px,2vw,24px));' +
+            'display:flex;flex-direction:column-reverse;align-items:flex-end;gap:10px;pointer-events:none;z-index:89950}' +
+            '#snakes-widget-dock>.snakes-widget-launch{pointer-events:auto}' +
+            '#snakes-widget-dock>#theme-quick-launch,#snakes-widget-dock>#snakes-faq-launch,#snakes-widget-dock>#ssSocialToggle{' +
+            'position:relative!important;right:auto!important;left:auto!important;top:auto!important;bottom:auto!important;margin:0!important}' +
+            '#snakes-widget-dock>#ssSocialToggle{z-index:1}' +
+            '@media (max-width:640px){#snakes-widget-dock{right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);gap:8px}}';
+        document.head.appendChild(style);
+    }
+
+    function getWidgetDock() {
+        if (!document.body) return null;
+        ensureWidgetDockStyles();
+        var dock = document.getElementById('snakes-widget-dock');
+        if (!dock) {
+            dock = document.createElement('div');
+            dock.id = 'snakes-widget-dock';
+            document.body.appendChild(dock);
+        }
+        return dock;
+    }
+
+    function sortDockChildren(dock) {
+        if (!dock) return;
+        var children = Array.prototype.slice.call(dock.children);
+        children.sort(function (a, b) {
+            return Number(a.dataset.widgetOrder || 100) - Number(b.dataset.widgetOrder || 100);
+        });
+        children.forEach(function (child) {
+            dock.appendChild(child);
+        });
+    }
+
+    function registerDockLaunch(element, order) {
+        if (!element || !document.body) return false;
+        var dock = getWidgetDock();
+        if (!dock) return false;
+        element.classList.add('snakes-widget-launch');
+        element.dataset.widgetOrder = String(Number(order || 100));
+        if (element.parentElement !== dock) {
+            dock.appendChild(element);
+        }
+        sortDockChildren(dock);
+        return true;
+    }
+
+    function exposeWidgetDockApi() {
+        if (window.SnakesWidgetDock && typeof window.SnakesWidgetDock.registerLaunch === 'function') {
+            return window.SnakesWidgetDock;
+        }
+        var api = window.SnakesWidgetDock || {};
+        api.registerLaunch = function (element, options) {
+            var opts = options || {};
+            return registerDockLaunch(element, Number(opts.order || 100));
+        };
+        api.refresh = function () {
+            sortDockChildren(document.getElementById('snakes-widget-dock'));
+        };
+        window.SnakesWidgetDock = api;
+        return api;
+    }
+
     function shouldRenderQuickSelector() {
         if (!document.body) return false;
         return document.body.classList.contains('snakes-theme') || !!document.querySelector('.snakes-theme');
@@ -243,7 +310,9 @@
             }
         });
 
-        document.body.appendChild(launchBtn);
+        if (!registerDockLaunch(launchBtn, 30)) {
+            document.body.appendChild(launchBtn);
+        }
         document.body.appendChild(overlay);
     }
 
@@ -308,14 +377,14 @@
                 { q: 'Can I leave without breaking progress?', a: 'Yes. Leave through in-mode controls so session cleanup completes correctly.' }
             ]
         },
-        'king-of-zone': {
-            title: 'King of the Zone FAQ',
-            intro: 'Zone control strategy and scoring help.',
+        'slitherrush': {
+            title: 'SLITHERRUSH FAQ',
+            intro: 'Fast multiplayer slither combat tips.',
             faqs: [
-                { q: 'How do I earn points in KOZ?', a: 'Stay in the active capture zone while contest pressure is low to accumulate score.' },
-                { q: 'Why did zone progress pause?', a: 'Zone capture can stall when contested by opponents or during zone relocation windows.' },
-                { q: 'What is the best strategy?', a: 'Rotate early to the next zone and hold high-value positions with short exposure.' },
-                { q: 'Does this mode affect bullets?', a: 'Mode outcomes can influence reward flow depending on your configured progression rules.' }
+                { q: 'How do I score points?', a: 'Collect energy orbs and survive longer than other slithers.' },
+                { q: 'What causes elimination?', a: 'Crashing into walls, another body, or losing a head-to-head clash.' },
+                { q: 'What happens after I die?', a: 'You immediately become a spectator and auto-follow a living slither.' },
+                { q: 'How do I switch spectator targets?', a: 'Use Q/E while spectating to cycle through alive players.' }
             ]
         },
         'platformer-arcade': {
@@ -595,16 +664,21 @@
             }
         });
 
-        if (document.getElementById('theme-quick-launch')) {
+        var docked = registerDockLaunch(launchBtn, 20);
+        if (!docked && document.getElementById('theme-quick-launch')) {
             launchBtn.classList.add('has-theme-launch');
             panel.classList.add('has-theme-launch');
         }
 
-        document.body.appendChild(launchBtn);
+        if (!docked) {
+            document.body.appendChild(launchBtn);
+        }
         document.body.appendChild(panel);
     }
 
     function initThemeSelector() {
+        exposeWidgetDockApi();
+        registerDockLaunch(document.getElementById('ssSocialToggle'), 10);
         ensureQuickSelector();
         var initialTheme = applyTheme(getStoredTheme(), false);
         if (document.querySelector('.theme-option')) {

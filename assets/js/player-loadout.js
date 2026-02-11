@@ -5,7 +5,7 @@
  * - Reads/writes selected hero, weapon, and avatar data from browser storage.
  * - Provides safe helper methods for rendering avatar markup in leaderboards/UI.
  * Fit in overall game:
- * - `snakes-game.js`, KOZ modules, and other Snakes pages call `window.SnakesLoadout`
+ * - `snakes-game.js`, SLITHERRUSH modules, and other Snakes pages call `window.SnakesLoadout`
  *   so all modes share the same player identity and equipment configuration.
  */
 (function (window) {

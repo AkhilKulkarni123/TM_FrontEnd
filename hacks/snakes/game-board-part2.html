@@ -116,11 +116,15 @@
         }
         
         #game-board.game-board {
-            padding: 8px !important;
+            padding: 9px !important;
             gap: 2px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
+            border-radius: 10px !important;
+            background: linear-gradient(145deg, #d97808, #f0a522) !important;
+            border: 2px solid #b45d00 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24) !important;
         }
         
         #game-board .board-row {
@@ -136,15 +140,17 @@
             max-width: 100% !important;
             aspect-ratio: 1 !important;
             padding: 2px !important;
-            border-radius: 4px !important;
+            border-radius: 6px !important;
             border-width: 1px !important;
             font-size: 0.5em !important;
+            box-shadow: inset 0 0 0 1px rgba(255, 246, 212, 0.55);
         }
         
         #game-board .square .square-number {
             font-size: 8px !important;
-            top: 1px !important;
-            left: 2px !important;
+            top: 2px !important;
+            left: 3px !important;
+            color: #6f5410 !important;
         }
         
         #game-board .square .square-icon {
@@ -159,8 +165,8 @@
         #game-board .square .player-marker,
         #game-board .floating-marker {
             font-size: 12px !important;
-            width: 18px !important;
-            height: 18px !important;
+            width: 20px !important;
+            height: 20px !important;
         }
 
         /* QUESTION MODAL STYLING */
@@ -1037,6 +1043,7 @@
     <!-- Load scripts in correct order -->
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="questions/questions_bank.js"></script>
@@ -1080,6 +1087,27 @@
                 return '<div class=\"online-player-icon\">' + getCharacterIcon(player.selected_character) + '</div>';
             }
 
+            function openPlayerSocialProfile(player) {
+                var social = window.SnakesSocial || null;
+                if (social && typeof social.openPlayerProfile === 'function') {
+                    var opened = social.openPlayerProfile({
+                        id: Number(player.user_id || player.id || 0) || null,
+                        user_id: Number(player.user_id || player.id || 0) || null,
+                        username: player.username || 'Player',
+                        avatar_url: player.avatar_url || player.avatarUrl || null,
+                        character: getHeroName(player.selected_character),
+                        current_square: player.current_square || null,
+                        total_bullets: player.total_bullets || 0
+                    });
+                    if (opened !== false) return true;
+                }
+                if (typeof showPlayerInfoPopup === 'function') {
+                    showPlayerInfoPopup(player);
+                    return true;
+                }
+                return false;
+            }
+
             function fetchActivePlayers() {
                 fetch(API_BASE + '/api/snakes/active-players', { credentials: 'include' })
                     .then(function(res) { return res.ok ? res.json() : null; })
@@ -1119,6 +1147,18 @@
                                 '<div class="online-player-details">' + heroName + ' • Square ' + (player.current_square || 1) + ' • ' + (player.total_bullets || 0) + ' bullets</div>' +
                             '</div>' +
                             '<div class="online-player-status"></div>';
+                        li.setAttribute('tabindex', '0');
+                        li.addEventListener('click', function () {
+                            hideOnlinePlayersModal();
+                            openPlayerSocialProfile(player);
+                        });
+                        li.addEventListener('keydown', function (event) {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                hideOnlinePlayersModal();
+                                openPlayerSocialProfile(player);
+                            }
+                        });
                         list.appendChild(li);
                     });
                 }

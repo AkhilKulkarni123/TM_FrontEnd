@@ -38,8 +38,8 @@ body.snakes-theme,
   --focus-ring: rgba(118, 75, 162, 0.42);
   --mode-boss-border: #e94560;
   --mode-pvp-border: #4facfe;
-  --mode-koz-border: #f1c40f;
-  --mode-koz-glow: rgba(241, 196, 15, 0.28);
+  --mode-slitherrush-border: #f1c40f;
+  --mode-slitherrush-glow: rgba(241, 196, 15, 0.28);
 }
 
 body.snakes-theme[data-theme='aurora-mint'],
@@ -63,8 +63,8 @@ body[data-theme='aurora-mint'] .snakes-theme,
   --panel-border: rgba(127, 255, 212, 0.22);
   --mode-boss-border: #4be8c7;
   --mode-pvp-border: #42d9f8;
-  --mode-koz-border: #c7ff7b;
-  --mode-koz-glow: rgba(199, 255, 123, 0.3);
+  --mode-slitherrush-border: #c7ff7b;
+  --mode-slitherrush-glow: rgba(199, 255, 123, 0.3);
 }
 
 body.snakes-theme[data-theme='emberforge'],
@@ -88,8 +88,8 @@ body[data-theme='emberforge'] .snakes-theme,
   --panel-border: rgba(255, 179, 71, 0.24);
   --mode-boss-border: #ff7a3d;
   --mode-pvp-border: #ffb347;
-  --mode-koz-border: #ffd166;
-  --mode-koz-glow: rgba(255, 209, 102, 0.32);
+  --mode-slitherrush-border: #ffd166;
+  --mode-slitherrush-glow: rgba(255, 209, 102, 0.32);
 }
 
 body.snakes-theme[data-theme='midnight-violet'],
@@ -113,8 +113,8 @@ body[data-theme='midnight-violet'] .snakes-theme,
   --panel-border: rgba(192, 132, 252, 0.24);
   --mode-boss-border: #b37bff;
   --mode-pvp-border: #8f9cff;
-  --mode-koz-border: #d5b3ff;
-  --mode-koz-glow: rgba(213, 179, 255, 0.34);
+  --mode-slitherrush-border: #d5b3ff;
+  --mode-slitherrush-glow: rgba(213, 179, 255, 0.34);
 }
 
 body.snakes-theme[data-theme='solar-flare'],
@@ -138,8 +138,8 @@ body[data-theme='solar-flare'] .snakes-theme,
   --panel-border: rgba(255, 183, 3, 0.24);
   --mode-boss-border: #ff8a00;
   --mode-pvp-border: #ffb703;
-  --mode-koz-border: #ffe07a;
-  --mode-koz-glow: rgba(255, 224, 122, 0.34);
+  --mode-slitherrush-border: #ffe07a;
+  --mode-slitherrush-glow: rgba(255, 224, 122, 0.34);
 }
 
 body.snakes-theme[data-theme='oceanic-depths'],
@@ -163,8 +163,8 @@ body[data-theme='oceanic-depths'] .snakes-theme,
   --panel-border: rgba(72, 202, 228, 0.24);
   --mode-boss-border: #33bfd9;
   --mode-pvp-border: #4fd4ff;
-  --mode-koz-border: #9ee9ff;
-  --mode-koz-glow: rgba(158, 233, 255, 0.3);
+  --mode-slitherrush-border: #9ee9ff;
+  --mode-slitherrush-glow: rgba(158, 233, 255, 0.3);
 }
 
 body.snakes-theme[data-theme='rose-nebula'],
@@ -188,8 +188,8 @@ body[data-theme='rose-nebula'] .snakes-theme,
   --panel-border: rgba(255, 143, 171, 0.24);
   --mode-boss-border: #ff6f9c;
   --mode-pvp-border: #ff9cc2;
-  --mode-koz-border: #ffd1e2;
-  --mode-koz-glow: rgba(255, 209, 226, 0.34);
+  --mode-slitherrush-border: #ffd1e2;
+  --mode-slitherrush-glow: rgba(255, 209, 226, 0.34);
 }
 
 body.snakes-theme[data-theme='cyber-lime'],
@@ -213,8 +213,8 @@ body[data-theme='cyber-lime'] .snakes-theme,
   --panel-border: rgba(190, 242, 100, 0.24);
   --mode-boss-border: #8cd93f;
   --mode-pvp-border: #bbff5a;
-  --mode-koz-border: #e6ffaf;
-  --mode-koz-glow: rgba(230, 255, 175, 0.34);
+  --mode-slitherrush-border: #e6ffaf;
+  --mode-slitherrush-glow: rgba(230, 255, 175, 0.34);
 }
 
 body.snakes-theme[data-theme='glacier-blue'],
@@ -238,8 +238,8 @@ body[data-theme='glacier-blue'] .snakes-theme,
   --panel-border: rgba(147, 197, 253, 0.24);
   --mode-boss-border: #76b0ff;
   --mode-pvp-border: #9ad2ff;
-  --mode-koz-border: #d0e8ff;
-  --mode-koz-glow: rgba(208, 232, 255, 0.34);
+  --mode-slitherrush-border: #d0e8ff;
+  --mode-slitherrush-glow: rgba(208, 232, 255, 0.34);
 }
 
 body.snakes-theme[data-theme='sandstone-gold'],
@@ -263,8 +263,8 @@ body[data-theme='sandstone-gold'] .snakes-theme,
   --panel-border: rgba(233, 196, 106, 0.24);
   --mode-boss-border: #d59a5f;
   --mode-pvp-border: #e9c46a;
-  --mode-koz-border: #f6db9f;
-  --mode-koz-glow: rgba(246, 219, 159, 0.36);
+  --mode-slitherrush-border: #f6db9f;
+  --mode-slitherrush-glow: rgba(246, 219, 159, 0.36);
 }
 
 .character-select-active {
@@ -763,10 +763,10 @@ body.snakes-theme,
   // ── Roll prompt overlay dice contrast ──
   .roll-prompt-content {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 2px solid var(--mode-koz-border);
+    border: 2px solid var(--mode-slitherrush-border);
 
     h2 {
-      color: var(--mode-koz-border);
+      color: var(--mode-slitherrush-border);
     }
 
     p {
@@ -1017,9 +1017,9 @@ body.snakes-theme,
   }
 
   #character-selection:not(.theme-layout-v2) .character-card.selected {
-    border-color: var(--mode-koz-border) !important;
+    border-color: var(--mode-slitherrush-border) !important;
     background: rgba(31, 41, 55, 0.9) !important;
-    box-shadow: 0 0 50px var(--mode-koz-glow) !important;
+    box-shadow: 0 0 50px var(--mode-slitherrush-glow) !important;
   }
 
   #character-selection:not(.theme-layout-v2) .carousel-btn {
@@ -1100,7 +1100,7 @@ body.snakes-theme,
   }
 }
 
-// Cross-page theme application (mode selection, battles, victory, KOZ, lessons).
+// Cross-page theme application (mode selection, battles, victory, SLITHERRUSH, lessons).
 body.snakes-theme {
   .mode-card {
     background: rgba(5, 9, 18, 0.62);
@@ -1116,8 +1116,8 @@ body.snakes-theme {
     border-color: var(--mode-pvp-border);
   }
 
-  .mode-card.koz-mode {
-    border: 3px solid var(--mode-koz-border);
+  .mode-card.slitherrush-mode {
+    border: 3px solid var(--mode-slitherrush-border);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
@@ -1129,8 +1129,8 @@ body.snakes-theme {
     box-shadow: 0 24px 48px rgba(var(--accent-2-rgb), 0.3);
   }
 
-  .mode-card.koz-mode:hover {
-    box-shadow: 0 22px 48px var(--mode-koz-glow);
+  .mode-card.slitherrush-mode:hover {
+    box-shadow: 0 22px 48px var(--mode-slitherrush-glow);
   }
 
   .boss-mode .mode-title {
@@ -1141,13 +1141,13 @@ body.snakes-theme {
     color: var(--mode-pvp-border);
   }
 
-  .koz-mode .mode-title {
-    color: var(--mode-koz-border);
+  .slitherrush-mode .mode-title {
+    color: var(--mode-slitherrush-border);
   }
 
   .boss-mode .mode-status,
   .pvp-mode .mode-status,
-  .koz-mode .mode-status {
+  .slitherrush-mode .mode-status {
     color: var(--heading);
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
@@ -1160,7 +1160,7 @@ body.snakes-theme {
     background: rgba(var(--accent-2-rgb), 0.2);
   }
 
-  .koz-mode .mode-status {
+  .slitherrush-mode .mode-status {
     background: rgba(var(--card-border-rgb), 0.2);
   }
 
@@ -1197,11 +1197,11 @@ body.snakes-theme {
   }
 
   .hud-hp-fill.opponent {
-    background: linear-gradient(90deg, var(--mode-boss-border) 0%, var(--mode-koz-border) 100%);
+    background: linear-gradient(90deg, var(--mode-boss-border) 0%, var(--mode-slitherrush-border) 100%);
   }
 
   .victory-title {
-    background: linear-gradient(135deg, var(--mode-koz-border) 0%, var(--accent-2) 50%, var(--mode-koz-border) 100%);
+    background: linear-gradient(135deg, var(--mode-slitherrush-border) 0%, var(--accent-2) 50%, var(--mode-slitherrush-border) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -1215,11 +1215,11 @@ body.snakes-theme {
 
   .player-stats h3,
   .stat-value {
-    color: var(--mode-koz-border);
+    color: var(--mode-slitherrush-border);
   }
 
   .champion-card.you {
-    border-color: var(--mode-koz-border);
+    border-color: var(--mode-slitherrush-border);
     background: rgba(var(--accent-rgb), 0.18);
   }
 
@@ -1254,14 +1254,14 @@ body.snakes-theme {
   }
 }
 
-body.snakes-theme.koz-mode {
-  --koz-panel: rgba(8, 12, 22, 0.82);
-  --koz-panel-border: rgba(var(--accent-rgb), 0.35);
-  --koz-accent: var(--accent);
-  --koz-warning: var(--mode-koz-border);
-  --koz-danger: var(--mode-boss-border);
-  --koz-success: var(--card-border);
-  --koz-muted: var(--muted-text);
+body.snakes-theme.slitherrush-mode {
+  --slitherrush-panel: rgba(8, 12, 22, 0.82);
+  --slitherrush-panel-border: rgba(var(--accent-rgb), 0.35);
+  --slitherrush-accent: var(--accent);
+  --slitherrush-warning: var(--mode-slitherrush-border);
+  --slitherrush-danger: var(--mode-boss-border);
+  --slitherrush-success: var(--card-border);
+  --slitherrush-muted: var(--muted-text);
 
   #gameCanvas {
     background: radial-gradient(circle at 30% 20%, rgba(var(--accent-rgb), 0.24), rgba(5, 6, 14, 0.95));

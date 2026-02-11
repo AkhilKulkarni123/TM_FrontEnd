@@ -233,6 +233,121 @@ window.HintBar = HintBar;
 // ENHANCED LEADERBOARD SYSTEM
 // ============================================
 
+function openLeaderboardSocialProfile(entry) {
+    var socialBridge = window.SnakesBoardSocial || null;
+    if (socialBridge && typeof socialBridge.openProfileFromLeaderboard === 'function') {
+        var openedViaBridge = !!socialBridge.openProfileFromLeaderboard(entry || {});
+        if (openedViaBridge) return true;
+    }
+
+    var social = window.SnakesSocial || null;
+    if (social && typeof social.openPlayerProfile === 'function') {
+        var opened = social.openPlayerProfile({
+            id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
+            user_id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
+            username: (entry && (entry.username || entry.name)) || 'Player',
+            avatar_url: entry && (entry.avatar_url || entry.avatarUrl || null),
+            character: entry && (entry.selected_character || entry.character || ''),
+            total_bullets: entry && (entry.total_bullets || entry.bullets || 0),
+            time_played: entry && (entry.time_played || 0)
+        });
+        if (opened !== false) return true;
+    }
+
+    // Fallback profile modal if social widget is not available.
+    if (typeof window.showPlayerInfoPopup === 'function') {
+        window.showPlayerInfoPopup({
+            user_id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
+            username: (entry && (entry.username || entry.name)) || 'Player',
+            selected_character: entry && (entry.selected_character || entry.character || ''),
+            total_bullets: entry && (entry.total_bullets || entry.bullets || 0),
+            time_played: entry && (entry.time_played || 0)
+        });
+        return true;
+    }
+
+    return false;
+}
+
+function sendLeaderboardFriendRequest(entry) {
+    var socialBridge = window.SnakesBoardSocial || null;
+    if (socialBridge && typeof socialBridge.sendFriendRequestFromLeaderboard === 'function') {
+        var sentViaBridge = !!socialBridge.sendFriendRequestFromLeaderboard(entry || {});
+        if (sentViaBridge) return true;
+    }
+
+    var social = window.SnakesSocial || null;
+    if (!social || typeof social.sendFriendRequest !== 'function') return false;
+    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
+    var currentUserId = Number((typeof gameState !== 'undefined' && gameState.userId) || 0) || 0;
+    if (targetUserId && currentUserId && targetUserId === currentUserId) return false;
+    if (!targetUserId) return false;
+    social.sendFriendRequest(targetUserId);
+    return true;
+}
+
+function openLeaderboardDm(entry) {
+    var socialBridge = window.SnakesBoardSocial || null;
+    if (socialBridge && typeof socialBridge.openDmFromLeaderboard === 'function') {
+        var openedViaBridge = !!socialBridge.openDmFromLeaderboard(entry || {});
+        if (openedViaBridge) return true;
+    }
+
+    var social = window.SnakesSocial || null;
+    if (!social || typeof social.openDmWithUser !== 'function') return false;
+    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
+    var currentUserId = Number((typeof gameState !== 'undefined' && gameState.userId) || 0) || 0;
+    if (targetUserId && currentUserId && targetUserId === currentUserId) return false;
+    if (!targetUserId) return false;
+    social.openDmWithUser(targetUserId);
+    return true;
+}
+
+function bindLeaderboardRowSocialActions(tr, entry, currentUserId) {
+    if (!tr || !entry) return;
+
+    var targetUserId = Number(entry.user_id || entry.id || 0) || 0;
+    var isCurrentUser = !!targetUserId && !!currentUserId && targetUserId === Number(currentUserId || 0);
+    if (isCurrentUser) return;
+
+    tr.classList.add('leaderboard-player-row');
+    tr.setAttribute('tabindex', '0');
+    tr.setAttribute('role', 'button');
+    tr.setAttribute('aria-label', 'Open social profile for ' + (entry.username || 'player'));
+
+    tr.addEventListener('click', function (event) {
+        var target = event.target || null;
+        var actionBtn = target && typeof target.closest === 'function'
+            ? target.closest('[data-lb-action]')
+            : null;
+
+        if (actionBtn) {
+            if (actionBtn.disabled) return;
+            var action = actionBtn.getAttribute('data-lb-action');
+            if (action === 'profile') openLeaderboardSocialProfile(entry);
+            else if (action === 'friend') {
+                if (!sendLeaderboardFriendRequest(entry)) openLeaderboardSocialProfile(entry);
+            }
+            else if (action === 'chat') {
+                if (!openLeaderboardDm(entry)) openLeaderboardSocialProfile(entry);
+            }
+            event.stopPropagation();
+            return;
+        }
+
+        openLeaderboardSocialProfile(entry);
+    });
+
+    tr.addEventListener('keydown', function (event) {
+        var key = String(event.key || '').toLowerCase();
+        if (key !== 'enter' && key !== ' ') return;
+        var keyTarget = event.target || null;
+        if (keyTarget && typeof keyTarget.closest === 'function' && keyTarget.closest('[data-lb-action]')) return;
+        event.preventDefault();
+        openLeaderboardSocialProfile(entry);
+    });
+}
+
 // Enhanced leaderboard flow: fetch broad ranking data, then render top + personal context.
 function viewLeaderboardEnhanced() {
     var modal = document.getElementById('leaderboard-modal');
@@ -308,6 +423,7 @@ function viewLeaderboardEnhanced() {
         for (var i = 0; i < Math.min(10, leaderboardData.length); i++) {
             if (!headerAdded) {
                 var headerRow = document.createElement('tr');
+                headerRow.className = 'leaderboard-meta-row';
                 headerRow.innerHTML = '<td colspan="4" class="leaderboard-section-header">🏆 Top 10 Players</td>';
                 tbody.appendChild(headerRow);
                 headerAdded = true;
@@ -322,11 +438,13 @@ function viewLeaderboardEnhanced() {
         if (currentUserIndex >= 10) {
             // Add divider
             var dividerRow = document.createElement('tr');
+            dividerRow.className = 'leaderboard-meta-row';
             dividerRow.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
             tbody.appendChild(dividerRow);
 
             // Add "Your Position" header
             var yourPosHeader = document.createElement('tr');
+            yourPosHeader.className = 'leaderboard-meta-row';
             yourPosHeader.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
             tbody.appendChild(yourPosHeader);
 
@@ -357,10 +475,12 @@ function viewLeaderboardEnhanced() {
         // New/zero-score players may be absent from API ranking; synthesize a local row for clarity.
         if (currentUserIndex === -1 && currentUserId) {
             var dividerRow2 = document.createElement('tr');
+            dividerRow2.className = 'leaderboard-meta-row';
             dividerRow2.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
             tbody.appendChild(dividerRow2);
 
             var yourPosHeader2 = document.createElement('tr');
+            yourPosHeader2.className = 'leaderboard-meta-row';
             yourPosHeader2.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
             tbody.appendChild(yourPosHeader2);
 
@@ -396,7 +516,8 @@ function viewLeaderboardEnhanced() {
 // Shared row renderer keeps visual formatting consistent across top/user/context sections.
 function createLeaderboardRow(entry, index, currentUserId) {
     var tr = document.createElement('tr');
-    var isCurrentUser = (entry.user_id === currentUserId);
+    var targetUserId = Number(entry.user_id || entry.id || 0) || 0;
+    var isCurrentUser = !!targetUserId && targetUserId === Number(currentUserId || 0);
     
     if (isCurrentUser) {
         tr.className = 'current-user-row';
@@ -433,11 +554,25 @@ function createLeaderboardRow(entry, index, currentUserId) {
         playerName += '<span class="user-position-badge">👤 YOU</span>';
     }
 
+    var hasTargetUser = targetUserId > 0;
+    var hasSocialBridge = !!window.SnakesSocial;
+    var actionsHtml = '';
+    if (!isCurrentUser) {
+        actionsHtml =
+            '<span class="leaderboard-player-actions">' +
+                '<button type="button" class="leaderboard-player-action profile" data-lb-action="profile">Profile</button>' +
+                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Friend</button>' +
+                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Chat</button>' +
+            '</span>';
+    }
+
     tr.innerHTML =
         '<td class="rank-col">' + rankBadge + '</td>' +
-        '<td class="player-col">' + characterIcon + ' ' + playerName + '</td>' +
+        '<td class="player-col"><div class="leaderboard-player-cell"><span class="leaderboard-player-name">' + characterIcon + ' ' + playerName + '</span>' + actionsHtml + '</div></td>' +
         '<td class="bullets-col">' + (entry.total_bullets || 0) + '</td>' +
         '<td class="time-col">' + formatTime(entry.time_played || 0) + '</td>';
+
+    bindLeaderboardRowSocialActions(tr, entry, currentUserId);
 
     return tr;
 }
