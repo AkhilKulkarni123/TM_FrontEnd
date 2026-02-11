@@ -6,14 +6,20 @@
     }
 
     var HOSTNAME = window.location.hostname || '';
+    var IPV4_PRIVATE_RE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
     var IS_LOCAL = (
         HOSTNAME === 'localhost' ||
         HOSTNAME === '127.0.0.1' ||
+        HOSTNAME === '::1' ||
         HOSTNAME === '0.0.0.0' ||
+        IPV4_PRIVATE_RE.test(HOSTNAME) ||
         /\.local$/i.test(HOSTNAME)
     );
-    var API_BASE = window.GAME_API_BASE || window.SNAKES_API_BASE || (IS_LOCAL ? (window.location.protocol + '//' + HOSTNAME + ':8306') : 'https://snakes.opencodingsociety.com');
-    var API_ROOT = API_BASE + '/api';
+    var BASE_FROM_GLOBAL = String(window.GAME_API_BASE || window.SNAKES_API_BASE || '').trim();
+    var API_BASE = '';
+    var API_ROOT = '';
+    var API_CANDIDATES = [];
+    var activeApiIndex = 0;
     var SOCKET_NAMESPACE = '/social';
     var PAGE_NAME = (window.location.pathname || '').split('/').pop() || '';
     var DEFAULT_EMOJIS = ['😀', '😂', '😍', '🔥', '🎮', '👍', '👀', '😎', '😭', '🤝', '🎯', '✅', '💬', '💥', '✨', '🚀'];
@@ -41,7 +47,8 @@
         lastOpenedDmUserId: null,
         loadHistoryLock: {},
         drawerOpen: false,
-        profileCard: { open: false, target: null }
+        profileCard: { open: false, target: null },
+        errorBanner: ''
     };
 
     var ui = {};
@@ -49,6 +56,56 @@
     var searchTimer = null;
     var typingTimer = null;
     var typingActive = false;
+    var lastSocketErrorToastAt = 0;
+
+    function normalizeBaseUrl(raw) {
+        if (!raw) return '';
+        try {
+            var parsed = new URL(String(raw), window.location.origin);
+            var origin = parsed.origin.replace(/\/+$/, '');
+            return origin.replace(/\/api\/?$/i, '');
+        } catch (err) {
+            return '';
+        }
+    }
+
+    function pushUnique(list, value) {
+        if (!value) return;
+        if (list.indexOf(value) >= 0) return;
+        list.push(value);
+    }
+
+    function buildApiCandidates() {
+        var list = [];
+        var originBase = normalizeBaseUrl(window.location.origin);
+        var configuredBase = normalizeBaseUrl(BASE_FROM_GLOBAL);
+        var localBase = window.location.protocol + '//' + (HOSTNAME || 'localhost') + ':8306';
+
+        pushUnique(list, configuredBase);
+        if (IS_LOCAL) {
+            pushUnique(list, normalizeBaseUrl(localBase));
+            if (HOSTNAME !== 'localhost') pushUnique(list, normalizeBaseUrl(window.location.protocol + '//localhost:8306'));
+            pushUnique(list, originBase);
+        } else {
+            pushUnique(list, 'https://snakes.opencodingsociety.com');
+            pushUnique(list, originBase);
+        }
+        if (!list.length) pushUnique(list, 'https://snakes.opencodingsociety.com');
+        return list;
+    }
+
+    function setApiBaseByIndex(index) {
+        if (!API_CANDIDATES.length) API_CANDIDATES = buildApiCandidates();
+        if (!API_CANDIDATES.length) API_CANDIDATES = ['https://snakes.opencodingsociety.com'];
+        var next = Math.max(0, Math.min(Number(index || 0), API_CANDIDATES.length - 1));
+        activeApiIndex = next;
+        API_BASE = API_CANDIDATES[activeApiIndex];
+        API_ROOT = API_BASE + '/api';
+        return API_BASE;
+    }
+
+    API_CANDIDATES = buildApiCandidates();
+    setApiBaseByIndex(0);
 
     function safeText(value) {
         return String(value == null ? '' : value);
@@ -80,6 +137,23 @@
         } catch (err) {
             return '';
         }
+    }
+
+    function getLoginHref() {
+        var next = window.location.href || '/';
+        return API_BASE + '/login?next=' + encodeURIComponent(next);
+    }
+
+    function renderAuthRequiredCard(message) {
+        var body = escapeHtml(message || 'Sign in to use friends, parties, and messaging.');
+        return '' +
+            '<div class="ss-card ss-auth-card">' +
+            '<p class="ss-title">Social Login Required</p>' +
+            '<div class="ss-empty">' + body + '</div>' +
+            '<div class="ss-auth-cta">' +
+            '<a class="ss-btn primary ss-auth-link" href="' + escapeHtml(getLoginHref()) + '">Open Login</a>' +
+            '</div>' +
+            '</div>';
     }
 
     function getConversationById(conversationId) {
@@ -127,6 +201,26 @@
             if (Number(blocked[i].id) === targetId) return 'blocked';
         }
         return 'none';
+    }
+
+    function findKnownUserById(userId) {
+        var targetId = Number(userId || 0);
+        if (!targetId) return null;
+
+        var pools = [
+            state.friendsState.friends || [],
+            state.friendsState.pending_in || [],
+            state.friendsState.pending_out || [],
+            state.friendsState.blocked || [],
+            (state.partyState.party && state.partyState.party.members) || []
+        ];
+        for (var i = 0; i < pools.length; i += 1) {
+            var list = pools[i];
+            for (var j = 0; j < list.length; j += 1) {
+                if (Number(list[j].id) === targetId) return list[j];
+            }
+        }
+        return { id: targetId, username: 'Player' };
     }
 
     function normalizeProfileInput(profile) {
@@ -246,6 +340,7 @@
         style.id = 'ssSocialStyles';
         style.textContent = [
             ':root{--ss-bg:#0d1320;--ss-bg-soft:#131b2b;--ss-text:#ebf2ff;--ss-muted:#a6b2cf;--ss-accent:var(--accent,#5aa0ff);--ss-success:#39d98a;--ss-warning:#ffcc66;--ss-danger:#ff6b6b;--ss-border:rgba(255,255,255,0.12);--ss-shadow:0 22px 44px rgba(0,0,0,.45);}',
+            'body.slitherrush-mode #ssSocialRoot{--ss-accent:#ffd646;--ss-bg:#090b12;--ss-bg-soft:#151b2a;--ss-border:rgba(255,214,70,.24);}',
             '#ssSocialToggle{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(145deg,var(--ss-accent),#1f6ad6);color:#fff;font-size:22px;font-weight:700;box-shadow:var(--ss-shadow);cursor:pointer;z-index:90000;transition:transform .18s ease,box-shadow .18s ease;}',
             '#ssSocialToggle:hover{transform:translateY(-2px);box-shadow:0 28px 48px rgba(0,0,0,.5);}',
             '#ssSocialToggle:focus-visible{outline:2px solid #fff;outline-offset:2px;}',
@@ -253,6 +348,8 @@
             '#ssSocialDrawer{position:fixed;right:22px;bottom:92px;width:min(980px,calc(100vw - 28px));height:min(700px,calc(100vh - 120px));background:linear-gradient(180deg,rgba(11,17,28,.97),rgba(9,14,24,.98));border:1px solid var(--ss-border);border-radius:18px;box-shadow:var(--ss-shadow);display:flex;flex-direction:column;overflow:hidden;transform:translateY(18px) scale(.96);opacity:0;pointer-events:none;z-index:90000;transition:transform .22s ease,opacity .22s ease;}',
             '#ssSocialDrawer.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto;}',
             '#ssSocialHeader{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--ss-border);background:rgba(255,255,255,.02);}',
+            '#ssErrorBanner{display:none;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,107,107,.45);background:rgba(255,107,107,.14);color:#ffd5d5;font-size:12px;}',
+            '#ssErrorBanner.open{display:flex;}',
             '.ss-userline{display:flex;align-items:center;gap:10px;min-width:0;}',
             '.ss-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#2a3e63;font-weight:700;overflow:hidden;border:1px solid rgba(255,255,255,.18);}',
             '.ss-avatar img{width:100%;height:100%;object-fit:cover;}',
@@ -260,9 +357,11 @@
             '.ss-usertext strong{font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ss-text)}',
             '.ss-usertext span{font-size:12px;color:var(--ss-muted);}',
             '#ssPresenceSelect{background:rgba(255,255,255,.06);border:1px solid var(--ss-border);color:var(--ss-text);padding:6px 10px;border-radius:10px;font-size:12px;}',
+            '#ssPresenceSelect:disabled{opacity:.55;cursor:not-allowed;}',
             '#ssTabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--ss-border);}',
             '.ss-tab{border:1px solid var(--ss-border);background:rgba(255,255,255,.03);color:var(--ss-text);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;}',
             '.ss-tab.active{background:rgba(90,160,255,.18);border-color:rgba(90,160,255,.55);}',
+            '.ss-tab:focus-visible{outline:2px solid rgba(255,255,255,.8);outline-offset:2px;}',
             '.ss-panel{display:none;flex:1;min-height:0;overflow:hidden;}',
             '.ss-panel.active{display:flex;}',
             '#ssFriendsPanel{flex-direction:column;}',
@@ -284,10 +383,14 @@
             '.ss-row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}',
             '.ss-btn{border:1px solid var(--ss-border);background:rgba(255,255,255,.03);color:var(--ss-text);padding:6px 8px;border-radius:8px;font-size:11px;cursor:pointer;transition:all .15s ease;}',
             '.ss-btn:hover{background:rgba(255,255,255,.1);}',
+            '.ss-btn:focus-visible{outline:2px solid rgba(255,255,255,.84);outline-offset:2px;}',
             '.ss-btn.primary{background:rgba(90,160,255,.2);border-color:rgba(90,160,255,.6);}',
             '.ss-btn.success{background:rgba(57,217,138,.14);border-color:rgba(57,217,138,.55);}',
             '.ss-btn.danger{background:rgba(255,107,107,.14);border-color:rgba(255,107,107,.55);}',
             '.ss-empty{padding:14px;border:1px dashed rgba(255,255,255,.2);border-radius:10px;color:var(--ss-muted);font-size:13px;text-align:center;}',
+            '.ss-auth-card{margin-top:4px;}',
+            '.ss-auth-cta{display:flex;justify-content:center;margin-top:10px;}',
+            '.ss-auth-link{text-decoration:none;font-size:12px;padding:8px 12px;}',
             '.ss-skeleton{height:46px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:220% 100%;animation:ssPulse 1.15s infinite;}',
             '@keyframes ssPulse{from{background-position:200% 0}to{background-position:-200% 0}}',
             '#ssPartyPanel{flex-direction:column;}',
@@ -297,8 +400,12 @@
             '#ssConversationList{border-right:1px solid var(--ss-border);overflow:auto;padding:10px;}',
             '.ss-conv-item{padding:10px;border:1px solid var(--ss-border);border-radius:10px;background:rgba(255,255,255,.03);margin-bottom:8px;cursor:pointer;}',
             '.ss-conv-item.active{background:rgba(90,160,255,.16);border-color:rgba(90,160,255,.55);}',
+            '.ss-conv-row{display:flex;align-items:flex-start;gap:8px;}',
+            '.ss-conv-avatar{width:32px;height:32px;flex:0 0 32px;margin-top:1px;}',
+            '.ss-conv-main{min-width:0;flex:1;}',
             '.ss-conv-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}',
             '.ss-conv-name{font-size:13px;font-weight:700;color:var(--ss-text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ss-conv-time{font-size:10px;color:var(--ss-muted);white-space:nowrap;margin-left:auto;}',
             '.ss-conv-preview{font-size:11px;color:var(--ss-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
             '.ss-unread-chip{min-width:18px;height:18px;border-radius:999px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;background:#ff3b30;color:#fff;font-size:10px;font-weight:700;}',
             '#ssChatPane{display:flex;flex-direction:column;min-height:0;}',
@@ -413,6 +520,28 @@
         }, 7000);
     }
 
+    function setErrorBanner(message) {
+        state.errorBanner = String(message || '').trim();
+        renderErrorBanner();
+    }
+
+    function clearErrorBanner() {
+        if (!state.errorBanner) return;
+        state.errorBanner = '';
+        renderErrorBanner();
+    }
+
+    function renderErrorBanner() {
+        if (!ui.errorBanner) return;
+        if (!state.errorBanner) {
+            ui.errorBanner.classList.remove('open');
+            ui.errorBanner.innerHTML = '';
+            return;
+        }
+        ui.errorBanner.innerHTML = '<span>' + escapeHtml(state.errorBanner) + '</span><button class="ss-btn danger" data-action="clear-error-banner">Dismiss</button>';
+        ui.errorBanner.classList.add('open');
+    }
+
     function setDrawerOpen(open) {
         state.drawerOpen = !!open;
         if (!ui.drawer) return;
@@ -440,6 +569,10 @@
 
     function renderBadge() {
         if (!ui.badge) return;
+        if (!state.authenticated) {
+            ui.badge.style.display = 'none';
+            return;
+        }
         computeUnreadTotal();
         if (state.unreadTotal > 0) {
             ui.badge.style.display = 'inline-flex';
@@ -479,6 +612,7 @@
             '<small><span class="ss-presence-dot ss-presence-' + escapeHtml(status) + '"></span>' + escapeHtml(subtitle || status) + '</small>' +
             '</div>' +
             '<div class="ss-row-actions">' +
+            '<button class="ss-btn" data-action="open-profile" data-user-id="' + Number(friend.id) + '">View</button>' +
             '<button class="ss-btn" data-action="message" data-user-id="' + Number(friend.id) + '">Message</button>';
         if (includePartyInvite) {
             html += '<button class="ss-btn primary" data-action="party-invite" data-user-id="' + Number(friend.id) + '">Invite</button>';
@@ -493,6 +627,10 @@
         if (!ui.friendsContent) return;
         if (state.bootstrapLoading) {
             ui.friendsContent.innerHTML = '<div class="ss-skeleton"></div><div class="ss-skeleton" style="margin-top:8px;"></div><div class="ss-skeleton" style="margin-top:8px;"></div>';
+            return;
+        }
+        if (!state.authenticated) {
+            ui.friendsContent.innerHTML = renderAuthRequiredCard('Sign in to search users, add friends, and view presence.');
             return;
         }
         var html = '';
@@ -636,6 +774,10 @@
             ui.partyContent.innerHTML = '<div class="ss-skeleton"></div><div class="ss-skeleton" style="margin-top:8px;"></div>';
             return;
         }
+        if (!state.authenticated) {
+            ui.partyContent.innerHTML = renderAuthRequiredCard('Sign in to create parties, invite friends, and join leader activities.');
+            return;
+        }
         var incomingInvites = state.partyState.incoming_invites || [];
         var party = state.partyState.party;
         var html = '';
@@ -723,6 +865,10 @@
             ui.conversationList.innerHTML = '<div class="ss-skeleton"></div><div class="ss-skeleton" style="margin-top:8px;"></div><div class="ss-skeleton" style="margin-top:8px;"></div>';
             return;
         }
+        if (!state.authenticated) {
+            ui.conversationList.innerHTML = renderAuthRequiredCard('Sign in to access direct messages and party chat.');
+            return;
+        }
         if (!state.conversations.length) {
             ui.conversationList.innerHTML = '<div class="ss-empty">No conversations yet.</div>';
             return;
@@ -732,15 +878,26 @@
             var conv = state.conversations[i];
             var isActive = Number(conv.id) === Number(state.activeConversationId);
             var title = (conv.title && conv.title.name) || 'Conversation';
+            var avatar = baseAvatar({
+                avatar_url: conv.title && conv.title.avatar_url,
+                username: title
+            });
             var preview = '';
+            var lastTime = '';
             if (conv.last_message) {
                 if (conv.last_message.type === 'image') preview = '[Image]';
                 else preview = conv.last_message.body_text || '';
+                lastTime = formatTime(conv.last_message.created_at);
             }
             html += '<div class="ss-conv-item ' + (isActive ? 'active' : '') + '" data-action="open-conversation" data-conversation-id="' + Number(conv.id) + '">' +
+                '<div class="ss-conv-row">' +
+                '<div class="ss-avatar ss-conv-avatar">' + avatar + '</div>' +
+                '<div class="ss-conv-main">' +
                 '<div class="ss-conv-top"><div class="ss-conv-name">' + escapeHtml(title) + '</div>' +
+                (lastTime ? '<span class="ss-conv-time">' + escapeHtml(lastTime) + '</span>' : '') +
                 (conv.unread_count ? '<span class="ss-unread-chip">' + Number(conv.unread_count) + '</span>' : '') + '</div>' +
-                '<div class="ss-conv-preview">' + escapeHtml(preview) + '</div></div>';
+                '<div class="ss-conv-preview">' + escapeHtml(preview) + '</div>' +
+                '</div></div></div>';
         }
         ui.conversationList.innerHTML = html;
     }
@@ -770,6 +927,10 @@
 
     function renderChatPane(scrollRestore) {
         if (!ui.chatPane) return;
+        if (!state.authenticated) {
+            ui.chatPane.innerHTML = '<div style="display:grid;place-items:center;height:100%;padding:12px;">' + renderAuthRequiredCard('Sign in to send messages, emojis, and images.') + '</div>';
+            return;
+        }
         var conv = getConversationById(state.activeConversationId);
         if (!conv) {
             ui.chatPane.innerHTML = '<div style="display:grid;place-items:center;height:100%;"><div class="ss-empty">Select a conversation to start chatting.</div></div>';
@@ -850,6 +1011,7 @@
     }
 
     function renderAll() {
+        renderErrorBanner();
         renderBadge();
         renderFriendsTab();
         renderPartyTab();
@@ -948,6 +1110,7 @@
                 clearImageComposer();
             }).catch(function (err) {
                 state.imageComposer.uploading = false;
+                setErrorBanner(err.message || 'Unable to upload image.');
                 showToast('Upload Failed', err.message || 'Unable to upload image.');
             });
             return;
@@ -1021,11 +1184,16 @@
             var inviteId = Number(actionEl.getAttribute('data-invite-id'));
             var conversationId = Number(actionEl.getAttribute('data-conversation-id'));
 
-            if (action === 'send-friend-request' && socket) socket.emit('friends_request_send', { target_user_id: userId });
+            if (action === 'clear-error-banner') clearErrorBanner();
+            else if (action === 'send-friend-request' && socket) socket.emit('friends_request_send', { target_user_id: userId });
             else if (action === 'accept-friend' && socket) socket.emit('friends_request_accept', { request_id: requestId });
             else if (action === 'decline-friend' && socket) socket.emit('friends_request_decline', { request_id: requestId });
             else if (action === 'remove-friend' && socket) socket.emit('friends_remove', { friend_user_id: userId });
             else if (action === 'block-user' && socket) socket.emit('friends_block', { user_id: userId });
+            else if (action === 'open-profile') {
+                var known = findKnownUserById(userId);
+                if (known) openProfileCard(known);
+            }
             else if (action === 'message') openDmWithFriend(userId);
             else if (action === 'create-party' && socket) socket.emit('party_create');
             else if (action === 'party-invite' && socket && state.partyState.party) socket.emit('party_invite', { party_id: Number(state.partyState.party.id), invitee_user_id: userId });
@@ -1217,6 +1385,7 @@
                     image_url: payload.image_url
                 });
             }).catch(function (err) {
+                setErrorBanner(err.message || 'Unable to upload image.');
                 showToast('Upload Failed', err.message || 'Unable to upload image.');
             });
             event.target.value = '';
@@ -1235,6 +1404,7 @@
             '<div class="ss-userline"><div class="ss-avatar" id="ssUserAvatar">?</div><div class="ss-usertext"><strong id="ssUserName">Social</strong><span id="ssUserStatus">Connecting...</span></div></div>' +
             '<select id="ssPresenceSelect"><option value="online">Online</option><option value="away">Away</option></select>' +
             '</div>' +
+            '<div id="ssErrorBanner" role="alert"></div>' +
             '<div id="ssTabs">' +
             '<button class="ss-tab active" data-tab="friends">Friends</button>' +
             '<button class="ss-tab" data-tab="party">Party</button>' +
@@ -1258,6 +1428,7 @@
         ui.userName = wrapper.querySelector('#ssUserName');
         ui.userStatus = wrapper.querySelector('#ssUserStatus');
         ui.presenceSelect = wrapper.querySelector('#ssPresenceSelect');
+        ui.errorBanner = wrapper.querySelector('#ssErrorBanner');
         ui.friendsContent = wrapper.querySelector('#ssFriendsContent');
         ui.partyContent = wrapper.querySelector('#ssPartyContent');
         ui.conversationList = wrapper.querySelector('#ssConversationList');
@@ -1274,21 +1445,36 @@
     }
 
     function refreshUserHeader() {
-        if (!state.user) return;
+        if (!ui.userName || !ui.userStatus || !ui.userAvatar) return;
+        if (!state.user || !state.authenticated) {
+            ui.userName.textContent = 'Guest';
+            ui.userStatus.textContent = 'Sign in for Social';
+            ui.userAvatar.innerHTML = '<span>?</span>';
+            if (ui.presenceSelect) ui.presenceSelect.disabled = true;
+            return;
+        }
         ui.userName.textContent = state.user.username || state.user.uid || 'User';
-        ui.userStatus.textContent = state.socketConnected ? 'Connected' : 'Offline';
+        ui.userStatus.textContent = state.socketConnected ? ('Connected • ' + API_BASE.replace(/^https?:\/\//, '')) : 'Offline';
         ui.userAvatar.innerHTML = baseAvatar(state.user);
+        if (ui.presenceSelect) ui.presenceSelect.disabled = false;
     }
 
     function connectSocialSocket() {
         return ensureSocketIoLoaded().then(function () {
+            setApiBaseByIndex(activeApiIndex);
             socket = window.io(API_BASE + SOCKET_NAMESPACE, {
-                transports: ['websocket'],
-                withCredentials: true
+                transports: ['websocket', 'polling'],
+                upgrade: true,
+                withCredentials: true,
+                reconnection: true,
+                reconnectionAttempts: 8,
+                reconnectionDelay: 450,
+                timeout: 7000
             });
 
             socket.on('connect', function () {
                 state.socketConnected = true;
+                clearErrorBanner();
                 refreshUserHeader();
                 if (state.activity) socket.emit('social_activity_set', state.activity);
             });
@@ -1296,13 +1482,24 @@
                 state.socketConnected = false;
                 refreshUserHeader();
             });
+            socket.on('connect_error', function () {
+                setErrorBanner('Realtime connection is unavailable right now.');
+                var now = Date.now();
+                if (now - lastSocketErrorToastAt > 8000) {
+                    lastSocketErrorToastAt = now;
+                    showToast('Social Offline', 'Realtime connection is unavailable right now.', []);
+                }
+            });
 
             socket.on('social_error', function (payload) {
-                showToast('Social Error', (payload && payload.message) || 'An error occurred.');
+                var message = (payload && payload.message) || 'An error occurred.';
+                setErrorBanner(message);
+                showToast('Social Error', message);
             });
 
             socket.on('friends_state', function (payload) {
                 state.friendsState = payload || { friends: [], pending_in: [], pending_out: [], blocked: [] };
+                clearErrorBanner();
                 renderAll();
             });
 
@@ -1313,7 +1510,29 @@
 
             socket.on('friend_request_received', function (payload) {
                 var from = payload && payload.from_user;
-                showToast('Friend Request', (from && from.username ? from.username : 'A player') + ' sent you a friend request.', []);
+                var requestId = Number(payload && payload.request_id || 0);
+                showToast(
+                    'Friend Request',
+                    (from && from.username ? from.username : 'A player') + ' sent you a friend request.',
+                    [
+                        {
+                            label: 'Accept',
+                            className: 'success',
+                            onClick: function () {
+                                if (socket && requestId) socket.emit('friends_request_accept', { request_id: requestId });
+                                setTab('friends');
+                                setDrawerOpen(true);
+                            }
+                        },
+                        {
+                            label: 'Decline',
+                            className: 'danger',
+                            onClick: function () {
+                                if (socket && requestId) socket.emit('friends_request_decline', { request_id: requestId });
+                            }
+                        }
+                    ]
+                );
             });
 
             socket.on('presence_update', function (payload) {
@@ -1346,6 +1565,7 @@
             socket.on('party_state', function (payload) {
                 state.partyState = payload || { party: null, incoming_invites: [] };
                 state.partyInvitePickerOpen = false;
+                clearErrorBanner();
                 renderAll();
             });
 
@@ -1378,10 +1598,12 @@
             socket.on('chat_list', function (payload) {
                 state.conversations = (payload && payload.conversations) || [];
                 computeUnreadTotal();
+                clearErrorBanner();
                 renderAll();
             });
 
             socket.on('chat_open', function (payload) {
+                clearErrorBanner();
                 applyChatOpen(payload);
             });
 
@@ -1466,48 +1688,72 @@
     }
 
     function bootstrap() {
-        return fetch(API_ROOT + '/social/bootstrap', { credentials: 'include' })
-            .then(function (res) {
-                if (res.status === 401) {
-                    state.authenticated = false;
-                    return null;
-                }
-                if (!res.ok) throw new Error('Unable to load social bootstrap');
-                return res.json();
-            })
-            .then(function (payload) {
-                if (!payload) {
+        function finalizeAuthenticated(payload) {
+            state.authenticated = true;
+            state.user = payload.user || null;
+            state.friendsState = payload.friends_state || state.friendsState;
+            state.partyState = payload.party_state || state.partyState;
+            state.conversations = (payload.chat_list && payload.chat_list.conversations) || [];
+            if (ui.presenceSelect && payload.presence && (payload.presence.status === 'away' || payload.presence.status === 'online')) {
+                ui.presenceSelect.value = payload.presence.status;
+            }
+            state.bootstrapLoading = false;
+            computeUnreadTotal();
+            clearErrorBanner();
+            refreshUserHeader();
+            renderAll();
+        }
+
+        function attempt(index) {
+            setApiBaseByIndex(index);
+            return fetch(API_ROOT + '/social/bootstrap', { credentials: 'include' })
+                .then(function (res) {
+                    if (res.status === 401) {
+                        state.bootstrapLoading = false;
+                        state.authenticated = false;
+                        clearErrorBanner();
+                        refreshUserHeader();
+                        renderAll();
+                        return;
+                    }
+                    if (!res.ok) throw new Error('Unable to load social bootstrap');
+                    return res.json().then(function (payload) {
+                        if (!payload) {
+                            state.bootstrapLoading = false;
+                            state.authenticated = false;
+                            clearErrorBanner();
+                            refreshUserHeader();
+                            renderAll();
+                            return;
+                        }
+                        finalizeAuthenticated(payload);
+                    });
+                })
+                .catch(function () {
+                    if (index < API_CANDIDATES.length - 1) {
+                        return attempt(index + 1);
+                    }
                     state.bootstrapLoading = false;
-                    return;
-                }
-                state.authenticated = true;
-                state.user = payload.user || null;
-                state.friendsState = payload.friends_state || state.friendsState;
-                state.partyState = payload.party_state || state.partyState;
-                state.conversations = (payload.chat_list && payload.chat_list.conversations) || [];
-                if (ui.presenceSelect && payload.presence && (payload.presence.status === 'away' || payload.presence.status === 'online')) {
-                    ui.presenceSelect.value = payload.presence.status;
-                }
-                state.bootstrapLoading = false;
-                computeUnreadTotal();
-                refreshUserHeader();
-                renderAll();
-            })
-            .catch(function () {
-                state.bootstrapLoading = false;
-                state.authenticated = false;
-            });
+                    state.authenticated = false;
+                    setErrorBanner('Unable to reach social services right now.');
+                    refreshUserHeader();
+                    renderAll();
+                });
+        }
+
+        return attempt(activeApiIndex);
     }
 
     function maybeDisableForGuests() {
         if (state.authenticated) return false;
-        if (ui.root) ui.root.style.display = 'none';
+        clearErrorBanner();
+        refreshUserHeader();
+        renderAll();
         return true;
     }
 
     function canUseInteractiveSocialUi() {
         if (!ui.root) return false;
-        if (ui.root.style.display === 'none') return false;
         if (!state.authenticated) return false;
         return true;
     }
@@ -1518,6 +1764,7 @@
         bootstrap().then(function () {
             if (maybeDisableForGuests()) return;
             connectSocialSocket().catch(function () {
+                setErrorBanner('Could not connect to social realtime services.');
                 showToast('Social Offline', 'Could not connect to social realtime services.');
             });
         });

@@ -128,6 +128,7 @@
         var renderer = new window.SlitherRush.Renderer(canvas);
         var ui = new window.SlitherRush.UI();
         var statusEl = document.getElementById('srConnectionStatus');
+        var socialBtn = document.getElementById('srSocialBtn');
         var retryBtn = document.getElementById('srRetryBtn');
         var introOverlay = document.getElementById('srIntroOverlay');
         var introCloseBtn = document.getElementById('srIntroCloseBtn');
@@ -223,8 +224,18 @@
             }
         }
 
+        function openSocialPanel() {
+            if (!window.SnakesSocial || typeof window.SnakesSocial.openDrawer !== 'function') {
+                setStatus('Social is still loading...');
+                return;
+            }
+            var opened = window.SnakesSocial.openDrawer('party');
+            if (!opened) setStatus('Sign in to use friends, party, and chat.');
+        }
+
         if (introCloseBtn) introCloseBtn.addEventListener('click', hideIntroOverlay);
         if (introPlayBtn) introPlayBtn.addEventListener('click', enterArenaNow);
+        if (socialBtn) socialBtn.addEventListener('click', openSocialPanel);
         if (retryBtn) retryBtn.addEventListener('click', retrySpawn);
         if (introOverlay) {
             introOverlay.addEventListener('click', function (event) {
