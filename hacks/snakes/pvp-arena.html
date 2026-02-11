@@ -929,7 +929,6 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
-    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -946,19 +945,6 @@
         console.log('PVP Arena - API Base:', GAME_API_BASE);
         console.log('PVP Arena - Socket URL:', SOCKET_URL);
         console.log('PVP Arena - Is Local:', IS_LOCAL);
-
-        function setSocialActivity(mode, target, label) {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
-            window.SnakesSocial.setActivity({
-                mode: mode || '',
-                target: target || '',
-                label: label || ''
-            });
-        }
-
-        function setPvpSocialActivity(target, label) {
-            setSocialActivity('pvp', target || '', label || 'In PVP Arena');
-        }
 
         function setupIntroPopup() {
             const overlay = document.getElementById('pvpIntroOverlay');
@@ -2601,10 +2587,7 @@
         }
 
         function openPvpSocialProfile(data) {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.openPlayerProfile !== 'function') return false;
-            const profile = findPvpPlayerProfile(data);
-            if (!profile) return false;
-            return window.SnakesSocial.openPlayerProfile(profile) !== false;
+            return false;
         }
 
         function addChatMessage(data) {
@@ -2784,7 +2767,6 @@
             if (socket) {
                 socket.emit('pvp_leave', {});
             }
-            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
         }
 
         function goToVictoryPage() {
@@ -2795,7 +2777,6 @@
             } catch (e) {
                 console.error('Error setting victory flag:', e);
             }
-            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
             
             window.location.href = 'victory.html?mode=pvp';
         }
@@ -2812,7 +2793,6 @@
                 socket.emit('pvp_leave', {});
             }
 
-            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
 
             window.location.href = 'mode-selection.html';
         }
@@ -2827,11 +2807,9 @@
                 } catch (e) {
                     console.error('Error setting victory flag:', e);
                 }
-                setSocialActivity('arcade', '', 'Browsing Battle Arcade');
-                
+                    
                 window.location.href = 'victory.html?mode=pvp';
             } else {
-                setSocialActivity('snakes-board', '', 'On Game Board');
                 window.location.href = 'game-board-part2.html';
             }
         }

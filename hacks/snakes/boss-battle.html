@@ -921,7 +921,6 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
-    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -939,19 +938,6 @@
         console.log('Boss Battle - API Base:', GAME_API_BASE);
         console.log('Boss Battle - Socket URL:', SOCKET_URL);
         console.log('Boss Battle - Is Local:', IS_LOCAL);
-
-        function setSocialActivity(mode, target, label) {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
-            window.SnakesSocial.setActivity({
-                mode: mode || '',
-                target: target || '',
-                label: label || ''
-            });
-        }
-
-        function setBossSocialActivity(target, label) {
-            setSocialActivity('boss-battle', target || '', label || 'In Boss Battle');
-        }
 
         // Resize canvas
         function resizeCanvas() {
@@ -4662,10 +4648,7 @@ function getDamageMultiplier() {
         }
 
         function openBossSocialProfile(data) {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.openPlayerProfile !== 'function') return false;
-            var profile = findBossPlayerProfile(data);
-            if (!profile) return false;
-            return window.SnakesSocial.openPlayerProfile(profile) !== false;
+            return false;
         }
 
         function addChatMessage(data) {
@@ -5009,7 +4992,6 @@ function getDamageMultiplier() {
         function goToVictoryPage() {
             stopPositionBroadcast();
             roomId = null;
-            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
             
             // Mark that player just won so victory page can auto-complete
             try {
@@ -5024,7 +5006,6 @@ function getDamageMultiplier() {
         function returnToBoard() {
             stopPositionBroadcast();
             roomId = null;
-            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
 
             // Check if this was a victory - redirect to victory page
             const gameOver = document.getElementById('gameOver');

@@ -1835,11 +1835,7 @@ function toSocialProfilePayload(player) {
 }
 
 function openSocialProfileForPlayer(player) {
-    var social = window.SnakesSocial;
-    if (!social || typeof social.openPlayerProfile !== 'function') return false;
-    var payload = toSocialProfilePayload(player);
-    if (!payload) return false;
-    return social.openPlayerProfile(payload) !== false;
+    return false;
 }
 
 function toLeaderboardProfilePayload(entry) {
@@ -1864,29 +1860,15 @@ function isCurrentUserId(userId) {
 }
 
 function openSocialProfileForLeaderboardEntry(entry) {
-    var social = window.SnakesSocial;
-    if (!social || typeof social.openPlayerProfile !== 'function') return false;
-    var payload = toLeaderboardProfilePayload(entry);
-    if (!payload) return false;
-    return social.openPlayerProfile(payload) !== false;
+    return false;
 }
 
 function sendFriendRequestForLeaderboardEntry(entry) {
-    var social = window.SnakesSocial;
-    if (!social || typeof social.sendFriendRequest !== 'function') return false;
-    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
-    if (!targetUserId || isCurrentUserId(targetUserId)) return false;
-    social.sendFriendRequest(targetUserId);
-    return true;
+    return false;
 }
 
 function openDmForLeaderboardEntry(entry) {
-    var social = window.SnakesSocial;
-    if (!social || typeof social.openDmWithUser !== 'function') return false;
-    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
-    if (!targetUserId || isCurrentUserId(targetUserId)) return false;
-    social.openDmWithUser(targetUserId);
-    return true;
+    return false;
 }
 
 window.SnakesBoardSocial = window.SnakesBoardSocial || {};
@@ -2003,64 +1985,7 @@ function renderPlayerInfoActions(modal, player) {
         body.appendChild(actions);
     }
 
-    var social = window.SnakesSocial || null;
-    var userId = Number(player.user_id || player.id || 0) || 0;
-    var canSocial = !!(social && typeof social.openPlayerProfile === 'function');
-    var canFriend = !!(social && userId > 0 && typeof social.sendFriendRequest === 'function');
-    var canDm = !!(social && userId > 0 && typeof social.openDmWithUser === 'function');
-
-    actions.innerHTML =
-        '<button type="button" class="player-info-action-btn primary" data-profile-action="social"' + (canSocial ? '' : ' disabled') + '>Open Social Profile</button>' +
-        '<button type="button" class="player-info-action-btn" data-profile-action="friend"' + (canFriend ? '' : ' disabled') + '>Add Friend</button>' +
-        '<button type="button" class="player-info-action-btn" data-profile-action="message"' + (canDm ? '' : ' disabled') + '>Message</button>';
-
-    var socialBtn = actions.querySelector('[data-profile-action="social"]');
-    if (socialBtn) {
-        socialBtn.addEventListener('click', function () {
-            if (openSocialProfileForPlayer(player)) {
-                closePlayerInfoPopup();
-                return;
-            }
-            if (social && typeof social.openDrawer === 'function' && social.openDrawer('friends')) {
-                closePlayerInfoPopup();
-                return;
-            }
-            showNotification('Sign in to use social profile actions.', { type: 'info', duration: 2800 });
-        });
-    }
-    var friendBtn = actions.querySelector('[data-profile-action="friend"]');
-    if (friendBtn) {
-        friendBtn.addEventListener('click', function () {
-            if (!canFriend) return;
-            var sent = social.sendFriendRequest(userId);
-            if (sent === false) {
-                if (openSocialProfileForPlayer(player)) {
-                    closePlayerInfoPopup();
-                    return;
-                }
-                showNotification('Sign in to send friend requests.', { type: 'info', duration: 2800 });
-                return;
-            }
-            showNotification('Friend request sent.', { type: 'success', duration: 2200 });
-            closePlayerInfoPopup();
-        });
-    }
-    var messageBtn = actions.querySelector('[data-profile-action="message"]');
-    if (messageBtn) {
-        messageBtn.addEventListener('click', function () {
-            if (!canDm) return;
-            var opened = social.openDmWithUser(userId);
-            if (opened === false) {
-                if (openSocialProfileForPlayer(player)) {
-                    closePlayerInfoPopup();
-                    return;
-                }
-                showNotification('Sign in to start direct messages.', { type: 'info', duration: 2800 });
-                return;
-            }
-            closePlayerInfoPopup();
-        });
-    }
+    actions.innerHTML = '';
 }
 
 function showPlayerInfoPopup(player) {

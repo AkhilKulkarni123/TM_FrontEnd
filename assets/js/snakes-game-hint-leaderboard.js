@@ -234,27 +234,7 @@ window.HintBar = HintBar;
 // ============================================
 
 function openLeaderboardSocialProfile(entry) {
-    var socialBridge = window.SnakesBoardSocial || null;
-    if (socialBridge && typeof socialBridge.openProfileFromLeaderboard === 'function') {
-        var openedViaBridge = !!socialBridge.openProfileFromLeaderboard(entry || {});
-        if (openedViaBridge) return true;
-    }
-
-    var social = window.SnakesSocial || null;
-    if (social && typeof social.openPlayerProfile === 'function') {
-        var opened = social.openPlayerProfile({
-            id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
-            user_id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
-            username: (entry && (entry.username || entry.name)) || 'Player',
-            avatar_url: entry && (entry.avatar_url || entry.avatarUrl || null),
-            character: entry && (entry.selected_character || entry.character || ''),
-            total_bullets: entry && (entry.total_bullets || entry.bullets || 0),
-            time_played: entry && (entry.time_played || 0)
-        });
-        if (opened !== false) return true;
-    }
-
-    // Fallback profile modal if social widget is not available.
+    // Fallback profile modal
     if (typeof window.showPlayerInfoPopup === 'function') {
         window.showPlayerInfoPopup({
             user_id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
@@ -270,37 +250,11 @@ function openLeaderboardSocialProfile(entry) {
 }
 
 function sendLeaderboardFriendRequest(entry) {
-    var socialBridge = window.SnakesBoardSocial || null;
-    if (socialBridge && typeof socialBridge.sendFriendRequestFromLeaderboard === 'function') {
-        var sentViaBridge = !!socialBridge.sendFriendRequestFromLeaderboard(entry || {});
-        if (sentViaBridge) return true;
-    }
-
-    var social = window.SnakesSocial || null;
-    if (!social || typeof social.sendFriendRequest !== 'function') return false;
-    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
-    var currentUserId = Number((typeof gameState !== 'undefined' && gameState.userId) || 0) || 0;
-    if (targetUserId && currentUserId && targetUserId === currentUserId) return false;
-    if (!targetUserId) return false;
-    social.sendFriendRequest(targetUserId);
-    return true;
+    return false;
 }
 
 function openLeaderboardDm(entry) {
-    var socialBridge = window.SnakesBoardSocial || null;
-    if (socialBridge && typeof socialBridge.openDmFromLeaderboard === 'function') {
-        var openedViaBridge = !!socialBridge.openDmFromLeaderboard(entry || {});
-        if (openedViaBridge) return true;
-    }
-
-    var social = window.SnakesSocial || null;
-    if (!social || typeof social.openDmWithUser !== 'function') return false;
-    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
-    var currentUserId = Number((typeof gameState !== 'undefined' && gameState.userId) || 0) || 0;
-    if (targetUserId && currentUserId && targetUserId === currentUserId) return false;
-    if (!targetUserId) return false;
-    social.openDmWithUser(targetUserId);
-    return true;
+    return false;
 }
 
 function bindLeaderboardRowSocialActions(tr, entry, currentUserId) {
@@ -554,15 +508,11 @@ function createLeaderboardRow(entry, index, currentUserId) {
         playerName += '<span class="user-position-badge">👤 YOU</span>';
     }
 
-    var hasTargetUser = targetUserId > 0;
-    var hasSocialBridge = !!window.SnakesSocial;
     var actionsHtml = '';
     if (!isCurrentUser) {
         actionsHtml =
             '<span class="leaderboard-player-actions">' +
                 '<button type="button" class="leaderboard-player-action profile" data-lb-action="profile">Profile</button>' +
-                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Friend</button>' +
-                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Chat</button>' +
             '</span>';
     }
 

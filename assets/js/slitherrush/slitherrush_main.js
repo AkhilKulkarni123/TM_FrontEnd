@@ -76,12 +76,7 @@
     if (!SOCKET_CANDIDATES.length) SOCKET_CANDIDATES = [REMOTE_DEFAULT_BASE];
 
     function setSocialActivity(mode, target, label) {
-        if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
-        window.SnakesSocial.setActivity({
-            mode: mode || '',
-            target: target || '',
-            label: label || ''
-        });
+        // Social feature removed
     }
 
     function safeGet(storage, key) {
@@ -177,12 +172,7 @@
         }
 
         function openSocialPanel() {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.openDrawer !== 'function') {
-                setStatus('Social is still loading...');
-                return;
-            }
-            var opened = window.SnakesSocial.openDrawer('party');
-            if (!opened) setStatus('Sign in to use friends, party, and chat.');
+            // Social feature removed
         }
 
         function reconnectCurrent(reasonLabel) {

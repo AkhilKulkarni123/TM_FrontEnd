@@ -1361,7 +1361,6 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
-    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script src="../../assets/js/snakes-game.js"></script>
     <script src="../../assets/js/mini-games.js"></script>
@@ -2206,19 +2205,6 @@ console.log(student.name); // 'Ada'</code></pre>
             }
 
             function openPlayerSocialProfile(player) {
-                var social = window.SnakesSocial || null;
-                if (social && typeof social.openPlayerProfile === 'function') {
-                    var opened = social.openPlayerProfile({
-                        id: Number(player.user_id || player.id || 0) || null,
-                        user_id: Number(player.user_id || player.id || 0) || null,
-                        username: player.username || 'Player',
-                        avatar_url: player.avatar_url || player.avatarUrl || null,
-                        character: getHeroName(player.selected_character),
-                        current_square: player.current_square || null,
-                        total_bullets: player.total_bullets || 0
-                    });
-                    if (opened !== false) return true;
-                }
                 if (typeof showPlayerInfoPopup === 'function') {
                     showPlayerInfoPopup(player);
                     return true;
