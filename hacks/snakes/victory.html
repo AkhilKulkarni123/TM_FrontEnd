@@ -268,6 +268,15 @@
             box-shadow: 0 10px 30px rgba(243, 156, 18, 0.3);
         }
 
+        .action-card.feedback {
+            border-color: #2ecc71;
+        }
+
+        .action-card.feedback:hover {
+            background: rgba(46, 204, 113, 0.2);
+            box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3);
+        }
+
         .action-icon {
             font-size: 3em;
             margin-bottom: 15px;
@@ -281,6 +290,7 @@
 
         .board .action-title { color: #4facfe; }
         .mini .action-title { color: #f39c12; }
+        .feedback .action-title { color: #2ecc71; }
 
         .action-description {
             color: rgba(255, 255, 255, 0.7);
@@ -510,6 +520,14 @@
                     Jump into other mini-game modes from the arcade selection screen.
                 </p>
             </div>
+
+            <div class="action-card feedback" onclick="goToFeedback()">
+                <div class="action-icon"></div>
+                <h3 class="action-title">User Feedback</h3>
+                <p class="action-description">
+                    Share your thoughts about the game and read ideas from other champions.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -693,6 +711,10 @@
 
         function goToMiniGames() {
             window.location.href = 'mode-selection.html';
+        }
+
+        function goToFeedback() {
+            window.location.href = 'feedback.html';
         }
 
         // Show modal
