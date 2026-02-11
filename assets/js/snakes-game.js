@@ -475,8 +475,79 @@ function playSfx(name) {
     }
 }
 
+var notificationState = {
+    container: null,
+    nextId: 1
+};
+
+function ensureNotificationHost() {
+    if (notificationState.container) return notificationState.container;
+    var host = document.getElementById('snakes-notifications');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'snakes-notifications';
+        host.className = 'snakes-notifications';
+        host.setAttribute('role', 'status');
+        host.setAttribute('aria-live', 'polite');
+        host.setAttribute('aria-atomic', 'false');
+        document.body.appendChild(host);
+    }
+    notificationState.container = host;
+    return host;
+}
+
+function showNotification(message, options) {
+    var opts = options || {};
+    var type = opts.type || 'info';
+    var duration = typeof opts.duration === 'number' ? opts.duration : 3500;
+    var sticky = !!opts.sticky;
+    var host = ensureNotificationHost();
+
+    var toast = document.createElement('div');
+    var id = 'snakes-toast-' + (notificationState.nextId++);
+    toast.id = id;
+    toast.className = 'snakes-toast snakes-toast--' + type;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.setAttribute('tabindex', '0');
+
+    var text = document.createElement('div');
+    text.className = 'snakes-toast__text';
+    text.textContent = String(message || '');
+    toast.appendChild(text);
+
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'snakes-toast__close';
+    close.setAttribute('aria-label', 'Dismiss notification');
+    close.textContent = '×';
+    close.addEventListener('click', function () {
+        toast.classList.remove('show');
+        setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 200);
+    });
+    toast.appendChild(close);
+
+    host.appendChild(toast);
+    requestAnimationFrame(function () {
+        toast.classList.add('show');
+    });
+
+    if (!sticky) {
+        setTimeout(function () {
+            toast.classList.remove('show');
+            setTimeout(function () {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 200);
+        }, duration);
+    }
+
+    return toast;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // DON'T hide character selection here - let autoResumeIfReady handle it
+    initAccessibility();
     initializeEventListeners();
     checkExistingLogin().then(function () {
         autoResumeIfReady();
@@ -539,7 +610,10 @@ function initializeEventListeners() {
 
     var bossAttackBtn = document.getElementById('boss-attack-btn');
     if (bossAttackBtn) bossAttackBtn.addEventListener('click', function () {
-        if (gameState.bullets < 10) { alert('You need at least 10 bullets to attack the boss.'); return; }
+        if (gameState.bullets < 10) {
+            showNotification('You need at least 10 bullets to attack the boss.', { type: 'warning' });
+            return;
+        }
         gameState.bullets -= 10;
         document.getElementById('boss-player-bullets').textContent = gameState.bullets;
         updatePlayerInfo();
@@ -597,6 +671,160 @@ function initializeEventListeners() {
     if (editNameBtn) editNameBtn.addEventListener('click', function () {
         showDisplayNameModal(true);
     });
+
+    document.addEventListener('keydown', handleGlobalKeydown);
+}
+
+function isEditableTarget(target) {
+    if (!target) return false;
+    var tag = target.tagName ? target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable) return true;
+    return false;
+}
+
+function getActiveModalElement() {
+    var questionModal = document.getElementById('question-modal');
+    if (questionModal && questionModal.classList.contains('active')) return questionModal;
+    var onlineModal = document.getElementById('online-players-modal');
+    if (onlineModal && onlineModal.classList.contains('active')) return onlineModal;
+    var modals = $all('.modal');
+    for (var i = 0; i < modals.length; i++) {
+        if (!modals[i].classList.contains('hidden')) return modals[i];
+    }
+    return null;
+}
+
+function handleGlobalKeydown(e) {
+    var key = e.key;
+    var activeModal = getActiveModalElement();
+
+    if (key === 'Escape' && activeModal) {
+        closeAllModals();
+        e.preventDefault();
+        return;
+    }
+
+    if ((key === 'Enter' || key === ' ') && !activeModal && !isEditableTarget(e.target)) {
+        var rollBtn = document.getElementById('roll-dice-btn');
+        if (rollBtn && !rollBtn.disabled) {
+            rollDice();
+            e.preventDefault();
+        }
+    }
+
+    if (key === 'Tab' && activeModal) {
+        trapFocus(e, activeModal);
+    }
+}
+
+function trapFocus(e, container) {
+    var focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+        if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+        }
+    } else {
+        if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+        }
+    }
+}
+
+function closeAllModals() {
+    var modals = $all('.modal');
+    for (var i = 0; i < modals.length; i++) {
+        modals[i].classList.add('hidden');
+        modals[i].setAttribute('aria-hidden', 'true');
+    }
+
+    var questionModal = document.getElementById('question-modal');
+    if (questionModal) {
+        questionModal.classList.remove('active');
+        questionModal.setAttribute('aria-hidden', 'true');
+    }
+
+    var onlineModal = document.getElementById('online-players-modal');
+    if (onlineModal) {
+        onlineModal.classList.remove('active');
+        onlineModal.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function initAccessibility() {
+    var modals = $all('.modal');
+    for (var i = 0; i < modals.length; i++) {
+        modals[i].setAttribute('role', 'dialog');
+        modals[i].setAttribute('aria-modal', 'true');
+        modals[i].setAttribute('aria-hidden', modals[i].classList.contains('hidden') ? 'true' : 'false');
+    }
+
+    var questionModal = document.getElementById('question-modal');
+    if (questionModal) {
+        questionModal.setAttribute('role', 'dialog');
+        questionModal.setAttribute('aria-modal', 'true');
+        questionModal.setAttribute('aria-hidden', questionModal.classList.contains('active') ? 'false' : 'true');
+    }
+
+    var onlineModal = document.getElementById('online-players-modal');
+    if (onlineModal) {
+        onlineModal.setAttribute('role', 'dialog');
+        onlineModal.setAttribute('aria-modal', 'true');
+        onlineModal.setAttribute('aria-hidden', onlineModal.classList.contains('active') ? 'false' : 'true');
+    }
+
+    var clickClosers = $all('.close-modal, .question-modal-close, .online-players-close');
+    for (var j = 0; j < clickClosers.length; j++) {
+        var el = clickClosers[j];
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', 'Close dialog');
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.currentTarget.click();
+            }
+        });
+    }
+
+    var observerTargets = [];
+    if (questionModal) observerTargets.push(questionModal);
+    if (onlineModal) observerTargets.push(onlineModal);
+    for (var k = 0; k < modals.length; k++) observerTargets.push(modals[k]);
+
+    var lastFocused = null;
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            if (mutation.type !== 'attributes') return;
+            var target = mutation.target;
+            var open = isModalElementOpen(target);
+            target.setAttribute('aria-hidden', open ? 'false' : 'true');
+            if (open) {
+                lastFocused = document.activeElement;
+                var focusable = target.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusable) focusable.focus();
+            } else if (lastFocused && document.body.contains(lastFocused)) {
+                lastFocused.focus();
+                lastFocused = null;
+            }
+        });
+    });
+
+    observerTargets.forEach(function (el) {
+        if (!el) return;
+        observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+}
+
+function isModalElementOpen(el) {
+    if (!el) return false;
+    if (el.id === 'question-modal') return el.classList.contains('active');
+    if (el.id === 'online-players-modal') return el.classList.contains('active');
+    return !el.classList.contains('hidden');
 }
 
 // Close only question modal panel; board state remains unchanged.
@@ -604,6 +832,7 @@ function closeQuestionModal() {
     var modal = document.getElementById('question-modal');
     if (modal) {
         modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
     }
 }
 
@@ -638,7 +867,7 @@ function useExistingLogin() {
     })
         .then(function (response) {
             if (!response.ok) {
-                alert('Please log in to the website first, then return to the game.');
+                showNotification('Please log in to the website first, then return to the game.', { type: 'warning', duration: 5000 });
                 var returnTo = window.location.pathname + window.location.search + window.location.hash;
                 window.location.href = getLoginUrl() + '?next=' + encodeURIComponent(returnTo);
                 return null;
@@ -694,7 +923,7 @@ function useExistingLogin() {
         })
         .catch(function (error) {
             console.error('Login error:', error);
-            alert('Error connecting to server. Please try again.');
+            showNotification('Error connecting to server. Please try again.', { type: 'error' });
         });
 }
 
@@ -925,7 +1154,7 @@ function selectCharacter(card) {
     
     // Visual feedback
     var characterName = card.querySelector('.character-name').textContent;
-    alert('✓ ' + characterName + ' selected! Click START ADVENTURE to begin.');
+    showNotification('✓ ' + characterName + ' selected! Click START ADVENTURE to begin.', { type: 'success' });
     
     // Update UI immediately
     updatePlayerInfo();
@@ -1004,7 +1233,7 @@ function selectCharacter(card) {
 function startGame() {
     playSfx('click');
     if (!gameState.character) {
-        alert('Please select a character!');
+        showNotification('Please select a character!', { type: 'warning' });
         return;
     }
 
@@ -1872,7 +2101,7 @@ function rollDice() {
     playSfx('dice');
     // Block dice roll if a lesson or question is currently open
     if (isLessonOrQuestionOpen()) {
-        alert('Please close the current lesson or question first before rolling the dice.\n\nYou can close it by clicking the X button to return to the game board.');
+        showNotification('Please close the current lesson or question first before rolling the dice.\n\nYou can close it by clicking the X button to return to the game board.', { type: 'warning', duration: 6000 });
         return;
     }
 
@@ -1904,7 +2133,7 @@ function showDiceAnimation(roll) {
         var resultNumber = document.getElementById('dice-result-number');
 
         if (!overlay || !cube) {
-            alert('You rolled a ' + roll + '!');
+            showNotification('You rolled a ' + roll + '!', { type: 'info' });
             resolve();
             return;
         }
@@ -2033,7 +2262,7 @@ function handleSquareEvent() {
 
     if (section === 1) {
         if (square === 0) {
-            alert('This is START. Roll the dice to move to the first lesson.');
+            showNotification('This is START. Roll the dice to move to the first lesson.', { type: 'info' });
             return;
         }
 
@@ -2055,7 +2284,7 @@ function handleSquareEvent() {
                     gameState.unlockedSections.push('half2');
                     saveProgress();
                 }
-                alert('All lessons completed! You can now go to the next section using the arrow button.');
+                showNotification('All lessons completed! You can now go to the next section using the arrow button.', { type: 'success', duration: 6000 });
             } else {
                 // Some lessons still incomplete
                 var msg = 'Lesson ' + lessonNum + ' is already complete!\n\n';
@@ -2064,7 +2293,7 @@ function handleSquareEvent() {
                     msg += 'Click on lesson squares ' + progress.incomplete.join(', ') + ' to complete them.\n';
                     msg += 'You can revisit any visited square by clicking on it.';
                 }
-                alert(msg);
+                showNotification(msg, { type: 'info', duration: 7000 });
             }
             return;
         }
@@ -2083,18 +2312,18 @@ function handleSquareEvent() {
             if (gameState.isGuest || gameState.isDemoMode) {
                 if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
                 saveProgress();
-                alert('You reached the end of the questions! You can now proceed to the boss.');
+                showNotification('You reached the end of the questions! You can now proceed to the boss.', { type: 'success', duration: 6000 });
                 return;
             }
             checkPlayerTopFive().then(function (isTopFive) {
                 if (isTopFive) {
                     if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
                     saveProgress();
-                    alert('You reached the end of the section! As a top player, you may now proceed to the boss.');
+                    showNotification('You reached the end of the section! As a top player, you may now proceed to the boss.', { type: 'success', duration: 6000 });
                 } else {
-                    alert('You reached the end of the questions, but only the top 10 players can proceed to the boss. Check the leaderboard and try to earn more bullets!');
+                    showNotification('You reached the end of the questions, but only the top 10 players can proceed to the boss. Check the leaderboard and try to earn more bullets!', { type: 'warning', duration: 7000 });
                 }
-            }).catch(function () { alert('Unable to check leaderboard at this time. Try again later.'); });
+            }).catch(function () { showNotification('Unable to check leaderboard at this time. Try again later.', { type: 'error' }); });
             return;
         }
         if (square >= sectionStart && square < sectionEnd) {
@@ -2118,14 +2347,14 @@ function showQuestionModal(square, row, index) {
     }
 
     if (!window.QUESTIONS_BANK) {
-        alert('Question data not loaded. Please refresh the page.');
+        showNotification('Question data not loaded. Please refresh the page.', { type: 'error' });
         return;
     }
 
     var BANK = window.QUESTIONS_BANK;
     if (!BANK[row] || !BANK[row][index]) {
         console.error('Question not found for row/index:', row, index);
-        alert('Question not found. Please try again.');
+        showNotification('Question not found. Please try again.', { type: 'error' });
         return;
     }
 
@@ -2200,7 +2429,7 @@ function showQuestionModal(square, row, index) {
         // ALWAYS use MiniGames system - no fallback to old games
         if (!window.MiniGames) {
             console.error('MiniGames not loaded! Cannot show question modal.');
-            alert('Game system not loaded. Please refresh the page.');
+            showNotification('Game system not loaded. Please refresh the page.', { type: 'error' });
             return;
         }
 
@@ -2283,13 +2512,13 @@ function showQuestionModal(square, row, index) {
     newBtn.addEventListener('click', function() {
         // Check if mini-game is completed
         if (!miniGameCompleted) {
-            alert('Please complete the mini-game challenge first!');
+            showNotification('Please complete the mini-game challenge first!', { type: 'warning' });
             return;
         }
 
         var selected = document.querySelector('input[name="question-answer"]:checked');
         if (!selected) {
-            alert('Please select an answer.');
+            showNotification('Please select an answer.', { type: 'warning' });
             return;
         }
 
@@ -2302,7 +2531,10 @@ function showQuestionModal(square, row, index) {
 
         // If in demo mode, handle locally without API call
         if (gameState.isDemoMode || gameState.isGuest) {
-            alert(correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.');
+            showNotification(
+                correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.',
+                { type: correct ? 'success' : 'warning' }
+            );
 
             if (correct) {
                 gameState.bullets += QUESTION_BULLETS;
@@ -2338,7 +2570,10 @@ function showQuestionModal(square, row, index) {
         })
         .then(function(res) {
             if (res.ok) {
-                alert(correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.');
+                showNotification(
+                    correct ? ('Correct! You earned ' + QUESTION_BULLETS + ' bullets.') : 'Incorrect. No bullets awarded.',
+                    { type: correct ? 'success' : 'warning' }
+                );
 
                 if (correct) {
                     gameState.bullets += QUESTION_BULLETS;
@@ -2352,12 +2587,12 @@ function showQuestionModal(square, row, index) {
             }
 
             return res.json().then(function(data) {
-                alert(data.error || data.message || 'Error submitting answer.');
+                showNotification(data.error || data.message || 'Error submitting answer.', { type: 'error' });
             });
         })
         .catch(function(err) {
             console.error(err);
-            alert('Network error.');
+            showNotification('Network error.', { type: 'error' });
         })
         .finally(function() {
             newBtn.disabled = false;
@@ -2505,7 +2740,7 @@ function navigateNext() {
             checkPlayerTopFive().then(function (isTopFive) {
                 if (!isTopFive) {
                     if (overlay) overlay.style.display = 'flex';
-                    alert('Only the top 10 players on the leaderboard can enter the boss battle. Climb the ranks!');
+                    showNotification('Only the top 10 players on the leaderboard can enter the boss battle. Climb the ranks!', { type: 'warning', duration: 6000 });
                     return;
                 }
                 if (gameState.unlockedSections.indexOf('boss') === -1) gameState.unlockedSections.push('boss');
@@ -2623,7 +2858,7 @@ function viewLeaderboard() {
 function startBossBattle() {
     checkPlayerTopFive().then(function (isTopFive) {
         if (!isTopFive) {
-            alert('Only the top 10 players can participate in the boss battle. Check the leaderboard to see where you stand.');
+            showNotification('Only the top 10 players can participate in the boss battle. Check the leaderboard to see where you stand.', { type: 'warning', duration: 6000 });
             return;
         }
         loadProgress().then(function () {
@@ -2635,7 +2870,7 @@ function startBossBattle() {
                 modal.classList.remove('hidden');
             }
         });
-    }).catch(function () { alert('Unable to verify leaderboard status. Try again later.'); });
+    }).catch(function () { showNotification('Unable to verify leaderboard status. Try again later.', { type: 'error' }); });
 }
 
 // ============================================
@@ -2669,7 +2904,10 @@ function autofillCurrentQuestion(square, row, index) {
     // Refresh the board
     createGameBoard();
 
-    alert('Demo Mode: Question auto-completed! You earned ' + QUESTION_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.');
+    showNotification(
+        'Demo Mode: Question auto-completed! You earned ' + QUESTION_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.',
+        { type: 'info', duration: 7000 }
+    );
 }
 
 /**
@@ -2713,7 +2951,10 @@ function autofillCurrentLesson(lessonNum) {
     // Refresh the board
     createGameBoard();
 
-    alert('Demo Mode: Lesson ' + lessonNum + ' auto-completed! You earned ' + LESSON_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.');
+    showNotification(
+        'Demo Mode: Lesson ' + lessonNum + ' auto-completed! You earned ' + LESSON_BULLETS + ' bullets.\n\nNote: This progress is for demo purposes only and will not be saved to the leaderboard.',
+        { type: 'info', duration: 7000 }
+    );
 }
 
 /**
@@ -2763,13 +3004,14 @@ function autofillSection1() {
     createGameBoard();
 
     if (completedCount > 0) {
-        alert('Demo Mode: Section 1 auto-completed!\n\n' +
+        showNotification('Demo Mode: Section 1 auto-completed!\n\n' +
             completedCount + ' lesson(s) completed\n' +
             bulletsEarned + ' bullets earned\n' +
             'Total bullets: ' + gameState.bullets + '\n\n' +
-            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.');
+            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.',
+            { type: 'info', duration: 8000 });
     } else {
-        alert('All lessons in Section 1 are already complete!');
+        showNotification('All lessons in Section 1 are already complete!', { type: 'info' });
     }
 }
 
@@ -2815,14 +3057,15 @@ function autofillSection2() {
     createGameBoard();
 
     if (completedCount > 0) {
-        alert('Demo Mode: Section 2 auto-completed!\n\n' +
+        showNotification('Demo Mode: Section 2 auto-completed!\n\n' +
             completedCount + ' question(s) completed\n' +
             bulletsEarned + ' bullets earned\n' +
             'Total bullets: ' + gameState.bullets + '\n\n' +
             'You now have enough bullets for the boss battle!\n\n' +
-            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.');
+            'Note: This progress is for demo purposes only and will not be saved to the leaderboard.',
+            { type: 'info', duration: 8000 });
     } else {
-        alert('All questions in Section 2 are already complete!');
+        showNotification('All questions in Section 2 are already complete!', { type: 'info' });
     }
 }
 // ============================================
@@ -3003,7 +3246,7 @@ function submitDisplayName() {
     if (!input) return;
     var name = String(input.value || '').trim();
     if (name.length < 2) {
-        alert('Please enter at least 2 characters for your screen name.');
+        showNotification('Please enter at least 2 characters for your screen name.', { type: 'warning' });
         return;
     }
     if (name.length > 20) name = name.slice(0, 20);

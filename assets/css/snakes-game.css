@@ -38,6 +38,82 @@ body {
   display: none !important;
 }
 
+/* Notifications */
+.snakes-notifications {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(420px, 90vw);
+  pointer-events: none;
+}
+
+.snakes-toast {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  border-left: 5px solid #3b82f6;
+  transform: translateY(-8px);
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  pointer-events: auto;
+}
+
+.snakes-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.snakes-toast--success {
+  border-left-color: #16a34a;
+}
+
+.snakes-toast--warning {
+  border-left-color: #f59e0b;
+}
+
+.snakes-toast--error {
+  border-left-color: #ef4444;
+}
+
+.snakes-toast__text {
+  font-size: 0.95em;
+  color: #111827;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.snakes-toast__close {
+  border: none;
+  background: transparent;
+  font-size: 1.1em;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.snakes-toast__close:hover {
+  color: #111827;
+}
+
+button:focus-visible,
+.btn:focus-visible,
+.nav-btn:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.7);
+  outline-offset: 2px;
+}
+
 /* Login styles */
 .login-box {
   background: white;
