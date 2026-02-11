@@ -2848,6 +2848,7 @@ function getDamageMultiplier() {
                 y: y,
                 dx: dx,
                 dy: dy,
+                character: character,
                 speed: Math.hypot(dx, dy) || preset.speed || 10,
                 size: preset.size || 8,
                 color: preset.color || ownerColor || '#FFD700',
@@ -4031,14 +4032,101 @@ function getDamageMultiplier() {
             // Draw other players' bullets
             gameState.otherPlayerBullets.forEach(drawBullet);
 
-            // Draw boss projectiles
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#8a2be2';
-            ctx.fillStyle = '#8a2be2';
+            // Draw boss projectiles — unique look per type
             gameState.bossProjectiles.forEach(proj => {
-                ctx.beginPath();
-                ctx.arc(proj.x, proj.y, proj.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.save();
+                const pType = proj.type || 'venom';
+                const pTime = Date.now();
+
+                if (pType === 'spiral') {
+                    // Spiraling green-purple energy with rotating trail
+                    const spin = pTime * 0.012;
+                    ctx.translate(proj.x, proj.y);
+                    ctx.rotate(spin);
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = '#27ae60';
+                    // Outer swirl arms
+                    for (let i = 0; i < 3; i++) {
+                        const a = (i / 3) * Math.PI * 2;
+                        ctx.fillStyle = i % 2 === 0 ? '#2ecc71' : '#8e44ad';
+                        ctx.beginPath();
+                        ctx.ellipse(Math.cos(a) * 4, Math.sin(a) * 4, proj.size * 0.6, proj.size * 0.3, a, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    // Bright core
+                    const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, proj.size);
+                    grd.addColorStop(0, '#abebc6');
+                    grd.addColorStop(0.5, '#27ae60');
+                    grd.addColorStop(1, 'rgba(142,68,173,0)');
+                    ctx.fillStyle = grd;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, proj.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (pType === 'burst') {
+                    // Shotgun pellet — jagged red shard
+                    const bAngle = Math.atan2(proj.dy || 0, proj.dx || 0);
+                    ctx.translate(proj.x, proj.y);
+                    ctx.rotate(bAngle + pTime * 0.008);
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#e74c3c';
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.beginPath();
+                    const pts = 5;
+                    for (let i = 0; i < pts * 2; i++) {
+                        const r = i % 2 === 0 ? proj.size + 1 : proj.size * 0.35;
+                        const sa = (i / (pts * 2)) * Math.PI * 2;
+                        if (i === 0) ctx.moveTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                        else ctx.lineTo(Math.cos(sa) * r, Math.sin(sa) * r);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    // Hot center
+                    ctx.fillStyle = '#f5b7b1';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (pType === 'sweep') {
+                    // Beam fragment — elongated cyan-white streak
+                    const bAngle = Math.atan2(proj.dy || 0, proj.dx || 0);
+                    ctx.translate(proj.x, proj.y);
+                    ctx.rotate(bAngle);
+                    ctx.shadowBlur = 16;
+                    ctx.shadowColor = '#00e5ff';
+                    // Elongated beam
+                    const grd = ctx.createLinearGradient(-proj.size * 1.5, 0, proj.size * 1.5, 0);
+                    grd.addColorStop(0, 'rgba(0,229,255,0)');
+                    grd.addColorStop(0.3, '#00e5ff');
+                    grd.addColorStop(0.5, '#ffffff');
+                    grd.addColorStop(0.7, '#00e5ff');
+                    grd.addColorStop(1, 'rgba(0,229,255,0)');
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(-proj.size * 1.5, -3, proj.size * 3, 6);
+                    // Core white line
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(-proj.size, -1, proj.size * 2, 2);
+
+                } else {
+                    // Default venom — toxic green-purple droplet
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#8a2be2';
+                    const grd = ctx.createRadialGradient(proj.x, proj.y, 2, proj.x, proj.y, proj.size + 2);
+                    grd.addColorStop(0, '#d5f5e3');
+                    grd.addColorStop(0.3, '#52be80');
+                    grd.addColorStop(0.7, '#8e44ad');
+                    grd.addColorStop(1, 'rgba(138,43,226,0)');
+                    ctx.fillStyle = grd;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, proj.size + 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Drip highlight
+                    ctx.fillStyle = '#abebc6';
+                    ctx.beginPath();
+                    ctx.arc(proj.x - 2, proj.y - 2, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
             });
 
             // Bleed visual effect on boss (red droplets)
@@ -4058,42 +4146,76 @@ function getDamageMultiplier() {
                 }
             }
 
-            // Draw powerups
-            // Reset shadow and alpha before drawing powerups
+            // Draw powerups — enhanced floating rune style
             ctx.shadowBlur = 0;
             ctx.globalAlpha = 1;
 
-            // Draw powerups
             gameState.powerups.forEach(powerup => {
                 const config = POWERUP_TYPES[powerup.type];
                 if (!config) return;
+                ctx.save();
 
-                // Pulsing glow effect
-                const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.2;
-                const glowSize = 25 * pulse;
+                const pTime = Date.now();
+                const pulse = 1 + Math.sin(pTime * 0.005) * 0.18;
+                const bob = Math.sin(pTime * 0.003) * 4; // Gentle float up/down
+                const py = powerup.y + bob;
 
-                // Outer glow
-                ctx.shadowBlur = glowSize;
+                // Spinning outer rune ring
+                const ringAngle = pTime * 0.001;
+                ctx.globalAlpha = 0.25;
+                ctx.strokeStyle = config.color;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 8]);
+                ctx.beginPath();
+                ctx.arc(powerup.x, py, 26 * pulse, ringAngle, ringAngle + Math.PI * 1.7);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Soft radial glow halo
+                const haloGrd = ctx.createRadialGradient(powerup.x, py, 6, powerup.x, py, 28 * pulse);
+                haloGrd.addColorStop(0, config.glowColor.replace('0.6', '0.5'));
+                haloGrd.addColorStop(0.6, config.glowColor.replace('0.6', '0.2'));
+                haloGrd.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = haloGrd;
+                ctx.beginPath();
+                ctx.arc(powerup.x, py, 28 * pulse, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Floating sparkle particles
+                ctx.globalAlpha = 0.7;
+                for (let i = 0; i < 5; i++) {
+                    const sparkAngle = pTime * 0.002 + (i / 5) * Math.PI * 2;
+                    const sparkR = 18 + Math.sin(pTime * 0.004 + i) * 6;
+                    const sx = powerup.x + Math.cos(sparkAngle) * sparkR;
+                    const sy = py + Math.sin(sparkAngle) * sparkR;
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 1, 2, 2);
+                }
+
+                // Inner filled circle with gradient
+                const innerGrd = ctx.createRadialGradient(powerup.x, py, 2, powerup.x, py, 18);
+                innerGrd.addColorStop(0, '#ffffff');
+                innerGrd.addColorStop(0.35, config.color);
+                innerGrd.addColorStop(1, config.glowColor.replace('0.6', '0.8'));
+                ctx.shadowBlur = 22 * pulse;
                 ctx.shadowColor = config.glowColor;
-                ctx.fillStyle = config.color;
-                ctx.globalAlpha = 0.3;
+                ctx.globalAlpha = 0.85;
+                ctx.fillStyle = innerGrd;
                 ctx.beginPath();
-                ctx.arc(powerup.x, powerup.y, 22, 0, Math.PI * 2);
+                ctx.arc(powerup.x, py, 17, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Inner circle
-                ctx.globalAlpha = 0.8;
-                ctx.beginPath();
-                ctx.arc(powerup.x, powerup.y, 18, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Icon
+                // Crisp icon on top
                 ctx.globalAlpha = 1;
-                ctx.shadowBlur = 0;
-                ctx.font = 'bold 20px Arial';
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = '#000';
+                ctx.font = 'bold 22px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(config.icon, powerup.x, powerup.y);
+                ctx.fillText(config.icon, powerup.x, py);
+
+                ctx.restore();
             });
 
             // Reset ctx state after powerups
