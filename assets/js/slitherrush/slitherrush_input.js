@@ -29,6 +29,11 @@
         this.lastDirection = { x: 1, y: 0 };
         this.lastSent = null;
         this.spectateSwitchQueue = [];
+        this.pointer = {
+            active: false,
+            x: 0,
+            y: 0
+        };
     }
 
     Input.prototype._setMovementKey = function (key, pressed) {
@@ -39,6 +44,18 @@
     };
 
     Input.prototype._computeDirection = function () {
+        if (this.pointer.active) {
+            var centerX = window.innerWidth / 2;
+            var centerY = window.innerHeight / 2;
+            var dx = this.pointer.x - centerX;
+            var dy = this.pointer.y - centerY;
+            if (Math.abs(dx) + Math.abs(dy) > 8) {
+                var pointerDir = normalizeVector(dx, dy);
+                this.lastDirection = pointerDir;
+                return pointerDir;
+            }
+        }
+
         var axisX = (this.keys.right ? 1 : 0) - (this.keys.left ? 1 : 0);
         var axisY = (this.keys.down ? 1 : 0) - (this.keys.up ? 1 : 0);
 
@@ -113,8 +130,61 @@
             self.keys.left = false;
             self.keys.right = false;
             self.keys.boost = false;
+            self.pointer.active = false;
             self._emitIfChanged();
         });
+
+        window.addEventListener('mousemove', function (event) {
+            self.pointer.active = true;
+            self.pointer.x = Number(event.clientX || 0);
+            self.pointer.y = Number(event.clientY || 0);
+            self._emitIfChanged();
+        });
+
+        window.addEventListener('mouseleave', function () {
+            self.pointer.active = false;
+            self._emitIfChanged();
+        });
+
+        window.addEventListener('mousedown', function (event) {
+            if (Number(event.button || 0) !== 0) return;
+            self.keys.boost = true;
+            self.pointer.active = true;
+            self.pointer.x = Number(event.clientX || self.pointer.x);
+            self.pointer.y = Number(event.clientY || self.pointer.y);
+            self._emitIfChanged();
+        });
+
+        window.addEventListener('mouseup', function (event) {
+            if (Number(event.button || 0) !== 0) return;
+            self.keys.boost = false;
+            self._emitIfChanged();
+        });
+
+        window.addEventListener('touchstart', function (event) {
+            if (!event.touches || !event.touches.length) return;
+            var touch = event.touches[0];
+            self.pointer.active = true;
+            self.pointer.x = Number(touch.clientX || 0);
+            self.pointer.y = Number(touch.clientY || 0);
+            self.keys.boost = true;
+            self._emitIfChanged();
+        }, { passive: true });
+
+        window.addEventListener('touchmove', function (event) {
+            if (!event.touches || !event.touches.length) return;
+            var touch = event.touches[0];
+            self.pointer.active = true;
+            self.pointer.x = Number(touch.clientX || 0);
+            self.pointer.y = Number(touch.clientY || 0);
+            self._emitIfChanged();
+        }, { passive: true });
+
+        window.addEventListener('touchend', function () {
+            self.keys.boost = false;
+            self.pointer.active = false;
+            self._emitIfChanged();
+        }, { passive: true });
 
         this._emitIfChanged();
     };

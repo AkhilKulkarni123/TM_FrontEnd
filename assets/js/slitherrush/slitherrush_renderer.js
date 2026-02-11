@@ -64,7 +64,7 @@
         pctx.clearRect(0, 0, size, size);
 
         // Dot lattice.
-        pctx.fillStyle = 'rgba(132, 202, 255, 0.07)';
+        pctx.fillStyle = 'rgba(255, 214, 70, 0.08)';
         for (var y = 18; y < size; y += 34) {
             for (var x = 18; x < size; x += 34) {
                 pctx.beginPath();
@@ -74,7 +74,7 @@
         }
 
         // Minimal diagonal hash accents.
-        pctx.strokeStyle = 'rgba(140, 210, 255, 0.06)';
+        pctx.strokeStyle = 'rgba(255, 214, 70, 0.09)';
         pctx.lineWidth = 1;
         for (var i = -1; i < 7; i += 1) {
             var sx = i * 44;
@@ -84,7 +84,7 @@
             pctx.stroke();
         }
 
-        pctx.strokeStyle = 'rgba(100, 170, 240, 0.05)';
+        pctx.strokeStyle = 'rgba(255, 188, 68, 0.08)';
         pctx.lineWidth = 1.2;
         pctx.beginPath();
         pctx.moveTo(0, size * 0.72);
@@ -121,9 +121,9 @@
         var h = this.view.height;
 
         var radial = ctx.createRadialGradient(w * 0.2, h * 0.14, 0, w * 0.5, h * 0.52, Math.max(w, h));
-        radial.addColorStop(0, '#0f2842');
-        radial.addColorStop(0.42, '#091a2f');
-        radial.addColorStop(1, '#040a17');
+        radial.addColorStop(0, '#2a1f08');
+        radial.addColorStop(0.44, '#17141b');
+        radial.addColorStop(1, '#090b12');
         ctx.fillStyle = radial;
         ctx.fillRect(0, 0, w, h);
 
@@ -139,7 +139,7 @@
 
         // Contour-like wave lines for motion depth.
         ctx.save();
-        ctx.strokeStyle = 'rgba(133, 206, 255, 0.09)';
+        ctx.strokeStyle = 'rgba(255, 214, 70, 0.1)';
         ctx.lineWidth = 1.15;
         for (var row = 0; row < 7; row += 1) {
             var baseY = row * (h / 6) + ((-this.camera.y * 0.08 + row * 17) % 50);
@@ -164,9 +164,9 @@
             var glow = this.worldToScreen(worldX, worldY);
             if (glow.x < -260 || glow.x > w + 260 || glow.y < -260 || glow.y > h + 260) continue;
             var g = ctx.createRadialGradient(glow.x, glow.y, 8, glow.x, glow.y, 170);
-            g.addColorStop(0, 'rgba(96, 195, 255, 0.16)');
-            g.addColorStop(0.62, 'rgba(69, 140, 234, 0.06)');
-            g.addColorStop(1, 'rgba(18, 39, 74, 0)');
+            g.addColorStop(0, 'rgba(255, 214, 70, 0.2)');
+            g.addColorStop(0.62, 'rgba(255, 188, 64, 0.08)');
+            g.addColorStop(1, 'rgba(40, 28, 10, 0)');
             ctx.fillStyle = g;
             ctx.beginPath();
             ctx.arc(glow.x, glow.y, 170, 0, Math.PI * 2);
@@ -194,13 +194,13 @@
         var h = bottomRight.y - topLeft.y;
 
         this.ctx.save();
-        this.ctx.strokeStyle = 'rgba(122, 214, 255, 0.55)';
+        this.ctx.strokeStyle = 'rgba(255, 214, 70, 0.7)';
         this.ctx.lineWidth = 2.5;
         this.ctx.setLineDash([12, 9]);
         this.ctx.strokeRect(x, y, w, h);
 
         this.ctx.setLineDash([]);
-        this.ctx.strokeStyle = 'rgba(194, 239, 255, 0.2)';
+        this.ctx.strokeStyle = 'rgba(255, 231, 167, 0.23)';
         this.ctx.lineWidth = 6;
         this.ctx.strokeRect(x, y, w, h);
         this.ctx.restore();
@@ -220,11 +220,11 @@
             var radius = 4 + Math.min(7, value);
             var pulse = 1 + (Math.sin(pulseTime + (i * 0.2)) * 0.17);
 
-            var core = '#86f8ff';
-            var glow = 'rgba(134, 248, 255, 0.35)';
+            var core = '#ffd35c';
+            var glow = 'rgba(255, 211, 92, 0.35)';
             if (value >= 4) {
-                core = '#ffd576';
-                glow = 'rgba(255, 213, 118, 0.35)';
+                core = '#ff964f';
+                glow = 'rgba(255, 150, 79, 0.34)';
             }
 
             ctx.beginPath();
@@ -304,7 +304,7 @@
 
         if (player.boost_active) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 205, 108, 0.95)';
+            ctx.strokeStyle = 'rgba(255, 214, 70, 0.95)';
             ctx.lineWidth = 3;
             ctx.arc(head.x, head.y, 18, 0, Math.PI * 2);
             ctx.stroke();
@@ -312,13 +312,13 @@
 
         if (isLocal) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(240, 253, 255, 0.95)';
+            ctx.strokeStyle = 'rgba(255, 236, 182, 0.95)';
             ctx.lineWidth = 2.5;
             ctx.arc(head.x, head.y, 24, 0, Math.PI * 2);
             ctx.stroke();
         }
 
-        ctx.fillStyle = 'rgba(232, 248, 255, 0.92)';
+        ctx.fillStyle = 'rgba(255, 241, 198, 0.94)';
         ctx.font = '13px Oxanium, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(player.username || 'Player', head.x, head.y - 22);

@@ -111,6 +111,39 @@
         });
     };
 
+    Client.prototype.disconnect = function () {
+        if (!this.socket) {
+            this.connected = false;
+            return;
+        }
+        try {
+            if (typeof this.socket.removeAllListeners === 'function') {
+                this.socket.removeAllListeners();
+            }
+        } catch (error) {}
+
+        try {
+            this.socket.disconnect();
+        } catch (error) {}
+
+        this.socket = null;
+        this.connected = false;
+        this.state = null;
+        this.death = null;
+        this.results = null;
+        this.selfId = null;
+    };
+
+    Client.prototype.reconnect = function (socketUrl, profile) {
+        if (socketUrl) this.socketUrl = String(socketUrl);
+        this.disconnect();
+        this.connect(profile || {});
+    };
+
+    Client.prototype.getSocketUrl = function () {
+        return this.socketUrl;
+    };
+
     Client.prototype.sendInput = function (payload) {
         if (!this.socket || !this.connected) return;
         this.socket.emit('slitherrush_input', payload || {});
