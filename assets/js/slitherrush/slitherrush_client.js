@@ -34,6 +34,8 @@
 
         this.selfId = null;
         this.selfUserName = 'Guest';
+        this.joinProfile = {};
+        this.lastJoinSentAt = 0;
 
         this.state = null;
         this.death = null;
@@ -43,12 +45,52 @@
     Client.prototype = Object.create(Emitter.prototype);
     Client.prototype.constructor = Client;
 
+    Client.prototype._cloneJoinProfile = function (profile) {
+        var src = profile || {};
+        return {
+            username: String(src.username || src.name || 'Guest'),
+            avatar: String(src.avatar || ''),
+            character: String(src.character || 'knight'),
+            party_id: src.party_id ? String(src.party_id).slice(0, 64) : null
+        };
+    };
+
+    Client.prototype._buildJoinPayload = function () {
+        var profile = this.joinProfile || {};
+        var payload = {
+            username: String(profile.username || 'Guest'),
+            avatar: profile.avatar || '',
+            character: profile.character || 'knight'
+        };
+        if (profile.party_id) payload.party_id = profile.party_id;
+        return payload;
+    };
+
+    Client.prototype.requestJoin = function (profile, force) {
+        if (profile) {
+            this.joinProfile = this._cloneJoinProfile(profile);
+            this.selfUserName = this.joinProfile.username || 'Guest';
+        } else if (!this.joinProfile || !this.joinProfile.username) {
+            this.joinProfile = this._cloneJoinProfile({ username: this.selfUserName || 'Guest' });
+        }
+
+        if (!this.socket || !this.connected) return false;
+
+        var now = Date.now();
+        if (!force && now - this.lastJoinSentAt < 450) return false;
+
+        this.lastJoinSentAt = now;
+        this.socket.emit('slitherrush_join', this._buildJoinPayload());
+        return true;
+    };
+
     Client.prototype.connect = function (profile) {
         if (this.socket) return;
 
         var self = this;
-        var joinProfile = profile || {};
-        this.selfUserName = String(joinProfile.username || joinProfile.name || 'Guest');
+        this.joinProfile = this._cloneJoinProfile(profile || {});
+        this.selfUserName = this.joinProfile.username || 'Guest';
+        this.lastJoinSentAt = 0;
 
         this.socket = window.io(this.socketUrl, {
             transports: ['websocket', 'polling'],
@@ -60,15 +102,7 @@
         this.socket.on('connect', function () {
             self.connected = true;
             self.selfId = self.socket.id;
-            var joinPayload = {
-                username: self.selfUserName,
-                avatar: joinProfile.avatar || '',
-                character: joinProfile.character || 'knight'
-            };
-            if (joinProfile.party_id) {
-                joinPayload.party_id = String(joinProfile.party_id).slice(0, 64);
-            }
-            self.socket.emit('slitherrush_join', joinPayload);
+            self.requestJoin(null, true);
             self.emit('connected', { sid: self.selfId });
         });
 
@@ -132,6 +166,7 @@
         this.death = null;
         this.results = null;
         this.selfId = null;
+        this.lastJoinSentAt = 0;
     };
 
     Client.prototype.reconnect = function (socketUrl, profile) {
@@ -142,6 +177,10 @@
 
     Client.prototype.getSocketUrl = function () {
         return this.socketUrl;
+    };
+
+    Client.prototype.isConnected = function () {
+        return !!(this.socket && this.connected);
     };
 
     Client.prototype.sendInput = function (payload) {

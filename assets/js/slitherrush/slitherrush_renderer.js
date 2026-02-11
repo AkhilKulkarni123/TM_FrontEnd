@@ -326,6 +326,95 @@
         ctx.restore();
     };
 
+    Renderer.prototype.renderBoot = function (context) {
+        var info = context || {};
+        var statusText = String(info.statusText || 'Connecting to arena...');
+        var detailText = String(info.detailText || 'Waiting for live state from server');
+        var now = performance.now() / 1000;
+
+        // Keep camera near center so bounds still read naturally while booting.
+        this.camera.x = lerp(this.camera.x, 2400, 0.08);
+        this.camera.y = lerp(this.camera.y, 1500, 0.08);
+
+        var ctx = this.ctx;
+        ctx.setTransform(this.view.dpr, 0, 0, this.view.dpr, 0, 0);
+        ctx.clearRect(0, 0, this.view.width, this.view.height);
+
+        this._drawBackground();
+        this._drawBounds({ width: 4800, height: 3000 });
+
+        var cx = this.view.width * 0.5 + Math.cos(now * 0.85) * 58;
+        var cy = this.view.height * 0.58 + Math.sin(now * 1.05) * 38;
+        var body = [];
+        for (var i = 0; i < 24; i += 1) {
+            var bend = now * 4.2 - (i * 0.42);
+            body.push({
+                x: cx - (i * 11.5) + (Math.sin(bend) * 8),
+                y: cy + (Math.cos(bend * 0.92) * 7)
+            });
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        for (var j = 0; j < body.length; j += 1) {
+            var p = body[j];
+            if (j === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        }
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 18;
+        ctx.strokeStyle = '#ffd35c';
+        ctx.stroke();
+
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+        ctx.stroke();
+
+        var head = body[0];
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(255,255,255,0.24)';
+        ctx.arc(head.x, head.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = '#ffb457';
+        ctx.arc(head.x, head.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 236, 182, 0.95)';
+        ctx.lineWidth = 2.5;
+        ctx.arc(head.x, head.y, 24, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        var panelW = Math.min(620, this.view.width - 40);
+        var panelX = (this.view.width - panelW) / 2;
+        var panelY = Math.max(18, this.view.height * 0.17);
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(8, 10, 18, 0.72)';
+        ctx.strokeStyle = 'rgba(255, 214, 70, 0.5)';
+        ctx.lineWidth = 1.2;
+        ctx.fillRect(panelX, panelY, panelW, 92);
+        ctx.strokeRect(panelX, panelY, panelW, 92);
+
+        ctx.fillStyle = '#ffe9a8';
+        ctx.font = '700 18px Oxanium, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(statusText, this.view.width / 2, panelY + 34);
+
+        ctx.fillStyle = 'rgba(245, 230, 186, 0.92)';
+        ctx.font = '500 14px Rajdhani, sans-serif';
+        ctx.fillText(detailText, this.view.width / 2, panelY + 58);
+
+        ctx.fillStyle = 'rgba(245, 230, 186, 0.78)';
+        ctx.font = '500 13px Rajdhani, sans-serif';
+        ctx.fillText('You can still move your pointer/WASD. Spawn starts as soon as state syncs.', this.view.width / 2, panelY + 78);
+        ctx.restore();
+    };
+
     Renderer.prototype.render = function (state, cameraTargetId) {
         if (!state) return;
 

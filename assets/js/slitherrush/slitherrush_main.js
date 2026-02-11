@@ -5,6 +5,7 @@
     var IPV4_PRIVATE_RE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
     var BASE_FROM_GLOBAL = String(window.GAME_API_BASE || window.SNAKES_API_BASE || '').trim();
     var LOCAL_PORT_CANDIDATES = [8306, 8301, 8500];
+    var REMOTE_DEFAULT_BASE = 'https://snakes.opencodingsociety.com';
     var IS_LOCAL = (
         HOSTNAME === 'localhost' ||
         HOSTNAME === '127.0.0.1' ||
@@ -37,18 +38,21 @@
         var scheme = window.location.protocol || 'http:';
         var host = HOSTNAME || 'localhost';
 
-        pushUnique(list, configuredBase);
-        pushUnique(list, originBase);
-
         if (IS_LOCAL) {
             for (var i = 0; i < LOCAL_PORT_CANDIDATES.length; i += 1) {
                 var port = LOCAL_PORT_CANDIDATES[i];
                 pushUnique(list, scheme + '//' + host + ':' + port);
                 if (host !== 'localhost') pushUnique(list, scheme + '//localhost:' + port);
             }
+            pushUnique(list, configuredBase);
+            pushUnique(list, originBase);
+            pushUnique(list, REMOTE_DEFAULT_BASE);
+            return list;
         }
 
-        pushUnique(list, 'https://snakes.opencodingsociety.com');
+        pushUnique(list, configuredBase);
+        pushUnique(list, REMOTE_DEFAULT_BASE);
+        pushUnique(list, originBase);
         return list;
     }
 
@@ -124,6 +128,7 @@
         var renderer = new window.SlitherRush.Renderer(canvas);
         var ui = new window.SlitherRush.UI();
         var statusEl = document.getElementById('srConnectionStatus');
+        var retryBtn = document.getElementById('srRetryBtn');
         var introOverlay = document.getElementById('srIntroOverlay');
         var introCloseBtn = document.getElementById('srIntroCloseBtn');
         var introPlayBtn = document.getElementById('srIntroPlayBtn');
@@ -140,9 +145,18 @@
         var waitingForJoin = true;
         var selfMissingSince = 0;
         var connectAttempt = 0;
+        var lastJoinNudgeAt = 0;
 
         function setStatus(text) {
             if (statusEl) statusEl.textContent = text;
+        }
+
+        function resetJoinTracking() {
+            waitingForJoin = true;
+            joinedPayloadSeen = false;
+            stateSeenAt = Date.now();
+            selfMissingSince = 0;
+            lastJoinNudgeAt = 0;
         }
 
         function currentEndpointLabel() {
@@ -157,19 +171,28 @@
 
         function tryNextEndpoint(reason) {
             if (endpointIndex >= SOCKET_CANDIDATES.length - 1) {
-                setStatus('Connected but no playable arena. Retrying spawn...');
+                var hostHint = currentEndpointLabel();
+                setStatus('No arena state from ' + hostHint + '. Click Retry Spawn.');
                 return false;
             }
             endpointIndex += 1;
-            waitingForJoin = true;
-            joinedPayloadSeen = false;
-            stateSeenAt = Date.now();
-            selfMissingSince = 0;
+            resetJoinTracking();
             connectAttempt += 1;
             setStatus('Reconnecting (' + connectAttempt + ') • ' + currentEndpointLabel());
             client.reconnect(SOCKET_CANDIDATES[endpointIndex], profile);
+            client.requestJoin(profile, true);
             setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
             return true;
+        }
+
+        function retrySpawn() {
+            endpointIndex = 0;
+            resetJoinTracking();
+            connectAttempt += 1;
+            setStatus('Retrying spawn (' + connectAttempt + ') • ' + currentEndpointLabel());
+            client.reconnect(SOCKET_CANDIDATES[endpointIndex], profile);
+            client.requestJoin(profile, true);
+            setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
         }
 
         var input = new window.SlitherRush.Input(function (payload) {
@@ -193,16 +216,20 @@
         function enterArenaNow() {
             hideIntroOverlay();
             spectatorRecoveryAttempts = 0;
-            client.playAgain();
+            if (client.getState()) {
+                client.playAgain();
+            } else {
+                retrySpawn();
+            }
         }
 
         if (introCloseBtn) introCloseBtn.addEventListener('click', hideIntroOverlay);
         if (introPlayBtn) introPlayBtn.addEventListener('click', enterArenaNow);
+        if (retryBtn) retryBtn.addEventListener('click', retrySpawn);
         if (introOverlay) {
             introOverlay.addEventListener('click', function (event) {
                 if (event.target === introOverlay) hideIntroOverlay();
             });
-            window.setTimeout(hideIntroOverlay, 9000);
         }
 
         ui.bindActions({
@@ -227,12 +254,15 @@
 
         client.on('connected', function () {
             waitingForJoin = true;
+            stateSeenAt = Date.now();
+            lastJoinNudgeAt = 0;
             setStatus('Joining live arena... (' + currentEndpointLabel() + ')');
         });
 
         client.on('joined', function (payload) {
             joinedPayloadSeen = true;
             waitingForJoin = false;
+            stateSeenAt = Date.now();
             var isSpectator = !!(payload && payload.role === 'spectator');
             setStatus(
                 isSpectator
@@ -320,10 +350,25 @@
         function frame() {
             var state = client.getState();
             if (!state) {
-                if (waitingForJoin && Date.now() - stateSeenAt > 2800) {
-                    tryNextEndpoint('state_timeout');
-                    stateSeenAt = Date.now();
+                var now = Date.now();
+                if (client.isConnected() && now - lastJoinNudgeAt > 1200) {
+                    client.requestJoin(profile);
+                    lastJoinNudgeAt = now;
                 }
+                if (now - stateSeenAt > 2800) {
+                    tryNextEndpoint('state_timeout');
+                    stateSeenAt = now;
+                }
+                renderer.renderBoot({
+                    statusText: statusEl ? statusEl.textContent : 'Joining live arena...',
+                    detailText: client.isConnected()
+                        ? (
+                            waitingForJoin
+                                ? ('Connected to ' + currentEndpointLabel() + ', requesting join...')
+                                : ('Connected to ' + currentEndpointLabel() + ', waiting for arena snapshot')
+                        )
+                        : ('Connecting to ' + currentEndpointLabel())
+                });
                 window.requestAnimationFrame(frame);
                 return;
             }
@@ -340,7 +385,7 @@
                 if (!selfMissingSince) selfMissingSince = Date.now();
                 if (Date.now() - selfMissingSince > 2500) {
                     if (!tryNextEndpoint('self_missing')) {
-                        setStatus('Connected • syncing player state');
+                        setStatus('Connected but self state is missing. Click Retry Spawn.');
                     }
                     selfMissingSince = Date.now();
                 }
