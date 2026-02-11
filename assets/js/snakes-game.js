@@ -1843,6 +1843,59 @@ function openSocialProfileForPlayer(player) {
     return true;
 }
 
+function toLeaderboardProfilePayload(entry) {
+    if (!entry) return null;
+    return toSocialProfilePayload({
+        user_id: entry.user_id || entry.id || null,
+        username: entry.username || entry.name || 'Player',
+        avatar_url: entry.avatar_url || entry.avatarUrl || null,
+        selected_character: entry.selected_character || entry.character || '',
+        weapon_type: entry.weapon_type || entry.selected_weapon || entry.weapon || '',
+        current_square: entry.current_square || null,
+        total_bullets: entry.total_bullets || entry.bullets || 0,
+        time_played: entry.time_played || 0,
+        presence: entry.presence || 'offline'
+    });
+}
+
+function isCurrentUserId(userId) {
+    var numericId = Number(userId || 0) || 0;
+    var selfId = Number(gameState.userId || 0) || 0;
+    return !!numericId && !!selfId && numericId === selfId;
+}
+
+function openSocialProfileForLeaderboardEntry(entry) {
+    var social = window.SnakesSocial;
+    if (!social || typeof social.openPlayerProfile !== 'function') return false;
+    var payload = toLeaderboardProfilePayload(entry);
+    if (!payload) return false;
+    social.openPlayerProfile(payload);
+    return true;
+}
+
+function sendFriendRequestForLeaderboardEntry(entry) {
+    var social = window.SnakesSocial;
+    if (!social || typeof social.sendFriendRequest !== 'function') return false;
+    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
+    if (!targetUserId || isCurrentUserId(targetUserId)) return false;
+    social.sendFriendRequest(targetUserId);
+    return true;
+}
+
+function openDmForLeaderboardEntry(entry) {
+    var social = window.SnakesSocial;
+    if (!social || typeof social.openDmWithUser !== 'function') return false;
+    var targetUserId = Number((entry && (entry.user_id || entry.id)) || 0) || 0;
+    if (!targetUserId || isCurrentUserId(targetUserId)) return false;
+    social.openDmWithUser(targetUserId);
+    return true;
+}
+
+window.SnakesBoardSocial = window.SnakesBoardSocial || {};
+window.SnakesBoardSocial.openProfileFromLeaderboard = openSocialProfileForLeaderboardEntry;
+window.SnakesBoardSocial.sendFriendRequestFromLeaderboard = sendFriendRequestForLeaderboardEntry;
+window.SnakesBoardSocial.openDmFromLeaderboard = openDmForLeaderboardEntry;
+
 // Modal list of players on a square with quick drill-down to full profile popup.
 function showSquarePlayersPopup(squareNum, players) {
     // Remove any existing popup
