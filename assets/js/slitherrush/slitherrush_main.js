@@ -2,13 +2,22 @@
     'use strict';
 
     var HOSTNAME = window.location.hostname || '';
+    var IPV4_PRIVATE_RE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
+    var BASE_FROM_GLOBAL = String(window.GAME_API_BASE || window.SNAKES_API_BASE || '').trim();
     var IS_LOCAL = (
         HOSTNAME === 'localhost' ||
         HOSTNAME === '127.0.0.1' ||
+        HOSTNAME === '::1' ||
         HOSTNAME === '0.0.0.0' ||
+        IPV4_PRIVATE_RE.test(HOSTNAME) ||
         /\.local$/i.test(HOSTNAME)
     );
-    var SOCKET_URL = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
+    var SOCKET_URL = (function () {
+        var configuredBase = BASE_FROM_GLOBAL.replace(/\/api\/?$/i, '');
+        if (configuredBase) return configuredBase;
+        if (IS_LOCAL) return window.location.protocol + '//' + HOSTNAME + ':8306';
+        return 'https://snakes.opencodingsociety.com';
+    })();
 
     function setSocialActivity(mode, target, label) {
         if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
@@ -91,6 +100,9 @@
         var selectedSpectateId = null;
         var autoRespawnTimerId = null;
         var autoRespawnAt = 0;
+        var spectatorRecoveryAt = 0;
+        var spectatorRecoveryAttempts = 0;
+        var joinedPayloadSeen = false;
 
         var input = new window.SlitherRush.Input(function (payload) {
             var serialized = JSON.stringify(payload || {});
@@ -125,6 +137,7 @@
         });
 
         client.on('joined', function (payload) {
+            joinedPayloadSeen = true;
             var status = document.getElementById('srConnectionStatus');
             if (status) {
                 status.textContent = payload && payload.role === 'spectator'
@@ -133,6 +146,22 @@
             }
             var target = profile.party_id || (payload && payload.arena_id) || '';
             setSocialActivity('slitherrush', target, 'In SLITHERRUSH');
+        });
+
+        client.on('state', function (payload) {
+            if (joinedPayloadSeen || !payload) return;
+            var players = Array.isArray(payload.players) ? payload.players : [];
+            var selfPlayer = players.find(function (p) { return p.id === payload.self_id; }) || null;
+            var status = document.getElementById('srConnectionStatus');
+            if (!status) return;
+
+            if (selfPlayer && selfPlayer.status === 'alive') {
+                status.textContent = 'Connected • live arena';
+            } else if (selfPlayer && selfPlayer.status === 'spectator') {
+                status.textContent = 'Connected • syncing player state';
+            } else {
+                status.textContent = 'Connected • waiting for arena sync';
+            }
         });
 
         client.on('connection_error', function () {
@@ -200,6 +229,27 @@
             var players = Array.isArray(state.players) ? state.players : [];
             var selfPlayer = players.find(function (p) { return p.id === state.self_id; }) || null;
             var isEliminated = !!(selfPlayer && selfPlayer.status === 'spectator' && state.state === 'active');
+            var alivePlayers = getAlivePlayers(state);
+
+            var shouldRecoverSpectator = (
+                state.state === 'active' &&
+                (!selfPlayer || selfPlayer.status !== 'alive') &&
+                alivePlayers.length === 0
+            );
+            if (shouldRecoverSpectator) {
+                if (!spectatorRecoveryAt) spectatorRecoveryAt = Date.now() + 300;
+                if (Date.now() >= spectatorRecoveryAt && spectatorRecoveryAttempts < 6) {
+                    spectatorRecoveryAttempts += 1;
+                    spectatorRecoveryAt = Date.now() + 1000;
+                    client.playAgain();
+
+                    var status = document.getElementById('srConnectionStatus');
+                    if (status) status.textContent = 'Syncing with live arena...';
+                }
+            } else {
+                spectatorRecoveryAt = 0;
+                spectatorRecoveryAttempts = 0;
+            }
 
             var cameraTargetId = state.self_id;
             if (!selfPlayer || selfPlayer.status !== 'alive') {
