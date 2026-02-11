@@ -240,6 +240,30 @@
         ctx.restore();
     };
 
+    Renderer.prototype._drawBullets = function (bullets) {
+        var ctx = this.ctx;
+        var list = Array.isArray(bullets) ? bullets : [];
+        if (!list.length) return;
+
+        ctx.save();
+        for (var i = 0; i < list.length; i++) {
+            var bullet = list[i];
+            var p = this.worldToScreen(Number(bullet.x || 0), Number(bullet.y || 0));
+            if (p.x < -20 || p.x > this.view.width + 20 || p.y < -20 || p.y > this.view.height + 20) continue;
+
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 236, 170, 0.25)';
+            ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = '#ffe58a';
+            ctx.arc(p.x, p.y, 3.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    };
+
     Renderer.prototype._getBodyPoints = function (player) {
         if (!player || !Array.isArray(player.body) || !player.body.length) {
             if (player && player.head) return [player.head];
@@ -421,6 +445,7 @@
         var bounds = state.bounds || { width: 4800, height: 3000 };
         var players = Array.isArray(state.players) ? state.players : [];
         var energyOrbs = Array.isArray(state.energy_orbs) ? state.energy_orbs : [];
+        var bullets = Array.isArray(state.bullets) ? state.bullets : [];
 
         var cameraTarget = null;
         if (cameraTargetId) {
@@ -441,6 +466,7 @@
         this._drawBackground();
         this._drawBounds(bounds);
         this._drawEnergy(energyOrbs, performance.now());
+        this._drawBullets(bullets);
 
         for (var i = 0; i < players.length; i++) {
             this._drawSlither(players[i], state.self_id);

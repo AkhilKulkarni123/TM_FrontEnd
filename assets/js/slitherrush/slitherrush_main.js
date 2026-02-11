@@ -31,6 +31,16 @@
         }
     }
 
+    function shouldSkipSocketBase(base) {
+        if (!base) return true;
+        try {
+            var host = new URL(base).hostname || '';
+            return /github\.io$/i.test(host) || /githubusercontent\.com$/i.test(host);
+        } catch (error) {
+            return true;
+        }
+    }
+
     function buildSocketCandidates() {
         var list = [];
         var configuredBase = normalizeBaseUrl(BASE_FROM_GLOBAL.replace(/\/api\/?$/i, ''));
@@ -44,19 +54,26 @@
                 pushUnique(list, scheme + '//' + host + ':' + port);
                 if (host !== 'localhost') pushUnique(list, scheme + '//localhost:' + port);
             }
-            pushUnique(list, configuredBase);
-            pushUnique(list, originBase);
+            if (!shouldSkipSocketBase(configuredBase)) pushUnique(list, configuredBase);
+            if (!shouldSkipSocketBase(originBase)) pushUnique(list, originBase);
             pushUnique(list, REMOTE_DEFAULT_BASE);
             return list;
         }
 
-        pushUnique(list, configuredBase);
+        if (!shouldSkipSocketBase(configuredBase)) pushUnique(list, configuredBase);
         pushUnique(list, REMOTE_DEFAULT_BASE);
-        pushUnique(list, originBase);
+
+        // Only trust current origin as a socket endpoint when this page is
+        // already served from the game backend domain.
+        if (/snakes\.opencodingsociety\.com$/i.test(HOSTNAME) && !shouldSkipSocketBase(originBase)) {
+            pushUnique(list, originBase);
+        }
+
         return list;
     }
 
     var SOCKET_CANDIDATES = buildSocketCandidates();
+    if (!SOCKET_CANDIDATES.length) SOCKET_CANDIDATES = [REMOTE_DEFAULT_BASE];
 
     function setSocialActivity(mode, target, label) {
         if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
@@ -83,8 +100,6 @@
         } catch (error) {
             queryParty = null;
         }
-        // Only trust explicit URL intent to avoid stale storage forcing players
-        // into old arenas where they can get stuck spectating.
         var party = queryParty;
         if (!party) return null;
         party = String(party).trim();
@@ -123,10 +138,13 @@
         }
 
         var profile = detectProfile();
-        setSocialActivity('slitherrush', profile.party_id || '', 'Joining SLITHERRUSH');
-        var client = new window.SlitherRush.Client({ socketUrl: SOCKET_CANDIDATES[0] || '' });
+        setSocialActivity('slitherrush', profile.party_id || '', 'Joining SLITHERRUSH FFA');
+
+        var endpointIndex = 0;
+        var client = new window.SlitherRush.Client({ socketUrl: SOCKET_CANDIDATES[endpointIndex] || REMOTE_DEFAULT_BASE });
         var renderer = new window.SlitherRush.Renderer(canvas);
         var ui = new window.SlitherRush.UI();
+
         var statusEl = document.getElementById('srConnectionStatus');
         var socialBtn = document.getElementById('srSocialBtn');
         var retryBtn = document.getElementById('srRetryBtn');
@@ -135,29 +153,12 @@
         var introPlayBtn = document.getElementById('srIntroPlayBtn');
 
         var lastInputPayload = null;
-        var selectedSpectateId = null;
-        var autoRespawnTimerId = null;
-        var autoRespawnAt = 0;
-        var spectatorRecoveryAt = 0;
-        var spectatorRecoveryAttempts = 0;
-        var joinedPayloadSeen = false;
-        var endpointIndex = 0;
-        var stateSeenAt = Date.now();
-        var waitingForJoin = true;
-        var selfMissingSince = 0;
-        var connectAttempt = 0;
         var lastJoinNudgeAt = 0;
+        var stateSeenAt = Date.now();
+        var connectAttempt = 0;
 
         function setStatus(text) {
             if (statusEl) statusEl.textContent = text;
-        }
-
-        function resetJoinTracking() {
-            waitingForJoin = true;
-            joinedPayloadSeen = false;
-            stateSeenAt = Date.now();
-            selfMissingSince = 0;
-            lastJoinNudgeAt = 0;
         }
 
         function currentEndpointLabel() {
@@ -170,30 +171,46 @@
             }
         }
 
-        function tryNextEndpoint(reason) {
-            if (endpointIndex >= SOCKET_CANDIDATES.length - 1) {
-                var hostHint = currentEndpointLabel();
-                setStatus('No arena state from ' + hostHint + '. Click Retry Spawn.');
-                return false;
+        function hideIntroOverlay() {
+            if (!introOverlay) return;
+            introOverlay.classList.remove('active');
+        }
+
+        function openSocialPanel() {
+            if (!window.SnakesSocial || typeof window.SnakesSocial.openDrawer !== 'function') {
+                setStatus('Social is still loading...');
+                return;
             }
-            endpointIndex += 1;
-            resetJoinTracking();
+            var opened = window.SnakesSocial.openDrawer('party');
+            if (!opened) setStatus('Sign in to use friends, party, and chat.');
+        }
+
+        function reconnectCurrent(reasonLabel) {
             connectAttempt += 1;
-            setStatus('Reconnecting (' + connectAttempt + ') • ' + currentEndpointLabel());
+            stateSeenAt = Date.now();
+            setStatus((reasonLabel || 'Retrying') + ' (' + connectAttempt + ') • ' + currentEndpointLabel());
             client.reconnect(SOCKET_CANDIDATES[endpointIndex], profile);
             client.requestJoin(profile, true);
             setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
+        }
+
+        function tryNextEndpoint(reasonLabel) {
+            if (endpointIndex >= SOCKET_CANDIDATES.length - 1) {
+                return false;
+            }
+            endpointIndex += 1;
+            reconnectCurrent(reasonLabel || 'Switching server');
             return true;
         }
 
         function retrySpawn() {
-            endpointIndex = 0;
-            resetJoinTracking();
-            connectAttempt += 1;
-            setStatus('Retrying spawn (' + connectAttempt + ') • ' + currentEndpointLabel());
-            client.reconnect(SOCKET_CANDIDATES[endpointIndex], profile);
-            client.requestJoin(profile, true);
-            setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
+            if (client.isConnected()) {
+                client.playAgain();
+                client.requestJoin(profile, true);
+                setStatus('Respawning in live arena...');
+                return;
+            }
+            reconnectCurrent('Retrying spawn');
         }
 
         var input = new window.SlitherRush.Input(function (payload) {
@@ -209,28 +226,9 @@
             window.location.href = 'mode-selection.html';
         }
 
-        function hideIntroOverlay() {
-            if (!introOverlay) return;
-            introOverlay.classList.remove('active');
-        }
-
         function enterArenaNow() {
             hideIntroOverlay();
-            spectatorRecoveryAttempts = 0;
-            if (client.getState()) {
-                client.playAgain();
-            } else {
-                retrySpawn();
-            }
-        }
-
-        function openSocialPanel() {
-            if (!window.SnakesSocial || typeof window.SnakesSocial.openDrawer !== 'function') {
-                setStatus('Social is still loading...');
-                return;
-            }
-            var opened = window.SnakesSocial.openDrawer('party');
-            if (!opened) setStatus('Sign in to use friends, party, and chat.');
+            retrySpawn();
         }
 
         if (introCloseBtn) introCloseBtn.addEventListener('click', hideIntroOverlay);
@@ -252,37 +250,22 @@
                 goModeSelection();
             },
             onPlayAgain: function () {
-                selectedSpectateId = null;
-                autoRespawnAt = 0;
-                if (autoRespawnTimerId) {
-                    window.clearTimeout(autoRespawnTimerId);
-                    autoRespawnTimerId = null;
-                }
-                spectatorRecoveryAttempts = 0;
                 client.playAgain();
             }
         });
 
         client.on('connected', function () {
-            waitingForJoin = true;
             stateSeenAt = Date.now();
             lastJoinNudgeAt = 0;
-            setStatus('Joining live arena... (' + currentEndpointLabel() + ')');
+            setStatus('Connected to ' + currentEndpointLabel() + ' • joining arena...');
         });
 
         client.on('joined', function (payload) {
-            joinedPayloadSeen = true;
-            waitingForJoin = false;
             stateSeenAt = Date.now();
-            var isSpectator = !!(payload && payload.role === 'spectator');
-            setStatus(
-                isSpectator
-                    ? 'Connected • spectating'
-                    : 'Connected • live arena'
-            );
-            if (isSpectator) client.playAgain();
+            setStatus('Connected • live arena');
+            hideIntroOverlay();
             var target = profile.party_id || (payload && payload.arena_id) || '';
-            setSocialActivity('slitherrush', target, 'In SLITHERRUSH');
+            setSocialActivity('slitherrush', target, 'In SLITHERRUSH FFA');
         });
 
         client.on('state', function (payload) {
@@ -290,22 +273,23 @@
             stateSeenAt = Date.now();
             var players = Array.isArray(payload.players) ? payload.players : [];
             var selfPlayer = players.find(function (p) { return p.id === payload.self_id; }) || null;
-            if (selfPlayer) waitingForJoin = false;
             if (selfPlayer && selfPlayer.status === 'alive') hideIntroOverlay();
-            if (joinedPayloadSeen) return;
+            setStatus('Live arena • ' + players.length + ' players');
+        });
 
-            if (selfPlayer && selfPlayer.status === 'alive') {
-                setStatus('Connected • live arena');
-            } else if (selfPlayer && selfPlayer.status === 'spectator') {
-                setStatus('Connected • syncing player state');
-            } else {
-                setStatus('Connected • waiting for arena sync');
+        client.on('death', function (payload) {
+            if (!payload) return;
+            var state = client.getState();
+            if (state && payload.player_id === state.self_id) {
+                setStatus('You were hit • respawning...');
             }
         });
 
         client.on('connection_error', function () {
-            setStatus('Connection issue... retrying');
-            tryNextEndpoint('connection_error');
+            setStatus('Connection issue on ' + currentEndpointLabel() + '...');
+            if (!tryNextEndpoint('Switching server')) {
+                setStatus('Unable to sync arena state. Click Retry Spawn.');
+            }
             setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
         });
 
@@ -314,144 +298,38 @@
         setStatus('Joining live arena... (' + currentEndpointLabel() + ')');
         client.connect(profile);
 
-        function getAlivePlayers(state) {
-            var players = Array.isArray(state && state.players) ? state.players : [];
-            return players.filter(function (p) {
-                return p && p.status === 'alive' && p.head;
-            });
-        }
-
-        function pickSpectateTarget(state, selfPlayer) {
-            var alivePlayers = getAlivePlayers(state);
-            if (!alivePlayers.length) {
-                selectedSpectateId = null;
-                return null;
-            }
-
-            if (selectedSpectateId) {
-                var keep = alivePlayers.find(function (p) { return p.id === selectedSpectateId; });
-                if (keep) return keep.id;
-            }
-
-            if (selfPlayer && selfPlayer.spectating) {
-                var assigned = alivePlayers.find(function (p) { return p.id === selfPlayer.spectating; });
-                if (assigned) {
-                    selectedSpectateId = assigned.id;
-                    return assigned.id;
-                }
-            }
-
-            selectedSpectateId = alivePlayers[0].id;
-            return selectedSpectateId;
-        }
-
-        function cycleSpectate(state, delta) {
-            if (!delta) return;
-
-            var alivePlayers = getAlivePlayers(state);
-            if (alivePlayers.length <= 1) return;
-
-            var currentIndex = alivePlayers.findIndex(function (p) { return p.id === selectedSpectateId; });
-            if (currentIndex < 0) currentIndex = 0;
-
-            var nextIndex = (currentIndex + delta + alivePlayers.length) % alivePlayers.length;
-            selectedSpectateId = alivePlayers[nextIndex].id;
-        }
-
         function frame() {
             var state = client.getState();
             if (!state) {
                 var now = Date.now();
+
                 if (client.isConnected() && now - lastJoinNudgeAt > 1200) {
                     client.requestJoin(profile);
                     lastJoinNudgeAt = now;
                 }
-                if (now - stateSeenAt > 2800) {
-                    tryNextEndpoint('state_timeout');
+
+                if (now - stateSeenAt > 4200) {
+                    if (!tryNextEndpoint('Switching server')) {
+                        setStatus('Waiting for arena state. Click Retry Spawn.');
+                    }
                     stateSeenAt = now;
                 }
+
                 renderer.renderBoot({
                     statusText: statusEl ? statusEl.textContent : 'Joining live arena...',
                     detailText: client.isConnected()
-                        ? (
-                            waitingForJoin
-                                ? ('Connected to ' + currentEndpointLabel() + ', requesting join...')
-                                : ('Connected to ' + currentEndpointLabel() + ', waiting for arena snapshot')
-                        )
+                        ? ('Connected to ' + currentEndpointLabel() + ', waiting for state sync')
                         : ('Connecting to ' + currentEndpointLabel())
                 });
+
                 window.requestAnimationFrame(frame);
                 return;
             }
 
-            var delta = input.consumeSpectateDelta();
-            cycleSpectate(state, delta);
-
-            var players = Array.isArray(state.players) ? state.players : [];
-            var selfPlayer = players.find(function (p) { return p.id === state.self_id; }) || null;
-            var isEliminated = !!(selfPlayer && selfPlayer.status === 'spectator' && state.state === 'active');
-            var alivePlayers = getAlivePlayers(state);
-
-            if (!selfPlayer) {
-                if (!selfMissingSince) selfMissingSince = Date.now();
-                if (Date.now() - selfMissingSince > 2500) {
-                    if (!tryNextEndpoint('self_missing')) {
-                        setStatus('Connected but self state is missing. Click Retry Spawn.');
-                    }
-                    selfMissingSince = Date.now();
-                }
-            } else {
-                selfMissingSince = 0;
-            }
-
-            var shouldRecoverSpectator = (
-                state.state === 'active' &&
-                selfPlayer &&
-                selfPlayer.status !== 'alive'
-            );
-            if (shouldRecoverSpectator) {
-                if (!spectatorRecoveryAt) spectatorRecoveryAt = Date.now() + 300;
-                if (Date.now() >= spectatorRecoveryAt && spectatorRecoveryAttempts < 8) {
-                    spectatorRecoveryAttempts += 1;
-                    spectatorRecoveryAt = Date.now() + 900;
-                    client.playAgain();
-                    setStatus(alivePlayers.length ? 'Joining active match...' : 'Syncing with live arena...');
-                }
-            } else {
-                spectatorRecoveryAt = 0;
-                spectatorRecoveryAttempts = 0;
-            }
-
-            var cameraTargetId = state.self_id;
-            if (!selfPlayer || selfPlayer.status !== 'alive') {
-                cameraTargetId = pickSpectateTarget(state, selfPlayer);
-            }
-
-            renderer.render(state, cameraTargetId);
-
-            var spectatingName = '--';
-            if (cameraTargetId) {
-                var targetPlayer = players.find(function (p) { return p.id === cameraTargetId; });
-                if (targetPlayer) spectatingName = targetPlayer.username || '--';
-            }
-
-            if (isEliminated && !autoRespawnTimerId) {
-                autoRespawnAt = Date.now() + 1400;
-                autoRespawnTimerId = window.setTimeout(function () {
-                    autoRespawnTimerId = null;
-                    autoRespawnAt = 0;
-                    selectedSpectateId = null;
-                    client.playAgain();
-                }, 1400);
-            } else if (!isEliminated && autoRespawnTimerId) {
-                window.clearTimeout(autoRespawnTimerId);
-                autoRespawnTimerId = null;
-                autoRespawnAt = 0;
-            }
-
+            renderer.render(state, state.self_id);
             ui.render(state, {
-                spectatingName: spectatingName,
-                respawnInSeconds: autoRespawnAt ? Math.max(0, Math.ceil((autoRespawnAt - Date.now()) / 1000)) : 0,
+                spectatingName: '--',
+                respawnInSeconds: 0,
                 results: client.getResults()
             });
 

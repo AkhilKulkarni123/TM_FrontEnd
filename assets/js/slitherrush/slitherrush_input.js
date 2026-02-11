@@ -23,7 +23,7 @@
             down: false,
             left: false,
             right: false,
-            boost: false
+            shoot: false
         };
 
         this.lastDirection = { x: 1, y: 0 };
@@ -75,7 +75,7 @@
                 x: clamp(Number(direction.x.toFixed(4)), -1, 1),
                 y: clamp(Number(direction.y.toFixed(4)), -1, 1)
             },
-            boost: !!this.keys.boost
+            shoot: !!this.keys.shoot
         };
 
         var serialized = JSON.stringify(payload);
@@ -91,8 +91,8 @@
         window.addEventListener('keydown', function (event) {
             var key = String(event.key || '').toLowerCase();
 
-            if (key === 'shift') {
-                self.keys.boost = true;
+            if (key === 'shift' || key === ' ') {
+                self.keys.shoot = true;
                 self._emitIfChanged();
                 return;
             }
@@ -114,8 +114,8 @@
         window.addEventListener('keyup', function (event) {
             var key = String(event.key || '').toLowerCase();
 
-            if (key === 'shift') {
-                self.keys.boost = false;
+            if (key === 'shift' || key === ' ') {
+                self.keys.shoot = false;
                 self._emitIfChanged();
                 return;
             }
@@ -129,7 +129,7 @@
             self.keys.down = false;
             self.keys.left = false;
             self.keys.right = false;
-            self.keys.boost = false;
+            self.keys.shoot = false;
             self.pointer.active = false;
             self._emitIfChanged();
         });
@@ -148,7 +148,7 @@
 
         window.addEventListener('mousedown', function (event) {
             if (Number(event.button || 0) !== 0) return;
-            self.keys.boost = true;
+            self.keys.shoot = true;
             self.pointer.active = true;
             self.pointer.x = Number(event.clientX || self.pointer.x);
             self.pointer.y = Number(event.clientY || self.pointer.y);
@@ -157,7 +157,7 @@
 
         window.addEventListener('mouseup', function (event) {
             if (Number(event.button || 0) !== 0) return;
-            self.keys.boost = false;
+            self.keys.shoot = false;
             self._emitIfChanged();
         });
 
@@ -167,7 +167,7 @@
             self.pointer.active = true;
             self.pointer.x = Number(touch.clientX || 0);
             self.pointer.y = Number(touch.clientY || 0);
-            self.keys.boost = true;
+            self.keys.shoot = true;
             self._emitIfChanged();
         }, { passive: true });
 
@@ -181,7 +181,7 @@
         }, { passive: true });
 
         window.addEventListener('touchend', function () {
-            self.keys.boost = false;
+            self.keys.shoot = false;
             self.pointer.active = false;
             self._emitIfChanged();
         }, { passive: true });

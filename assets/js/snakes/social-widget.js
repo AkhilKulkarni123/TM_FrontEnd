@@ -75,20 +75,63 @@
         list.push(value);
     }
 
+    function shouldSkipApiBase(base) {
+        if (!base) return true;
+        try {
+            var host = new URL(base).hostname || '';
+            if (/github\.io$/i.test(host) || /githubusercontent\.com$/i.test(host)) return true;
+        } catch (err) {
+            return true;
+        }
+        return false;
+    }
+
+    function isLikelyApiHost(base) {
+        if (!base) return false;
+        try {
+            var host = new URL(base).hostname || '';
+            if (
+                host === 'localhost' ||
+                host === '127.0.0.1' ||
+                host === '::1' ||
+                host === '0.0.0.0' ||
+                IPV4_PRIVATE_RE.test(host) ||
+                /\.local$/i.test(host)
+            ) {
+                return true;
+            }
+            return /(^|\.)snakes\.opencodingsociety\.com$/i.test(host) ||
+                /(^|\.)api\.opencodingsociety\.com$/i.test(host) ||
+                /(^|\.)spring\.opencodingsociety\.com$/i.test(host);
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function preferredAuthBase() {
+        var fallback = 'https://snakes.opencodingsociety.com';
+        var current = API_CANDIDATES[activeApiIndex] || API_BASE || '';
+        if (!shouldSkipApiBase(current)) return current;
+        for (var i = 0; i < API_CANDIDATES.length; i += 1) {
+            if (!shouldSkipApiBase(API_CANDIDATES[i])) return API_CANDIDATES[i];
+        }
+        return fallback;
+    }
+
     function buildApiCandidates() {
         var list = [];
         var originBase = normalizeBaseUrl(window.location.origin);
         var configuredBase = normalizeBaseUrl(BASE_FROM_GLOBAL);
         var localBase = window.location.protocol + '//' + (HOSTNAME || 'localhost') + ':8306';
 
-        pushUnique(list, configuredBase);
+        if (!shouldSkipApiBase(configuredBase)) pushUnique(list, configuredBase);
         if (IS_LOCAL) {
             pushUnique(list, normalizeBaseUrl(localBase));
             if (HOSTNAME !== 'localhost') pushUnique(list, normalizeBaseUrl(window.location.protocol + '//localhost:8306'));
-            pushUnique(list, originBase);
+            if (!shouldSkipApiBase(originBase)) pushUnique(list, originBase);
         } else {
             pushUnique(list, 'https://snakes.opencodingsociety.com');
-            pushUnique(list, originBase);
+            if (isLikelyApiHost(originBase) && !shouldSkipApiBase(originBase)) pushUnique(list, originBase);
         }
         if (!list.length) pushUnique(list, 'https://snakes.opencodingsociety.com');
         return list;
@@ -140,8 +183,16 @@
     }
 
     function getLoginHref() {
-        var next = window.location.href || '/';
-        return API_BASE + '/login?next=' + encodeURIComponent(next);
+        var authBase = preferredAuthBase();
+        var next = '/';
+        try {
+            var current = new URL(window.location.href || '/', window.location.origin);
+            var authUrl = new URL(authBase);
+            if (current.host === authUrl.host) next = (current.pathname || '/') + (current.search || '') + (current.hash || '');
+        } catch (err) {
+            next = '/';
+        }
+        return authBase + '/login?next=' + encodeURIComponent(next);
     }
 
     function renderAuthRequiredCard(message) {
@@ -340,7 +391,7 @@
         style.id = 'ssSocialStyles';
         style.textContent = [
             ':root{--ss-bg:#0d1320;--ss-bg-soft:#131b2b;--ss-text:#ebf2ff;--ss-muted:#a6b2cf;--ss-accent:var(--accent,#5aa0ff);--ss-success:#39d98a;--ss-warning:#ffcc66;--ss-danger:#ff6b6b;--ss-border:rgba(255,255,255,0.12);--ss-shadow:0 22px 44px rgba(0,0,0,.45);}',
-            'body.slitherrush-mode #ssSocialRoot{--ss-accent:#ffd646;--ss-bg:#090b12;--ss-bg-soft:#151b2a;--ss-border:rgba(255,214,70,.24);}',
+            'body.slitherrush-mode #ssSocialRoot,body.slitherrush-mode #ssSocialToggle{--ss-accent:#ffd646;--ss-bg:#090b12;--ss-bg-soft:#151b2a;--ss-border:rgba(255,214,70,.24);}',
             '#ssSocialToggle{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:none;border-radius:18px;background:linear-gradient(145deg,var(--ss-accent),#1f6ad6);color:#fff;font-size:22px;font-weight:700;box-shadow:var(--ss-shadow);cursor:pointer;z-index:90000;transition:transform .18s ease,box-shadow .18s ease;}',
             '#ssSocialToggle:hover{transform:translateY(-2px);box-shadow:0 28px 48px rgba(0,0,0,.5);}',
             '#ssSocialToggle:focus-visible{outline:2px solid #fff;outline-offset:2px;}',
@@ -1393,6 +1444,13 @@
         bindMiniDrag();
     }
 
+    function dockSocialToggleIfAvailable() {
+        if (!ui.toggle) return;
+        var dockApi = window.SnakesWidgetDock;
+        if (!dockApi || typeof dockApi.registerLaunch !== 'function') return;
+        dockApi.registerLaunch(ui.toggle, { order: 10 });
+    }
+
     function buildUi() {
         ensureStyles();
         var wrapper = document.createElement('div');
@@ -1440,6 +1498,7 @@
         ui.profileModal = wrapper.querySelector('#ssProfileModal');
         ui.profileBody = wrapper.querySelector('#ssProfileBody');
 
+        dockSocialToggleIfAvailable();
         bindStaticUiEvents();
         bindGlobalActions();
     }
