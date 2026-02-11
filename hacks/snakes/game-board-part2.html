@@ -1090,7 +1090,7 @@
             function openPlayerSocialProfile(player) {
                 var social = window.SnakesSocial || null;
                 if (social && typeof social.openPlayerProfile === 'function') {
-                    social.openPlayerProfile({
+                    var opened = social.openPlayerProfile({
                         id: Number(player.user_id || player.id || 0) || null,
                         user_id: Number(player.user_id || player.id || 0) || null,
                         username: player.username || 'Player',
@@ -1099,7 +1099,7 @@
                         current_square: player.current_square || null,
                         total_bullets: player.total_bullets || 0
                     });
-                    return true;
+                    if (opened !== false) return true;
                 }
                 if (typeof showPlayerInfoPopup === 'function') {
                     showPlayerInfoPopup(player);

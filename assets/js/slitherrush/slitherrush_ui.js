@@ -4,6 +4,7 @@
     var SlitherRush = window.SlitherRush = window.SlitherRush || {};
 
     function formatClock(totalSeconds) {
+        if (totalSeconds == null) return '--:--';
         var sec = Math.max(0, Math.floor(Number(totalSeconds || 0)));
         var m = Math.floor(sec / 60);
         var s = sec % 60;
@@ -72,7 +73,7 @@
         if (!rows.length) {
             var empty = document.createElement('div');
             empty.className = 'sr-leaderboard-empty';
-            empty.textContent = 'Waiting for players...';
+            empty.textContent = 'No slithers yet. Start collecting orbs.';
             this.leaderboardList.appendChild(empty);
         }
     };
@@ -110,9 +111,17 @@
 
         var players = Array.isArray(state.players) ? state.players : [];
         var self = players.find(function (player) { return player.id === state.self_id; }) || null;
+        var rawState = String(state.state || 'active').toLowerCase();
+        var stateLabel = rawState === 'active'
+            ? 'LIVE'
+            : (rawState === 'waiting' ? 'WARMUP' : rawState.toUpperCase());
+        var timerValue = formatClock(state.time_left || state.countdown || 0);
+        if (rawState === 'active' && Number(state.time_left || 0) <= 0) {
+            timerValue = '∞';
+        }
 
-        if (this.stateLabel) this.stateLabel.textContent = String(state.state || 'waiting').toUpperCase();
-        if (this.matchTimerValue) this.matchTimerValue.textContent = formatClock(state.time_left || state.countdown || 0);
+        if (this.stateLabel) this.stateLabel.textContent = stateLabel;
+        if (this.matchTimerValue) this.matchTimerValue.textContent = timerValue;
         if (this.aliveValue) this.aliveValue.textContent = Math.max(0, Number(state.alive_count || 0));
 
         if (self) {
@@ -132,7 +141,12 @@
             this.deathOverlay.classList.toggle('active', eliminated);
         }
         if (eliminated) {
-            if (this.deathText) this.deathText.textContent = 'YOU WERE ELIMINATED';
+            var respawnIn = Number(context.respawnInSeconds || 0);
+            if (this.deathText) {
+                this.deathText.textContent = respawnIn > 0
+                    ? ('YOU WERE ELIMINATED • RESPAWNING IN ' + respawnIn + 's')
+                    : 'YOU WERE ELIMINATED';
+            }
             if (this.spectatingText) this.spectatingText.textContent = 'SPECTATING: ' + spectatingName;
         }
 

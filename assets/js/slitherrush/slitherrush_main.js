@@ -1,7 +1,13 @@
 (function (window) {
     'use strict';
 
-    var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    var HOSTNAME = window.location.hostname || '';
+    var IS_LOCAL = (
+        HOSTNAME === 'localhost' ||
+        HOSTNAME === '127.0.0.1' ||
+        HOSTNAME === '0.0.0.0' ||
+        /\.local$/i.test(HOSTNAME)
+    );
     var SOCKET_URL = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
 
     function setSocialActivity(mode, target, label) {
@@ -83,6 +89,8 @@
 
         var lastInputPayload = null;
         var selectedSpectateId = null;
+        var autoRespawnTimerId = null;
+        var autoRespawnAt = 0;
 
         var input = new window.SlitherRush.Input(function (payload) {
             var serialized = JSON.stringify(payload || {});
@@ -107,6 +115,11 @@
             },
             onPlayAgain: function () {
                 selectedSpectateId = null;
+                autoRespawnAt = 0;
+                if (autoRespawnTimerId) {
+                    window.clearTimeout(autoRespawnTimerId);
+                    autoRespawnTimerId = null;
+                }
                 client.playAgain();
             }
         });
@@ -115,8 +128,8 @@
             var status = document.getElementById('srConnectionStatus');
             if (status) {
                 status.textContent = payload && payload.role === 'spectator'
-                    ? 'Joined as spectator'
-                    : 'Connected to arena';
+                    ? 'Connected • spectating'
+                    : 'Connected • live arena';
             }
             var target = profile.party_id || (payload && payload.arena_id) || '';
             setSocialActivity('slitherrush', target, 'In SLITHERRUSH');
@@ -186,6 +199,7 @@
 
             var players = Array.isArray(state.players) ? state.players : [];
             var selfPlayer = players.find(function (p) { return p.id === state.self_id; }) || null;
+            var isEliminated = !!(selfPlayer && selfPlayer.status === 'spectator' && state.state === 'active');
 
             var cameraTargetId = state.self_id;
             if (!selfPlayer || selfPlayer.status !== 'alive') {
@@ -200,8 +214,23 @@
                 if (targetPlayer) spectatingName = targetPlayer.username || '--';
             }
 
+            if (isEliminated && !autoRespawnTimerId) {
+                autoRespawnAt = Date.now() + 1400;
+                autoRespawnTimerId = window.setTimeout(function () {
+                    autoRespawnTimerId = null;
+                    autoRespawnAt = 0;
+                    selectedSpectateId = null;
+                    client.playAgain();
+                }, 1400);
+            } else if (!isEliminated && autoRespawnTimerId) {
+                window.clearTimeout(autoRespawnTimerId);
+                autoRespawnTimerId = null;
+                autoRespawnAt = 0;
+            }
+
             ui.render(state, {
                 spectatingName: spectatingName,
+                respawnInSeconds: autoRespawnAt ? Math.max(0, Math.ceil((autoRespawnAt - Date.now()) / 1000)) : 0,
                 results: client.getResults()
             });
 

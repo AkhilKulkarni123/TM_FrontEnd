@@ -1505,6 +1505,13 @@
         return true;
     }
 
+    function canUseInteractiveSocialUi() {
+        if (!ui.root) return false;
+        if (ui.root.style.display === 'none') return false;
+        if (!state.authenticated) return false;
+        return true;
+    }
+
     function init() {
         buildUi();
         initPageActivity();
@@ -1518,30 +1525,36 @@
         window.SnakesSocial = window.SnakesSocial || {};
         window.SnakesSocial.__initialized = true;
         window.SnakesSocial.openDrawer = function (tab) {
+            if (!canUseInteractiveSocialUi()) return false;
             if (tab) setTab(tab);
             setDrawerOpen(true);
+            return true;
         };
         window.SnakesSocial.setActivity = function (activity) {
             activity = activity || {};
             updateActivity(activity.mode, activity.target, activity.label);
         };
         window.SnakesSocial.openMiniChatWithUser = function (userId) {
+            if (!canUseInteractiveSocialUi() || !socket || !state.socketConnected) return false;
             openDmWithFriend(userId);
+            return true;
         };
         window.SnakesSocial.openPlayerProfile = function (profile) {
+            if (!canUseInteractiveSocialUi()) return false;
             return openProfileCard(profile || {});
         };
         window.SnakesSocial.closePlayerProfile = function () {
             closeProfileCard();
         };
         window.SnakesSocial.sendFriendRequest = function (userId) {
-            if (!socket || !state.socketConnected) return false;
+            if (!canUseInteractiveSocialUi() || !socket || !state.socketConnected) return false;
             var targetId = Number(userId || 0);
             if (!targetId) return false;
             socket.emit('friends_request_send', { target_user_id: targetId });
             return true;
         };
         window.SnakesSocial.openDmWithUser = function (userId) {
+            if (!canUseInteractiveSocialUi() || !socket || !state.socketConnected) return false;
             var targetId = Number(userId || 0);
             if (!targetId) return false;
             openDmWithFriend(targetId);
@@ -1554,6 +1567,9 @@
                 conversations: state.conversations,
                 activeConversationId: state.activeConversationId
             }));
+        };
+        window.SnakesSocial.isAvailable = function () {
+            return canUseInteractiveSocialUi() && !!socket && !!state.socketConnected;
         };
     }
 

@@ -1839,8 +1839,7 @@ function openSocialProfileForPlayer(player) {
     if (!social || typeof social.openPlayerProfile !== 'function') return false;
     var payload = toSocialProfilePayload(player);
     if (!payload) return false;
-    social.openPlayerProfile(payload);
-    return true;
+    return social.openPlayerProfile(payload) !== false;
 }
 
 function toLeaderboardProfilePayload(entry) {
@@ -1869,8 +1868,7 @@ function openSocialProfileForLeaderboardEntry(entry) {
     if (!social || typeof social.openPlayerProfile !== 'function') return false;
     var payload = toLeaderboardProfilePayload(entry);
     if (!payload) return false;
-    social.openPlayerProfile(payload);
-    return true;
+    return social.openPlayerProfile(payload) !== false;
 }
 
 function sendFriendRequestForLeaderboardEntry(entry) {
@@ -2007,9 +2005,10 @@ function renderPlayerInfoActions(modal, player) {
 
     var social = window.SnakesSocial || null;
     var userId = Number(player.user_id || player.id || 0) || 0;
-    var canSocial = !!(social && typeof social.openPlayerProfile === 'function');
-    var canFriend = !!(canSocial && userId > 0 && typeof social.sendFriendRequest === 'function');
-    var canDm = !!(canSocial && userId > 0 && typeof social.openDmWithUser === 'function');
+    var socialAvailable = !!(social && (typeof social.isAvailable !== 'function' || social.isAvailable()));
+    var canSocial = !!(socialAvailable && typeof social.openPlayerProfile === 'function');
+    var canFriend = !!(socialAvailable && userId > 0 && typeof social.sendFriendRequest === 'function');
+    var canDm = !!(socialAvailable && userId > 0 && typeof social.openDmWithUser === 'function');
 
     actions.innerHTML =
         '<button type="button" class="player-info-action-btn primary" data-profile-action="social"' + (canSocial ? '' : ' disabled') + '>Open Social Profile</button>' +

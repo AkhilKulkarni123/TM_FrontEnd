@@ -23,6 +23,7 @@
 
         this.camera = { x: 0, y: 0 };
         this.smoothedHeads = {};
+        this.backgroundPattern = null;
 
         this.resize();
         this.bindResize();
@@ -45,6 +46,53 @@
         this.canvas.height = Math.round(this.view.height * this.view.dpr);
         this.canvas.style.width = this.view.width + 'px';
         this.canvas.style.height = this.view.height + 'px';
+
+        this._rebuildBackgroundPattern();
+    };
+
+    Renderer.prototype._rebuildBackgroundPattern = function () {
+        var tile = document.createElement('canvas');
+        var size = 220;
+        tile.width = size;
+        tile.height = size;
+        var pctx = tile.getContext('2d');
+        if (!pctx) {
+            this.backgroundPattern = null;
+            return;
+        }
+
+        pctx.clearRect(0, 0, size, size);
+
+        // Dot lattice.
+        pctx.fillStyle = 'rgba(132, 202, 255, 0.07)';
+        for (var y = 18; y < size; y += 34) {
+            for (var x = 18; x < size; x += 34) {
+                pctx.beginPath();
+                pctx.arc(x, y, 1.35, 0, Math.PI * 2);
+                pctx.fill();
+            }
+        }
+
+        // Minimal diagonal hash accents.
+        pctx.strokeStyle = 'rgba(140, 210, 255, 0.06)';
+        pctx.lineWidth = 1;
+        for (var i = -1; i < 7; i += 1) {
+            var sx = i * 44;
+            pctx.beginPath();
+            pctx.moveTo(sx, 0);
+            pctx.lineTo(sx + 54, 54);
+            pctx.stroke();
+        }
+
+        pctx.strokeStyle = 'rgba(100, 170, 240, 0.05)';
+        pctx.lineWidth = 1.2;
+        pctx.beginPath();
+        pctx.moveTo(0, size * 0.72);
+        pctx.bezierCurveTo(size * 0.22, size * 0.63, size * 0.38, size * 0.83, size * 0.6, size * 0.73);
+        pctx.bezierCurveTo(size * 0.76, size * 0.64, size * 0.9, size * 0.82, size, size * 0.7);
+        pctx.stroke();
+
+        this.backgroundPattern = this.ctx.createPattern(tile, 'repeat');
     };
 
     Renderer.prototype.worldToScreen = function (x, y) {
@@ -72,36 +120,66 @@
         var w = this.view.width;
         var h = this.view.height;
 
-        var gradient = ctx.createLinearGradient(0, 0, w, h);
-        gradient.addColorStop(0, '#07111f');
-        gradient.addColorStop(0.58, '#10243a');
-        gradient.addColorStop(1, '#0b1728');
-        ctx.fillStyle = gradient;
+        var radial = ctx.createRadialGradient(w * 0.2, h * 0.14, 0, w * 0.5, h * 0.52, Math.max(w, h));
+        radial.addColorStop(0, '#0f2842');
+        radial.addColorStop(0.42, '#091a2f');
+        radial.addColorStop(1, '#040a17');
+        ctx.fillStyle = radial;
         ctx.fillRect(0, 0, w, h);
 
-        var gridSize = 80;
-        var startX = (-this.camera.x % gridSize + gridSize) % gridSize;
-        var startY = (-this.camera.y % gridSize + gridSize) % gridSize;
+        if (this.backgroundPattern) {
+            var tileDriftX = ((-this.camera.x * 0.055) % 220 + 220) % 220;
+            var tileDriftY = ((-this.camera.y * 0.055) % 220 + 220) % 220;
+            ctx.save();
+            ctx.translate(tileDriftX - 220, tileDriftY - 220);
+            ctx.fillStyle = this.backgroundPattern;
+            ctx.fillRect(0, 0, w + 440, h + 440);
+            ctx.restore();
+        }
 
+        // Contour-like wave lines for motion depth.
         ctx.save();
-        ctx.strokeStyle = 'rgba(130, 201, 255, 0.12)';
-        ctx.lineWidth = 1;
-
-        for (var x = startX; x < w; x += gridSize) {
+        ctx.strokeStyle = 'rgba(133, 206, 255, 0.09)';
+        ctx.lineWidth = 1.15;
+        for (var row = 0; row < 7; row += 1) {
+            var baseY = row * (h / 6) + ((-this.camera.y * 0.08 + row * 17) % 50);
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
+            for (var x = -36; x <= w + 36; x += 18) {
+                var wave =
+                    Math.sin((x * 0.011) + (this.camera.x * 0.0032) + row) * 10 +
+                    Math.cos((x * 0.0065) - (this.camera.y * 0.0027) + row * 0.8) * 6;
+                var py = baseY + wave;
+                if (x <= -36) ctx.moveTo(x, py);
+                else ctx.lineTo(x, py);
+            }
             ctx.stroke();
         }
-
-        for (var y = startY; y < h; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-            ctx.stroke();
-        }
-
         ctx.restore();
+
+        // Soft glows anchored to world coordinates.
+        ctx.save();
+        for (var i = 0; i < 6; i += 1) {
+            var worldX = ((i * 857) % 5400) + 120;
+            var worldY = ((i * 613) % 3600) + 120;
+            var glow = this.worldToScreen(worldX, worldY);
+            if (glow.x < -260 || glow.x > w + 260 || glow.y < -260 || glow.y > h + 260) continue;
+            var g = ctx.createRadialGradient(glow.x, glow.y, 8, glow.x, glow.y, 170);
+            g.addColorStop(0, 'rgba(96, 195, 255, 0.16)');
+            g.addColorStop(0.62, 'rgba(69, 140, 234, 0.06)');
+            g.addColorStop(1, 'rgba(18, 39, 74, 0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(glow.x, glow.y, 170, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // Gentle vignette to keep HUD readable.
+        var vignette = ctx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.24, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
+        vignette.addColorStop(0, 'rgba(0,0,0,0)');
+        vignette.addColorStop(1, 'rgba(0,0,0,0.36)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, w, h);
     };
 
     Renderer.prototype._drawBounds = function (bounds) {
@@ -116,8 +194,14 @@
         var h = bottomRight.y - topLeft.y;
 
         this.ctx.save();
-        this.ctx.strokeStyle = 'rgba(255, 122, 122, 0.78)';
-        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = 'rgba(122, 214, 255, 0.55)';
+        this.ctx.lineWidth = 2.5;
+        this.ctx.setLineDash([12, 9]);
+        this.ctx.strokeRect(x, y, w, h);
+
+        this.ctx.setLineDash([]);
+        this.ctx.strokeStyle = 'rgba(194, 239, 255, 0.2)';
+        this.ctx.lineWidth = 6;
         this.ctx.strokeRect(x, y, w, h);
         this.ctx.restore();
     };

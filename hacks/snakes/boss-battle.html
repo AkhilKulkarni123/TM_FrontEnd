@@ -4577,8 +4577,7 @@ function getDamageMultiplier() {
             if (!window.SnakesSocial || typeof window.SnakesSocial.openPlayerProfile !== 'function') return false;
             var profile = findBossPlayerProfile(data);
             if (!profile) return false;
-            window.SnakesSocial.openPlayerProfile(profile);
-            return true;
+            return window.SnakesSocial.openPlayerProfile(profile) !== false;
         }
 
         function addChatMessage(data) {
@@ -4604,7 +4603,9 @@ function getDamageMultiplier() {
                 senderBtn.textContent = senderName + ':';
                 senderBtn.title = 'View social profile';
                 senderBtn.addEventListener('click', function () {
-                    openBossSocialProfile(data);
+                    if (!openBossSocialProfile(data)) {
+                        addSystemMessage('Social profile unavailable. Sign in to use social actions.');
+                    }
                 });
                 div.appendChild(senderBtn);
             }

@@ -2604,8 +2604,7 @@
             if (!window.SnakesSocial || typeof window.SnakesSocial.openPlayerProfile !== 'function') return false;
             const profile = findPvpPlayerProfile(data);
             if (!profile) return false;
-            window.SnakesSocial.openPlayerProfile(profile);
-            return true;
+            return window.SnakesSocial.openPlayerProfile(profile) !== false;
         }
 
         function addChatMessage(data) {
@@ -2631,7 +2630,9 @@
                 senderBtn.textContent = senderName + ':';
                 senderBtn.title = 'View social profile';
                 senderBtn.addEventListener('click', function () {
-                    openPvpSocialProfile(data);
+                    if (!openPvpSocialProfile(data)) {
+                        addSystemMessage('Social profile unavailable. Sign in to use social actions.');
+                    }
                 });
                 div.appendChild(senderBtn);
             }

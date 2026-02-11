@@ -242,7 +242,7 @@ function openLeaderboardSocialProfile(entry) {
 
     var social = window.SnakesSocial || null;
     if (social && typeof social.openPlayerProfile === 'function') {
-        social.openPlayerProfile({
+        var opened = social.openPlayerProfile({
             id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
             user_id: Number((entry && (entry.user_id || entry.id)) || 0) || null,
             username: (entry && (entry.username || entry.name)) || 'Player',
@@ -251,7 +251,7 @@ function openLeaderboardSocialProfile(entry) {
             total_bullets: entry && (entry.total_bullets || entry.bullets || 0),
             time_played: entry && (entry.time_played || 0)
         });
-        return true;
+        if (opened !== false) return true;
     }
 
     // Fallback profile modal if social widget is not available.
@@ -325,8 +325,12 @@ function bindLeaderboardRowSocialActions(tr, entry, currentUserId) {
             if (actionBtn.disabled) return;
             var action = actionBtn.getAttribute('data-lb-action');
             if (action === 'profile') openLeaderboardSocialProfile(entry);
-            else if (action === 'friend') sendLeaderboardFriendRequest(entry);
-            else if (action === 'chat') openLeaderboardDm(entry);
+            else if (action === 'friend') {
+                if (!sendLeaderboardFriendRequest(entry)) openLeaderboardSocialProfile(entry);
+            }
+            else if (action === 'chat') {
+                if (!openLeaderboardDm(entry)) openLeaderboardSocialProfile(entry);
+            }
             event.stopPropagation();
             return;
         }
@@ -551,13 +555,14 @@ function createLeaderboardRow(entry, index, currentUserId) {
     }
 
     var hasTargetUser = targetUserId > 0;
+    var socialReady = !!(window.SnakesSocial && (typeof window.SnakesSocial.isAvailable !== 'function' || window.SnakesSocial.isAvailable()));
     var actionsHtml = '';
     if (!isCurrentUser) {
         actionsHtml =
             '<span class="leaderboard-player-actions">' +
                 '<button type="button" class="leaderboard-player-action profile" data-lb-action="profile">Profile</button>' +
-                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser ? '' : ' disabled') + '>Friend</button>' +
-                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser ? '' : ' disabled') + '>Chat</button>' +
+                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser && socialReady ? '' : ' disabled') + '>Friend</button>' +
+                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser && socialReady ? '' : ' disabled') + '>Chat</button>' +
             '</span>';
     }
 
