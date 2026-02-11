@@ -555,14 +555,14 @@ function createLeaderboardRow(entry, index, currentUserId) {
     }
 
     var hasTargetUser = targetUserId > 0;
-    var socialReady = !!(window.SnakesSocial && (typeof window.SnakesSocial.isAvailable !== 'function' || window.SnakesSocial.isAvailable()));
+    var hasSocialBridge = !!window.SnakesSocial;
     var actionsHtml = '';
     if (!isCurrentUser) {
         actionsHtml =
             '<span class="leaderboard-player-actions">' +
                 '<button type="button" class="leaderboard-player-action profile" data-lb-action="profile">Profile</button>' +
-                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser && socialReady ? '' : ' disabled') + '>Friend</button>' +
-                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser && socialReady ? '' : ' disabled') + '>Chat</button>' +
+                '<button type="button" class="leaderboard-player-action friend" data-lb-action="friend"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Friend</button>' +
+                '<button type="button" class="leaderboard-player-action chat" data-lb-action="chat"' + (hasTargetUser && hasSocialBridge ? '' : ' disabled') + '>Chat</button>' +
             '</span>';
     }
 

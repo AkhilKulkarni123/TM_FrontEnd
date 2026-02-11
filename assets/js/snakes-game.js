@@ -2005,10 +2005,9 @@ function renderPlayerInfoActions(modal, player) {
 
     var social = window.SnakesSocial || null;
     var userId = Number(player.user_id || player.id || 0) || 0;
-    var socialAvailable = !!(social && (typeof social.isAvailable !== 'function' || social.isAvailable()));
-    var canSocial = !!(socialAvailable && typeof social.openPlayerProfile === 'function');
-    var canFriend = !!(socialAvailable && userId > 0 && typeof social.sendFriendRequest === 'function');
-    var canDm = !!(socialAvailable && userId > 0 && typeof social.openDmWithUser === 'function');
+    var canSocial = !!(social && typeof social.openPlayerProfile === 'function');
+    var canFriend = !!(social && userId > 0 && typeof social.sendFriendRequest === 'function');
+    var canDm = !!(social && userId > 0 && typeof social.openDmWithUser === 'function');
 
     actions.innerHTML =
         '<button type="button" class="player-info-action-btn primary" data-profile-action="social"' + (canSocial ? '' : ' disabled') + '>Open Social Profile</button>' +
@@ -2018,15 +2017,31 @@ function renderPlayerInfoActions(modal, player) {
     var socialBtn = actions.querySelector('[data-profile-action="social"]');
     if (socialBtn) {
         socialBtn.addEventListener('click', function () {
-            if (!openSocialProfileForPlayer(player)) return;
-            closePlayerInfoPopup();
+            if (openSocialProfileForPlayer(player)) {
+                closePlayerInfoPopup();
+                return;
+            }
+            if (social && typeof social.openDrawer === 'function' && social.openDrawer('friends')) {
+                closePlayerInfoPopup();
+                return;
+            }
+            showNotification('Sign in to use social profile actions.', { type: 'info', duration: 2800 });
         });
     }
     var friendBtn = actions.querySelector('[data-profile-action="friend"]');
     if (friendBtn) {
         friendBtn.addEventListener('click', function () {
             if (!canFriend) return;
-            social.sendFriendRequest(userId);
+            var sent = social.sendFriendRequest(userId);
+            if (sent === false) {
+                if (openSocialProfileForPlayer(player)) {
+                    closePlayerInfoPopup();
+                    return;
+                }
+                showNotification('Sign in to send friend requests.', { type: 'info', duration: 2800 });
+                return;
+            }
+            showNotification('Friend request sent.', { type: 'success', duration: 2200 });
             closePlayerInfoPopup();
         });
     }
@@ -2034,7 +2049,15 @@ function renderPlayerInfoActions(modal, player) {
     if (messageBtn) {
         messageBtn.addEventListener('click', function () {
             if (!canDm) return;
-            social.openDmWithUser(userId);
+            var opened = social.openDmWithUser(userId);
+            if (opened === false) {
+                if (openSocialProfileForPlayer(player)) {
+                    closePlayerInfoPopup();
+                    return;
+                }
+                showNotification('Sign in to start direct messages.', { type: 'info', duration: 2800 });
+                return;
+            }
             closePlayerInfoPopup();
         });
     }
