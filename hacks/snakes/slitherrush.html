@@ -222,6 +222,141 @@
             letter-spacing: 0.3px;
         }
 
+        .sr-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 12, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 22;
+            padding: 18px;
+            animation: srIntroFadeIn 0.24s ease;
+        }
+
+        .sr-intro-overlay.fade-out {
+            animation: srIntroFadeOut 0.24s ease forwards;
+            pointer-events: none;
+        }
+
+        .sr-intro-card {
+            width: min(560px, 95vw);
+            border-radius: 20px;
+            padding: 30px 34px;
+            position: relative;
+            text-align: center;
+            border: 3px solid #f1c40f;
+            background: linear-gradient(135deg, #312809 0%, #201a08 55%, #141108 100%);
+            box-shadow: 0 16px 42px rgba(243, 156, 18, 0.48), 0 0 56px rgba(241, 196, 15, 0.3);
+        }
+
+        .sr-intro-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 245, 206, 0.45);
+            background: rgba(0, 0, 0, 0.36);
+            color: #fff;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .sr-intro-close:hover {
+            background: rgba(243, 156, 18, 0.62);
+            border-color: rgba(241, 196, 15, 0.95);
+        }
+
+        .sr-intro-title {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            color: #fff1b3;
+            text-shadow: 0 0 16px rgba(243, 156, 18, 0.56);
+            letter-spacing: 0.6px;
+            font-family: 'Oxanium', sans-serif;
+        }
+
+        .sr-intro-icon {
+            font-size: 3.1em;
+            margin: 8px 0 12px;
+            filter: drop-shadow(0 0 14px rgba(243, 156, 18, 0.6));
+        }
+
+        .sr-intro-text {
+            font-size: 1.05em;
+            color: #fef3cd;
+            margin: 0 0 10px;
+            line-height: 1.55;
+        }
+
+        .sr-intro-highlight {
+            color: #f9d34a;
+            font-weight: 700;
+        }
+
+        .sr-intro-controls {
+            margin: 16px 0;
+            background: rgba(14, 11, 4, 0.58);
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: left;
+            border: 1px solid rgba(241, 196, 15, 0.22);
+        }
+
+        .sr-intro-controls h3 {
+            text-align: center;
+            margin: 0 0 8px;
+            color: #f9d34a;
+            font-size: 1.25em;
+            letter-spacing: 0.4px;
+            font-family: 'Oxanium', sans-serif;
+        }
+
+        .sr-intro-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 2px;
+            border-bottom: 1px solid rgba(255, 242, 200, 0.12);
+            font-size: 1.04em;
+            color: #fef3cd;
+        }
+
+        .sr-intro-row:last-child {
+            border-bottom: none;
+        }
+
+        .sr-intro-key {
+            background: #f1c40f;
+            color: #251c08;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-weight: 700;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .sr-intro-tip {
+            color: rgba(255, 236, 178, 0.78);
+            font-size: 0.95em;
+            margin-top: 8px;
+        }
+
+        @keyframes srIntroFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes srIntroFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
         @media (max-width: 980px) {
             .sr-top {
                 grid-template-columns: 1fr;
@@ -239,10 +374,40 @@
                 padding: 7px 10px;
             }
         }
+
+        @media (max-width: 640px) {
+            .sr-intro-card {
+                padding: 22px 18px;
+            }
+
+            .sr-intro-row {
+                font-size: 0.98em;
+            }
+        }
     </style>
 </head>
 <body class="snakes-theme slitherrush-mode">
     <div id="srRoot">
+        <div class="sr-intro-overlay" id="srIntroOverlay">
+            <div class="sr-intro-card">
+                <button class="sr-intro-close" id="srIntroCloseBtn" aria-label="Close intro">x</button>
+                <h1 class="sr-intro-title">SLITHERRUSH</h1>
+                <div class="sr-intro-icon">🐍</div>
+                <p class="sr-intro-text">Welcome to <span class="sr-intro-highlight">SlitherRush</span> in the Battle Arcade.</p>
+                <p class="sr-intro-text">Outmaneuver opponents, eat pellets, and survive until the timer ends.</p>
+                <div class="sr-intro-controls">
+                    <h3>Controls</h3>
+                    <div class="sr-intro-row"><span>Move</span><span class="sr-intro-key">W / A / S / D or Arrows</span></div>
+                    <div class="sr-intro-row"><span>Boost</span><span class="sr-intro-key">Shift</span></div>
+                    <div class="sr-intro-row"><span>Spectate Previous</span><span class="sr-intro-key">Q</span></div>
+                    <div class="sr-intro-row"><span>Spectate Next</span><span class="sr-intro-key">E</span></div>
+                    <div class="sr-intro-row"><span>Leave Arena</span><span class="sr-intro-key">Leave Arena</span></div>
+                </div>
+                <p class="sr-intro-text"><span class="sr-intro-highlight">Click anywhere</span> to continue.</p>
+                <p class="sr-intro-tip">Tip: You can also close with <span class="sr-intro-highlight">x</span>, <span class="sr-intro-highlight">Esc</span>, or <span class="sr-intro-highlight">Enter</span>.</p>
+            </div>
+        </div>
+
         <canvas id="srCanvas"></canvas>
 
         <div class="sr-top">
@@ -307,5 +472,40 @@
     <script src="../../assets/js/slitherrush/slitherrush_ui.js"></script>
     <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/slitherrush/slitherrush_main.js"></script>
+    <script>
+        (function setupSlitherRushIntro() {
+            var overlay = document.getElementById('srIntroOverlay');
+            var closeBtn = document.getElementById('srIntroCloseBtn');
+            if (!overlay) return;
+
+            var dismissed = false;
+
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
+                overlay.classList.add('fade-out');
+                setTimeout(function () {
+                    overlay.style.display = 'none';
+                }, 250);
+            }
+
+            overlay.addEventListener('click', dismissIntro);
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    dismissIntro();
+                });
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (dismissed) return;
+                var key = String(event.key || '').toLowerCase();
+                if (key === 'escape' || key === 'enter' || key === ' ') {
+                    dismissIntro();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
