@@ -912,6 +912,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -922,10 +923,25 @@
         // Socket.IO now runs on the same server as the API
         const SOCKET_URL = GAME_API_BASE;
         const GAME_API_ROOT = GAME_API_BASE + '/api';
+        const PAGE_PARAMS = new URLSearchParams(window.location.search || '');
+        const REQUESTED_PVP_ROOM = (PAGE_PARAMS.get('room_id') || PAGE_PARAMS.get('roomId') || '').trim();
 
         console.log('PVP Arena - API Base:', GAME_API_BASE);
         console.log('PVP Arena - Socket URL:', SOCKET_URL);
         console.log('PVP Arena - Is Local:', IS_LOCAL);
+
+        function setSocialActivity(mode, target, label) {
+            if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
+            window.SnakesSocial.setActivity({
+                mode: mode || '',
+                target: target || '',
+                label: label || ''
+            });
+        }
+
+        function setPvpSocialActivity(target, label) {
+            setSocialActivity('pvp', target || '', label || 'In PVP Arena');
+        }
 
         function setupIntroPopup() {
             const overlay = document.getElementById('pvpIntroOverlay');
@@ -979,6 +995,7 @@
         const SELF_RECONCILE_SOFT_PX = 6;
         const SELF_RECONCILE_HARD_PX = 72;
         const REMOTE_INTERPOLATION_RATE = 11;
+        setPvpSocialActivity('', 'Searching for PVP match');
 
         // --- Center wall geometry (shared by drawing + collision) ---
         // The wall is a vertical strip at the exact center of the canvas.
@@ -1583,6 +1600,9 @@
                     bullets: gameState.player.bullets,
                     lives: gameState.player.lives
                 };
+                if (REQUESTED_PVP_ROOM) {
+                    joinData.room_id = REQUESTED_PVP_ROOM;
+                }
                 lastJoinData = joinData;
                 console.log('=== JOINING PVP ===');
                 console.log('Sending join data:', joinData);
@@ -1610,6 +1630,7 @@
                 console.log('=== PVP ROOM STATE ===');
                 console.log('Received data:', data);
                 currentRoomId = data.roomId || currentRoomId;
+                if (currentRoomId) setPvpSocialActivity(currentRoomId, 'In PVP Arena');
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
                 const roomBadge = document.getElementById('roomBadge');
@@ -1877,6 +1898,7 @@
             socket.on('pvp_room_status', (data) => {
                 if (!data) return;
                 if (data.roomId) currentRoomId = data.roomId;
+                if (currentRoomId) setPvpSocialActivity(currentRoomId, 'In PVP Arena');
                 if (typeof data.playerCount !== 'undefined') {
                     document.getElementById('roomBadge').style.display = 'block';
                     document.getElementById('playerCount').textContent = data.playerCount;
@@ -2680,6 +2702,7 @@
             if (socket) {
                 socket.emit('pvp_leave', {});
             }
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
         }
 
         function goToVictoryPage() {
@@ -2690,6 +2713,7 @@
             } catch (e) {
                 console.error('Error setting victory flag:', e);
             }
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
             
             window.location.href = 'victory.html?mode=pvp';
         }
@@ -2706,6 +2730,8 @@
                 socket.emit('pvp_leave', {});
             }
 
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
+
             window.location.href = 'mode-selection.html';
         }
 
@@ -2719,9 +2745,11 @@
                 } catch (e) {
                     console.error('Error setting victory flag:', e);
                 }
+                setSocialActivity('arcade', '', 'Browsing Battle Arcade');
                 
                 window.location.href = 'victory.html?mode=pvp';
             } else {
+                setSocialActivity('snakes-board', '', 'On Game Board');
                 window.location.href = 'game-board-part2.html';
             }
         }

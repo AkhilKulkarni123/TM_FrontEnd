@@ -904,6 +904,7 @@
 
     <script src="../../assets/js/theme-selector.js"></script>
     <script src="../../assets/js/snakes/sfx.js"></script>
+    <script src="../../assets/js/snakes/social-widget.js"></script>
     <script src="../../assets/js/player-loadout.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -914,10 +915,26 @@
         // Socket.IO now runs on the same server as the API
         const SOCKET_URL = GAME_API_BASE;
         const GAME_API_ROOT = GAME_API_BASE + '/api';
+        const PAGE_PARAMS = new URLSearchParams(window.location.search || '');
+        const REQUESTED_ROOM_ID = (PAGE_PARAMS.get('room_id') || PAGE_PARAMS.get('roomId') || '').trim();
+        const AUTO_JOIN_BATTLE = PAGE_PARAMS.get('join') === '1' || !!REQUESTED_ROOM_ID;
 
         console.log('Boss Battle - API Base:', GAME_API_BASE);
         console.log('Boss Battle - Socket URL:', SOCKET_URL);
         console.log('Boss Battle - Is Local:', IS_LOCAL);
+
+        function setSocialActivity(mode, target, label) {
+            if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
+            window.SnakesSocial.setActivity({
+                mode: mode || '',
+                target: target || '',
+                label: label || ''
+            });
+        }
+
+        function setBossSocialActivity(target, label) {
+            setSocialActivity('boss-battle', target || '', label || 'In Boss Battle');
+        }
 
         // Resize canvas
         function resizeCanvas() {
@@ -946,6 +963,8 @@
         const SELF_RECONCILE_SOFT_PX = 8;
         const SELF_RECONCILE_HARD_PX = 72;
         const REMOTE_INTERPOLATION_RATE = 11;
+
+        setBossSocialActivity('', 'In Boss Battle Lobby');
 
         const CHARACTER_CONFIG = {
             knight: { icon: '🛡️', color: '#4facfe', glow: '#4facfe', name: 'Knight',
@@ -1592,6 +1611,12 @@
         // (lobby join happens automatically in the connect handler)
         connectSocket();
 
+        if (AUTO_JOIN_BATTLE) {
+            setTimeout(function () {
+                if (!gameActive) startBattle();
+            }, 900);
+        }
+
         // Key handlers
         window.addEventListener('keydown', (e) => gameState.keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
@@ -2110,6 +2135,9 @@
                     avatar_data: gameState.player.avatarData || null,
                     dev_mode: true  // Skip square 25 requirement for testing
                 };
+                if (REQUESTED_ROOM_ID) {
+                    payload.room_id = REQUESTED_ROOM_ID;
+                }
                 if (isGuestSession()) {
                     try {
                         const guestId = sessionStorage.getItem('snakes_user_id');
@@ -2137,6 +2165,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     roomId = data.room_id;
+                    setBossSocialActivity(roomId, 'In Boss Battle');
                     console.log('Joined room:', data);
 
                     // Update room badge
@@ -2261,6 +2290,7 @@
         function startGuestSocketOnlyBattle() {
             connectSocket();
             roomId = 'boss_battle_room';
+            setBossSocialActivity(roomId, 'In Boss Battle');
 
             document.getElementById('roomBadge').style.display = 'block';
             document.getElementById('roomCode').textContent = roomId;
@@ -4723,6 +4753,7 @@ function getDamageMultiplier() {
             if (socket && roomId) {
                 socket.emit('boss_leave_room', { room_id: roomId });
             }
+            setBossSocialActivity('', 'In Boss Battle Lobby');
         }
 
         function showVictoryAnimation() {
@@ -4778,6 +4809,7 @@ function getDamageMultiplier() {
                         body: JSON.stringify(leavePayload)
                     }).catch(() => {});
                 }
+                setBossSocialActivity('', 'Leaving Boss Battle');
                 returnToBoard();
             }
         }
@@ -4785,6 +4817,7 @@ function getDamageMultiplier() {
         function goToVictoryPage() {
             stopPositionBroadcast();
             roomId = null;
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
             
             // Mark that player just won so victory page can auto-complete
             try {
@@ -4799,6 +4832,7 @@ function getDamageMultiplier() {
         function returnToBoard() {
             stopPositionBroadcast();
             roomId = null;
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
 
             // Check if this was a victory - redirect to victory page
             const gameOver = document.getElementById('gameOver');

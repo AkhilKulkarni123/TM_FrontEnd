@@ -4,6 +4,15 @@
     var IS_LOCAL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     var SOCKET_URL = IS_LOCAL ? 'http://localhost:8306' : 'https://snakes.opencodingsociety.com';
 
+    function setSocialActivity(mode, target, label) {
+        if (!window.SnakesSocial || typeof window.SnakesSocial.setActivity !== 'function') return;
+        window.SnakesSocial.setActivity({
+            mode: mode || '',
+            target: target || '',
+            label: label || ''
+        });
+    }
+
     function safeGet(storage, key) {
         try {
             return storage.getItem(key);
@@ -67,6 +76,7 @@
         }
 
         var profile = detectProfile();
+        setSocialActivity('slitherrush', profile.party_id || '', 'Joining SLITHERRUSH');
         var client = new window.SlitherRush.Client({ socketUrl: SOCKET_URL });
         var renderer = new window.SlitherRush.Renderer(canvas);
         var ui = new window.SlitherRush.UI();
@@ -83,6 +93,7 @@
         input.bind();
 
         function goModeSelection() {
+            setSocialActivity('arcade', '', 'Browsing Battle Arcade');
             window.location.href = 'mode-selection.html';
         }
 
@@ -107,11 +118,14 @@
                     ? 'Joined as spectator'
                     : 'Connected to arena';
             }
+            var target = profile.party_id || (payload && payload.arena_id) || '';
+            setSocialActivity('slitherrush', target, 'In SLITHERRUSH');
         });
 
         client.on('connection_error', function () {
             var status = document.getElementById('srConnectionStatus');
             if (status) status.textContent = 'Connection issue... retrying';
+            setSocialActivity('slitherrush', profile.party_id || '', 'Reconnecting...');
         });
 
         client.connect(profile);
