@@ -2049,6 +2049,29 @@
                 }
             });
 
+            // Room players refresh (periodic sync or manual request)
+            socket.on('boss_room_players', (data) => {
+                if (!data || !Array.isArray(data.players)) return;
+                if (roomId && data.room_id && data.room_id !== roomId) return;
+                const nextPlayers = {};
+                data.players.forEach(p => {
+                    if (p.sid && p.sid !== socket.id) {
+                        nextPlayers[p.sid] = Object.assign({}, p, {
+                            weaponType: resolveWeaponType(p.character, p.weapon_type || p.selected_weapon),
+                            avatarUrl: p.avatar_url || p.avatarUrl || '',
+                            avatarData: p.avatar_data || p.avatarData || '',
+                            targetX: Number.isFinite(Number(p.x)) ? Number(p.x) : null,
+                            targetY: Number.isFinite(Number(p.y)) ? Number(p.y) : null
+                        });
+                    }
+                });
+                gameState.otherPlayers = nextPlayers;
+                updatePlayersList();
+                if (typeof data.playerCount !== 'undefined') {
+                    document.getElementById('playerCount').textContent = data.playerCount;
+                }
+            });
+
             // Player joined
             socket.on('boss_player_joined', (data) => {
                 console.log('Player joined:', data);
@@ -2429,6 +2452,7 @@
 
                     // Start position broadcasting
                     startPositionBroadcast();
+                    startRoomSync();
 
                     // Start powerup spawn requests
                     startPowerupSpawnRequests();
@@ -2539,6 +2563,7 @@
             savePlayerState({ lives: gameState.player.lives });
 
             startPositionBroadcast();
+            startRoomSync();
             startPowerupSpawnRequests();
             gameActive = true;
 
@@ -2573,6 +2598,8 @@
 
         // Offline mode powerup spawner (local only)
         let offlinePowerupInterval = null;
+        // Periodic room sync to keep player list/positions fresh
+        let roomSyncInterval = null;
         function startOfflinePowerupSpawner() {
             if (offlinePowerupInterval) clearInterval(offlinePowerupInterval);
             offlinePowerupInterval = setInterval(() => {
@@ -2644,6 +2671,7 @@
             document.getElementById('startBtn').disabled = false;
 
             setMobileControlsActive(false);
+            stopRoomSync();
         }
 
         function startPositionBroadcast() {
@@ -2665,6 +2693,22 @@
             if (positionBroadcastInterval) {
                 clearInterval(positionBroadcastInterval);
                 positionBroadcastInterval = null;
+            }
+        }
+
+        function startRoomSync() {
+            if (roomSyncInterval) clearInterval(roomSyncInterval);
+            roomSyncInterval = setInterval(() => {
+                if (socket && socket.connected && roomId) {
+                    socket.emit('boss_get_players', { room_id: roomId });
+                }
+            }, 1000);
+        }
+
+        function stopRoomSync() {
+            if (roomSyncInterval) {
+                clearInterval(roomSyncInterval);
+                roomSyncInterval = null;
             }
         }
 
