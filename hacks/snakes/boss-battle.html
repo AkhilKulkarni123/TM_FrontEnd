@@ -4874,8 +4874,8 @@ function getDamageMultiplier() {
             gameState.powerups = gameState.powerups.filter(p => p.id !== powerupId);
         }
 
-        let _playersListDirty = true;
-        let _lastPlayersListUpdate = 0;
+        var _playersListDirty = true;
+        var _lastPlayersListUpdate = 0;
         function schedulePlayersListUpdate() {
             _playersListDirty = true;
         }
