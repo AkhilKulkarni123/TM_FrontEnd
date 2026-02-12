@@ -152,6 +152,33 @@
         var stateSeenAt = Date.now();
         var connectAttempt = 0;
 
+        // ========== Ammo system ==========
+        var MAX_AMMO = 6;
+        var ammo = MAX_AMMO;
+        var ammoRechargeRate = 1200; // ms per bullet recharge
+        var lastAmmoRechargeAt = Date.now();
+        var localDeath = false;
+        var localDeathKiller = '';
+        var localDeathTime = 0;
+        var DEATH_REDIRECT_DELAY = 2500; // ms before redirecting after death
+
+        // ========== Pattern chooser ==========
+        window.SlitherRush._selectedPattern = 'solid';
+        var patternGrid = document.getElementById('srPatternGrid');
+        if (patternGrid) {
+            var patternOptions = patternGrid.querySelectorAll('.sr-pattern-option');
+            patternOptions.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    patternOptions.forEach(function (o) { o.classList.remove('selected'); });
+                    opt.classList.add('selected');
+                    window.SlitherRush._selectedPattern = opt.getAttribute('data-pattern') || 'solid';
+                });
+            });
+
+            // Draw pattern previews
+            _drawPatternPreviews();
+        }
+
         function setStatus(text) {
             if (statusEl) statusEl.textContent = text;
         }
@@ -204,6 +231,16 @@
         }
 
         var input = new window.SlitherRush.Input(function (payload) {
+            // Ammo gate: only allow shooting if we have ammo
+            if (payload && payload.shoot && ammo <= 0) {
+                payload.shoot = false;
+            }
+            // Consume ammo when shooting
+            if (payload && payload.shoot && ammo > 0) {
+                ammo--;
+                lastAmmoRechargeAt = Date.now();
+            }
+
             var serialized = JSON.stringify(payload || {});
             if (serialized === lastInputPayload) return;
             lastInputPayload = serialized;
@@ -271,7 +308,14 @@
             if (!payload) return;
             var state = client.getState();
             if (state && payload.player_id === state.self_id) {
-                setStatus('You were hit • respawning...');
+                setStatus('You died! Redirecting...');
+                localDeath = true;
+                localDeathKiller = payload.killer_name || payload.killed_by || 'another snake';
+                localDeathTime = Date.now();
+                // Redirect to minigame page after delay
+                setTimeout(function () {
+                    window.location.href = 'mode-selection.html';
+                }, DEATH_REDIRECT_DELAY);
             }
         });
 
@@ -290,9 +334,15 @@
 
         function frame() {
             var state = client.getState();
-            if (!state) {
-                var now = Date.now();
+            var now = Date.now();
 
+            // Ammo recharge over time
+            if (ammo < MAX_AMMO && now - lastAmmoRechargeAt >= ammoRechargeRate) {
+                ammo = Math.min(MAX_AMMO, ammo + 1);
+                lastAmmoRechargeAt = now;
+            }
+
+            if (!state) {
                 if (client.isConnected() && now - lastJoinNudgeAt > 1200) {
                     client.requestJoin(profile);
                     lastJoinNudgeAt = now;
@@ -316,17 +366,146 @@
                 return;
             }
 
+            // Head-to-body collision check (slither.io style)
+            if (!localDeath) {
+                var collision = renderer.checkHeadCollisions(state);
+                if (collision) {
+                    localDeath = true;
+                    localDeathKiller = collision.killerName || 'another snake';
+                    localDeathTime = Date.now();
+                    setStatus('You crashed into ' + localDeathKiller + '! Redirecting...');
+                    // Notify server of death
+                    client.sendInput({ death: true, killed_by: collision.killedBy });
+                    // Redirect after delay
+                    setTimeout(function () {
+                        window.location.href = 'mode-selection.html';
+                    }, DEATH_REDIRECT_DELAY);
+                }
+            }
+
             renderer.render(state, state.self_id);
             ui.render(state, {
                 spectatingName: '--',
                 respawnInSeconds: 0,
-                results: client.getResults()
+                results: client.getResults(),
+                ammo: ammo,
+                maxAmmo: MAX_AMMO,
+                localDeath: localDeath,
+                localDeathKiller: localDeathKiller
             });
 
             window.requestAnimationFrame(frame);
         }
 
         window.requestAnimationFrame(frame);
+    }
+
+    // Pattern preview drawer
+    function _drawPatternPreviews() {
+        var patterns = {
+            solid: function (ctx, w, h) {
+                ctx.fillStyle = '#7ad0ff';
+                ctx.fillRect(0, 0, w, h);
+            },
+            stripes: function (ctx, w, h) {
+                ctx.fillStyle = '#7ad0ff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.25)';
+                for (var x = 0; x < w; x += 8) ctx.fillRect(x, 0, 4, h);
+            },
+            scales: function (ctx, w, h) {
+                ctx.fillStyle = '#7ad0ff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 1;
+                for (var y = 0; y < h; y += 10) {
+                    for (var x = 0; x < w; x += 10) {
+                        ctx.beginPath();
+                        ctx.arc(x + (y % 20 === 0 ? 0 : 5), y, 5, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+            },
+            neon: function (ctx, w, h) {
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, w, h);
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                for (var x = 0; x < w; x += 8) ctx.strokeRect(x, 0, 6, h);
+            },
+            lava: function (ctx, w, h) {
+                var g = ctx.createLinearGradient(0, 0, w, h);
+                g.addColorStop(0, '#ff4500');
+                g.addColorStop(0.5, '#ff8c00');
+                g.addColorStop(1, '#8b0000');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,0,0.3)';
+                ctx.beginPath(); ctx.arc(w * 0.3, h * 0.5, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(w * 0.7, h * 0.3, 3, 0, Math.PI * 2); ctx.fill();
+            },
+            ice: function (ctx, w, h) {
+                var g = ctx.createLinearGradient(0, 0, w, 0);
+                g.addColorStop(0, '#a8d8ea');
+                g.addColorStop(0.5, '#e0f7fa');
+                g.addColorStop(1, '#80deea');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillRect(5, 8, 8, 2);
+                ctx.fillRect(25, 15, 6, 2);
+                ctx.fillRect(45, 5, 10, 2);
+            },
+            galaxy: function (ctx, w, h) {
+                var g = ctx.createLinearGradient(0, 0, w, h);
+                g.addColorStop(0, '#4a148c');
+                g.addColorStop(0.5, '#1a237e');
+                g.addColorStop(1, '#0d0030');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                for (var i = 0; i < 8; i++) {
+                    ctx.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5);
+                }
+                ctx.fillStyle = 'rgba(200, 150, 255, 0.3)';
+                ctx.beginPath(); ctx.arc(w * 0.5, h * 0.5, 6, 0, Math.PI * 2); ctx.fill();
+            },
+            toxic: function (ctx, w, h) {
+                ctx.fillStyle = '#1b5e20';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#76ff03';
+                ctx.beginPath(); ctx.arc(w * 0.25, h * 0.5, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#64dd17';
+                ctx.beginPath(); ctx.arc(w * 0.6, h * 0.3, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(w * 0.8, h * 0.7, 3.5, 0, Math.PI * 2); ctx.fill();
+            }
+        };
+
+        Object.keys(patterns).forEach(function (name) {
+            var canvasEl = document.getElementById('prev' + name.charAt(0).toUpperCase() + name.slice(1));
+            if (!canvasEl) return;
+            var rect = canvasEl.getBoundingClientRect();
+            canvasEl.width = Math.max(60, rect.width || 60);
+            canvasEl.height = Math.max(32, rect.height || 32);
+            var pctx = canvasEl.getContext('2d');
+            if (!pctx) return;
+            pctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            // Round corners via clipping
+            var r = 6;
+            pctx.beginPath();
+            pctx.moveTo(r, 0);
+            pctx.lineTo(canvasEl.width - r, 0);
+            pctx.quadraticCurveTo(canvasEl.width, 0, canvasEl.width, r);
+            pctx.lineTo(canvasEl.width, canvasEl.height - r);
+            pctx.quadraticCurveTo(canvasEl.width, canvasEl.height, canvasEl.width - r, canvasEl.height);
+            pctx.lineTo(r, canvasEl.height);
+            pctx.quadraticCurveTo(0, canvasEl.height, 0, canvasEl.height - r);
+            pctx.lineTo(0, r);
+            pctx.quadraticCurveTo(0, 0, r, 0);
+            pctx.closePath();
+            pctx.clip();
+            patterns[name](pctx, canvasEl.width, canvasEl.height);
+        });
     }
 
     if (document.readyState === 'loading') {

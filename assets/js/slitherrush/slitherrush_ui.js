@@ -17,6 +17,11 @@
         this.scoreValue = document.getElementById('srScoreValue');
         this.aliveValue = document.getElementById('srAliveValue');
         this.matchTimerValue = document.getElementById('srMatchTimerValue');
+        this.ammoValue = document.getElementById('srAmmoValue');
+        this.dmgValue = document.getElementById('srDmgValue');
+
+        this.ammoBar = document.getElementById('srAmmoBar');
+        this.dmgIndicator = document.getElementById('srDmgIndicator');
 
         this.leaderboardList = document.getElementById('srLeaderboardList');
 
@@ -124,12 +129,49 @@
         if (this.matchTimerValue) this.matchTimerValue.textContent = timerValue;
         if (this.aliveValue) this.aliveValue.textContent = Math.max(0, Number(state.alive_count || 0));
 
+        var snakeLength = 0;
         if (self) {
-            if (this.lengthValue) this.lengthValue.textContent = Math.max(0, Number(self.length || 0));
+            snakeLength = Math.max(0, Number(self.length || 0));
+            if (this.lengthValue) this.lengthValue.textContent = snakeLength;
             if (this.scoreValue) this.scoreValue.textContent = Math.max(0, Number(self.score || 0));
         } else {
             if (this.lengthValue) this.lengthValue.textContent = '0';
             if (this.scoreValue) this.scoreValue.textContent = '0';
+        }
+
+        // Damage multiplier based on length (1x base + 0.5x per 5 length)
+        var dmgMultiplier = 1 + Math.floor(snakeLength / 5) * 0.5;
+        if (this.dmgValue) this.dmgValue.textContent = dmgMultiplier.toFixed(1) + 'x';
+        if (this.dmgIndicator) this.dmgIndicator.textContent = 'DMG: ' + dmgMultiplier.toFixed(1) + 'x  ·  Length = Power';
+
+        // Update ammo bar pips
+        var ammo = context.ammo || 0;
+        var maxAmmo = context.maxAmmo || 6;
+        if (this.ammoValue) this.ammoValue.textContent = ammo;
+        if (this.ammoBar) {
+            // Rebuild pips if count changed
+            var pips = this.ammoBar.querySelectorAll('.sr-ammo-pip');
+            if (pips.length !== maxAmmo) {
+                var label = this.ammoBar.querySelector('.sr-ammo-label');
+                this.ammoBar.innerHTML = '';
+                if (label) this.ammoBar.appendChild(label);
+                else {
+                    var newLabel = document.createElement('span');
+                    newLabel.className = 'sr-ammo-label';
+                    newLabel.textContent = 'AMMO';
+                    this.ammoBar.appendChild(newLabel);
+                }
+                for (var p = 0; p < maxAmmo; p++) {
+                    var pip = document.createElement('div');
+                    pip.className = 'sr-ammo-pip';
+                    this.ammoBar.appendChild(pip);
+                }
+                pips = this.ammoBar.querySelectorAll('.sr-ammo-pip');
+            }
+            for (var q = 0; q < pips.length; q++) {
+                pips[q].classList.toggle('filled', q < ammo);
+                pips[q].classList.toggle('recharging', q === ammo && ammo < maxAmmo);
+            }
         }
 
         this._renderLeaderboard(state.leaderboard || [], state.self_id);
@@ -138,16 +180,15 @@
         var eliminated = !!(self && self.status === 'spectator' && state.state === 'active');
 
         if (this.deathOverlay) {
-            this.deathOverlay.classList.toggle('active', eliminated);
+            this.deathOverlay.classList.toggle('active', eliminated || !!context.localDeath);
         }
-        if (eliminated) {
-            var respawnIn = Number(context.respawnInSeconds || 0);
+        if (eliminated || context.localDeath) {
             if (this.deathText) {
-                this.deathText.textContent = respawnIn > 0
-                    ? ('YOU WERE ELIMINATED • RESPAWNING IN ' + respawnIn + 's')
+                this.deathText.textContent = context.localDeath
+                    ? ('CRASHED INTO ' + (context.localDeathKiller || 'ANOTHER SNAKE') + '!')
                     : 'YOU WERE ELIMINATED';
             }
-            if (this.spectatingText) this.spectatingText.textContent = 'SPECTATING: ' + spectatingName;
+            if (this.spectatingText) this.spectatingText.textContent = 'Redirecting...';
         }
 
         this._renderResults(context.results || null);

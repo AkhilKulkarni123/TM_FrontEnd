@@ -214,28 +214,73 @@
         for (var i = 0; i < energyOrbs.length; i++) {
             var orb = energyOrbs[i];
             var p = this.worldToScreen(orb.x, orb.y);
-            if (p.x < -30 || p.x > this.view.width + 30 || p.y < -30 || p.y > this.view.height + 30) continue;
+            if (p.x < -40 || p.x > this.view.width + 40 || p.y < -40 || p.y > this.view.height + 40) continue;
 
             var value = Math.max(1, Number(orb.value || 1));
-            var radius = 4 + Math.min(7, value);
-            var pulse = 1 + (Math.sin(pulseTime + (i * 0.2)) * 0.17);
+            var radius = 5 + Math.min(9, value * 1.3);
+            var pulse = 1 + (Math.sin(pulseTime + (i * 0.2)) * 0.2);
+            var rotation = nowMs * 0.001 + i * 0.5;
 
-            var core = '#ffd35c';
-            var glow = 'rgba(255, 211, 92, 0.35)';
-            if (value >= 4) {
+            var core, glow, ringColor;
+            if (value >= 5) {
+                core = '#ff6040';
+                glow = 'rgba(255, 96, 64, 0.4)';
+                ringColor = 'rgba(255, 140, 80, 0.6)';
+            } else if (value >= 3) {
                 core = '#ff964f';
-                glow = 'rgba(255, 150, 79, 0.34)';
+                glow = 'rgba(255, 150, 79, 0.35)';
+                ringColor = 'rgba(255, 180, 100, 0.5)';
+            } else {
+                core = '#7eff6a';
+                glow = 'rgba(126, 255, 106, 0.3)';
+                ringColor = 'rgba(160, 255, 140, 0.45)';
             }
 
+            // Outer glow
+            var glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius * 3 * pulse);
+            glowGrad.addColorStop(0, glow);
+            glowGrad.addColorStop(0.5, glow.replace(/[\d.]+\)$/, '0.12)'));
+            glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.beginPath();
-            ctx.fillStyle = glow;
-            ctx.arc(p.x, p.y, radius * 2.2 * pulse, 0, Math.PI * 2);
+            ctx.fillStyle = glowGrad;
+            ctx.arc(p.x, p.y, radius * 3 * pulse, 0, Math.PI * 2);
             ctx.fill();
 
+            // Orbiting ring particles
+            for (var r = 0; r < 4; r++) {
+                var ringAngle = rotation + r * (Math.PI / 2);
+                var rx = p.x + Math.cos(ringAngle) * (radius * 1.8);
+                var ry = p.y + Math.sin(ringAngle) * (radius * 1.8);
+                ctx.beginPath();
+                ctx.fillStyle = ringColor;
+                ctx.arc(rx, ry, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Core orb with gradient
+            var coreGrad = ctx.createRadialGradient(p.x - radius * 0.2, p.y - radius * 0.2, 0, p.x, p.y, radius * pulse);
+            coreGrad.addColorStop(0, '#ffffff');
+            coreGrad.addColorStop(0.3, core);
+            coreGrad.addColorStop(1, core);
             ctx.beginPath();
-            ctx.fillStyle = core;
+            ctx.fillStyle = coreGrad;
             ctx.arc(p.x, p.y, radius * pulse, 0, Math.PI * 2);
             ctx.fill();
+
+            // Shine highlight
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.arc(p.x - radius * 0.25, p.y - radius * 0.25, radius * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Length value text for bigger orbs
+            if (value >= 2) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold ' + Math.max(9, radius * 0.9) + 'px Oxanium, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('+' + value, p.x, p.y);
+            }
         }
         ctx.restore();
     };
@@ -244,24 +289,185 @@
         var ctx = this.ctx;
         var list = Array.isArray(bullets) ? bullets : [];
         if (!list.length) return;
+        var nowMs = performance.now();
 
         ctx.save();
         for (var i = 0; i < list.length; i++) {
             var bullet = list[i];
-            var p = this.worldToScreen(Number(bullet.x || 0), Number(bullet.y || 0));
-            if (p.x < -20 || p.x > this.view.width + 20 || p.y < -20 || p.y > this.view.height + 20) continue;
+            var bx = Number(bullet.x || 0);
+            var by = Number(bullet.y || 0);
+            var p = this.worldToScreen(bx, by);
+            if (p.x < -40 || p.x > this.view.width + 40 || p.y < -40 || p.y > this.view.height + 40) continue;
 
+            var dx = Number(bullet.dx || bullet.direction_x || 0);
+            var dy = Number(bullet.dy || bullet.direction_y || 0);
+            var mag = Math.sqrt(dx * dx + dy * dy) || 1;
+            dx /= mag;
+            dy /= mag;
+
+            var pulse = 0.85 + Math.sin(nowMs * 0.012 + i * 1.7) * 0.15;
+            var ownerColor = bullet.color || '#ffe58a';
+
+            // Outer glow halo
+            var glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 18 * pulse);
+            glowGrad.addColorStop(0, 'rgba(255, 240, 180, 0.35)');
+            glowGrad.addColorStop(0.4, 'rgba(255, 200, 80, 0.15)');
+            glowGrad.addColorStop(1, 'rgba(255, 180, 60, 0)');
             ctx.beginPath();
-            ctx.fillStyle = 'rgba(255, 236, 170, 0.25)';
-            ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = glowGrad;
+            ctx.arc(p.x, p.y, 18 * pulse, 0, Math.PI * 2);
             ctx.fill();
 
+            // Directional trail (3 trailing dots)
+            for (var t = 1; t <= 3; t++) {
+                var trailX = p.x - dx * t * 7;
+                var trailY = p.y - dy * t * 7;
+                var trailAlpha = 0.3 - t * 0.08;
+                var trailR = 3.5 - t * 0.7;
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(255, 230, 140, ' + trailAlpha + ')';
+                ctx.arc(trailX, trailY, Math.max(1, trailR), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Core bullet — elongated ellipse in direction of travel
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            var angle = Math.atan2(dy, dx);
+            ctx.rotate(angle);
+
+            // Bright core ellipse
             ctx.beginPath();
-            ctx.fillStyle = '#ffe58a';
-            ctx.arc(p.x, p.y, 3.6, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 7 * pulse, 3.5 * pulse, 0, 0, Math.PI * 2);
+            ctx.fillStyle = ownerColor;
             ctx.fill();
+
+            // Inner white highlight
+            ctx.beginPath();
+            ctx.ellipse(1, -0.5, 3.5 * pulse, 1.5 * pulse, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fill();
+
+            ctx.restore();
+
+            // Spark particles around bullet
+            for (var s = 0; s < 3; s++) {
+                var sparkAngle = (nowMs * 0.008 + s * 2.1 + i) % (Math.PI * 2);
+                var sparkDist = 9 + Math.sin(nowMs * 0.015 + s) * 4;
+                var sx = p.x + Math.cos(sparkAngle) * sparkDist;
+                var sy = p.y + Math.sin(sparkAngle) * sparkDist;
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(255, 220, 120, ' + (0.4 + Math.sin(nowMs * 0.01 + s * 0.8) * 0.2) + ')';
+                ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         ctx.restore();
+    };
+
+    // Pattern definitions for snake skins
+    var SNAKE_PATTERNS = {
+        solid: function () { return null; },
+        stripes: function (ctx, color, length) {
+            var pat = document.createElement('canvas');
+            pat.width = 20; pat.height = 20;
+            var pc = pat.getContext('2d');
+            pc.fillStyle = color;
+            pc.fillRect(0, 0, 20, 20);
+            pc.fillStyle = 'rgba(255,255,255,0.25)';
+            for (var s = -20; s < 40; s += 8) {
+                pc.fillRect(s, 0, 4, 20);
+            }
+            return ctx.createPattern(pat, 'repeat');
+        },
+        scales: function (ctx, color) {
+            var pat = document.createElement('canvas');
+            pat.width = 16; pat.height = 16;
+            var pc = pat.getContext('2d');
+            pc.fillStyle = color;
+            pc.fillRect(0, 0, 16, 16);
+            pc.strokeStyle = 'rgba(255,255,255,0.2)';
+            pc.lineWidth = 1;
+            pc.beginPath(); pc.arc(4, 4, 5, 0, Math.PI * 2); pc.stroke();
+            pc.beginPath(); pc.arc(12, 12, 5, 0, Math.PI * 2); pc.stroke();
+            return ctx.createPattern(pat, 'repeat');
+        },
+        neon: function (ctx, color) {
+            var pat = document.createElement('canvas');
+            pat.width = 8; pat.height = 8;
+            var pc = pat.getContext('2d');
+            pc.fillStyle = '#000';
+            pc.fillRect(0, 0, 8, 8);
+            pc.strokeStyle = color;
+            pc.lineWidth = 2;
+            pc.strokeRect(1, 1, 6, 6);
+            return ctx.createPattern(pat, 'repeat');
+        },
+        lava: function (ctx) {
+            var pat = document.createElement('canvas');
+            pat.width = 20; pat.height = 20;
+            var pc = pat.getContext('2d');
+            var g = pc.createLinearGradient(0, 0, 20, 20);
+            g.addColorStop(0, '#ff4500');
+            g.addColorStop(0.4, '#ff8c00');
+            g.addColorStop(0.7, '#ff4500');
+            g.addColorStop(1, '#8b0000');
+            pc.fillStyle = g;
+            pc.fillRect(0, 0, 20, 20);
+            pc.fillStyle = 'rgba(255,255,0,0.3)';
+            pc.beginPath(); pc.arc(6, 10, 3, 0, Math.PI * 2); pc.fill();
+            pc.beginPath(); pc.arc(14, 5, 2, 0, Math.PI * 2); pc.fill();
+            return ctx.createPattern(pat, 'repeat');
+        },
+        ice: function (ctx) {
+            var pat = document.createElement('canvas');
+            pat.width = 16; pat.height = 16;
+            var pc = pat.getContext('2d');
+            var g = pc.createLinearGradient(0, 0, 16, 16);
+            g.addColorStop(0, '#a8d8ea');
+            g.addColorStop(0.5, '#e0f7fa');
+            g.addColorStop(1, '#80deea');
+            pc.fillStyle = g;
+            pc.fillRect(0, 0, 16, 16);
+            pc.fillStyle = 'rgba(255,255,255,0.5)';
+            pc.fillRect(2, 2, 3, 1);
+            pc.fillRect(10, 8, 4, 1);
+            pc.fillRect(5, 13, 2, 1);
+            return ctx.createPattern(pat, 'repeat');
+        },
+        galaxy: function (ctx) {
+            var pat = document.createElement('canvas');
+            pat.width = 24; pat.height = 24;
+            var pc = pat.getContext('2d');
+            var g = pc.createRadialGradient(12, 12, 0, 12, 12, 16);
+            g.addColorStop(0, '#4a148c');
+            g.addColorStop(0.5, '#1a237e');
+            g.addColorStop(1, '#0d0030');
+            pc.fillStyle = g;
+            pc.fillRect(0, 0, 24, 24);
+            pc.fillStyle = 'rgba(255,255,255,0.7)';
+            pc.fillRect(4, 6, 1.5, 1.5);
+            pc.fillRect(18, 3, 1, 1);
+            pc.fillRect(10, 18, 1.5, 1.5);
+            pc.fillRect(20, 15, 1, 1);
+            pc.fillStyle = 'rgba(200, 150, 255, 0.4)';
+            pc.beginPath(); pc.arc(12, 12, 5, 0, Math.PI * 2); pc.fill();
+            return ctx.createPattern(pat, 'repeat');
+        },
+        toxic: function (ctx) {
+            var pat = document.createElement('canvas');
+            pat.width = 18; pat.height = 18;
+            var pc = pat.getContext('2d');
+            pc.fillStyle = '#1b5e20';
+            pc.fillRect(0, 0, 18, 18);
+            pc.fillStyle = '#76ff03';
+            pc.beginPath(); pc.arc(5, 5, 3, 0, Math.PI * 2); pc.fill();
+            pc.fillStyle = '#64dd17';
+            pc.beginPath(); pc.arc(13, 13, 2.5, 0, Math.PI * 2); pc.fill();
+            pc.fillStyle = 'rgba(200, 255, 0, 0.2)';
+            pc.fillRect(0, 0, 18, 18);
+            return ctx.createPattern(pat, 'repeat');
+        }
     };
 
     Renderer.prototype._getBodyPoints = function (player) {
@@ -283,11 +489,21 @@
         var isLocal = player.id === localId;
         var isAlive = player.status === 'alive';
         var alpha = isAlive ? 1 : 0.4;
+        var snakeLength = Number(player.length || body.length || 1);
+
+        // Determine pattern to use
+        var patternName = 'solid';
+        if (isLocal && window.SlitherRush && window.SlitherRush._selectedPattern) {
+            patternName = window.SlitherRush._selectedPattern;
+        }
 
         ctx.save();
         ctx.globalAlpha = alpha;
 
         if (body.length > 1) {
+            // Draw body segments with thickness based on snake length
+            var baseWidth = 18 + Math.min(12, snakeLength * 0.3);
+
             ctx.beginPath();
             for (var i = 0; i < body.length; i++) {
                 var screenPoint = this.worldToScreen(body[i].x, body[i].y);
@@ -296,13 +512,36 @@
             }
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.lineWidth = 18;
-            ctx.strokeStyle = color;
+            ctx.lineWidth = baseWidth;
+
+            // Apply pattern or solid color
+            var patternFn = SNAKE_PATTERNS[patternName];
+            var pattern = patternFn ? patternFn(ctx, color, snakeLength) : null;
+            ctx.strokeStyle = pattern || color;
             ctx.stroke();
 
-            ctx.lineWidth = 5;
+            // Pattern overlay shimmer for non-solid
+            if (patternName !== 'solid') {
+                ctx.lineWidth = baseWidth - 2;
+                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+                ctx.stroke();
+            }
+
+            // Highlight spine
+            ctx.lineWidth = 3;
             ctx.strokeStyle = 'rgba(255,255,255,0.18)';
             ctx.stroke();
+
+            // Segment markers for length > 10
+            if (snakeLength > 10) {
+                for (var seg = 0; seg < body.length; seg += 5) {
+                    var sp = this.worldToScreen(body[seg].x, body[seg].y);
+                    ctx.beginPath();
+                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                    ctx.arc(sp.x, sp.y, baseWidth * 0.55, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
         }
 
         var headKey = player.id || ('anon-' + Math.random());
@@ -315,22 +554,59 @@
         smooth.y = lerp(smooth.y, player.head.y, 0.35);
 
         var head = this.worldToScreen(smooth.x, smooth.y);
+        var headRadius = 12 + Math.min(6, snakeLength * 0.15);
 
+        // Head glow
         ctx.beginPath();
         ctx.fillStyle = 'rgba(255,255,255,0.26)';
-        ctx.arc(head.x, head.y, 20, 0, Math.PI * 2);
+        ctx.arc(head.x, head.y, headRadius + 8, 0, Math.PI * 2);
         ctx.fill();
 
+        // Head fill with gradient
+        var headGrad = ctx.createRadialGradient(head.x - 2, head.y - 2, 0, head.x, head.y, headRadius);
+        headGrad.addColorStop(0, '#ffffff');
+        headGrad.addColorStop(0.35, color);
+        headGrad.addColorStop(1, color);
         ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.arc(head.x, head.y, 12, 0, Math.PI * 2);
+        ctx.fillStyle = headGrad;
+        ctx.arc(head.x, head.y, headRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyes on the head
+        var dir = { x: 1, y: 0 };
+        if (body.length > 1) {
+            var b1 = body[0], b2 = body[1];
+            var edx = b1.x - b2.x, edy = b1.y - b2.y;
+            var emag = Math.sqrt(edx * edx + edy * edy) || 1;
+            dir = { x: edx / emag, y: edy / emag };
+        }
+        var perpX = -dir.y, perpY = dir.x;
+        var eyeOff = headRadius * 0.45;
+        var eyeSize = headRadius * 0.28;
+        // Left eye
+        ctx.beginPath();
+        ctx.fillStyle = '#fff';
+        ctx.arc(head.x + perpX * eyeOff + dir.x * eyeOff * 0.5, head.y + perpY * eyeOff + dir.y * eyeOff * 0.5, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = '#111';
+        ctx.arc(head.x + perpX * eyeOff + dir.x * eyeOff * 0.8, head.y + perpY * eyeOff + dir.y * eyeOff * 0.8, eyeSize * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+        // Right eye
+        ctx.beginPath();
+        ctx.fillStyle = '#fff';
+        ctx.arc(head.x - perpX * eyeOff + dir.x * eyeOff * 0.5, head.y - perpY * eyeOff + dir.y * eyeOff * 0.5, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = '#111';
+        ctx.arc(head.x - perpX * eyeOff + dir.x * eyeOff * 0.8, head.y - perpY * eyeOff + dir.y * eyeOff * 0.8, eyeSize * 0.55, 0, Math.PI * 2);
         ctx.fill();
 
         if (player.boost_active) {
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255, 214, 70, 0.95)';
             ctx.lineWidth = 3;
-            ctx.arc(head.x, head.y, 18, 0, Math.PI * 2);
+            ctx.arc(head.x, head.y, headRadius + 6, 0, Math.PI * 2);
             ctx.stroke();
         }
 
@@ -338,16 +614,63 @@
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255, 236, 182, 0.95)';
             ctx.lineWidth = 2.5;
-            ctx.arc(head.x, head.y, 24, 0, Math.PI * 2);
+            ctx.arc(head.x, head.y, headRadius + 12, 0, Math.PI * 2);
             ctx.stroke();
         }
 
+        // Name + length indicator
         ctx.fillStyle = 'rgba(255, 241, 198, 0.94)';
         ctx.font = '13px Oxanium, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(player.username || 'Player', head.x, head.y - 22);
+        ctx.fillText(player.username || 'Player', head.x, head.y - headRadius - 14);
+
+        if (snakeLength > 1) {
+            ctx.fillStyle = 'rgba(255, 180, 80, 0.85)';
+            ctx.font = '11px Oxanium, sans-serif';
+            ctx.fillText('L' + snakeLength, head.x, head.y - headRadius - 3);
+        }
 
         ctx.restore();
+    };
+
+    // Head-to-body collision detection (slither.io style)
+    Renderer.prototype.checkHeadCollisions = function (state) {
+        if (!state) return null;
+        var players = Array.isArray(state.players) ? state.players : [];
+        var selfId = state.self_id;
+        var self = null;
+
+        for (var i = 0; i < players.length; i++) {
+            if (players[i].id === selfId && players[i].status === 'alive') {
+                self = players[i];
+                break;
+            }
+        }
+        if (!self || !self.head) return null;
+
+        var hx = self.head.x;
+        var hy = self.head.y;
+        var snakeLength = Number(self.length || 1);
+        var headRadius = 12 + Math.min(6, snakeLength * 0.15);
+        var collisionDist = headRadius + 9; // head radius + body half-width
+
+        for (var j = 0; j < players.length; j++) {
+            var other = players[j];
+            if (other.id === selfId) continue; // skip self
+            if (other.status !== 'alive') continue;
+            if (!Array.isArray(other.body) || other.body.length < 2) continue;
+
+            for (var k = 0; k < other.body.length; k++) {
+                var seg = other.body[k];
+                var dx = hx - seg.x;
+                var dy = hy - seg.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < collisionDist) {
+                    return { killedBy: other.id, killerName: other.username || 'Player' };
+                }
+            }
+        }
+        return null;
     };
 
     Renderer.prototype.renderBoot = function (context) {
