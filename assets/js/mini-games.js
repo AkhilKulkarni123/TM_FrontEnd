@@ -494,8 +494,8 @@
     };
 
     // =====================================================
-    // LESSON 2: Data Structures
-    // Games: Array Assembler, Object Detective, Stack Attack, Queue Quest, Nested Navigator
+    // LESSON 2: AP CSP Data Abstraction & Lists
+    // Games: Array Assembler, List Loop Tracer, Data Cleaner, Abstraction Builder, Nested Navigator
     // =====================================================
 
     const LESSON_2_GAMES = {
@@ -599,266 +599,230 @@
             }
         },
 
-        // Game 2: Object Detective - Match properties to objects
-        objectDetective: {
-            name: 'Object Detective',
-            description: 'Match the properties to the correct objects!',
+        // Game 2: List Loop Tracer - Predict output of list iteration
+        listLoopTracer: {
+            name: 'List Loop Tracer',
+            description: 'Trace loops over lists and predict the output (AP CSP iteration + lists)!',
             init: function(container, onComplete) {
                 const state = { score: 0, total: 6, completed: false };
 
-                const clues = [
-                    { clue: 'Has 4 wheels and an engine', answer: 'car', options: ['car', 'bicycle', 'boat'] },
-                    { clue: 'Has pages and a cover', answer: 'book', options: ['book', 'phone', 'lamp'] },
-                    { clue: 'Has a screen and keyboard', answer: 'laptop', options: ['laptop', 'chair', 'table'] },
-                    { clue: 'Has wings and can fly', answer: 'plane', options: ['plane', 'train', 'bus'] },
-                    { clue: 'Has strings and makes music', answer: 'guitar', options: ['guitar', 'drum', 'piano'] },
-                    { clue: 'Has roots and leaves', answer: 'tree', options: ['tree', 'rock', 'cloud'] }
+                const prompts = [
+                    { code: 'total = 0\nFOR EACH n IN [2, 4, 6]\n  total <- total + n\nDISPLAY(total)', options: ['12', '6', '24', '8'], answer: 0 },
+                    { code: 'count = 0\nFOR EACH item IN ["a","b","c","d"]\n  count <- count + 1\nDISPLAY(count)', options: ['4', '3', '5', '1'], answer: 0 },
+                    { code: 'sum = 1\nFOR EACH x IN [3, 2]\n  sum <- sum * x\nDISPLAY(sum)', options: ['6', '5', '3', '8'], answer: 0 },
+                    { code: 'nums = [5, 1, 2]\nFOR EACH v IN nums\n  DISPLAY(v)', options: ['5 1 2', '1 2 5', '8', '2'], answer: 0 },
+                    { code: 'hits = 0\nFOR EACH n IN [1,2,3,4]\n  IF n > 2\n    hits <- hits + 1\nDISPLAY(hits)', options: ['2', '1', '3', '4'], answer: 0 },
+                    { code: 'words = ["code","is","fun"]\nDISPLAY(words[1])', options: ['is', 'code', 'fun', 'undefined'], answer: 0 }
                 ];
 
                 container.innerHTML = `
-                    <div class="mini-game object-detective" style="width: 100%;">
-                        <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🔍 Object Detective</span>
-                            <div class="game-score" style="font-weight: bold;">Solved: <span id="score">0</span>/${state.total}</div>
+                    <div class="mini-game list-loop-tracer" style="width: 100%;">
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span class="game-title">🔁 List Loop Tracer</span>
+                            <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        <div class="game-layout-horizontal" style="display: flex; gap: 30px; align-items: center; width: 100%;">
-                            <div class="clue-box" id="clue-box" style="flex: 1; padding:15px;background:#f8f9fa;border-radius:10px; min-width: 300px;"></div>
-                            <div class="options-grid" id="options-grid" style="display:flex;gap:12px;flex-wrap:wrap; flex: 1;"></div>
+                        <div class="game-instructions">
+                            <strong>🎯 Goal:</strong> Read the pseudocode and choose the correct output.
                         </div>
+                        <div id="prompt-wrap"></div>
                     </div>
                 `;
 
-                let currentClue = 0;
+                let current = 0;
 
-                function showClue() {
-                    if (currentClue >= clues.length) {
+                function renderPrompt() {
+                    if (current >= prompts.length) {
                         state.completed = true;
                         onComplete(true, 100);
                         return;
                     }
 
-                    const clue = clues[currentClue];
-                    container.querySelector('#clue-box').innerHTML = `<p style="font-size:1.1em;margin:0;"><strong>Clue:</strong> ${clue.clue}</p>`;
+                    const prompt = prompts[current];
+                    const wrap = container.querySelector('#prompt-wrap');
+                    wrap.innerHTML = `
+                        <pre style="margin:0 0 12px 0;"><code>${escapeHtml(prompt.code)}</code></pre>
+                        <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+                    `;
+                    const answers = wrap.querySelector('.answers-grid');
 
-                    const optionsGrid = container.querySelector('#options-grid');
-                    optionsGrid.innerHTML = '';
-                    const shuffled = [...clue.options].sort(() => Math.random() - 0.5);
-
-                    shuffled.forEach(option => {
+                    prompt.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
-                        btn.textContent = option;
-                        btn.style.cssText = 'padding:15px 25px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:10px;cursor:pointer;font-size:1em;font-weight:bold;transition:transform 0.2s;';
+                        btn.textContent = opt;
+                        btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
                         btn.addEventListener('click', () => {
-                            if (option === clue.answer) {
-                                btn.style.background = '#28a745';
+                            if (i === prompt.answer) {
                                 state.score++;
                                 container.querySelector('#score').textContent = state.score;
-                                currentClue++;
-                                setTimeout(showClue, 500);
+                                btn.style.background = '#d1fae5';
+                                btn.style.borderColor = '#10b981';
+                                current++;
+                                setTimeout(renderPrompt, 280);
                             } else {
-                                btn.style.background = '#dc3545';
-                                btn.disabled = true;
+                                btn.style.background = '#fee2e2';
+                                btn.style.borderColor = '#ef4444';
                             }
                         });
-                        optionsGrid.appendChild(btn);
+                        answers.appendChild(btn);
                     });
                 }
 
-                showClue();
+                renderPrompt();
                 startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
-
                 return state;
             }
         },
 
-        // Game 3: Stack Attack - LIFO card stacking game
-        stackAttack: {
-            name: 'Stack Attack',
-            description: 'Use LIFO (Last In, First Out) rules to complete the challenge!',
+        // Game 3: Data Cleaner - Pick the best cleaning step for each dataset issue
+        dataCleaner: {
+            name: 'Data Cleaner',
+            description: 'Choose the best data-cleaning action for each AP CSP data problem.',
             init: function(container, onComplete) {
-                const state = { completed: false };
+                const state = { score: 0, total: 6, completed: false };
+                const tasks = [
+                    { issue: 'A list of survey IDs contains duplicates.', options: ['Remove duplicates', 'Sort alphabetically', 'Add random IDs', 'Ignore it'], answer: 0 },
+                    { issue: 'Some rows have missing ages: age = "".', options: ['Flag or fill missing values', 'Delete the whole dataset', 'Convert all to text', 'Duplicate rows'], answer: 0 },
+                    { issue: 'Dates are mixed: 01/05/26 and 2026-01-05.', options: ['Standardize date format', 'Randomize order', 'Delete newest rows', 'Store as images'], answer: 0 },
+                    { issue: 'A score column has value 9999 by mistake.', options: ['Detect and fix outlier/error', 'Keep it for variety', 'Multiply all scores', 'Hide the column'], answer: 0 },
+                    { issue: 'State names are NY, New York, ny.', options: ['Normalize labels/case', 'Split into many columns', 'Drop all state data', 'Encrypt immediately'], answer: 0 },
+                    { issue: 'Device type column has extra spaces: " laptop ".', options: ['Trim whitespace', 'Add more spaces', 'Use random capitalization', 'Convert to binary'], answer: 0 }
+                ];
 
                 container.innerHTML = `
-                    <div class="mini-game stack-attack" style="width: 100%;">
+                    <div class="mini-game data-cleaner" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">📚 Stack Attack</span>
+                            <span class="game-title">🧹 Data Cleaner</span>
+                            <div class="game-score">Fixed: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
-                            <strong>🎯 Goal:</strong> Remove all RED cards using LIFO (Last In, First Out). Keep BLUE cards!
+                        <div class="game-instructions">
+                            <strong>🎯 Goal:</strong> Pick the best cleaning action for each dataset issue.
                         </div>
-                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; width: 100%;">
-                            <div class="game-visual-area" style="display: flex; gap: 25px; flex-shrink: 0;">
-                                <div style="text-align: center;">
-                                    <p style="margin-bottom: 8px; font-weight: bold; color: #333;">Stack</p>
-                                    <div class="stack" id="main-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px solid #333;border-radius:10px;padding:10px;background:#f8f9fa;"></div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <p style="margin-bottom: 8px; font-weight: bold; color: #999;">Removed</p>
-                                    <div class="removed" id="removed-stack" style="display:flex;flex-direction:column-reverse;align-items:center;min-height:200px;width:100px;border:3px dashed #999;border-radius:10px;padding:10px;"></div>
-                                </div>
-                            </div>
-                            <div class="game-controls-area" style="flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 280px;">
-                                <div style="background: #f8f9fa; padding: 18px; border-radius: 10px; margin-bottom: 18px;">
-                                    <p style="margin: 0 0 10px 0; font-size: 1em;"><strong>LIFO Rule:</strong> Only the TOP card can be removed!</p>
-                                    <p style="margin: 0; font-size: 0.9em; color: #666;">Pop red cards first, before reaching blue ones.</p>
-                                </div>
-                                <button id="pop-btn" style="padding:16px 40px;background:#dc3545;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1.1em;">⬆️ Pop Top Card</button>
-                            </div>
-                        </div>
+                        <div id="task-wrap"></div>
                     </div>
                 `;
 
-                const mainStack = container.querySelector('#main-stack');
-                const removedStack = container.querySelector('#removed-stack');
-                const cards = ['red', 'blue', 'red', 'blue', 'red'];
-                let stack = [...cards];
-                let blueRemoved = false;
+                let current = 0;
 
-                function renderStack() {
-                    mainStack.innerHTML = '';
-                    stack.forEach((card, i) => {
-                        const div = document.createElement('div');
-                        div.style.cssText = `width:60px;height:30px;background:${card};border-radius:4px;margin:2px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;`;
-                        div.textContent = card.toUpperCase();
-                        mainStack.appendChild(div);
+                function renderTask() {
+                    if (current >= tasks.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
+                        return;
+                    }
+                    const task = tasks[current];
+                    const wrap = container.querySelector('#task-wrap');
+                    wrap.innerHTML = `
+                        <div style="background:#fff7ed;border:2px solid #fdba74;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
+                            Dataset issue: ${task.issue}
+                        </div>
+                        <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+                    `;
+                    const answers = wrap.querySelector('.answers-grid');
+
+                    task.options.forEach((opt, i) => {
+                        const btn = document.createElement('button');
+                        btn.textContent = opt;
+                        btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
+                        btn.addEventListener('click', () => {
+                            if (i === task.answer) {
+                                state.score++;
+                                container.querySelector('#score').textContent = state.score;
+                                btn.style.background = '#d1fae5';
+                                btn.style.borderColor = '#10b981';
+                                current++;
+                                setTimeout(renderTask, 280);
+                            } else {
+                                btn.style.background = '#fee2e2';
+                                btn.style.borderColor = '#ef4444';
+                            }
+                        });
+                        answers.appendChild(btn);
                     });
                 }
 
-                container.querySelector('#pop-btn').addEventListener('click', () => {
-                    if (stack.length === 0) return;
-
-                    const top = stack.pop();
-                    if (top === 'blue') {
-                        blueRemoved = true;
-                        alert('Oops! You removed a BLUE card. Try again!');
-                        stack = [...cards];
-                        removedStack.innerHTML = '<span style="color:#999;font-size:0.8em;">Removed</span>';
-                    } else {
-                        const div = document.createElement('div');
-                        div.style.cssText = 'width:60px;height:30px;background:red;border-radius:4px;margin:2px;';
-                        removedStack.appendChild(div);
-                    }
-
-                    renderStack();
-
-                    // Check win - all red cards removed
-                    if (stack.every(c => c === 'blue') && stack.length > 0) {
-                        state.completed = true;
-                        onComplete(true, 100);
-                    }
-                });
-
-                renderStack();
+                renderTask();
                 startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, 0);
+                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
-
                 return state;
             }
         },
 
-        // Game 4: Queue Quest - FIFO customer management
-        queueQuest: {
-            name: 'Queue Quest',
-            description: 'Manage the customer queue using FIFO (First In, First Out)!',
+        // Game 4: Abstraction Builder - Choose the best abstraction for a scenario
+        abstractionBuilder: {
+            name: 'Abstraction Builder',
+            description: 'Choose whether a list, variable, or procedure best handles each coding scenario.',
             init: function(container, onComplete) {
-                const state = { served: 0, target: 8, completed: false };
-
-                const customers = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank', 'Grace', 'Henry', 'Ivy', 'Jack'];
-                let queue = [];
-                let nextCustomer = 0;
+                const state = { score: 0, total: 6, completed: false };
+                const scenarios = [
+                    { prompt: 'Track all scores from 30 snake rounds.', options: ['Single variable', 'List', 'Hard-code all values', 'Random function'], answer: 1 },
+                    { prompt: 'Reuse collision logic in many places.', options: ['Procedure/function', 'More comments only', 'Duplicate code', 'New color theme'], answer: 0 },
+                    { prompt: 'Store one player name only.', options: ['Single variable', 'List of 100 items', 'Nested object', 'Queue'], answer: 0 },
+                    { prompt: 'Process every fruit position in snake body.', options: ['List + loop', 'One giant IF', 'Screenshot it', 'Manual counting'], answer: 0 },
+                    { prompt: 'Hide detail of score calculation behind one call.', options: ['Procedure abstraction', 'Delete formula', 'Inline everywhere', 'Use emoji names'], answer: 0 },
+                    { prompt: 'Keep difficulty presets easy/medium/hard.', options: ['Data abstraction object/list', 'Three unrelated files', 'No structure', 'Only comments'], answer: 0 }
+                ];
 
                 container.innerHTML = `
-                    <div class="mini-game queue-quest" style="width: 100%;">
+                    <div class="mini-game abstraction-builder" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🎫 Queue Quest</span>
-                            <div class="game-score">Served: <span id="score">0</span>/${state.target}</div>
+                            <span class="game-title">🧩 Abstraction Builder</span>
+                            <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         </div>
-                        <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
-                            <strong>🎯 Goal:</strong> Serve 8 customers using FIFO (First In, First Out). Gold = first in line.
+                        <div class="game-instructions">
+                            <strong>🎯 Goal:</strong> Pick the best abstraction for each scenario.
                         </div>
-                        <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: flex-start; width: 100%;">
-                            <div class="game-visual-area" style="flex: 1; min-width: 350px;">
-                                <p style="font-weight: bold; margin-bottom: 10px; color: #555;">Customer Queue:</p>
-                                <div class="queue-display" id="queue-display" style="display:flex;gap:12px;flex-wrap:wrap;min-height:70px;padding:15px;background:#f8f9fa;border-radius:12px;border:2px solid #ddd;"></div>
-                                <p id="status" style="margin-top:12px;color:#666;min-height:24px;font-size:1em;"></p>
-                            </div>
-                            <div class="game-controls-area" style="flex-shrink: 0; min-width: 220px;">
-                                <div style="background: #f0f7ff; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-                                    <p style="margin: 0; font-size: 1em;"><strong>FIFO:</strong> First In, First Out</p>
-                                    <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #666;">Always serve the gold customer first!</p>
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:12px;">
-                                    <button id="add-customer" style="padding:14px 24px;background:#28a745;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1em;">➕ New Customer</button>
-                                    <button id="serve-customer" style="padding:14px 24px;background:#667eea;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:1em;">✅ Serve First</button>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="scenario-wrap"></div>
                     </div>
                 `;
 
-                const queueDisplay = container.querySelector('#queue-display');
-                const status = container.querySelector('#status');
+                let current = 0;
 
-                function renderQueue() {
-                    queueDisplay.innerHTML = '';
-                    if (queue.length === 0) {
-                        queueDisplay.innerHTML = '<span style="color:#999;">Queue is empty</span>';
+                function renderScenario() {
+                    if (current >= scenarios.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
                         return;
                     }
-                    queue.forEach((customer, i) => {
-                        const div = document.createElement('div');
-                        div.style.cssText = `padding:8px 15px;background:${i === 0 ? '#ffd700' : '#e8f4fc'};border:2px solid ${i === 0 ? '#f39c12' : '#3498db'};border-radius:20px;font-weight:bold;`;
-                        div.textContent = customer;
-                        queueDisplay.appendChild(div);
+                    const sc = scenarios[current];
+                    const wrap = container.querySelector('#scenario-wrap');
+                    wrap.innerHTML = `
+                        <div style="background:#eef2ff;border:2px solid #93c5fd;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
+                            ${sc.prompt}
+                        </div>
+                        <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+                    `;
+                    const answers = wrap.querySelector('.answers-grid');
+
+                    sc.options.forEach((opt, i) => {
+                        const btn = document.createElement('button');
+                        btn.textContent = opt;
+                        btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
+                        btn.addEventListener('click', () => {
+                            if (i === sc.answer) {
+                                state.score++;
+                                container.querySelector('#score').textContent = state.score;
+                                btn.style.background = '#d1fae5';
+                                btn.style.borderColor = '#10b981';
+                                current++;
+                                setTimeout(renderScenario, 280);
+                            } else {
+                                btn.style.background = '#fee2e2';
+                                btn.style.borderColor = '#ef4444';
+                            }
+                        });
+                        answers.appendChild(btn);
                     });
                 }
 
-                container.querySelector('#add-customer').addEventListener('click', () => {
-                    if (queue.length >= 5) {
-                        status.textContent = 'Queue is full! Serve customers first.';
-                        status.style.color = '#dc3545';
-                        return;
-                    }
-                    queue.push(customers[nextCustomer % customers.length]);
-                    nextCustomer++;
-                    status.textContent = '';
-                    renderQueue();
-                });
-
-                container.querySelector('#serve-customer').addEventListener('click', () => {
-                    if (queue.length === 0) {
-                        status.textContent = 'No customers to serve!';
-                        status.style.color = '#dc3545';
-                        return;
-                    }
-                    const served = queue.shift(); // FIFO - remove first
-                    state.served++;
-                    container.querySelector('#score').textContent = state.served;
-                    status.textContent = `Served ${served}!`;
-                    status.style.color = '#28a745';
-                    renderQueue();
-
-                    if (state.served >= state.target) {
-                        state.completed = true;
-                        onComplete(true, 100);
-                    }
-                });
-
-                // Start with some customers
-                queue = [customers[0], customers[1], customers[2]];
-                nextCustomer = 3;
-                renderQueue();
-
+                renderScenario();
                 startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.served / state.target) * 100));
+                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
-
                 return state;
             }
         },
@@ -1132,93 +1096,128 @@
             }
         },
 
-        // Game 3: Packet Pathfinder
+        // Game 3: Packet Pathfinder (AP CSP packet/routing scenarios)
         packetPathfinder: {
             name: 'Packet Pathfinder',
-            description: 'Guide data packets through routers to their destination!',
+            description: 'Solve packet-routing scenarios from AP CSP networking concepts!',
             init: function(container, onComplete) {
-                const state = { delivered: 0, total: 3, completed: false };
+                const state = { score: 0, total: 6, completed: false };
+                const prompts = [
+                    {
+                        prompt: 'A message is sent across the Internet. Which is most accurate?',
+                        options: [
+                            'It is split into packets that may take different paths',
+                            'It must stay as one piece on one path',
+                            'DNS stores the whole message until complete',
+                            'Routers cannot reroute packets'
+                        ],
+                        answer: 0
+                    },
+                    {
+                        prompt: 'Why does packet switching improve reliability?',
+                        options: [
+                            'Packets can reroute if one path fails',
+                            'All packets are duplicated forever',
+                            'Only one router is used',
+                            'It prevents any packet loss completely'
+                        ],
+                        answer: 0
+                    },
+                    {
+                        prompt: 'What does a router mainly do?',
+                        options: [
+                            'Forwards packets toward a destination',
+                            'Converts every URL to HTML',
+                            'Creates passwords for users',
+                            'Stores all internet data permanently'
+                        ],
+                        answer: 0
+                    },
+                    {
+                        prompt: 'Which statement about packet order is correct?',
+                        options: [
+                            'Packets may arrive out of order and are reassembled',
+                            'Packets always arrive in send order',
+                            'Packets never need destination info',
+                            'Packets skip protocol rules'
+                        ],
+                        answer: 0
+                    },
+                    {
+                        prompt: 'A path is congested. What likely happens?',
+                        options: [
+                            'Routers choose alternate routes when possible',
+                            'Internet stops permanently',
+                            'DNS disables all domains',
+                            'Every packet becomes encrypted automatically'
+                        ],
+                        answer: 0
+                    },
+                    {
+                        prompt: 'Which protocol pair is commonly discussed in AP CSP networking?',
+                        options: [
+                            'IP for addressing and TCP for reliable delivery',
+                            'HTML and CSS',
+                            'PNG and JPG',
+                            'GPU and CPU'
+                        ],
+                        answer: 0
+                    }
+                ];
 
                 container.innerHTML = `
-                    <div class="mini-game packet-pathfinder">
+                    <div class="mini-game packet-pathfinder" style="width: 100%;">
                         <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Delivered: <span id="score">0</span>/${state.total}</div>
-                        <div class="network-grid" id="network-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;"></div>
-                        <p id="status" style="text-align:center;margin-top:10px;"></p>
+                        <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
+                        <div class="game-instructions">
+                            <strong>🎯 Goal:</strong> Pick the best networking answer for each scenario.
+                        </div>
+                        <div id="packet-quiz-wrap"></div>
                     </div>
                 `;
 
-                const grid = container.querySelector('#network-grid');
-                let packet = { x: 0, y: 2 };
-                let destination = { x: 4, y: 2 };
-                let path = [];
-
-                function renderNetwork() {
-                    grid.innerHTML = '';
-                    for (let y = 0; y < 5; y++) {
-                        for (let x = 0; x < 5; x++) {
-                            const cell = document.createElement('div');
-                            cell.dataset.x = x;
-                            cell.dataset.y = y;
-                            cell.style.cssText = 'aspect-ratio:1;background:#2a2a4a;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2em;transition:background 0.2s;';
-
-                            if (x === packet.x && y === packet.y) {
-                                cell.textContent = '📦';
-                                cell.style.background = '#ffd700';
-                            } else if (x === destination.x && y === destination.y) {
-                                cell.textContent = '🎯';
-                                cell.style.background = '#28a745';
-                            } else if ((x === 2 && y === 1) || (x === 2 && y === 3)) {
-                                cell.textContent = '📡';
-                                cell.style.background = '#3498db';
-                            } else if (path.some(p => p.x === x && p.y === y)) {
-                                cell.style.background = '#90cdf4';
-                            }
-
-                            cell.addEventListener('click', () => {
-                                const cx = parseInt(cell.dataset.x);
-                                const cy = parseInt(cell.dataset.y);
-
-                                // Check if adjacent to packet or last path point
-                                const lastPoint = path.length > 0 ? path[path.length - 1] : packet;
-                                const dx = Math.abs(cx - lastPoint.x);
-                                const dy = Math.abs(cy - lastPoint.y);
-
-                                if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-                                    path.push({ x: cx, y: cy });
-                                    renderNetwork();
-
-                                    if (cx === destination.x && cy === destination.y) {
-                                        state.delivered++;
-                                        container.querySelector('#score').textContent = state.delivered;
-                                        container.querySelector('#status').textContent = 'Packet delivered!';
-                                        container.querySelector('#status').style.color = '#28a745';
-
-                                        if (state.delivered >= state.total) {
-                                            state.completed = true;
-                                            onComplete(true, 100);
-                                        } else {
-                                            // Reset for next packet
-                                            setTimeout(() => {
-                                                packet = { x: 0, y: Math.floor(Math.random() * 5) };
-                                                destination = { x: 4, y: Math.floor(Math.random() * 5) };
-                                                path = [];
-                                                container.querySelector('#status').textContent = '';
-                                                renderNetwork();
-                                            }, 500);
-                                        }
-                                    }
-                                }
-                            });
-
-                            grid.appendChild(cell);
-                        }
+                let currentIndex = 0;
+                function showPrompt() {
+                    if (currentIndex >= prompts.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
+                        return;
                     }
+
+                    const prompt = prompts[currentIndex];
+                    const wrap = container.querySelector('#packet-quiz-wrap');
+                    wrap.innerHTML = `
+                        <div style="background:#f0f9ff;border:2px solid #7dd3fc;padding:12px;border-radius:10px;margin:8px 0 12px 0;font-weight:700;color:#0f172a;">
+                            ${prompt.prompt}
+                        </div>
+                        <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+                    `;
+
+                    const answers = wrap.querySelector('.answers-grid');
+                    prompt.options.forEach((opt, i) => {
+                        const btn = document.createElement('button');
+                        btn.textContent = opt;
+                        btn.style.cssText = 'padding:12px;background:#f8fafc;border:2px solid #3b82f6;border-radius:8px;cursor:pointer;font-weight:700;color:#0f172a;';
+                        btn.addEventListener('click', () => {
+                            if (i === prompt.answer) {
+                                state.score++;
+                                container.querySelector('#score').textContent = state.score;
+                                btn.style.background = '#d1fae5';
+                                btn.style.borderColor = '#10b981';
+                                currentIndex++;
+                                setTimeout(showPrompt, 250);
+                            } else {
+                                btn.style.background = '#fee2e2';
+                                btn.style.borderColor = '#ef4444';
+                            }
+                        });
+                        answers.appendChild(btn);
+                    });
                 }
 
-                renderNetwork();
+                showPrompt();
                 startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.delivered / state.total) * 100));
+                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
 
                 return state;
@@ -1806,7 +1805,7 @@
                 function showScenario() {
                     if (currentIndex >= scenarios.length) {
                         state.completed = true;
-                        const passed = state.correct >= state.total;
+                        const passed = state.correct >= Math.ceil(state.total * 0.7);
                         onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
@@ -1872,7 +1871,7 @@
                 function showPermission() {
                     if (currentIndex >= permissions.length) {
                         state.completed = true;
-                        const passed = state.correct >= state.total;
+                        const passed = state.correct >= Math.ceil(state.total * 0.7);
                         onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
@@ -1943,7 +1942,7 @@
                 function showChart() {
                     if (currentIndex >= trends.length) {
                         state.completed = true;
-                        const passed = state.correct >= state.total;
+                        const passed = state.correct >= Math.ceil(state.total * 0.7);
                         onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
@@ -2015,11 +2014,13 @@
                     const m = matches[currentIndex];
                     container.querySelector('#data-type').textContent = m.dataType;
 
-                    const charts = matches.map(x => x.chart).sort(() => Math.random() - 0.5);
+                    const allCharts = matches.map(x => x.chart).filter(c => c !== m.chart);
+                    const randomDistractors = allCharts.sort(() => Math.random() - 0.5).slice(0, 3);
+                    const charts = [m.chart, ...randomDistractors].sort(() => Math.random() - 0.5);
                     const optionsDiv = container.querySelector('#chart-options');
                     optionsDiv.innerHTML = '';
 
-                    charts.slice(0, 4).forEach(chart => {
+                    charts.forEach(chart => {
                         const btn = document.createElement('button');
                         btn.textContent = chart;
                         btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-weight:bold;';
@@ -2048,26 +2049,26 @@
             }
         },
 
-        // Game 5: Ethical Dilemma Dash
+        // Game 5: Ethical Dilemma Dash (scored AP CSP impacts decisions)
         ethicalDilemmaDash: {
             name: 'Ethical Dilemma Dash',
-            description: 'Make quick ethical decisions on computing scenarios!',
+            description: 'Choose the most responsible computing decision for each scenario.',
             init: function(container, onComplete) {
-                const state = { answered: 0, total: 6, completed: false };
+                const state = { correct: 0, answered: 0, total: 6, completed: false };
 
                 const dilemmas = [
-                    { question: 'Should AI be used for criminal sentencing?', options: ['Yes, more consistent', 'No, potential bias'] },
-                    { question: 'Should companies sell user data to advertisers?', options: ['Yes, free services', 'No, privacy matters'] },
-                    { question: 'Should facial recognition be used in public?', options: ['Yes, for safety', 'No, surveillance concern'] },
-                    { question: 'Should algorithms decide loan approvals alone?', options: ['Yes, faster decisions', 'No, human review needed'] },
-                    { question: 'Should kids\' data be collected by educational apps?', options: ['Yes, for personalization', 'No, protect minors'] },
-                    { question: 'Should AI-generated content be labeled?', options: ['Yes, transparency', 'No, unnecessary'] }
+                    { question: 'A school AI tool gives lower scores to one demographic. Best next step?', options: ['Ignore because AI is objective', 'Audit data/model for bias and retrain'], answer: 1 },
+                    { question: 'An app asks for contacts but only needs a calculator feature. Best action?', options: ['Deny unnecessary permission', 'Allow all permissions always'], answer: 0 },
+                    { question: 'A company wants to publish student data with names attached. Best practice?', options: ['Anonymize/de-identify data first', 'Publish full names for transparency'], answer: 0 },
+                    { question: 'AI-generated study guide is posted as human-written. Best practice?', options: ['Label AI-generated content clearly', 'Hide AI use to avoid confusion'], answer: 0 },
+                    { question: 'Facial recognition is used with no opt-out in public spaces. Best response?', options: ['Require safeguards, limits, and oversight', 'Deploy everywhere immediately'], answer: 0 },
+                    { question: 'A recommendation system amplifies harmful misinformation. Best step?', options: ['Adjust algorithm and add safety review', 'Increase engagement regardless of harm'], answer: 0 }
                 ].sort(() => Math.random() - 0.5);
 
                 container.innerHTML = `
                     <div class="mini-game ethical-dash">
                         <div class="game-timer"><span id="timer">45</span>s</div>
-                        <div class="game-score">Answered: <span id="score">0</span>/${state.total}</div>
+                        <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="dilemma-display" id="dilemma" style="text-align:center;padding:20px;background:#f8f9fa;border-radius:10px;margin:10px 0;min-height:80px;"></div>
                         <div class="dilemma-options" id="options" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;"></div>
                     </div>
@@ -2078,7 +2079,8 @@
                 function showDilemma() {
                     if (currentIndex >= dilemmas.length) {
                         state.completed = true;
-                        onComplete(true, 100);
+                        const passed = state.correct >= Math.ceil(state.total * 0.7);
+                        onComplete(passed, Math.floor((state.correct / state.total) * 100));
                         return;
                     }
 
@@ -2093,8 +2095,11 @@
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;';
                         btn.addEventListener('click', () => {
+                            if (d.options.indexOf(opt) === d.answer) {
+                                state.correct++;
+                            }
                             state.answered++;
-                            container.querySelector('#score').textContent = state.answered;
+                            container.querySelector('#score').textContent = state.correct;
                             currentIndex++;
                             showDilemma();
                         });
@@ -2190,7 +2195,7 @@
 
     const GAME_NAMES = {
         1: ['binaryConverter', 'dataTypeDetective', 'ifThenTower', 'bugSquasher', 'algorithmChef'],
-        2: ['arrayAssembler', 'objectDetective', 'stackAttack', 'queueQuest', 'nestedNavigator'],
+        2: ['arrayAssembler', 'listLoopTracer', 'dataCleaner', 'abstractionBuilder', 'nestedNavigator'],
         3: ['ipAddressMatcher', 'dnsSpeedRun', 'packetPathfinder', 'urlDecoder', 'routerRush'],
         4: ['passwordStrengthSmash', 'caesarCipherCracker', 'phishingDetector', 'firewallFrenzy', 'encryptionKeyMatch'],
         5: ['biasBuster', 'privacyProtector', 'dataTrendSpotter', 'chartChampion', 'ethicalDilemmaDash']

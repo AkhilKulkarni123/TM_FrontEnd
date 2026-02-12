@@ -43,6 +43,35 @@
     box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
+/* Improve baseline readability across all mini-games. */
+.mini-game .game-header > span {
+    color: #0f172a !important;
+    background: #e2e8f0;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-weight: 800;
+}
+
+.mini-game .game-instructions {
+    background: #eff6ff !important;
+    color: #0f172a !important;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 12px;
+    line-height: 1.4;
+}
+
+.mini-game .game-instructions strong {
+    color: #1e3a8a;
+}
+
+.mini-game input,
+.mini-game button,
+.mini-game label {
+    color: #0f172a;
+}
+
 /* =====================================================
    COMPACT ARCADE ZONE STYLES (For smaller games)
    ===================================================== */
