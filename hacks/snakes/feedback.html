@@ -249,6 +249,7 @@
         const STORAGE_KEY = 'snakes_feedback_entries';
         const DB_KEY = 'snakes_local_db_v1';
         const USER_KEY = 'snakes_feedback_local_user';
+        const HIDDEN_KEY = 'snakes_feedback_hidden';
         const FEEDBACK_API = `${pythonURI}/api/feedback`;
 
         const form = document.getElementById('feedbackForm');
@@ -282,6 +283,28 @@
 
         function saveDb(db) {
             localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        function loadHiddenIds() {
+            try {
+                const raw = localStorage.getItem(HIDDEN_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveHiddenIds(ids) {
+            localStorage.setItem(HIDDEN_KEY, JSON.stringify(ids));
+        }
+
+        function hideEntry(id) {
+            const ids = loadHiddenIds();
+            if (!ids.includes(id)) {
+                ids.push(id);
+                saveHiddenIds(ids);
+            }
         }
 
         function migrateLegacyFeedbackIfNeeded() {
@@ -370,7 +393,9 @@
         }
 
         function renderEntries(entriesOverride = null) {
-            const entries = entriesOverride || loadEntries();
+            const hiddenIds = loadHiddenIds();
+            const entries = (entriesOverride || loadEntries())
+                .filter(entry => !hiddenIds.includes(entry.id));
             const filtered = currentFilter === 'mine'
                 ? entries.filter(entry => entry.localUserId === localUserId)
                 : entries;
@@ -385,11 +410,15 @@
                 .map(entry => {
                     const safeName = entry.displayName || entry.localUserId || 'Anonymous Champion';
                     const created = new Date(entry.createdAt).toLocaleString();
+                    const deleteBtn = entry.localUserId === localUserId
+                        ? `<button class="btn secondary delete-feedback-btn" type="button" data-id="${entry.id}">Delete</button>`
+                        : '';
                     return `
                         <div class="feedback-card">
                             <h3>${safeName}</h3>
                             <p>${entry.text}</p>
                             <div class="meta">${created}</div>
+                            ${deleteBtn}
                         </div>
                     `;
                 })
@@ -445,6 +474,16 @@
                 currentFilter = btn.dataset.filter;
                 renderEntries();
             });
+        });
+
+        feedbackList.addEventListener('click', (event) => {
+            const button = event.target.closest('.delete-feedback-btn');
+            if (!button) return;
+            const id = button.dataset.id;
+            if (!id) return;
+            if (!confirm('Hide this feedback from your view?')) return;
+            hideEntry(id);
+            renderEntries();
         });
 
         function goToVictory() {
