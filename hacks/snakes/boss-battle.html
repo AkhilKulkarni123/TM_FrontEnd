@@ -1063,7 +1063,12 @@
         const FRAME_RATE_BASE = 60;
         const SELF_RECONCILE_SOFT_PX = 8;
         const SELF_RECONCILE_HARD_PX = 72;
-        const REMOTE_INTERPOLATION_RATE = 11;
+        const REMOTE_INTERPOLATION_RATE = 15; // Higher = faster catch-up for smoother appearance
+        const BULLET_COOLDOWN = 150; // Milliseconds between shots
+        let lastBulletTime = 0;
+        const SAVE_STATE_INTERVAL = 2000; // Throttle savePlayerState to max once per 2 seconds
+        let lastSaveTime = 0;
+        let saveStateTimeout = null;
 
 
         const CHARACTER_CONFIG = {
@@ -2165,6 +2170,10 @@
                     ownerColor: charConfig.glow
                 });
                 spawned.forEach((proj) => gameState.otherPlayerBullets.push(proj));
+                // Cap array size to prevent memory growth
+                if (gameState.otherPlayerBullets.length > 100) {
+                    gameState.otherPlayerBullets = gameState.otherPlayerBullets.slice(-100);
+                }
             });
 
             // Boss health update
@@ -2689,7 +2698,7 @@
                         boss_y: gameState.boss.y
                     });
                 }
-            }, 50); // 20 FPS position updates
+            }, 100); // 10 FPS position updates (reduces network traffic)
         }
 
         function stopPositionBroadcast() {
@@ -2738,6 +2747,22 @@
             if (powerupSpawnInterval) {
                 clearInterval(powerupSpawnInterval);
                 powerupSpawnInterval = null;
+            }
+        }
+
+        // Throttled wrapper - schedules save, avoids spamming API
+        function savePlayerStateThrottled() {
+            const now = Date.now();
+            if (now - lastSaveTime >= SAVE_STATE_INTERVAL) {
+                lastSaveTime = now;
+                savePlayerState();
+            } else if (!saveStateTimeout) {
+                // Schedule a save for later if not already scheduled
+                saveStateTimeout = setTimeout(() => {
+                    saveStateTimeout = null;
+                    lastSaveTime = Date.now();
+                    savePlayerState();
+                }, SAVE_STATE_INTERVAL - (now - lastSaveTime));
             }
         }
 
@@ -2829,7 +2854,8 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const now = typeof frameTime === 'number' ? frameTime : performance.now();
-            const dt = Math.min(0.05, Math.max(0.008, (now - (lastFrameAt || now)) / 1000));
+            // Tighter dt bounds for more consistent game speed
+            const dt = Math.min(0.033, Math.max(0.008, (now - (lastFrameAt || now)) / 1000));
             lastFrameAt = now;
             const moveStep = gameState.player.speed * dt * FRAME_RATE_BASE;
 
@@ -2874,9 +2900,15 @@
 
                 const dx = targetX - player.x;
                 const dy = targetY - player.y;
-                if (Math.hypot(dx, dy) > 180) {
+                const distance = Math.hypot(dx, dy);
+                if (distance > 180) {
+                    // Teleport if too far behind
                     player.x = targetX;
                     player.y = targetY;
+                } else if (distance > 80) {
+                    // Accelerate catch-up when moderately behind
+                    player.x += dx * Math.min(factor * 2, 0.5);
+                    player.y += dy * Math.min(factor * 2, 0.5);
                 } else {
                     player.x += dx * factor;
                     player.y += dy * factor;
@@ -3184,6 +3216,13 @@ function getDamageMultiplier() {
         }
 
         function shoot() {
+            // Rate limit shooting to prevent spam
+            const now = Date.now();
+            if (now - lastBulletTime < BULLET_COOLDOWN) {
+                return; // Too soon, ignore
+            }
+            lastBulletTime = now;
+
             if (gameState.player.bullets > 0) {
                 gameState.player.weaponType = resolveWeaponType(gameState.player.character, gameState.player.weaponType);
                 const weaponPreset = getWeaponPreset(gameState.player.character, gameState.player.weaponType);
@@ -3209,9 +3248,13 @@ function getDamageMultiplier() {
                     ownerColor: CHARACTER_CONFIG[gameState.player.character]?.glow || '#FFD700'
                 });
                 shots.forEach((projectile) => gameState.playerBullets.push(projectile));
+                // Cap array size to prevent memory growth
+                if (gameState.playerBullets.length > 50) {
+                    gameState.playerBullets = gameState.playerBullets.slice(-50);
+                }
                 gameState.player.bullets--;
                 updateBulletsDisplay();
-                savePlayerState();
+                savePlayerStateThrottled(); // Throttled to avoid API spam
 
                 // Track stats
                 gameState.battleStats.bulletsFired++;
