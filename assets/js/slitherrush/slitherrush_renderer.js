@@ -852,7 +852,89 @@
         ctx.restore();
     };
 
-    Renderer.prototype.render = function (state, cameraTargetId) {
+    Renderer.prototype._drawGrowthOrbs = function (growthOrbs, nowMs) {
+        var ctx = this.ctx;
+        if (!Array.isArray(growthOrbs) || !growthOrbs.length) return;
+
+        ctx.save();
+        var pulseTime = nowMs / 300;
+
+        for (var i = 0; i < growthOrbs.length; i++) {
+            var orb = growthOrbs[i];
+            if (!orb.alive) continue;
+
+            var p = this.worldToScreen(orb.x, orb.y);
+            if (p.x < -50 || p.x > this.view.width + 50 || p.y < -50 || p.y > this.view.height + 50) continue;
+
+            var value = orb.value || 1;
+            var radius = 6 + value * 2;
+            var pulse = 1 + Math.sin(pulseTime + i * 0.4) * 0.18;
+            var rot = nowMs * 0.0015 + i * 0.8;
+
+            // Color by value tier
+            var coreColor, glowColor, accentColor;
+            if (value >= 3) {
+                coreColor = '#ffcc00';
+                glowColor = 'rgba(255, 204, 0, 0.35)';
+                accentColor = 'rgba(255, 230, 80, 0.6)';
+            } else if (value >= 2) {
+                coreColor = '#40e0d0';
+                glowColor = 'rgba(64, 224, 208, 0.3)';
+                accentColor = 'rgba(100, 240, 220, 0.5)';
+            } else {
+                coreColor = '#50fa7b';
+                glowColor = 'rgba(80, 250, 123, 0.25)';
+                accentColor = 'rgba(120, 255, 160, 0.45)';
+            }
+
+            // Outer glow
+            var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius * 3.2 * pulse);
+            g.addColorStop(0, glowColor);
+            g.addColorStop(0.5, glowColor.replace(/[\d.]+\)$/, '0.08)'));
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.beginPath();
+            ctx.fillStyle = g;
+            ctx.arc(p.x, p.y, radius * 3.2 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Orbiting dots
+            for (var d = 0; d < 3; d++) {
+                var dAngle = rot + d * (Math.PI * 2 / 3);
+                var ox = p.x + Math.cos(dAngle) * (radius * 2);
+                var oy = p.y + Math.sin(dAngle) * (radius * 2);
+                ctx.beginPath();
+                ctx.fillStyle = accentColor;
+                ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Core with gradient
+            var cg = ctx.createRadialGradient(p.x - radius * 0.2, p.y - radius * 0.2, 0, p.x, p.y, radius * pulse);
+            cg.addColorStop(0, '#ffffff');
+            cg.addColorStop(0.35, coreColor);
+            cg.addColorStop(1, coreColor);
+            ctx.beginPath();
+            ctx.fillStyle = cg;
+            ctx.arc(p.x, p.y, radius * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Shine
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.arc(p.x - radius * 0.22, p.y - radius * 0.22, radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Value label
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.font = 'bold ' + Math.max(9, radius * 0.85) + 'px Oxanium, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('+' + value, p.x, p.y + 0.5);
+        }
+        ctx.restore();
+    };
+
+    Renderer.prototype.render = function (state, cameraTargetId, growthOrbs) {
         if (!state) return;
 
         var bounds = state.bounds || { width: 4800, height: 3000 };
@@ -879,6 +961,7 @@
         this._drawBackground();
         this._drawBounds(bounds);
         this._drawEnergy(energyOrbs, performance.now());
+        this._drawGrowthOrbs(growthOrbs || [], performance.now());
         this._drawBullets(bullets);
 
         for (var i = 0; i < players.length; i++) {

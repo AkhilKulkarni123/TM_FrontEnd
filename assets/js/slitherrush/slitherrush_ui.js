@@ -130,8 +130,9 @@
         if (this.aliveValue) this.aliveValue.textContent = Math.max(0, Number(state.alive_count || 0));
 
         var snakeLength = 0;
+        var bonus = Number(context.localLengthBonus || 0);
         if (self) {
-            snakeLength = Math.max(0, Number(self.length || 0));
+            snakeLength = Math.max(0, Number(self.length || 0)) + bonus;
             if (this.lengthValue) this.lengthValue.textContent = snakeLength;
             if (this.scoreValue) this.scoreValue.textContent = Math.max(0, Number(self.score || 0));
         } else {

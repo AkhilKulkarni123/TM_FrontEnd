@@ -163,6 +163,65 @@
         var DEATH_REDIRECT_DELAY = 2500; // ms before redirecting after death
         var userClickedPlay = false; // gate: don't join/hide intro until user picks pattern & clicks play
 
+        // ========== Growth Orbs (client-side) ==========
+        var GROWTH_ORB_COUNT = 35;           // orbs active on map at any time
+        var GROWTH_ORB_PICKUP_RADIUS = 28;   // how close head must be to collect
+        var GROWTH_ORB_RESPAWN_MS = 3000;    // delay before a collected orb respawns
+        var growthOrbs = [];                 // { x, y, value, alive, respawnAt }
+        var localLengthBonus = 0;            // extra length from collected orbs
+        var MAP_W = 4800, MAP_H = 3000;
+
+        function spawnGrowthOrb() {
+            var margin = 80;
+            var value = Math.random() < 0.2 ? 2 : 1; // 20% chance for +2
+            if (Math.random() < 0.05) value = 3;      // 5% chance for +3
+            return {
+                x: margin + Math.random() * (MAP_W - margin * 2),
+                y: margin + Math.random() * (MAP_H - margin * 2),
+                value: value,
+                alive: true,
+                respawnAt: 0
+            };
+        }
+
+        // Initialize growth orbs
+        for (var gi = 0; gi < GROWTH_ORB_COUNT; gi++) {
+            growthOrbs.push(spawnGrowthOrb());
+        }
+
+        function tickGrowthOrbs(state, now) {
+            if (!state) return;
+            var players = Array.isArray(state.players) ? state.players : [];
+            var self = players.find(function (p) { return p.id === state.self_id; }) || null;
+            if (!self || !self.head || self.status !== 'alive') return;
+
+            var hx = self.head.x;
+            var hy = self.head.y;
+
+            for (var i = 0; i < growthOrbs.length; i++) {
+                var orb = growthOrbs[i];
+                if (!orb.alive) {
+                    // Respawn check
+                    if (now >= orb.respawnAt) {
+                        var fresh = spawnGrowthOrb();
+                        orb.x = fresh.x;
+                        orb.y = fresh.y;
+                        orb.value = fresh.value;
+                        orb.alive = true;
+                    }
+                    continue;
+                }
+                // Pickup check
+                var dx = hx - orb.x;
+                var dy = hy - orb.y;
+                if (Math.sqrt(dx * dx + dy * dy) < GROWTH_ORB_PICKUP_RADIUS) {
+                    localLengthBonus += orb.value;
+                    orb.alive = false;
+                    orb.respawnAt = now + GROWTH_ORB_RESPAWN_MS;
+                }
+            }
+        }
+
         // ========== Pattern chooser ==========
         window.SlitherRush._selectedPattern = 'solid';
         var patternGrid = document.getElementById('srPatternGrid');
@@ -392,7 +451,10 @@
                 }
             }
 
-            renderer.render(state, state.self_id);
+            // Tick growth orb pickups
+            tickGrowthOrbs(state, now);
+
+            renderer.render(state, state.self_id, growthOrbs);
             ui.render(state, {
                 spectatingName: '--',
                 respawnInSeconds: 0,
@@ -400,7 +462,8 @@
                 ammo: ammo,
                 maxAmmo: MAX_AMMO,
                 localDeath: localDeath,
-                localDeathKiller: localDeathKiller
+                localDeathKiller: localDeathKiller,
+                localLengthBonus: localLengthBonus
             });
 
             window.requestAnimationFrame(frame);
