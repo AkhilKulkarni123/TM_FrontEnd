@@ -36,7 +36,7 @@
                     <div class="mini-game binary-converter" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">💾 Binary Converter</span>
+                            <span class="game-title">💾 Binary Converter</span>
                             <div class="game-score">Score: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 15px; font-size: 0.9em;">
@@ -125,7 +125,7 @@
                     <div class="mini-game data-type-detective" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🔍 Data Type Detective</span>
+                            <span class="game-title">🔍 Data Type Detective</span>
                             <div class="game-score">Found: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 15px;">
@@ -219,7 +219,7 @@
                     <div class="mini-game if-then-tower" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🏗️ If-Then Tower</span>
+                            <span class="game-title">🏗️ If-Then Tower</span>
                             <div class="game-score">Height: <span id="score">0</span>/6</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 10px; font-size: 0.95em;">
@@ -307,7 +307,7 @@
                     <div class="mini-game bug-squasher" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🐛 Bug Squasher</span>
+                            <span class="game-title">🐛 Bug Squasher</span>
                             <div class="game-score">Bugs Found: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 15px;">
@@ -403,7 +403,7 @@
                     <div class="mini-game algorithm-chef" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">👨‍🍳 Algorithm Chef: ${recipe.name}</span>
+                            <span class="game-title">👨‍🍳 Algorithm Chef: ${recipe.name}</span>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 15px;">
                             <strong>📋 Instructions:</strong> Drag and drop the steps to arrange them in the correct logical order. Think: What must happen FIRST?
@@ -519,7 +519,7 @@
                     <div class="mini-game array-assembler" style="width: 100%;">
                         <div class="game-header">
                             <div class="game-timer"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">📦 Array Assembler</span>
+                            <span class="game-title">📦 Array Assembler</span>
                             <div class="game-score">Completed: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
@@ -685,13 +685,13 @@
             init: function(container, onComplete) {
                 const state = { score: 0, total: 7, completed: false };
                 const tasks = [
-                    { issue: 'A list of survey IDs contains duplicates.', options: ['Remove duplicates', 'Sort alphabetically', 'Add random IDs', 'Ignore it'], answer: 0 },
-                    { issue: 'Some rows have missing ages: age = "".', options: ['Flag or fill missing values', 'Delete the whole dataset', 'Convert all to text', 'Duplicate rows'], answer: 0 },
-                    { issue: 'Dates are mixed: 01/05/26 and 2026-01-05.', options: ['Standardize date format', 'Randomize order', 'Delete newest rows', 'Store as images'], answer: 0 },
-                    { issue: 'A score column has value 9999 by mistake.', options: ['Detect and fix outlier/error', 'Keep it for variety', 'Multiply all scores', 'Hide the column'], answer: 0 },
-                    { issue: 'State names are NY, New York, ny.', options: ['Normalize labels/case', 'Split into many columns', 'Drop all state data', 'Encrypt immediately'], answer: 0 },
-                    { issue: 'Device type column has extra spaces: " laptop ".', options: ['Trim whitespace', 'Add more spaces', 'Use random capitalization', 'Convert to binary'], answer: 0 },
-                    { issue: 'Rows use mixed yes/no values: "Yes", "Y", "yes", "No".', options: ['Standardize to one encoding scheme', 'Keep every spelling style', 'Delete all no values', 'Turn into emojis'], answer: 0 }
+                    { issue: 'A list of survey IDs contains duplicates.', snippet: 'ids = [101, 103, 103, 104]', options: ['Remove duplicates', 'Sort alphabetically', 'Add random IDs', 'Ignore it'], answer: 0 },
+                    { issue: 'Some rows have missing ages: age = "".', snippet: 'rows = [{age:16}, {age:""}, {age:17}]', options: ['Flag or fill missing values', 'Delete the whole dataset', 'Convert all to text', 'Duplicate rows'], answer: 0 },
+                    { issue: 'Dates are mixed: 01/05/26 and 2026-01-05.', snippet: 'dates = ["01/05/26", "2026-01-05"]', options: ['Standardize date format', 'Randomize order', 'Delete newest rows', 'Store as images'], answer: 0 },
+                    { issue: 'A score column has value 9999 by mistake.', snippet: 'scores = [91, 88, 9999, 87]', options: ['Detect and fix outlier/error', 'Keep it for variety', 'Multiply all scores', 'Hide the column'], answer: 0 },
+                    { issue: 'State names are NY, New York, ny.', snippet: 'states = ["NY", "New York", "ny"]', options: ['Normalize labels/case', 'Split into many columns', 'Drop all state data', 'Encrypt immediately'], answer: 0 },
+                    { issue: 'Device type column has extra spaces: " laptop ".', snippet: 'device = " laptop "', options: ['Trim whitespace', 'Add more spaces', 'Use random capitalization', 'Convert to binary'], answer: 0 },
+                    { issue: 'Rows use mixed yes/no values: "Yes", "Y", "yes", "No".', snippet: 'answers = ["Yes", "Y", "yes", "No"]', options: ['Standardize to one encoding scheme', 'Keep every spelling style', 'Delete all no values', 'Turn into emojis'], answer: 0 }
                 ];
 
                 container.innerHTML = `
@@ -722,6 +722,7 @@
                         <div style="background:#fff7ed;border:2px solid #fdba74;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
                             Dataset issue: ${task.issue}
                         </div>
+                        <pre style="margin:0 0 12px 0;"><code>${escapeHtml(task.snippet || '')}</code></pre>
                         <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
                     `;
                     const answers = wrap.querySelector('.answers-grid');
@@ -762,13 +763,13 @@
             init: function(container, onComplete) {
                 const state = { score: 0, total: 7, completed: false };
                 const scenarios = [
-                    { prompt: 'Track all scores from 30 snake rounds.', options: ['Single variable', 'List', 'Hard-code all values', 'Random function'], answer: 1 },
-                    { prompt: 'Reuse collision logic in many places.', options: ['Procedure/function', 'More comments only', 'Duplicate code', 'New color theme'], answer: 0 },
-                    { prompt: 'Store one player name only.', options: ['Single variable', 'List of 100 items', 'Nested object', 'Queue'], answer: 0 },
-                    { prompt: 'Process every fruit position in snake body.', options: ['List + loop', 'One giant IF', 'Screenshot it', 'Manual counting'], answer: 0 },
-                    { prompt: 'Hide detail of score calculation behind one call.', options: ['Procedure abstraction', 'Delete formula', 'Inline everywhere', 'Use emoji names'], answer: 0 },
-                    { prompt: 'Keep difficulty presets easy/medium/hard.', options: ['Data abstraction object/list', 'Three unrelated files', 'No structure', 'Only comments'], answer: 0 },
-                    { prompt: 'Reuse “moveSnake(speed)” logic in multiple levels.', options: ['Create one parameterized procedure', 'Copy-paste five versions', 'Use magic numbers only', 'Inline with no function'], answer: 0 }
+                    { prompt: 'Track all scores from 30 snake rounds.', snippet: 'score1 = 12\nscore2 = 15\n...\nscore30 = 9', options: ['Single variable', 'List', 'Hard-code all values', 'Random function'], answer: 1 },
+                    { prompt: 'Reuse collision logic in many places.', snippet: '// collision check repeated in 6 files', options: ['Procedure/function', 'More comments only', 'Duplicate code', 'New color theme'], answer: 0 },
+                    { prompt: 'Store one player name only.', snippet: 'playerName = "Ada"', options: ['Single variable', 'List of 100 items', 'Nested object', 'Queue'], answer: 0 },
+                    { prompt: 'Process every fruit position in snake body.', snippet: 'for each segment in snakeBody:\n  checkCollision(segment)', options: ['List + loop', 'One giant IF', 'Screenshot it', 'Manual counting'], answer: 0 },
+                    { prompt: 'Hide detail of score calculation behind one call.', snippet: 'final = calcScore(apples, time, bonus)', options: ['Procedure abstraction', 'Delete formula', 'Inline everywhere', 'Use emoji names'], answer: 0 },
+                    { prompt: 'Keep difficulty presets easy/medium/hard.', snippet: 'difficulty = {easy:{speed:2}, medium:{speed:4}, hard:{speed:6}}', options: ['Data abstraction object/list', 'Three unrelated files', 'No structure', 'Only comments'], answer: 0 },
+                    { prompt: 'Reuse “moveSnake(speed)” logic in multiple levels.', snippet: 'function moveSnake(speed) { /* reused everywhere */ }', options: ['Create one parameterized procedure', 'Copy-paste five versions', 'Use magic numbers only', 'Inline with no function'], answer: 0 }
                 ];
 
                 container.innerHTML = `
@@ -799,6 +800,7 @@
                         <div style="background:#eef2ff;border:2px solid #93c5fd;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
                             ${sc.prompt}
                         </div>
+                        <pre style="margin:0 0 12px 0;"><code>${escapeHtml(sc.snippet || '')}</code></pre>
                         <div class="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
                     `;
                     const answers = wrap.querySelector('.answers-grid');
@@ -835,23 +837,43 @@
         // Game 5: Nested Navigator - Navigate through nested objects
         nestedNavigator: {
             name: 'Nested Navigator',
-            description: 'Navigate through nested data structures!',
+            description: 'Read the code and evaluate nested paths!',
             init: function(container, onComplete) {
                 const state = { score: 0, total: 5, completed: false };
 
                 const challenges = [
-                    { path: 'user.name', data: { user: { name: 'Alice', age: 25 } }, answer: 'Alice' },
-                    { path: 'user.address.city', data: { user: { address: { city: 'NYC', zip: '10001' } } }, answer: 'NYC' },
-                    { path: 'items[0]', data: { items: ['apple', 'banana', 'orange'] }, answer: 'apple' },
-                    { path: 'products[1].price', data: { products: [{ name: 'A', price: 10 }, { name: 'B', price: 20 }] }, answer: '20' },
-                    { path: 'config.settings.theme', data: { config: { settings: { theme: 'dark', lang: 'en' } } }, answer: 'dark' }
+                    {
+                        path: 'user.name',
+                        code: 'const data = { user: { name: "Alice", age: 25 } };\nconsole.log(data.user.name);',
+                        answer: 'Alice'
+                    },
+                    {
+                        path: 'user.address.city',
+                        code: 'const data = { user: { address: { city: "NYC", zip: "10001" } } };\nconsole.log(data.user.address.city);',
+                        answer: 'NYC'
+                    },
+                    {
+                        path: 'items[0]',
+                        code: 'const data = { items: ["apple", "banana", "orange"] };\nconsole.log(data.items[0]);',
+                        answer: 'apple'
+                    },
+                    {
+                        path: 'products[1].price',
+                        code: 'const data = { products: [{ name: "A", price: 10 }, { name: "B", price: 20 }] };\nconsole.log(data.products[1].price);',
+                        answer: '20'
+                    },
+                    {
+                        path: 'config.settings.theme',
+                        code: 'const data = { config: { settings: { theme: "dark", lang: "en" } } };\nconsole.log(data.config.settings.theme);',
+                        answer: 'dark'
+                    }
                 ];
 
                 container.innerHTML = `
                     <div class="mini-game nested-navigator" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🧭 Nested Navigator</span>
+                            <span class="game-title">🧭 Nested Navigator</span>
                             <div class="game-score" style="font-weight: bold;">Found: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-layout-horizontal" style="display: flex; gap: 30px; align-items: flex-start; width: 100%;">
@@ -860,7 +882,7 @@
                                 <div class="data-display" id="data-display" style="font-family:monospace;padding:12px;background:#f8f9fa;border-radius:10px;font-size:0.9em;"></div>
                             </div>
                             <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 10px;">
-                                <div style="font-weight: 600; color: #555;">Enter the value at this path:</div>
+                                <div style="font-weight: 700; color: #0f172a;">Enter the output value from this line:</div>
                                 <input type="text" id="answer-input" placeholder="Type your answer..." style="padding:12px;border:2px solid #667eea;border-radius:8px;font-size:1em;">
                                 <button id="submit-btn" style="padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.05em;">Submit Answer</button>
                             </div>
@@ -878,8 +900,8 @@
                     }
 
                     const challenge = challenges[currentChallenge];
-                    container.querySelector('#path-display').textContent = `Find: ${challenge.path}`;
-                    container.querySelector('#data-display').innerHTML = `<pre style="margin:0;white-space:pre-wrap;">${JSON.stringify(challenge.data, null, 2)}</pre>`;
+                    container.querySelector('#path-display').textContent = `Evaluate: ${challenge.path}`;
+                    container.querySelector('#data-display').innerHTML = `<pre style="margin:0;white-space:pre-wrap;color:#0f172a;background:#eef2ff;padding:10px;border-radius:8px;border:1px solid #c7d2fe;"><code>${escapeHtml(challenge.code)}</code></pre>`;
                     container.querySelector('#answer-input').value = '';
                 }
 
@@ -887,7 +909,7 @@
                     const input = container.querySelector('#answer-input').value.trim();
                     const challenge = challenges[currentChallenge];
 
-                    if (input === challenge.answer) {
+                    if (input.toLowerCase() === String(challenge.answer).toLowerCase()) {
                         state.score++;
                         container.querySelector('#score').textContent = state.score;
                         currentChallenge++;
@@ -939,7 +961,7 @@
                     <div class="mini-game ip-matcher" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🌐 IP Address Matcher</span>
+                            <span class="game-title">🌐 IP Address Matcher</span>
                             <div class="game-score" style="font-weight: bold;">Matched: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
@@ -1038,7 +1060,7 @@
                     <div class="mini-game dns-speedrun" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
-                            <span style="font-weight: bold; color: #667eea;">🌐 DNS Speed Run</span>
+                            <span class="game-title">🌐 DNS Speed Run</span>
                             <div class="game-score" style="font-weight: bold;">Translated: <span id="score">0</span>/${state.total}</div>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 8px; font-size: 0.9em; text-align: center;">
@@ -1046,7 +1068,10 @@
                         </div>
                         <div class="game-layout-horizontal" style="display: flex; gap: 40px; align-items: center; width: 100%;">
                             <div class="domain-display" id="domain-display" style="flex: 1; text-align:center;font-size:1.2em;padding:15px;background:#1e1e1e;color:#00ff00;border-radius:10px;font-family:monospace;min-width:200px;"></div>
-                            <div class="ip-options" id="ip-options" style="flex: 2; display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
+                            <div style="flex: 2;">
+                                <pre id="dns-code" style="margin:0 0 10px 0;"></pre>
+                                <div class="ip-options" id="ip-options" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1064,6 +1089,8 @@
                     container.querySelector('#domain-display').textContent = current.domain;
 
                     const optionsDiv = container.querySelector('#ip-options');
+                    const dnsCode = container.querySelector('#dns-code');
+                    if (dnsCode) dnsCode.innerHTML = `<code>${escapeHtml(`// DNS lookup\nresolve("${current.domain}") => ?`)}</code>`;
                     const distractors = translations
                         .map(t => t.ip)
                         .filter(ip => ip !== current.ip)
@@ -1277,7 +1304,10 @@
                     }
 
                     const part = shuffledParts[currentPart];
-                    container.querySelector('#question-area').innerHTML = `<p>Which part is the <strong style="color:${part.color}">${part.part}</strong>?</p>`;
+                    container.querySelector('#question-area').innerHTML = `
+                        <p>Which part is the <strong style="color:${part.color}">${part.part}</strong>?</p>
+                        <pre style="margin:8px 0 0 0;"><code>const u = new URL("https://www.example.com/products/item?id=123&color=red");\n// identify u.${part.part === 'protocol' ? 'protocol' : part.part === 'domain' ? 'hostname' : part.part === 'path' ? 'pathname' : 'search'}</code></pre>
+                    `;
 
                     const optionsArea = container.querySelector('#options-area');
                     const options = urlParts.map(p => p.example).sort(() => Math.random() - 0.5);

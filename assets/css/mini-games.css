@@ -87,6 +87,34 @@
     color: #0f172a;
 }
 
+/* Prevent white-on-white regressions in modal/lesson host styles. */
+.mini-game,
+.mini-game p,
+.mini-game li,
+.mini-game .instruction,
+.mini-game .clue-box,
+.mini-game .question-area,
+.mini-game .scenario-display,
+.mini-game .permission-display,
+.mini-game .dilemma-display,
+.mini-game .chart-display,
+.mini-game .data-type-display,
+.mini-game .path-display,
+.mini-game .data-display {
+    color: #0f172a !important;
+}
+
+.mini-game pre {
+    background: #eef2ff !important;
+    color: #0f172a !important;
+    border: 1px solid #c7d2fe;
+}
+
+.mini-game code {
+    background: #e2e8f0;
+    color: #111827 !important;
+}
+
 /* =====================================================
    COMPACT ARCADE ZONE STYLES (For smaller games)
    ===================================================== */
