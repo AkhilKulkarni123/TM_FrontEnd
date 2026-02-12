@@ -1032,6 +1032,9 @@
         const GAME_API_ROOT = GAME_API_BASE + '/api';
         const PAGE_PARAMS = new URLSearchParams(window.location.search || '');
         const REQUESTED_PVP_ROOM = (PAGE_PARAMS.get('room_id') || PAGE_PARAMS.get('roomId') || '').trim();
+        const setPvpSocialActivitySafe = (typeof window.setPvpSocialActivity === 'function')
+            ? window.setPvpSocialActivity
+            : function () {};
 
         console.log('PVP Arena - API Base:', GAME_API_BASE);
         console.log('PVP Arena - Socket URL:', SOCKET_URL);
@@ -1831,7 +1834,7 @@
                 console.log('=== PVP ROOM STATE ===');
                 console.log('Received data:', data);
                 currentRoomId = data.roomId || currentRoomId;
-                if (currentRoomId) setPvpSocialActivity(currentRoomId, 'In PVP Arena');
+                if (currentRoomId) setPvpSocialActivitySafe(currentRoomId, 'In PVP Arena');
                 document.getElementById('roomBadge').style.display = 'block';
                 document.getElementById('playerCount').textContent = data.playerCount || 1;
                 const roomBadge = document.getElementById('roomBadge');
@@ -2099,7 +2102,7 @@
             socket.on('pvp_room_status', (data) => {
                 if (!data) return;
                 if (data.roomId) currentRoomId = data.roomId;
-                if (currentRoomId) setPvpSocialActivity(currentRoomId, 'In PVP Arena');
+                if (currentRoomId) setPvpSocialActivitySafe(currentRoomId, 'In PVP Arena');
                 if (typeof data.playerCount !== 'undefined') {
                     document.getElementById('roomBadge').style.display = 'block';
                     document.getElementById('playerCount').textContent = data.playerCount;

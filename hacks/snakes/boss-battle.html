@@ -1029,6 +1029,9 @@
         const PAGE_PARAMS = new URLSearchParams(window.location.search || '');
         const REQUESTED_ROOM_ID = (PAGE_PARAMS.get('room_id') || PAGE_PARAMS.get('roomId') || '').trim();
         const AUTO_JOIN_BATTLE = PAGE_PARAMS.get('join') === '1' || !!REQUESTED_ROOM_ID;
+        const setBossSocialActivitySafe = (typeof window.setBossSocialActivity === 'function')
+            ? window.setBossSocialActivity
+            : function () {};
 
         console.log('Boss Battle - API Base:', GAME_API_BASE);
         console.log('Boss Battle - Socket URL:', SOCKET_URL);
@@ -2404,7 +2407,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     roomId = data.room_id;
-                    setBossSocialActivity(roomId, 'In Boss Battle');
+                    setBossSocialActivitySafe(roomId, 'In Boss Battle');
                     console.log('Joined room:', data);
 
                     // Update room badge
@@ -2530,7 +2533,7 @@
         function startGuestSocketOnlyBattle() {
             connectSocket();
             roomId = 'boss_battle_room';
-            setBossSocialActivity(roomId, 'In Boss Battle');
+            setBossSocialActivitySafe(roomId, 'In Boss Battle');
 
             document.getElementById('roomBadge').style.display = 'block';
             document.getElementById('roomCode').textContent = roomId;
@@ -5307,7 +5310,7 @@ function getDamageMultiplier() {
             if (socket && roomId) {
                 socket.emit('boss_leave_room', { room_id: roomId });
             }
-            setBossSocialActivity('', 'In Boss Battle Lobby');
+                setBossSocialActivitySafe('', 'In Boss Battle Lobby');
         }
 
         function showVictoryAnimation() {
@@ -5363,7 +5366,7 @@ function getDamageMultiplier() {
                         body: JSON.stringify(leavePayload)
                     }).catch(() => {});
                 }
-                setBossSocialActivity('', 'Leaving Boss Battle');
+                setBossSocialActivitySafe('', 'Leaving Boss Battle');
                 returnToBoard();
             }
         }
