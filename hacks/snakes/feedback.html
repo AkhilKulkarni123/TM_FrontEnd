@@ -345,11 +345,15 @@
         }
 
         async function createEntryViaApi(entry) {
+            const resolvedUid = entry.displayName
+                || (currentUser && (currentUser.name || currentUser.uid || currentUser.username))
+                || entry.localUserId
+                || 'Anonymous';
             const payload = {
                 title: entry.title,
                 body: entry.text,
                 type: entry.type || 'Other',
-                uid: entry.localUserId || 'Anonymous'
+                uid: resolvedUid
             };
             const res = await fetch(`${FEEDBACK_API}/`, {
                 method: 'POST',
@@ -401,11 +405,15 @@
             }
 
             const displayName = displayNameInput.value.trim();
+            const resolvedLocalId = displayName
+                || (currentUser && (currentUser.name || currentUser.uid || currentUser.username))
+                || localUserId;
+
             const entry = {
                 id: 'fb-' + Date.now(),
                 displayName,
                 text,
-                localUserId,
+                localUserId: resolvedLocalId,
                 createdAt: new Date().toISOString(),
                 title: displayName ? `${displayName} feedback` : 'Snakes feedback',
                 type: 'Other'
