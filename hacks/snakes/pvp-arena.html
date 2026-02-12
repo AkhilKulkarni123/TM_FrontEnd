@@ -35,6 +35,7 @@
             display: block;
             background: radial-gradient(circle, #0f3460 0%, #1a1a2e 100%);
             border: 3px solid #4facfe;
+            touch-action: none;
         }
 
         /* HUD Styles */
@@ -311,6 +312,85 @@
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            inset: 0;
+            display: none;
+            z-index: 85;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease;
+        }
+
+        .mobile-controls.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-joystick {
+            position: absolute;
+            left: 18px;
+            bottom: 18px;
+            width: 130px;
+            height: 130px;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        .mobile-joystick .joystick-base {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .mobile-joystick .joystick-stick {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.85), rgba(0, 242, 254, 0.7));
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+        }
+
+        .mobile-actions {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .mobile-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+            touch-action: manipulation;
+        }
+
+        .mobile-btn.primary {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.95), rgba(0, 242, 254, 0.8));
+        }
+
+        @media (pointer: coarse), (max-width: 900px) {
+            .mobile-controls {
+                display: block;
+            }
         }
 
         .btn {
@@ -819,6 +899,7 @@
                 <div class="mode-intro-row"><span>Move</span><span class="mode-intro-key">WASD / Arrow Keys</span></div>
                 <div class="mode-intro-row"><span>Aim</span><span class="mode-intro-key">Mouse</span></div>
                 <div class="mode-intro-row"><span>Shoot</span><span class="mode-intro-key">SPACE / Click</span></div>
+                <div class="mode-intro-row"><span>Mobile</span><span class="mode-intro-key">Joystick + Shoot</span></div>
                 <div class="mode-intro-row"><span>Leave Arena</span><span class="mode-intro-key">X Key</span></div>
             </div>
             <p class="mode-intro-text"><span class="mode-intro-highlight">Click anywhere</span> to continue.</p>
@@ -875,6 +956,16 @@
             </div>
 
             <canvas id="gameCanvas"></canvas>
+
+            <div class="mobile-controls" id="mobileControls" aria-hidden="true">
+                <div class="mobile-joystick" id="moveJoystick" aria-label="Move joystick">
+                    <div class="joystick-base"></div>
+                    <div class="joystick-stick" id="moveStick"></div>
+                </div>
+                <div class="mobile-actions" id="mobileActions">
+                    <button class="mobile-btn primary" id="mobileShootBtn" type="button">Shoot</button>
+                </div>
+            </div>
 
             <!-- In-game leave button -->
             <button class="ingame-leave-btn" id="ingameLeaveBtn" onclick="leaveArena()">
@@ -1526,6 +1617,110 @@
             }
         });
 
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 900;
+        const mobileControls = document.getElementById('mobileControls');
+        const moveJoystick = document.getElementById('moveJoystick');
+        const moveStick = document.getElementById('moveStick');
+        const mobileShootBtn = document.getElementById('mobileShootBtn');
+
+        function setMobileControlsActive(active) {
+            if (!mobileControls || !isTouchDevice) return;
+            mobileControls.classList.toggle('active', active);
+            mobileControls.setAttribute('aria-hidden', active ? 'false' : 'true');
+        }
+
+        function setKeyState(key, value) {
+            gameState.keys[key] = !!value;
+        }
+
+        function applyMoveVector(nx, ny) {
+            const dead = 0.25;
+            const up = ny < -dead;
+            const down = ny > dead;
+            const left = nx < -dead;
+            const right = nx > dead;
+            setKeyState('w', up);
+            setKeyState('arrowup', up);
+            setKeyState('s', down);
+            setKeyState('arrowdown', down);
+            setKeyState('a', left);
+            setKeyState('arrowleft', left);
+            setKeyState('d', right);
+            setKeyState('arrowright', right);
+        }
+
+        if (isTouchDevice && moveJoystick && moveStick) {
+            const radius = 50;
+            let joyActive = false;
+            let center = { x: 0, y: 0 };
+
+            const updateStick = (dx, dy) => {
+                moveStick.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%)`;
+            };
+
+            moveJoystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = moveJoystick.getBoundingClientRect();
+                center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                joyActive = true;
+                updateStick(0, 0);
+            }, { passive: false });
+
+            moveJoystick.addEventListener('touchmove', (e) => {
+                if (!joyActive) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - center.x;
+                const dy = touch.clientY - center.y;
+                const dist = Math.min(radius, Math.hypot(dx, dy));
+                const angle = Math.atan2(dy, dx);
+                const clampedX = Math.cos(angle) * dist;
+                const clampedY = Math.sin(angle) * dist;
+                updateStick(clampedX, clampedY);
+                applyMoveVector(clampedX / radius, clampedY / radius);
+                e.preventDefault();
+            }, { passive: false });
+
+            const endJoystick = () => {
+                joyActive = false;
+                updateStick(0, 0);
+                applyMoveVector(0, 0);
+            };
+
+            moveJoystick.addEventListener('touchend', endJoystick);
+            moveJoystick.addEventListener('touchcancel', endJoystick);
+        }
+
+        function handleAimTouch(e) {
+            if (!gameActive) return;
+            if (e.target.closest('#moveJoystick') || e.target.closest('#mobileActions')) return;
+            const touch = e.touches[0];
+            if (!touch) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            gameState.mouseX = (touch.clientX - rect.left) * scaleX;
+            gameState.mouseY = (touch.clientY - rect.top) * scaleY;
+            gameState.mouseInCanvas = true;
+            const dx = gameState.mouseX - gameState.player.x;
+            const dy = gameState.mouseY - gameState.player.y;
+            gameState.targetAimAngle = Math.atan2(dy, dx);
+            e.preventDefault();
+        }
+
+        canvas.addEventListener('touchstart', handleAimTouch, { passive: false });
+        canvas.addEventListener('touchmove', handleAimTouch, { passive: false });
+        canvas.addEventListener('touchend', () => { gameState.mouseInCanvas = false; }, { passive: true });
+
+        if (mobileShootBtn) {
+            mobileShootBtn.addEventListener('touchstart', (e) => {
+                if (gameActive) shoot();
+                e.preventDefault();
+            }, { passive: false });
+            mobileShootBtn.addEventListener('click', () => {
+                if (gameActive) shoot();
+            });
+        }
+
         // Mouse aiming
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -1962,6 +2157,8 @@
             document.getElementById('ingameLeaveBtn').style.display = 'block';
             canvas.classList.add('battle-active');
             resizeCanvas();
+
+            setMobileControlsActive(true);
 
             startPositionBroadcast();
             gameLoop();
@@ -2730,6 +2927,7 @@
             stopPositionBroadcast();
 
             document.getElementById('ingameLeaveBtn').style.display = 'none';
+            setMobileControlsActive(false);
 
             const gameOver = document.getElementById('gameOver');
             const title = document.getElementById('gameOverTitle');
@@ -2788,6 +2986,7 @@
 
             gameActive = false;
             stopPositionBroadcast();
+            setMobileControlsActive(false);
 
             if (socket) {
                 socket.emit('pvp_leave', {});
