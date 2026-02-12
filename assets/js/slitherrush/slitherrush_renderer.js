@@ -866,14 +866,19 @@
             var p = this.worldToScreen(orb.x, orb.y);
             if (p.x < -50 || p.x > this.view.width + 50 || p.y < -50 || p.y > this.view.height + 50) continue;
 
-            var value = orb.value || 1;
-            var radius = 6 + value * 2;
+            var value = Math.max(1, Number(orb.value || 1));
+            var isDeathDrop = orb.source === 'death';
+            var radius = (isDeathDrop ? 5.2 : 6) + value * (isDeathDrop ? 1.5 : 2);
             var pulse = 1 + Math.sin(pulseTime + i * 0.4) * 0.18;
             var rot = nowMs * 0.0015 + i * 0.8;
 
-            // Color by value tier
+            // Color by source + value tier
             var coreColor, glowColor, accentColor;
-            if (value >= 3) {
+            if (isDeathDrop) {
+                coreColor = orb.tint || '#ff584d';
+                glowColor = 'rgba(255, 88, 72, 0.34)';
+                accentColor = 'rgba(255, 176, 156, 0.56)';
+            } else if (value >= 3) {
                 coreColor = '#ffcc00';
                 glowColor = 'rgba(255, 204, 0, 0.35)';
                 accentColor = 'rgba(255, 230, 80, 0.6)';
@@ -898,10 +903,12 @@
             ctx.fill();
 
             // Orbiting dots
-            for (var d = 0; d < 3; d++) {
-                var dAngle = rot + d * (Math.PI * 2 / 3);
-                var ox = p.x + Math.cos(dAngle) * (radius * 2);
-                var oy = p.y + Math.sin(dAngle) * (radius * 2);
+            var orbitCount = isDeathDrop ? 2 : 3;
+            var orbitRadius = isDeathDrop ? radius * 1.45 : radius * 2;
+            for (var d = 0; d < orbitCount; d++) {
+                var dAngle = rot + d * (Math.PI * 2 / orbitCount);
+                var ox = p.x + Math.cos(dAngle) * orbitRadius;
+                var oy = p.y + Math.sin(dAngle) * orbitRadius;
                 ctx.beginPath();
                 ctx.fillStyle = accentColor;
                 ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
@@ -924,12 +931,14 @@
             ctx.arc(p.x - radius * 0.22, p.y - radius * 0.22, radius * 0.3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Value label
-            ctx.fillStyle = 'rgba(255,255,255,0.95)';
-            ctx.font = 'bold ' + Math.max(9, radius * 0.85) + 'px Oxanium, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('+' + value, p.x, p.y + 0.5);
+            if (!isDeathDrop) {
+                // Value label
+                ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                ctx.font = 'bold ' + Math.max(9, radius * 0.85) + 'px Oxanium, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('+' + value, p.x, p.y + 0.5);
+            }
         }
         ctx.restore();
     };

@@ -168,12 +168,28 @@
         var MIN_VISUAL_LENGTH = 6;
 
         // ========== Growth Orbs (client-side) ==========
-        var GROWTH_ORB_COUNT = 35;           // orbs active on map at any time
-        var GROWTH_ORB_PICKUP_RADIUS = 28;   // how close head must be to collect
-        var GROWTH_ORB_RESPAWN_MS = 3000;    // delay before a collected orb respawns
-        var growthOrbs = [];                 // { x, y, value, alive, respawnAt }
-        var localMassDelta = 0;              // local growth from orbs, consumed by sprint
+        var GROWTH_ORB_COUNT = 35;             // baseline map orbs active at any time
+        var GROWTH_ORB_PICKUP_RADIUS = 28;     // how close head must be to collect
+        var GROWTH_ORB_RESPAWN_MS = 3000;      // delay before a collected map orb respawns
+        var DEATH_DROP_DESPAWN_MS = 16000;     // dropped death-mass lifetime
+        var DEATH_DROP_COOLDOWN_MS = 1200;     // prevents duplicate drop bursts per death
+        var growthOrbs = [];                   // { x, y, value, alive, respawnAt, source, despawnAt, tint }
+        var playerLifeState = {};              // { [playerId]: status }
+        var deathDropAtByPlayer = {};          // { [playerId]: timestamp }
+        var localMassDelta = 0;                // local growth from orbs, consumed by sprint
         var MAP_W = 4800, MAP_H = 3000;
+
+        function clampToArena(value, max, margin) {
+            var safeMargin = Math.max(0, Number(margin || 0));
+            var safeMax = Math.max(safeMargin + 1, Number(max || 0));
+            return Math.max(safeMargin, Math.min(safeMax - safeMargin, Number(value || 0)));
+        }
+
+        function refreshMapBounds(state) {
+            if (!state || !state.bounds) return;
+            MAP_W = Math.max(1200, Number(state.bounds.width || MAP_W));
+            MAP_H = Math.max(800, Number(state.bounds.height || MAP_H));
+        }
 
         function getSelfPlayer(state) {
             if (!state || !Array.isArray(state.players)) return null;
@@ -189,12 +205,93 @@
             var value = Math.random() < 0.2 ? 2 : 1; // 20% chance for +2
             if (Math.random() < 0.05) value = 3;      // 5% chance for +3
             return {
-                x: margin + Math.random() * (MAP_W - margin * 2),
-                y: margin + Math.random() * (MAP_H - margin * 2),
+                x: margin + Math.random() * Math.max(1, (MAP_W - margin * 2)),
+                y: margin + Math.random() * Math.max(1, (MAP_H - margin * 2)),
                 value: value,
                 alive: true,
-                respawnAt: 0
+                respawnAt: 0,
+                source: 'map',
+                despawnAt: 0,
+                tint: ''
             };
+        }
+
+        function spawnDeathDropOrbs(player, now) {
+            if (!player || player.id == null) return 0;
+            var playerId = String(player.id);
+            if (deathDropAtByPlayer[playerId] && (now - deathDropAtByPlayer[playerId] < DEATH_DROP_COOLDOWN_MS)) {
+                return 0;
+            }
+
+            var body = Array.isArray(player.body) ? player.body : [];
+            var anchors = body.length ? body : (player.head ? [player.head] : []);
+            if (!anchors.length) return 0;
+
+            var snakeLength = Math.max(4, Number(player.length || anchors.length || 4));
+            var bodyWidth = 18 + Math.min(12, snakeLength * 0.3);
+            var dropBudget = Math.max(8, Math.round((snakeLength * 0.62) + (bodyWidth * 1.25)));
+            var orbCount = Math.max(6, Math.min(72, Math.round((snakeLength * 0.42) + (bodyWidth * 0.35))));
+            var remaining = dropBudget;
+            var tint = player.color || '#ff584d';
+            var spawned = 0;
+
+            for (var i = 0; i < orbCount; i += 1) {
+                var slotsLeft = orbCount - i;
+                var maxForThis = Math.max(1, remaining - (slotsLeft - 1));
+                var avg = remaining / slotsLeft;
+                var value = Math.max(1, Math.round(avg * (0.65 + (Math.random() * 0.8))));
+                value = Math.min(4, Math.min(maxForThis, value));
+                remaining -= value;
+
+                var baseIndex = Math.floor((i / Math.max(1, orbCount - 1)) * (anchors.length - 1));
+                var indexJitter = Math.floor((Math.random() - 0.5) * 4);
+                var anchorIndex = Math.max(0, Math.min(anchors.length - 1, baseIndex + indexJitter));
+                var anchor = anchors[anchorIndex] || anchors[0];
+                var spread = Math.max(8, bodyWidth * (0.45 + Math.random() * 0.9));
+                var angle = Math.random() * Math.PI * 2;
+
+                growthOrbs.push({
+                    x: clampToArena(Number(anchor.x || 0) + (Math.cos(angle) * spread), MAP_W, 44),
+                    y: clampToArena(Number(anchor.y || 0) + (Math.sin(angle) * spread), MAP_H, 44),
+                    value: value,
+                    alive: true,
+                    respawnAt: 0,
+                    source: 'death',
+                    despawnAt: now + DEATH_DROP_DESPAWN_MS,
+                    tint: tint
+                });
+                spawned += 1;
+            }
+
+            deathDropAtByPlayer[playerId] = now;
+            return spawned;
+        }
+
+        function trackDeathDropsFromState(state, now) {
+            if (!state || !Array.isArray(state.players)) return;
+            refreshMapBounds(state);
+
+            var seen = {};
+            for (var i = 0; i < state.players.length; i += 1) {
+                var player = state.players[i];
+                if (!player || player.id == null) continue;
+                var playerId = String(player.id);
+                var status = String(player.status || 'alive');
+                var prevStatus = playerLifeState[playerId];
+
+                if (prevStatus === 'alive' && status !== 'alive') {
+                    spawnDeathDropOrbs(player, now);
+                }
+
+                playerLifeState[playerId] = status;
+                seen[playerId] = true;
+            }
+
+            Object.keys(playerLifeState).forEach(function (playerId) {
+                if (seen[playerId]) return;
+                delete playerLifeState[playerId];
+                delete deathDropAtByPlayer[playerId];
+            });
         }
 
         // Initialize growth orbs
@@ -204,34 +301,68 @@
 
         function tickGrowthOrbs(state, now) {
             if (!state) return;
-            var self = getSelfPlayer(state);
-            if (!self || !self.head || self.status !== 'alive') return;
-            if (state.bounds) {
-                MAP_W = Math.max(1200, Number(state.bounds.width || MAP_W));
-                MAP_H = Math.max(800, Number(state.bounds.height || MAP_H));
+            refreshMapBounds(state);
+
+            var players = Array.isArray(state.players) ? state.players : [];
+            var activeHeads = [];
+            for (var p = 0; p < players.length; p += 1) {
+                var player = players[p];
+                if (!player || player.status !== 'alive' || !player.head || player.id == null) continue;
+                activeHeads.push({
+                    id: String(player.id),
+                    x: Number(player.head.x || 0),
+                    y: Number(player.head.y || 0)
+                });
             }
 
-            var hx = self.head.x;
-            var hy = self.head.y;
+            var pickupRadiusSq = GROWTH_ORB_PICKUP_RADIUS * GROWTH_ORB_PICKUP_RADIUS;
 
-            for (var i = 0; i < growthOrbs.length; i++) {
+            for (var i = growthOrbs.length - 1; i >= 0; i -= 1) {
                 var orb = growthOrbs[i];
+                if (!orb) continue;
+                var isDeathOrb = orb.source === 'death';
+
                 if (!orb.alive) {
-                    // Respawn check
-                    if (now >= orb.respawnAt) {
+                    if (isDeathOrb) {
+                        growthOrbs.splice(i, 1);
+                    } else if (now >= orb.respawnAt) {
                         var fresh = spawnGrowthOrb();
                         orb.x = fresh.x;
                         orb.y = fresh.y;
                         orb.value = fresh.value;
                         orb.alive = true;
+                        orb.source = 'map';
+                        orb.despawnAt = 0;
+                        orb.tint = '';
                     }
                     continue;
                 }
-                // Pickup check
-                var dx = hx - orb.x;
-                var dy = hy - orb.y;
-                if (Math.sqrt(dx * dx + dy * dy) < GROWTH_ORB_PICKUP_RADIUS) {
+
+                if (isDeathOrb && orb.despawnAt && now >= orb.despawnAt) {
+                    growthOrbs.splice(i, 1);
+                    continue;
+                }
+
+                var collectorId = null;
+                for (var h = 0; h < activeHeads.length; h += 1) {
+                    var head = activeHeads[h];
+                    var dx = head.x - Number(orb.x || 0);
+                    var dy = head.y - Number(orb.y || 0);
+                    if ((dx * dx) + (dy * dy) <= pickupRadiusSq) {
+                        collectorId = head.id;
+                        break;
+                    }
+                }
+
+                if (!collectorId) continue;
+
+                if (collectorId === String(state.self_id || '')) {
                     localMassDelta += Number(orb.value || 1);
+                }
+
+                if (isDeathOrb) {
+                    growthOrbs.splice(i, 1);
+                } else {
                     orb.alive = false;
                     orb.respawnAt = now + GROWTH_ORB_RESPAWN_MS;
                 }
@@ -524,6 +655,7 @@
         client.on('state', function (payload) {
             if (!payload) return;
             stateSeenAt = Date.now();
+            trackDeathDropsFromState(payload, stateSeenAt);
             var players = Array.isArray(payload.players) ? payload.players : [];
             var selfPlayer = players.find(function (p) { return p.id === payload.self_id; }) || null;
             if (userClickedPlay && selfPlayer && selfPlayer.status === 'alive') hideIntroOverlay();
@@ -534,6 +666,8 @@
             if (!payload) return;
             var state = client.getState();
             if (state && payload.player_id === state.self_id) {
+                var selfOnDeath = getSelfPlayer(state);
+                spawnDeathDropOrbs(selfOnDeath, Date.now());
                 setStatus('You died! Redirecting...');
                 localDeath = true;
                 localDeathKiller = payload.killer_name || payload.killed_by || 'another snake';
@@ -598,6 +732,8 @@
             if (!localDeath) {
                 var collision = renderer.checkHeadCollisions(state);
                 if (collision) {
+                    var selfOnCrash = getSelfPlayer(state);
+                    spawnDeathDropOrbs(selfOnCrash, now);
                     localDeath = true;
                     localDeathKiller = collision.killerName || 'another snake';
                     localDeathTime = Date.now();
