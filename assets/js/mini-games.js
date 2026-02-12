@@ -9,6 +9,7 @@
 
     // Game configuration
     const GAME_DURATION = 45000; // 45 seconds default
+    const CHALLENGE_DURATION = 40000; // Slightly harder pace for board challenge rounds
     const GAMES_PER_LESSON = 5;
 
     // =====================================================
@@ -92,7 +93,7 @@
                 }
                 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
                 
@@ -604,7 +605,7 @@
             name: 'List Loop Tracer',
             description: 'Trace loops over lists and predict the output (AP CSP iteration + lists)!',
             init: function(container, onComplete) {
-                const state = { score: 0, total: 6, completed: false };
+                const state = { score: 0, total: 8, completed: false };
 
                 const prompts = [
                     { code: 'total = 0\nFOR EACH n IN [2, 4, 6]\n  total <- total + n\nDISPLAY(total)', options: ['12', '6', '24', '8'], answer: 0 },
@@ -612,7 +613,9 @@
                     { code: 'sum = 1\nFOR EACH x IN [3, 2]\n  sum <- sum * x\nDISPLAY(sum)', options: ['6', '5', '3', '8'], answer: 0 },
                     { code: 'nums = [5, 1, 2]\nFOR EACH v IN nums\n  DISPLAY(v)', options: ['5 1 2', '1 2 5', '8', '2'], answer: 0 },
                     { code: 'hits = 0\nFOR EACH n IN [1,2,3,4]\n  IF n > 2\n    hits <- hits + 1\nDISPLAY(hits)', options: ['2', '1', '3', '4'], answer: 0 },
-                    { code: 'words = ["code","is","fun"]\nDISPLAY(words[1])', options: ['is', 'code', 'fun', 'undefined'], answer: 0 }
+                    { code: 'words = ["code","is","fun"]\nDISPLAY(words[1])', options: ['is', 'code', 'fun', 'undefined'], answer: 0 },
+                    { code: 'nums = [1,2,3]\ntotal = 0\nFOR EACH n IN nums\n  total <- total + n * 2\nDISPLAY(total)', options: ['12', '6', '9', '3'], answer: 0 },
+                    { code: 'a = [9,8,7,6]\nDISPLAY(a[2])', options: ['7', '8', '6', '9'], answer: 0 }
                 ];
 
                 container.innerHTML = `
@@ -668,7 +671,7 @@
                 }
 
                 renderPrompt();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
                 return state;
@@ -680,14 +683,15 @@
             name: 'Data Cleaner',
             description: 'Choose the best data-cleaning action for each AP CSP data problem.',
             init: function(container, onComplete) {
-                const state = { score: 0, total: 6, completed: false };
+                const state = { score: 0, total: 7, completed: false };
                 const tasks = [
                     { issue: 'A list of survey IDs contains duplicates.', options: ['Remove duplicates', 'Sort alphabetically', 'Add random IDs', 'Ignore it'], answer: 0 },
                     { issue: 'Some rows have missing ages: age = "".', options: ['Flag or fill missing values', 'Delete the whole dataset', 'Convert all to text', 'Duplicate rows'], answer: 0 },
                     { issue: 'Dates are mixed: 01/05/26 and 2026-01-05.', options: ['Standardize date format', 'Randomize order', 'Delete newest rows', 'Store as images'], answer: 0 },
                     { issue: 'A score column has value 9999 by mistake.', options: ['Detect and fix outlier/error', 'Keep it for variety', 'Multiply all scores', 'Hide the column'], answer: 0 },
                     { issue: 'State names are NY, New York, ny.', options: ['Normalize labels/case', 'Split into many columns', 'Drop all state data', 'Encrypt immediately'], answer: 0 },
-                    { issue: 'Device type column has extra spaces: " laptop ".', options: ['Trim whitespace', 'Add more spaces', 'Use random capitalization', 'Convert to binary'], answer: 0 }
+                    { issue: 'Device type column has extra spaces: " laptop ".', options: ['Trim whitespace', 'Add more spaces', 'Use random capitalization', 'Convert to binary'], answer: 0 },
+                    { issue: 'Rows use mixed yes/no values: "Yes", "Y", "yes", "No".', options: ['Standardize to one encoding scheme', 'Keep every spelling style', 'Delete all no values', 'Turn into emojis'], answer: 0 }
                 ];
 
                 container.innerHTML = `
@@ -744,7 +748,7 @@
                 }
 
                 renderTask();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
                 return state;
@@ -756,14 +760,15 @@
             name: 'Abstraction Builder',
             description: 'Choose whether a list, variable, or procedure best handles each coding scenario.',
             init: function(container, onComplete) {
-                const state = { score: 0, total: 6, completed: false };
+                const state = { score: 0, total: 7, completed: false };
                 const scenarios = [
                     { prompt: 'Track all scores from 30 snake rounds.', options: ['Single variable', 'List', 'Hard-code all values', 'Random function'], answer: 1 },
                     { prompt: 'Reuse collision logic in many places.', options: ['Procedure/function', 'More comments only', 'Duplicate code', 'New color theme'], answer: 0 },
                     { prompt: 'Store one player name only.', options: ['Single variable', 'List of 100 items', 'Nested object', 'Queue'], answer: 0 },
                     { prompt: 'Process every fruit position in snake body.', options: ['List + loop', 'One giant IF', 'Screenshot it', 'Manual counting'], answer: 0 },
                     { prompt: 'Hide detail of score calculation behind one call.', options: ['Procedure abstraction', 'Delete formula', 'Inline everywhere', 'Use emoji names'], answer: 0 },
-                    { prompt: 'Keep difficulty presets easy/medium/hard.', options: ['Data abstraction object/list', 'Three unrelated files', 'No structure', 'Only comments'], answer: 0 }
+                    { prompt: 'Keep difficulty presets easy/medium/hard.', options: ['Data abstraction object/list', 'Three unrelated files', 'No structure', 'Only comments'], answer: 0 },
+                    { prompt: 'Reuse “moveSnake(speed)” logic in multiple levels.', options: ['Create one parameterized procedure', 'Copy-paste five versions', 'Use magic numbers only', 'Inline with no function'], answer: 0 }
                 ];
 
                 container.innerHTML = `
@@ -820,7 +825,7 @@
                 }
 
                 renderScenario();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
                 return state;
@@ -898,7 +903,7 @@
                 });
 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
 
@@ -1059,11 +1064,12 @@
                     container.querySelector('#domain-display').textContent = current.domain;
 
                     const optionsDiv = container.querySelector('#ip-options');
-                    const options = [current.ip];
-                    while (options.length < 4) {
-                        const randomIP = `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
-                        if (!options.includes(randomIP)) options.push(randomIP);
-                    }
+                    const distractors = translations
+                        .map(t => t.ip)
+                        .filter(ip => ip !== current.ip)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 3);
+                    const options = [current.ip, ...distractors];
                     options.sort(() => Math.random() - 0.5);
 
                     optionsDiv.innerHTML = '';
@@ -1088,7 +1094,7 @@
                 }
 
                 showTranslation();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
 
@@ -1101,7 +1107,7 @@
             name: 'Packet Pathfinder',
             description: 'Solve packet-routing scenarios from AP CSP networking concepts!',
             init: function(container, onComplete) {
-                const state = { score: 0, total: 6, completed: false };
+                const state = { score: 0, total: 7, completed: false };
                 const prompts = [
                     {
                         prompt: 'A message is sent across the Internet. Which is most accurate?',
@@ -1162,6 +1168,16 @@
                             'GPU and CPU'
                         ],
                         answer: 0
+                    },
+                    {
+                        prompt: 'A packet includes source and destination addresses. Why?',
+                        options: [
+                            'So routers know where to forward it',
+                            'So DNS can style the webpage',
+                            'So only one path is possible',
+                            'So the packet never needs reassembly'
+                        ],
+                        answer: 0
                     }
                 ];
 
@@ -1216,7 +1232,7 @@
                 }
 
                 showPrompt();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
 
@@ -1288,7 +1304,7 @@
                 }
 
                 showQuestion();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
                 });
 
@@ -1301,7 +1317,7 @@
             name: 'Router Rush',
             description: 'Sort incoming packets to the correct network!',
             init: function(container, onComplete) {
-                const state = { sorted: 0, total: 10, completed: false, errors: 0 };
+                const state = { sorted: 0, total: 12, completed: false, errors: 0 };
 
                 const networks = [
                     { name: 'Network A', prefix: '192.168.1' },
@@ -1351,6 +1367,8 @@
                         container.querySelector('#score').textContent = state.sorted;
                     } else {
                         state.errors++;
+                        if (state.sorted > 0) state.sorted--;
+                        container.querySelector('#score').textContent = state.sorted;
                     }
                     showPacket();
                 });
@@ -1361,12 +1379,14 @@
                         container.querySelector('#score').textContent = state.sorted;
                     } else {
                         state.errors++;
+                        if (state.sorted > 0) state.sorted--;
+                        container.querySelector('#score').textContent = state.sorted;
                     }
                     showPacket();
                 });
 
                 showPacket();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
                     if (!state.completed) onComplete(false, Math.floor((state.sorted / state.total) * 100));
                 });
 
