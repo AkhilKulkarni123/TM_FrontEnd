@@ -2212,7 +2212,9 @@
                 }
 
                 // Pass all player stats to endGame
-                endGame(true, data.all_player_stats || []);
+                setTimeout(() => {
+                    endGame(true, data.all_player_stats || []);
+                }, 300);
             });
 
             // Player stats update
