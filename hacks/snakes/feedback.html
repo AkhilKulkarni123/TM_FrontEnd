@@ -223,7 +223,7 @@
                     </div>
                 </form>
                 <p class="meta-note" id="storageNote">
-                    Feedback is saved locally on this device.
+                    Feedback is saved to the local database (localStorage) on this device.
                 </p>
             </div>
 
@@ -243,9 +243,13 @@
     </div>
 
     <script src="../../assets/js/theme-selector.js"></script>
-    <script>
+    <script type="module">
+        import { pythonURI } from '../../assets/js/api/config.js';
+
         const STORAGE_KEY = 'snakes_feedback_entries';
+        const DB_KEY = 'snakes_local_db_v1';
         const USER_KEY = 'snakes_feedback_local_user';
+        const FEEDBACK_API = `${pythonURI}/api/feedback`;
 
         const form = document.getElementById('feedbackForm');
         const displayNameInput = document.getElementById('displayName');
@@ -255,27 +259,114 @@
         const storageNote = document.getElementById('storageNote');
 
         let currentFilter = 'all';
+        let currentUser = null;
         let localUserId = localStorage.getItem(USER_KEY);
         if (!localUserId) {
             localUserId = 'user-' + Math.random().toString(36).slice(2, 10);
             localStorage.setItem(USER_KEY, localUserId);
         }
 
-        function loadEntries() {
+        function loadDb() {
             try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                return raw ? JSON.parse(raw) : [];
-            } catch (e) {
-                return [];
-            }
+                const raw = localStorage.getItem(DB_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    return {
+                        accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
+                        feedback: Array.isArray(parsed.feedback) ? parsed.feedback : []
+                    };
+                }
+            } catch (e) {}
+            return { accounts: [], feedback: [] };
+        }
+
+        function saveDb(db) {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        function migrateLegacyFeedbackIfNeeded() {
+            try {
+                const legacyRaw = localStorage.getItem(STORAGE_KEY);
+                if (!legacyRaw) return;
+                const legacyEntries = JSON.parse(legacyRaw);
+                if (!Array.isArray(legacyEntries) || !legacyEntries.length) return;
+                const db = loadDb();
+                if (!db.feedback.length) {
+                    db.feedback = legacyEntries;
+                    saveDb(db);
+                }
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+        }
+
+        function loadEntries() {
+            return loadDb().feedback;
         }
 
         function saveEntries(entries) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            const db = loadDb();
+            db.feedback = entries;
+            saveDb(db);
         }
 
-        function renderEntries() {
-            const entries = loadEntries();
+        async function fetchCurrentUser() {
+            try {
+                const res = await fetch(`${pythonURI}/api/id`, { credentials: 'include' });
+                if (!res.ok) return null;
+                const data = await res.json();
+                return data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function normalizeApiEntry(entry) {
+            return {
+                id: entry.id || 'fb-' + Date.now(),
+                displayName: entry.github_username || 'Anonymous Champion',
+                text: entry.body || '',
+                localUserId: entry.github_username || '',
+                createdAt: entry.created_at || new Date().toISOString(),
+                type: entry.type || 'Other',
+                githubIssueUrl: entry.github_issue_url || null
+            };
+        }
+
+        async function loadEntriesFromApi() {
+            try {
+                const res = await fetch(`${FEEDBACK_API}/all`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch feedback');
+                const data = await res.json();
+                if (!Array.isArray(data)) throw new Error('Invalid feedback response');
+                return data.map(normalizeApiEntry);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function createEntryViaApi(entry) {
+            const payload = {
+                title: entry.title,
+                body: entry.text,
+                type: entry.type || 'Other',
+                uid: entry.localUserId || 'Anonymous'
+            };
+            const res = await fetch(`${FEEDBACK_API}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || 'Failed to save feedback');
+            }
+            const saved = await res.json();
+            return normalizeApiEntry(saved);
+        }
+
+        function renderEntries(entriesOverride = null) {
+            const entries = entriesOverride || loadEntries();
             const filtered = currentFilter === 'mine'
                 ? entries.filter(entry => entry.localUserId === localUserId)
                 : entries;
@@ -288,7 +379,7 @@
             feedbackList.innerHTML = filtered
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map(entry => {
-                    const safeName = entry.displayName || 'Anonymous Champion';
+                    const safeName = entry.displayName || entry.localUserId || 'Anonymous Champion';
                     const created = new Date(entry.createdAt).toLocaleString();
                     return `
                         <div class="feedback-card">
@@ -301,7 +392,7 @@
                 .join('');
         }
 
-        form.addEventListener('submit', (event) => {
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
             const text = feedbackInput.value.trim();
             if (text.length < 5) {
@@ -309,18 +400,29 @@
                 return;
             }
 
-            const entries = loadEntries();
-            entries.push({
+            const displayName = displayNameInput.value.trim();
+            const entry = {
                 id: 'fb-' + Date.now(),
-                displayName: displayNameInput.value.trim(),
+                displayName,
                 text,
                 localUserId,
-                createdAt: new Date().toISOString()
-            });
+                createdAt: new Date().toISOString(),
+                title: displayName ? `${displayName} feedback` : 'Snakes feedback',
+                type: 'Other'
+            };
 
-            saveEntries(entries);
-            feedbackInput.value = '';
-            renderEntries();
+            try {
+                const saved = await createEntryViaApi(entry);
+                const apiEntries = await loadEntriesFromApi();
+                feedbackInput.value = '';
+                renderEntries(apiEntries || [saved, ...loadEntries()]);
+            } catch (e) {
+                const entries = loadEntries();
+                entries.push(entry);
+                saveEntries(entries);
+                feedbackInput.value = '';
+                renderEntries();
+            }
         });
 
         clearFormBtn.addEventListener('click', () => {
@@ -341,7 +443,24 @@
             window.location.href = 'victory.html';
         }
 
-        renderEntries();
+        async function initFeedback() {
+            migrateLegacyFeedbackIfNeeded();
+            currentUser = await fetchCurrentUser();
+            if (currentUser && (currentUser.name || currentUser.uid || currentUser.username)) {
+                localUserId = currentUser.name || currentUser.uid || currentUser.username;
+            }
+
+            const apiEntries = await loadEntriesFromApi();
+            if (apiEntries) {
+                renderEntries(apiEntries);
+                storageNote.textContent = 'Feedback is saved to the Snakes backend and shared across accounts.';
+                return;
+            }
+
+            renderEntries();
+        }
+
+        initFeedback();
     </script>
 </body>
 </html>
