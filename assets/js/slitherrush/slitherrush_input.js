@@ -23,7 +23,8 @@
             down: false,
             left: false,
             right: false,
-            shoot: false
+            shoot: false,
+            sprint: false
         };
 
         this.lastDirection = { x: 1, y: 0 };
@@ -70,12 +71,16 @@
 
     Input.prototype._emitIfChanged = function () {
         var direction = this._computeDirection();
+        var sprintMultiplier = this.keys.sprint ? 1.45 : 1;
         var payload = {
             direction: {
-                x: clamp(Number(direction.x.toFixed(4)), -1, 1),
-                y: clamp(Number(direction.y.toFixed(4)), -1, 1)
+                x: clamp(Number((direction.x * sprintMultiplier).toFixed(4)), -2, 2),
+                y: clamp(Number((direction.y * sprintMultiplier).toFixed(4)), -2, 2)
             },
-            shoot: !!this.keys.shoot
+            shoot: !!this.keys.shoot,
+            sprint: !!this.keys.sprint,
+            boost: !!this.keys.sprint,
+            boosting: !!this.keys.sprint
         };
 
         var serialized = JSON.stringify(payload);
@@ -91,7 +96,15 @@
         window.addEventListener('keydown', function (event) {
             var key = String(event.key || '').toLowerCase();
 
-            if (key === 'shift' || key === ' ') {
+            if (key === 'shift') {
+                event.preventDefault();
+                self.keys.sprint = true;
+                self._emitIfChanged();
+                return;
+            }
+
+            if (key === ' ') {
+                event.preventDefault();
                 self.keys.shoot = true;
                 self._emitIfChanged();
                 return;
@@ -114,7 +127,15 @@
         window.addEventListener('keyup', function (event) {
             var key = String(event.key || '').toLowerCase();
 
-            if (key === 'shift' || key === ' ') {
+            if (key === 'shift') {
+                event.preventDefault();
+                self.keys.sprint = false;
+                self._emitIfChanged();
+                return;
+            }
+
+            if (key === ' ') {
+                event.preventDefault();
                 self.keys.shoot = false;
                 self._emitIfChanged();
                 return;
@@ -130,6 +151,7 @@
             self.keys.left = false;
             self.keys.right = false;
             self.keys.shoot = false;
+            self.keys.sprint = false;
             self.pointer.active = false;
             self._emitIfChanged();
         });
