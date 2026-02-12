@@ -610,6 +610,7 @@
                 // Request PVP room status
                 socket.emit('pvp_get_status', {});
                 socket.emit('slitherrush_get_status', {});
+                socket.emit('pvp_mode_viewer_join', {});
             });
 
             socket.on('pvp_status', (data) => {
@@ -617,6 +618,7 @@
                 pvpStatusState.totalPlayers = data.totalPlayers || 0;
                 pvpStatusState.activeRooms = data.activeRooms || 0;
                 pvpStatusState.openSlots = data.openSlots || 0;
+                pvpStatusState.viewerCount = data.viewerCount || 0;
                 updatePVPStatus();
             });
 
@@ -627,6 +629,12 @@
                 slitherrushStatusState.openSlots = data.openSlots || 0;
                 updateSlitherRushStatus();
             });
+
+            socket.on('disconnect', () => {
+                if (socket) {
+                    socket.emit('pvp_mode_viewer_leave', {});
+                }
+            });
         }
 
         // Update PVP status display
@@ -636,14 +644,15 @@
             const pvpRooms = document.getElementById('pvpRoomCount');
             const pvpOpenSlots = document.getElementById('pvpOpenSlots');
 
-            if (pvpCount) pvpCount.textContent = pvpStatusState.totalPlayers;
+            const displayCount = Math.max(pvpStatusState.totalPlayers, pvpStatusState.viewerCount || 0);
+            if (pvpCount) pvpCount.textContent = displayCount;
             if (pvpRooms) pvpRooms.textContent = pvpStatusState.activeRooms;
             if (pvpOpenSlots) pvpOpenSlots.textContent = pvpStatusState.openSlots;
 
             if (pvpStatusEl) {
                 pvpStatusEl.classList.remove('full');
                 pvpStatusEl.innerHTML =
-                    'Players online: <span id=\"pvpPlayerCount\">' + pvpStatusState.totalPlayers +
+                    'Players online: <span id=\"pvpPlayerCount\">' + displayCount +
                     '</span> • Arenas active: <span id=\"pvpRoomCount\">' + pvpStatusState.activeRooms +
                     '</span> • Open slots: <span id=\"pvpOpenSlots\">' + pvpStatusState.openSlots + '</span>';
             }
