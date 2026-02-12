@@ -447,10 +447,10 @@ function viewLeaderboardEnhanced() {
             var charIcon = characterIcons[userChar] || '🙂';
 
             var syntheticRow = document.createElement('tr');
-            syntheticRow.className = 'current-user-row';
+            syntheticRow.className = 'current-user-row leaderboard-entry-row';
             syntheticRow.innerHTML =
                 '<td class="rank-col"><span class="rank-badge regular">' + userRank + '</span></td>' +
-                '<td class="player-col">' + charIcon + ' ' + userName + '<span class="user-position-badge">👤 YOU</span></td>' +
+                '<td class="player-col"><div class="leaderboard-player-cell"><span class="leaderboard-player-name">' + charIcon + ' ' + userName + '<span class="user-position-badge">👤 YOU</span></span></div></td>' +
                 '<td class="bullets-col">' + userBullets + '</td>' +
                 '<td class="time-col">-</td>';
             tbody.appendChild(syntheticRow);

@@ -2426,3 +2426,29 @@ textarea:focus-visible {
 #leaderboard-table tbody tr.rank-row-3 td {
   color: #ffffff !important;
 }
+
+/* Keep current-user row aligned to table columns (no pseudo row decorations). */
+#leaderboard-table tbody tr.current-user-row {
+  position: static !important;
+  animation: none !important;
+  transform: none !important;
+  border: 0 !important;
+}
+
+#leaderboard-table tbody tr.current-user-row::before {
+  content: none !important;
+  display: none !important;
+}
+
+#leaderboard-table tbody tr.current-user-row > td {
+  border-top: 2px solid #ffd700 !important;
+  border-bottom: 2px solid #ffd700 !important;
+}
+
+#leaderboard-table tbody tr.current-user-row > td:first-child {
+  border-left: 2px solid #ffd700 !important;
+}
+
+#leaderboard-table tbody tr.current-user-row > td:last-child {
+  border-right: 2px solid #ffd700 !important;
+}
