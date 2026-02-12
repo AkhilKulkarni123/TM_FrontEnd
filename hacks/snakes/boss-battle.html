@@ -2844,11 +2844,17 @@
             return current + diff * factor;
         }
 
-        // Update progress bar
+        // Update progress bar — throttled to avoid DOM thrashing every frame
+        let _lastProgressUpdate = 0;
+        const _progressFill = document.getElementById('battleProgressFill');
+        const _progressText = document.getElementById('battleProgressText');
         function updateProgressBar() {
+            const now = Date.now();
+            if (now - _lastProgressUpdate < 200) return;
+            _lastProgressUpdate = now;
             const damagePercent = ((gameState.boss.maxHealth - gameState.boss.health) / gameState.boss.maxHealth) * 100;
-            document.getElementById('battleProgressFill').style.width = damagePercent + '%';
-            document.getElementById('battleProgressText').textContent = `Boss Damage: ${Math.round(damagePercent)}%`;
+            _progressFill.style.width = damagePercent + '%';
+            _progressText.textContent = `Boss Damage: ${Math.round(damagePercent)}%`;
         }
 
         function gameLoop(frameTime) {
@@ -2882,6 +2888,7 @@
             checkCreativeAttackCollisions();
             applyBossBleed();
             updateProgressBar();
+            flushPlayersListUpdate();
 
             requestAnimationFrame(gameLoop);
         }
@@ -3197,23 +3204,7 @@ function getDamageMultiplier() {
             projectile.x += projectile.dx;
             projectile.y += projectile.dy;
 
-            if (projectile.maxBounces > 0 && projectile.bounceCount < projectile.maxBounces) {
-                let bounced = false;
-                if (projectile.x <= 1 || projectile.x >= canvas.width - 1) {
-                    projectile.dx *= -1;
-                    projectile.x = Math.max(1, Math.min(canvas.width - 1, projectile.x));
-                    projectile.bounceCount += 1;
-                    bounced = true;
-                }
-                if (projectile.y <= 1 || projectile.y >= canvas.height - 1) {
-                    projectile.dy *= -1;
-                    projectile.y = Math.max(1, Math.min(canvas.height - 1, projectile.y));
-                    projectile.bounceCount += 1;
-                    bounced = true;
-                }
-                if (bounced) return true;
-            }
-
+            // No wall bouncing — bullets die when they leave the arena
             return projectile.y > 0 && projectile.y < canvas.height && projectile.x > 0 && projectile.x < canvas.width;
         }
 
@@ -4110,9 +4101,8 @@ function getDamageMultiplier() {
 
                 const charConfig = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
 
-                // Glow circle
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = charConfig.glow;
+                // Glow circle (no shadowBlur for performance)
+                ctx.shadowBlur = 0;
                 ctx.fillStyle = charConfig.color;
                 ctx.globalAlpha = 0.3;
                 ctx.beginPath();
@@ -4134,8 +4124,7 @@ function getDamageMultiplier() {
 
             // Draw current player
             const charConfig = CHARACTER_CONFIG[gameState.player.character] || CHARACTER_CONFIG.knight;
-            ctx.shadowBlur = 25;
-            ctx.shadowColor = charConfig.glow;
+            ctx.shadowBlur = 0;
             ctx.fillStyle = charConfig.color;
             ctx.globalAlpha = 0.3;
             ctx.beginPath();
@@ -4198,30 +4187,14 @@ function getDamageMultiplier() {
                 const bChar = bullet.character || 'knight';
 
                 if (bChar === 'wizard') {
-                    // Magic orb with swirling energy particles
-                    const time = Date.now() * 0.008;
-                    for (let i = 0; i < 4; i++) {
-                        const pa = time + (i * Math.PI / 2);
-                        const px = bullet.x + Math.cos(pa) * 7;
-                        const py = bullet.y + Math.sin(pa) * 7;
-                        ctx.globalAlpha = 0.5;
-                        ctx.fillStyle = '#d2b4de';
-                        ctx.fillRect(Math.round(px) - 2, Math.round(py) - 2, 4, 4);
-                    }
+                    // Simplified magic orb (no per-frame gradient for performance)
                     ctx.globalAlpha = 1;
-                    const grd = ctx.createRadialGradient(bullet.x, bullet.y, 1, bullet.x, bullet.y, bullet.size + 2);
-                    grd.addColorStop(0, '#fef9e7');
-                    grd.addColorStop(0.25, '#f9e79f');
-                    grd.addColorStop(0.5, '#ff9f1c');
-                    grd.addColorStop(0.8, '#e74c3c');
-                    grd.addColorStop(1, 'rgba(142,68,173,0)');
-                    ctx.shadowBlur = 18;
+                    ctx.shadowBlur = 8;
                     ctx.shadowColor = '#9b59b6';
-                    ctx.fillStyle = grd;
+                    ctx.fillStyle = '#ff9f1c';
                     ctx.beginPath();
                     ctx.arc(bullet.x, bullet.y, bullet.size + 2, 0, Math.PI * 2);
                     ctx.fill();
-                    // Bright pixel core
                     ctx.shadowBlur = 0;
                     ctx.fillStyle = '#fff';
                     ctx.fillRect(Math.round(bullet.x) - 2, Math.round(bullet.y) - 2, 4, 4);
@@ -4230,8 +4203,7 @@ function getDamageMultiplier() {
                     // Pixel-art arrow rotated in direction of travel
                     ctx.translate(bullet.x, bullet.y);
                     ctx.rotate(bAngle);
-                    ctx.shadowBlur = 6;
-                    ctx.shadowColor = '#2ecc71';
+                    ctx.shadowBlur = 0;
                     // Arrow shaft (wood)
                     ctx.fillStyle = '#8e6b3e';
                     ctx.fillRect(-10, -1, 16, 2);
@@ -4272,8 +4244,7 @@ function getDamageMultiplier() {
                     const spin = Date.now() * 0.01;
                     ctx.translate(bullet.x, bullet.y);
                     ctx.rotate(spin);
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = '#f39c12';
+                    ctx.shadowBlur = 0;
                     // 4-pointed star blade
                     ctx.fillStyle = '#d4ac6e';
                     ctx.beginPath();
@@ -4302,11 +4273,10 @@ function getDamageMultiplier() {
                     ctx.fillRect(-2, -2, 4, 4);
 
                 } else {
-                    // Knight: Glowing energy diamond / blade projectile
+                    // Knight: Energy diamond / blade projectile
                     ctx.translate(bullet.x, bullet.y);
                     ctx.rotate(bAngle);
-                    ctx.shadowBlur = 14;
-                    ctx.shadowColor = '#4facfe';
+                    ctx.shadowBlur = 0;
                     // Outer diamond
                     ctx.fillStyle = '#4facfe';
                     ctx.beginPath();
@@ -4985,7 +4955,24 @@ function getDamageMultiplier() {
             gameState.powerups = gameState.powerups.filter(p => p.id !== powerupId);
         }
 
+        let _playersListDirty = true;
+        let _lastPlayersListUpdate = 0;
+        function schedulePlayersListUpdate() {
+            _playersListDirty = true;
+        }
+        // Actual DOM update, called at most once per 500ms from gameLoop
+        function flushPlayersListUpdate() {
+            const now = Date.now();
+            if (!_playersListDirty || now - _lastPlayersListUpdate < 500) return;
+            _playersListDirty = false;
+            _lastPlayersListUpdate = now;
+            _updatePlayersListDOM();
+        }
         function updatePlayersList() {
+            // For backward compat, schedule + immediate if not in tight loop
+            schedulePlayersListUpdate();
+        }
+        function _updatePlayersListDOM() {
             const list = document.getElementById('playersList');
             const players = Object.values(gameState.otherPlayers);
 
