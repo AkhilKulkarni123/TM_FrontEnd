@@ -161,6 +161,7 @@
         var localDeathKiller = '';
         var localDeathTime = 0;
         var DEATH_REDIRECT_DELAY = 2500; // ms before redirecting after death
+        var userClickedPlay = false; // gate: don't join/hide intro until user picks pattern & clicks play
 
         // ========== Pattern chooser ==========
         window.SlitherRush._selectedPattern = 'solid';
@@ -195,6 +196,7 @@
 
         function hideIntroOverlay() {
             if (!introOverlay) return;
+            if (!userClickedPlay) return; // don't hide until user has clicked Enter Arena
             introOverlay.classList.remove('active');
         }
 
@@ -254,6 +256,7 @@
         }
 
         function enterArenaNow() {
+            userClickedPlay = true;
             hideIntroOverlay();
             retrySpawn();
         }
@@ -284,13 +287,19 @@
         client.on('connected', function () {
             stateSeenAt = Date.now();
             lastJoinNudgeAt = 0;
-            setStatus('Connected to ' + currentEndpointLabel() + ' • joining arena...');
+            if (userClickedPlay) {
+                setStatus('Connected to ' + currentEndpointLabel() + ' • joining arena...');
+            } else {
+                setStatus('Connected • choose your pattern and click Enter Arena');
+            }
         });
 
         client.on('joined', function (payload) {
             stateSeenAt = Date.now();
-            setStatus('Connected • live arena');
-            hideIntroOverlay();
+            if (userClickedPlay) {
+                setStatus('Connected • live arena');
+                hideIntroOverlay();
+            }
             var target = profile.party_id || (payload && payload.arena_id) || '';
             setSocialActivity('slitherrush', target, 'In SLITHERRUSH FFA');
         });
@@ -300,8 +309,8 @@
             stateSeenAt = Date.now();
             var players = Array.isArray(payload.players) ? payload.players : [];
             var selfPlayer = players.find(function (p) { return p.id === payload.self_id; }) || null;
-            if (selfPlayer && selfPlayer.status === 'alive') hideIntroOverlay();
-            setStatus('Live arena • ' + players.length + ' players');
+            if (userClickedPlay && selfPlayer && selfPlayer.status === 'alive') hideIntroOverlay();
+            if (userClickedPlay) setStatus('Live arena • ' + players.length + ' players');
         });
 
         client.on('death', function (payload) {
@@ -343,7 +352,7 @@
             }
 
             if (!state) {
-                if (client.isConnected() && now - lastJoinNudgeAt > 1200) {
+                if (userClickedPlay && client.isConnected() && now - lastJoinNudgeAt > 1200) {
                     client.requestJoin(profile);
                     lastJoinNudgeAt = now;
                 }

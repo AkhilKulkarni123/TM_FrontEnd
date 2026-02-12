@@ -23,6 +23,7 @@
 
         this.camera = { x: 0, y: 0 };
         this.smoothedHeads = {};
+        this.smoothedBodies = {}; // per-player smoothed body positions
         this.backgroundPattern = null;
 
         this.resize();
@@ -111,8 +112,8 @@
         var targetX = clamp(target.x, halfW, Math.max(halfW, bounds.width - halfW));
         var targetY = clamp(target.y, halfH, Math.max(halfH, bounds.height - halfH));
 
-        this.camera.x = lerp(this.camera.x, targetX, 0.22);
-        this.camera.y = lerp(this.camera.y, targetY, 0.22);
+        this.camera.x = lerp(this.camera.x, targetX, 0.12);
+        this.camera.y = lerp(this.camera.y, targetY, 0.12);
     };
 
     Renderer.prototype._drawBackground = function () {
@@ -297,7 +298,7 @@
             var bx = Number(bullet.x || 0);
             var by = Number(bullet.y || 0);
             var p = this.worldToScreen(bx, by);
-            if (p.x < -40 || p.x > this.view.width + 40 || p.y < -40 || p.y > this.view.height + 40) continue;
+            if (p.x < -60 || p.x > this.view.width + 60 || p.y < -60 || p.y > this.view.height + 60) continue;
 
             var dx = Number(bullet.dx || bullet.direction_x || 0);
             var dy = Number(bullet.dy || bullet.direction_y || 0);
@@ -305,60 +306,93 @@
             dx /= mag;
             dy /= mag;
 
-            var pulse = 0.85 + Math.sin(nowMs * 0.012 + i * 1.7) * 0.15;
+            var pulse = 0.88 + Math.sin(nowMs * 0.01 + i * 1.7) * 0.12;
             var ownerColor = bullet.color || '#ffe58a';
+            var angle = Math.atan2(dy, dx);
 
-            // Outer glow halo
-            var glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 18 * pulse);
-            glowGrad.addColorStop(0, 'rgba(255, 240, 180, 0.35)');
-            glowGrad.addColorStop(0.4, 'rgba(255, 200, 80, 0.15)');
-            glowGrad.addColorStop(1, 'rgba(255, 180, 60, 0)');
-            ctx.beginPath();
-            ctx.fillStyle = glowGrad;
-            ctx.arc(p.x, p.y, 18 * pulse, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Directional trail (3 trailing dots)
-            for (var t = 1; t <= 3; t++) {
-                var trailX = p.x - dx * t * 7;
-                var trailY = p.y - dy * t * 7;
-                var trailAlpha = 0.3 - t * 0.08;
-                var trailR = 3.5 - t * 0.7;
+            // === Comet trail (long, fading) ===
+            var trailLen = 7;
+            for (var t = trailLen; t >= 1; t--) {
+                var trailX = p.x - dx * t * 8;
+                var trailY = p.y - dy * t * 8;
+                var trailAlpha = (1 - t / trailLen) * 0.35;
+                var trailR = (1 - t / trailLen) * 4.5 + 1;
                 ctx.beginPath();
-                ctx.fillStyle = 'rgba(255, 230, 140, ' + trailAlpha + ')';
-                ctx.arc(trailX, trailY, Math.max(1, trailR), 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 230, 140, ' + trailAlpha.toFixed(3) + ')';
+                ctx.arc(trailX, trailY, Math.max(0.8, trailR), 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            // Core bullet — elongated ellipse in direction of travel
+            // === Expanding energy ring ===
+            var ringPhase = (nowMs * 0.004 + i * 2.3) % 1;
+            var ringRadius = 8 + ringPhase * 22;
+            var ringAlpha = (1 - ringPhase) * 0.25;
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 220, 100, ' + ringAlpha.toFixed(3) + ')';
+            ctx.lineWidth = 1.5 * (1 - ringPhase);
+            ctx.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Second staggered ring
+            var ringPhase2 = (nowMs * 0.004 + i * 2.3 + 0.5) % 1;
+            var ringRadius2 = 8 + ringPhase2 * 22;
+            var ringAlpha2 = (1 - ringPhase2) * 0.15;
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 200, 80, ' + ringAlpha2.toFixed(3) + ')';
+            ctx.lineWidth = 1.2 * (1 - ringPhase2);
+            ctx.arc(p.x, p.y, ringRadius2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // === Outer glow halo ===
+            var glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22 * pulse);
+            glowGrad.addColorStop(0, 'rgba(255, 245, 200, 0.45)');
+            glowGrad.addColorStop(0.3, 'rgba(255, 210, 90, 0.2)');
+            glowGrad.addColorStop(0.7, 'rgba(255, 180, 60, 0.06)');
+            glowGrad.addColorStop(1, 'rgba(255, 180, 60, 0)');
+            ctx.beginPath();
+            ctx.fillStyle = glowGrad;
+            ctx.arc(p.x, p.y, 22 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // === Core bullet — elongated comet shape ===
             ctx.save();
             ctx.translate(p.x, p.y);
-            var angle = Math.atan2(dy, dx);
             ctx.rotate(angle);
+
+            // Motion streak behind core
+            var streakGrad = ctx.createLinearGradient(-18, 0, 8, 0);
+            streakGrad.addColorStop(0, 'rgba(255, 230, 150, 0)');
+            streakGrad.addColorStop(0.6, 'rgba(255, 230, 150, 0.2)');
+            streakGrad.addColorStop(1, ownerColor);
+            ctx.beginPath();
+            ctx.ellipse(-3, 0, 14 * pulse, 3 * pulse, 0, 0, Math.PI * 2);
+            ctx.fillStyle = streakGrad;
+            ctx.fill();
 
             // Bright core ellipse
             ctx.beginPath();
-            ctx.ellipse(0, 0, 7 * pulse, 3.5 * pulse, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 8 * pulse, 4 * pulse, 0, 0, Math.PI * 2);
             ctx.fillStyle = ownerColor;
             ctx.fill();
 
-            // Inner white highlight
+            // Hot white center
             ctx.beginPath();
-            ctx.ellipse(1, -0.5, 3.5 * pulse, 1.5 * pulse, 0, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.ellipse(1.5, -0.5, 4 * pulse, 2 * pulse, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             ctx.fill();
 
             ctx.restore();
 
-            // Spark particles around bullet
-            for (var s = 0; s < 3; s++) {
-                var sparkAngle = (nowMs * 0.008 + s * 2.1 + i) % (Math.PI * 2);
-                var sparkDist = 9 + Math.sin(nowMs * 0.015 + s) * 4;
+            // === Orbiting spark particles ===
+            for (var s = 0; s < 5; s++) {
+                var sparkAngle = (nowMs * 0.006 + s * 1.26 + i * 0.7) % (Math.PI * 2);
+                var sparkDist = 10 + Math.sin(nowMs * 0.012 + s * 1.3) * 5;
                 var sx = p.x + Math.cos(sparkAngle) * sparkDist;
                 var sy = p.y + Math.sin(sparkAngle) * sparkDist;
+                var sparkBright = 0.35 + Math.sin(nowMs * 0.008 + s * 0.9) * 0.25;
                 ctx.beginPath();
-                ctx.fillStyle = 'rgba(255, 220, 120, ' + (0.4 + Math.sin(nowMs * 0.01 + s * 0.8) * 0.2) + ')';
-                ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 230, 140, ' + sparkBright.toFixed(3) + ')';
+                ctx.arc(sx, sy, 1.3 + Math.sin(nowMs * 0.01 + s) * 0.5, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -478,11 +512,71 @@
         return player.body;
     };
 
+    // Smooth all body segment positions for a player
+    Renderer.prototype._getSmoothedBody = function (player) {
+        var raw = this._getBodyPoints(player);
+        if (!raw.length) return raw;
+
+        var key = player.id || 'anon';
+        var cached = this.smoothedBodies[key];
+        var bodyLerp = 0.25; // how quickly body catches up (lower = smoother)
+
+        if (!cached || cached.length !== raw.length) {
+            // Initialize or reset on length change
+            this.smoothedBodies[key] = raw.map(function (pt) {
+                return { x: pt.x, y: pt.y };
+            });
+            return this.smoothedBodies[key];
+        }
+
+        for (var i = 0; i < raw.length; i++) {
+            cached[i].x = lerp(cached[i].x, raw[i].x, bodyLerp);
+            cached[i].y = lerp(cached[i].y, raw[i].y, bodyLerp);
+        }
+        return cached;
+    };
+
+    // Catmull-Rom spline through body points for smooth curves
+    Renderer.prototype._drawSmoothBodyPath = function (ctx, body) {
+        if (body.length < 2) return;
+
+        var points = [];
+        for (var i = 0; i < body.length; i++) {
+            points.push(this.worldToScreen(body[i].x, body[i].y));
+        }
+
+        if (points.length === 2) {
+            ctx.moveTo(points[0].x, points[0].y);
+            ctx.lineTo(points[1].x, points[1].y);
+            return;
+        }
+
+        // Move to first point
+        ctx.moveTo(points[0].x, points[0].y);
+
+        // Use Catmull-Rom splines converted to cubic beziers
+        for (var j = 0; j < points.length - 1; j++) {
+            var p0 = points[Math.max(0, j - 1)];
+            var p1 = points[j];
+            var p2 = points[Math.min(points.length - 1, j + 1)];
+            var p3 = points[Math.min(points.length - 1, j + 2)];
+
+            // Catmull-Rom to cubic bezier control points
+            var tension = 0.35;
+            var cp1x = p1.x + (p2.x - p0.x) * tension;
+            var cp1y = p1.y + (p2.y - p0.y) * tension;
+            var cp2x = p2.x - (p3.x - p1.x) * tension;
+            var cp2y = p2.y - (p3.y - p1.y) * tension;
+
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+    };
+
     Renderer.prototype._drawSlither = function (player, localId) {
         if (!player || !player.head) return;
 
         var ctx = this.ctx;
-        var body = this._getBodyPoints(player);
+        var body = this._getSmoothedBody(player);
         if (!body.length) return;
 
         var color = player.color || '#7ad0ff';
@@ -505,11 +599,7 @@
             var baseWidth = 18 + Math.min(12, snakeLength * 0.3);
 
             ctx.beginPath();
-            for (var i = 0; i < body.length; i++) {
-                var screenPoint = this.worldToScreen(body[i].x, body[i].y);
-                if (i === 0) ctx.moveTo(screenPoint.x, screenPoint.y);
-                else ctx.lineTo(screenPoint.x, screenPoint.y);
-            }
+            this._drawSmoothBodyPath(ctx, body);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.lineWidth = baseWidth;
@@ -550,8 +640,8 @@
             smooth = { x: player.head.x, y: player.head.y };
             this.smoothedHeads[headKey] = smooth;
         }
-        smooth.x = lerp(smooth.x, player.head.x, 0.35);
-        smooth.y = lerp(smooth.y, player.head.y, 0.35);
+        smooth.x = lerp(smooth.x, player.head.x, 0.22);
+        smooth.y = lerp(smooth.y, player.head.y, 0.22);
 
         var head = this.worldToScreen(smooth.x, smooth.y);
         var headRadius = 12 + Math.min(6, snakeLength * 0.15);
