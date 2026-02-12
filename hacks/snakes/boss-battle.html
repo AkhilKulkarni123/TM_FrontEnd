@@ -5132,7 +5132,7 @@ function getDamageMultiplier() {
                 // Calculate local battle stats
                 const stats = gameState.battleStats;
                 const accuracy = stats.bulletsFired > 0
-                    ? Math.round((stats.bulletsHit / stats.bulletsFired) * 100)
+                    ? Math.min(100, Math.round((stats.bulletsHit / stats.bulletsFired) * 100))
                     : 0;
                 const battleTime = stats.battleStartTime
                     ? Math.round((Date.now() - stats.battleStartTime) / 1000)
@@ -5161,7 +5161,7 @@ function getDamageMultiplier() {
                     sortedStats.forEach((player, index) => {
                         const charConfig = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
                         const playerAccuracy = player.bullets_fired > 0
-                            ? Math.round((player.bullets_hit || 0) / player.bullets_fired * 100)
+                            ? Math.min(100, Math.round((player.bullets_hit || 0) / player.bullets_fired * 100))
                             : 0;
                         const isYou = player.username === gameState.player.username;
                         const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
