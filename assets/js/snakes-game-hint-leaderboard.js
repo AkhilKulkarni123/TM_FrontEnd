@@ -474,8 +474,12 @@ function createLeaderboardRow(entry, index, currentUserId) {
     var isCurrentUser = !!targetUserId && targetUserId === Number(currentUserId || 0);
     
     if (isCurrentUser) {
-        tr.className = 'current-user-row';
+        tr.classList.add('current-user-row');
     }
+    tr.classList.add('leaderboard-entry-row');
+    if (index === 0) tr.classList.add('rank-row-1');
+    else if (index === 1) tr.classList.add('rank-row-2');
+    else if (index === 2) tr.classList.add('rank-row-3');
 
     var rankClass = '';
     var rankBadge = '';

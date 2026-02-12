@@ -2345,3 +2345,84 @@ textarea:focus-visible {
 .snakes-theme .hint-card-steps li::before {
   color: #667eea;
 }
+
+/* ======================================================
+   Leaderboard readability + Top10 section stability
+   Keeps Top 10 / Your Position functionality intact.
+   ====================================================== */
+.leaderboard-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaderboard-table-container {
+  margin: 0;
+  padding: 0;
+}
+
+#leaderboard-table {
+  margin: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+#leaderboard-table td,
+#leaderboard-table th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#leaderboard-table tbody tr.leaderboard-meta-row,
+#leaderboard-table tbody tr.leaderboard-meta-row:hover {
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+#leaderboard-table tbody tr.leaderboard-meta-row > td {
+  padding: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.leaderboard-section-header {
+  display: block;
+  margin: 0;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.18));
+  color: #2a315f !important;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-top: 1px solid rgba(102, 126, 234, 0.25);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.25);
+}
+
+#leaderboard-table .leaderboard-player-name,
+#leaderboard-table .player-col,
+#leaderboard-table .bullets-col,
+#leaderboard-table .time-col {
+  color: #141a33 !important;
+  font-weight: 600;
+}
+
+#leaderboard-table tbody tr.rank-row-1 {
+  background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%) !important;
+}
+
+#leaderboard-table tbody tr.rank-row-2 {
+  background: linear-gradient(90deg, #c0c0c0 0%, #e8e8e8 100%) !important;
+}
+
+#leaderboard-table tbody tr.rank-row-3 {
+  background: linear-gradient(90deg, #cd7f32 0%, #e09856 100%) !important;
+}
+
+#leaderboard-table tbody tr.rank-row-1 td,
+#leaderboard-table tbody tr.rank-row-2 td {
+  color: #2b2b2b !important;
+}
+
+#leaderboard-table tbody tr.rank-row-3 td {
+  color: #ffffff !important;
+}
