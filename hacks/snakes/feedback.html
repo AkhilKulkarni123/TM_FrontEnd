@@ -124,34 +124,9 @@
             line-height: 1.4;
         }
 
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            border-radius: 999px;
-            padding: 8px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.45), rgba(var(--accent-2-rgb), 0.35));
-            border-color: rgba(var(--accent-rgb), 0.6);
-        }
-
         .feedback-list {
             display: grid;
             gap: 12px;
-            max-height: 520px;
-            overflow-y: auto;
-            padding-right: 6px;
         }
 
         .feedback-card {
@@ -229,16 +204,7 @@
 
             <div class="panel">
                 <h2>Community Feedback</h2>
-                <div class="tabs">
-                    <button class="tab-btn active" data-filter="all" type="button">All Feedback</button>
-                    <button class="tab-btn" data-filter="mine" type="button">My Feedback</button>
-                </div>
                 <div class="feedback-list" id="feedbackList"></div>
-                <div class="feedback-pagination" id="feedbackPagination">
-                    <button class="btn secondary" type="button" id="prevPageBtn">Previous</button>
-                    <span class="meta-note" id="pageInfo">Page 1</span>
-                    <button class="btn secondary" type="button" id="nextPageBtn">Next</button>
-                </div>
             </div>
         </section>
 
@@ -260,16 +226,10 @@
         const displayNameInput = document.getElementById('displayName');
         const feedbackInput = document.getElementById('feedbackText');
         const feedbackList = document.getElementById('feedbackList');
-        const prevPageBtn = document.getElementById('prevPageBtn');
-        const nextPageBtn = document.getElementById('nextPageBtn');
-        const pageInfo = document.getElementById('pageInfo');
         const clearFormBtn = document.getElementById('clearFormBtn');
         const storageNote = document.getElementById('storageNote');
 
-        let currentFilter = 'all';
         let currentUser = null;
-        let currentPage = 1;
-        const pageSize = 6;
         let localUserId = localStorage.getItem(USER_KEY);
         if (!localUserId) {
             localUserId = 'user-' + Math.random().toString(36).slice(2, 10);
@@ -381,27 +341,15 @@
 
         function renderEntries(entriesOverride = null) {
             const entries = entriesOverride || loadEntries();
-            const filtered = currentFilter === 'mine'
-                ? entries.filter(entry => entry.localUserId === localUserId)
-                : entries;
-            const sorted = filtered
+            const sorted = entries
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-            if (currentPage > totalPages) currentPage = totalPages;
-
-            const startIndex = (currentPage - 1) * pageSize;
-            const pageItems = sorted.slice(startIndex, startIndex + pageSize);
 
             if (!sorted.length) {
                 feedbackList.innerHTML = '<div class="empty-state">No feedback yet. Be the first to share!</div>';
-                pageInfo.textContent = 'Page 1';
-                prevPageBtn.disabled = true;
-                nextPageBtn.disabled = true;
                 return;
             }
 
-            feedbackList.innerHTML = pageItems
+            feedbackList.innerHTML = sorted
                 .map(entry => {
                     const safeName = entry.displayName || entry.localUserId || 'Anonymous Champion';
                     const created = new Date(entry.createdAt).toLocaleString();
@@ -414,10 +362,6 @@
                     `;
                 })
                 .join('');
-
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage === totalPages;
         }
 
         form.addEventListener('submit', async (event) => {
@@ -460,28 +404,6 @@
         clearFormBtn.addEventListener('click', () => {
             displayNameInput.value = '';
             feedbackInput.value = '';
-        });
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
-                currentPage = 1;
-                renderEntries();
-            });
-        });
-
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage -= 1;
-                renderEntries();
-            }
-        });
-
-        nextPageBtn.addEventListener('click', () => {
-            currentPage += 1;
-            renderEntries();
         });
 
         function goToVictory() {
