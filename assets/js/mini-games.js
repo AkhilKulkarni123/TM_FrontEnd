@@ -491,6 +491,90 @@
 
                 return state;
             }
+        },
+
+        // Game 6: Loop Racer - Guide character through maze using loop commands (AP CSP 3.8)
+        loopRacer: {
+            name: 'Loop Racer',
+            description: 'Guide your character through a maze using loop commands!',
+            init: function(container, onComplete) {
+                const state = { score: 0, total: 5, completed: false };
+                const challenges = [
+                    { instruction: 'Move the robot 3 steps right', answer: 'repeat 3 { moveRight() }', options: ['repeat 3 { moveRight() }', 'moveRight(3)', 'for i in 3: move()', 'loop(3, right)'] },
+                    { instruction: 'Collect 4 coins in a row', answer: 'repeat 4 { collect() }', options: ['collect(4)', 'repeat 4 { collect() }', 'for coin in 4: get()', 'loop collect 4'] },
+                    { instruction: 'Move up 2, then right 3', answer: 'repeat 2 { moveUp() } repeat 3 { moveRight() }', options: ['repeat 2 { moveUp() } repeat 3 { moveRight() }', 'move(up2, right3)', 'repeat 5 { move() }', 'moveUp(2) moveRight(3)'] },
+                    { instruction: 'Jump over 3 obstacles', answer: 'repeat 3 { jump() }', options: ['jump(3)', 'repeat 3 { jump() }', 'for i in 3: jump', 'loop jump(3)'] },
+                    { instruction: 'Move right until wall (5 steps)', answer: 'while not wall { moveRight() }', options: ['moveRight(5)', 'repeat 5 { moveRight() }', 'while not wall { moveRight() }', 'until wall: moveRight()'] }
+                ];
+
+                container.innerHTML = `
+                    <div class="mini-game loop-racer" style="width: 100%;">
+                        <div class="game-header">
+                            <div class="game-timer"><span id="timer">45</span>s</div>
+                            <span class="game-title">🏎️ Loop Racer</span>
+                            <div class="game-score">Score: <span id="score">0</span>/${state.total}</div>
+                        </div>
+                        <div class="game-instructions" style="margin-bottom: 15px; font-size: 0.9em;">
+                            <strong>🎯 Goal:</strong> Pick the correct loop command to guide your character!
+                            <strong style="margin-left: 10px;">💡 AP CSP:</strong> Topic 3.8 - Iteration
+                        </div>
+                        <div class="race-area" id="race-area" style="width: 100%;"></div>
+                    </div>
+                `;
+
+                const raceArea = container.querySelector('#race-area');
+                let currentChallenge = 0;
+
+                function showChallenge() {
+                    if (currentChallenge >= challenges.length) {
+                        state.completed = true;
+                        onComplete(true, 100);
+                        return;
+                    }
+
+                    const challenge = challenges[currentChallenge];
+                    const shuffled = [...challenge.options].sort(() => Math.random() - 0.5);
+
+                    raceArea.innerHTML = `
+                        <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                            <div style="font-size: 1.1em; font-weight: bold; color: #2e7d32; margin-bottom: 8px;">Challenge ${currentChallenge + 1} of ${challenges.length}</div>
+                            <div style="font-size: 1.3em; color: #1b5e20;">${challenge.instruction}</div>
+                        </div>
+                        <div class="options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            ${shuffled.map(opt => `
+                                <button class="loop-option" data-answer="${opt}" style="padding: 14px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-family: monospace; font-size: 0.95em; text-align: center; transition: all 0.2s;">${opt}</button>
+                            `).join('')}
+                        </div>
+                    `;
+
+                    raceArea.querySelectorAll('.loop-option').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            if (btn.dataset.answer === challenge.answer) {
+                                btn.style.background = '#d4edda';
+                                btn.style.borderColor = '#28a745';
+                                state.score++;
+                                container.querySelector('#score').textContent = state.score;
+                                currentChallenge++;
+                                setTimeout(() => showChallenge(), 400);
+                            } else {
+                                btn.style.background = '#f8d7da';
+                                btn.style.borderColor = '#dc3545';
+                                setTimeout(() => {
+                                    btn.style.background = '#f5f5f5';
+                                    btn.style.borderColor = '#e0e0e0';
+                                }, 400);
+                            }
+                        });
+                    });
+                }
+
+                showChallenge();
+                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
+                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
+                });
+
+                return state;
+            }
         }
     };
 
@@ -2267,7 +2351,7 @@
     };
 
     const GAME_NAMES = {
-        1: ['binaryConverter', 'dataTypeDetective', 'ifThenTower', 'bugSquasher', 'algorithmChef'],
+        1: ['binaryConverter', 'dataTypeDetective', 'ifThenTower', 'bugSquasher', 'algorithmChef', 'loopRacer'],
         2: ['arrayAssembler', 'listLoopTracer', 'dataCleaner', 'abstractionBuilder', 'nestedNavigator'],
         3: ['ipAddressMatcher', 'dnsSpeedRun', 'packetPathfinder', 'urlDecoder', 'routerRush'],
         4: ['passwordStrengthSmash', 'caesarCipherCracker', 'phishingDetector', 'firewallFrenzy', 'encryptionKeyMatch'],
