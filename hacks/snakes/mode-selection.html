@@ -485,6 +485,33 @@
             font-weight: bold;
             margin-left: 5px;
         }
+
+        /* Player count badge */
+        .mode-card .player-count-badge {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.85);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .boss-mode .player-count-badge   { border-color: rgba(233, 69, 96, 0.45); }
+        .pvp-mode .player-count-badge    { border-color: rgba(79, 172, 254, 0.45); }
+        .slitherrush-mode .player-count-badge { border-color: rgba(243, 156, 18, 0.45); }
+        .platformer-mode .player-count-badge  { border-color: rgba(46, 204, 113, 0.45); }
+        
     </style>
     <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
 </head>
@@ -516,9 +543,10 @@
     <div class="mode-container">
         <!-- Boss Battle Mode -->
         <div class="mode-card boss-mode" onclick="selectMode('boss')">
+            <div class="player-count-badge">👥 10 max</div>
             <span class="mode-icon"></span>
             <h2 class="mode-title">Boss Battle</h2>
-            <p class="mode-description">Team up with other players to defeat the mighty dragon boss!</p>
+            <p class="mode-description">Team up with other players to defeat the mighty snake boss!</p>
             <ul class="mode-features">
                 <li>Cooperative multiplayer (up to 10 players)</li>
                 <li>Shared boss health pool</li>
@@ -530,6 +558,7 @@
 
         <!-- PVP Mode -->
         <div class="mode-card pvp-mode" onclick="selectMode('pvp')" id="pvpCard">
+            <div class="player-count-badge">⚔️ 1v1</div>
             <span class="mode-icon"></span>
             <h2 class="mode-title">PVP Arena</h2>
             <p class="mode-description">Go head-to-head against another player in an intense duel!</p>
@@ -546,6 +575,7 @@
 
         <!-- SLITHERRUSH Mode -->
         <div class="mode-card slitherrush-mode" onclick="selectMode('slitherrush')" id="slitherrushCard">
+            <div class="player-count-badge">👥 Multiplayer</div>
             <span class="mode-icon"></span>
             <h2 class="mode-title">SLITHERRUSH</h2>
             <p class="mode-description">Out-steer rivals, grow your slither, and survive to become the last one alive.</p>
@@ -585,6 +615,7 @@
 
         <!-- Platformer Mode -->
         <div class="mode-card platformer-mode" onclick="selectMode('platformer')" id="platformerCard">
+            <div class="player-count-badge">🧍 Solo</div>
             <span class="mode-icon"></span>
             <h2 class="mode-title">Platformer Gauntlet</h2>
             <p class="mode-description">Race through an obstacle course to reach the exit gate.</p>
