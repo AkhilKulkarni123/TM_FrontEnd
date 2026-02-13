@@ -45,6 +45,16 @@ categories: ['Backend', 'Game Development']
     color: #667eea;
     letter-spacing: 8px;
 }
+.explain-box {
+    background: rgba(102, 126, 234, 0.08);
+    border-left: 4px solid #667eea;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+.explain-box strong { color: #4facfe; }
 .endpoint-table {
     width: 100%;
     border-collapse: collapse;
@@ -119,13 +129,6 @@ categories: ['Backend', 'Game Development']
     margin: 0;
     font-size: 0.88em;
 }
-.highlight-box {
-    background: rgba(102, 126, 234, 0.1);
-    border-left: 4px solid #667eea;
-    border-radius: 0 10px 10px 0;
-    padding: 14px 18px;
-    margin: 16px 0;
-}
 .team-banner {
     display: flex;
     gap: 16px;
@@ -156,6 +159,22 @@ categories: ['Backend', 'Game Development']
 }
 .csp-card h4 { margin: 0 0 4px 0; font-size: 0.9em; color: #4facfe; }
 .csp-card p { margin: 0; font-size: 0.83em; opacity: 0.9; }
+.snippet-explain {
+    background: rgba(67, 233, 123, 0.06);
+    border: 1px solid rgba(67, 233, 123, 0.2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: -8px 0 18px 0;
+    font-size: 0.88em;
+    line-height: 1.65;
+}
+.snippet-explain strong { color: #43e97b; }
+.line-explain {
+    display: block;
+    margin: 6px 0;
+    padding-left: 12px;
+    border-left: 2px solid rgba(67, 233, 123, 0.3);
+}
 </style>
 
 ## Backend Team
@@ -192,16 +211,26 @@ categories: ['Backend', 'Game Development']
     </div>
 </div>
 
-The frontend (Jekyll static site) makes REST calls and WebSocket connections to the Flask backend running on port **8306**. Gunicorn serves the app with an **eventlet** worker class for async WebSocket support. Nginx reverse-proxies traffic from `snakes.opencodingsociety.com` to the container. SQLAlchemy handles all database operations.
+<div class="explain-box">
+<strong>What each layer does in plain English:</strong><br><br>
+<strong>Jekyll Frontend</strong> — This is what the user sees. Jekyll is a static site generator that turns our HTML/CSS/JS files into a website hosted for free on GitHub Pages. It has zero backend logic — it just sends requests to our server.<br><br>
+<strong>Flask REST API</strong> — Flask is a Python web framework. "REST API" means our server exposes URLs (like <code>/api/snakes/leaderboard</code>) that the frontend can call to read or write data. Think of it like a waiter: the frontend places an order (request), Flask processes it, and sends back the result (response) as JSON.<br><br>
+<strong>Socket.IO (WebSockets)</strong> — Normal HTTP is one-way: the frontend asks, the server answers. WebSockets open a two-way connection that stays open, so the server can push updates to players instantly. This is how multiplayer works — when Player A moves, the server immediately tells Player B without Player B having to ask. Eventlet is the async engine that lets one server handle many simultaneous socket connections.<br><br>
+<strong>SQLAlchemy ORM</strong> — ORM stands for Object-Relational Mapping. Instead of writing raw SQL queries like <code>SELECT * FROM users WHERE id=5</code>, we write Python: <code>User.query.filter_by(id=5).first()</code>. SQLAlchemy translates our Python classes into database tables automatically.<br><br>
+<strong>Docker + Nginx</strong> — Docker packages our entire app (code + Python + all dependencies) into a container, so it runs identically on any machine. Nginx is a web server that sits in front of our app — when someone visits <code>snakes.opencodingsociety.com</code>, Nginx receives the request and forwards it to our Flask container on port 8306. Gunicorn is the production-grade server that actually runs our Flask code inside the container.
+</div>
 
 ---
 
 ## App Routes & Blueprint Registration
 
-The backend registers **15+ Flask Blueprints** in `main.py`, each handling a domain:
+<div class="explain-box">
+<strong>What are app routes?</strong> A route is a URL pattern that maps to a Python function. When someone visits <code>/api/snakes/leaderboard</code>, Flask looks up which function handles that URL and runs it. <strong>Blueprints</strong> are Flask's way of organizing routes into groups — instead of putting all 20+ endpoints in one file, we split them into logical modules (game routes, admin routes, user routes, etc.) and register each blueprint with the main app.
+</div>
 
 ```python
 # main.py — Blueprint registration
+# Each line connects a group of URL routes to the main app
 app.register_blueprint(snakes_game_api)   # /api/snakes — core game CRUD
 app.register_blueprint(snakes_bp)         # /api/snakes — extended endpoints
 app.register_blueprint(admin_api)         # /api/admin  — admin dashboard
@@ -209,6 +238,10 @@ app.register_blueprint(boss_api)          # /api/boss   — boss battle rooms
 app.register_blueprint(game_api)          # /api/game   — game progress
 app.register_blueprint(user_api)          # /api/user   — user management
 ```
+
+<div class="snippet-explain">
+<strong>Line-by-line:</strong> Each <code>register_blueprint()</code> call takes all the routes defined in a separate file and attaches them to the main Flask app. For example, <code>snakes_game_api</code> is defined in <code>api/snakes_game.py</code> — it contains all the game endpoints like leaderboard, champions, etc. When the app starts, Flask knows: "if a request comes in for <code>/api/snakes/leaderboard</code>, run the function in the snakes_game_api blueprint." This keeps our code modular — each file handles one responsibility.
+</div>
 
 | Route Pattern | Purpose |
 |---|---|
@@ -222,6 +255,14 @@ app.register_blueprint(user_api)          # /api/user   — user management
 ---
 
 ## API Endpoints
+
+<div class="explain-box">
+<strong>What is an API endpoint?</strong> An endpoint is a specific URL + HTTP method combination that does one thing. The frontend calls these endpoints using <code>fetch()</code> in JavaScript. The four main HTTP methods are:<br>
+- <strong>GET</strong> = Read data (like loading your game progress)<br>
+- <strong>POST</strong> = Create or submit data (like answering a question)<br>
+- <strong>PUT</strong> = Update existing data (like autosaving your position)<br>
+- <strong>DELETE</strong> = Remove data (like deleting a game record)
+</div>
 
 ### Game State Endpoints (`/api/snakes/`)
 
@@ -243,6 +284,10 @@ app.register_blueprint(user_api)          # /api/user   — user management
 <tr><td><code>/api/snakes/active-players</code></td><td><span class="method-badge method-get">GET</span></td><td>Players updated in last 10s</td><td>—</td></tr>
 <tr><td><code>/api/snakes/unvisited-squares</code></td><td><span class="method-badge method-get">GET</span></td><td>List of unvisited question squares</td><td>—</td></tr>
 </table>
+
+<div class="explain-box">
+<strong>How the frontend uses these:</strong> When a player finishes a lesson, the JavaScript on the page runs <code>fetch('https://snakes.opencodingsociety.com/api/snakes/complete-lesson', { method: 'POST', body: JSON.stringify({lesson_number: 3, bullets_earned: 10}) })</code>. The Flask server receives this, finds the player's database record, adds lesson 3 to their <code>completed_lessons</code> list, adds 10 to their bullet count, checks if all 5 lessons are done (and if so, unlocks the next board section), saves to the database, and sends back the updated state as JSON.
+</div>
 
 ### Admin Endpoints (`/api/admin/`)
 
@@ -282,6 +327,10 @@ app.register_blueprint(user_api)          # /api/user   — user management
     <div class="flow-step">@token_required() on every API call</div>
 </div>
 
+<div class="explain-box">
+<strong>What is this flow showing?</strong> When a user logs in, their username and password are sent to the server. The server checks if they match a record in the database. If yes, it creates a <strong>JWT (JSON Web Token)</strong> — a small encrypted string that contains the user's ID. This token gets stored in an <strong>HttpOnly cookie</strong> (a cookie that JavaScript cannot read, making it safe from XSS attacks). From now on, every time the frontend makes an API call, the browser automatically sends this cookie along. The server reads the token, decodes who the user is, and knows which game data to load or update.
+</div>
+
 ```python
 # api/jwt_authorize.py — Token decorator
 def token_required():
@@ -296,7 +345,13 @@ def token_required():
     return decorator
 ```
 
-The `@token_required()` decorator extracts the user from the JWT payload and stores it in Flask's `g.current_user` context. Every game API call goes through this — associating data with the correct `SnakesGameData` record. **Guest mode** bypasses auth and uses `sessionStorage` (no server persistence).
+<div class="snippet-explain">
+<strong>What this code does step by step:</strong>
+<span class="line-explain"><code>token = request.cookies.get('jwt')</code> — Grabs the JWT token from the browser's cookies that were sent with the request.</span>
+<span class="line-explain"><code>jwt.decode(token, SECRET_KEY, algorithms=['HS256'])</code> — Decodes (decrypts) the token using our secret key. HS256 is the encryption algorithm. If someone tampered with the token, this line would fail and reject the request.</span>
+<span class="line-explain"><code>g.current_user = User.query.filter_by(_uid=data['_uid']).first()</code> — Uses the user ID from inside the token to look up the full user record from the database, then stores it in Flask's <code>g</code> object so any endpoint function can access <code>g.current_user</code>.</span>
+<span class="line-explain"><strong>The decorator pattern:</strong> <code>@token_required()</code> is placed above any endpoint function that needs authentication. It runs this validation code <em>before</em> the endpoint's actual logic — like a security guard checking your ID before letting you into a building.</span>
+</div>
 
 ### Game Progression Pipeline
 
@@ -316,9 +371,15 @@ The `@token_required()` decorator extracts the user from the JWT payload and sto
     <div class="flow-step">POST /complete</div>
 </div>
 
-The server enforces **section gating**: `unlocked_sections` progresses from `['half1']` → `['half1','half2']` (after 5 lessons) → `['half1','half2','boss']` (after reaching square 56). The backend validates every transition server-side — clients cannot skip ahead.
+<div class="explain-box">
+<strong>What is section gating?</strong> The backend enforces a strict order of progression. The player's <code>unlocked_sections</code> list starts as <code>['half1']</code> — they can only access the first part of the board (lessons). After completing all 5 lessons, the server appends <code>'half2'</code> to the list, unlocking the question section. After reaching square 56, <code>'boss'</code> gets appended, unlocking battle modes. The frontend checks this list to show/hide sections — but critically, the <strong>backend also validates</strong> every request, so even if someone tried to hack the frontend to skip ahead, the server would reject it.
+</div>
 
 ### Real-Time Multiplayer (Socket.IO)
+
+<div class="explain-box">
+<strong>Why WebSockets instead of regular HTTP?</strong> Regular HTTP works like texting — the frontend sends a message, waits for a reply, conversation over. For multiplayer gaming, we need a phone call — both sides can talk at any time. Socket.IO keeps a persistent connection open between each player and the server. When Player A moves their character, the server instantly pushes that position to all other players in the same room, without them having to ask "did anyone move?" every few milliseconds.
+</div>
 
 Three multiplayer modes run over WebSocket connections:
 
@@ -361,6 +422,10 @@ Three multiplayer modes run over WebSocket connections:
 
 </div>
 
+<div class="explain-box">
+<strong>"Server-authoritative" — what does that mean?</strong> The server is the single source of truth. Players send their inputs (key presses, mouse clicks) to the server, and the <em>server</em> calculates all positions, collisions, and damage. The server then tells every client what happened. This prevents cheating — a player can't modify their local code to say "I have 999 health" because the server tracks health, not the client. The SlitherRush mode takes this furthest: the entire game simulation (30 frames per second) runs on the server. Clients just send steering input and receive the game state to render.
+</div>
+
 **WebSocket JWT auth** — Socket connections authenticate via cookies using `_resolve_socket_user()`:
 
 ```python
@@ -372,9 +437,17 @@ def _resolve_socket_user():
     return User.query.filter_by(_uid=decoded.get('_uid')).first()
 ```
 
+<div class="snippet-explain">
+<strong>Why is this needed?</strong> WebSocket connections don't automatically come with authentication like HTTP requests. This function manually checks: does this socket connection have a valid JWT cookie attached? If yes, decode it and look up the user in the database. If no token exists, return <code>None</code> (the player connects as a guest). This is how the server knows <em>who</em> is sending each <code>boss_shoot</code> or <code>slitherrush_input</code> event.
+</div>
+
 ---
 
 ## Database Design
+
+<div class="explain-box">
+<strong>Why do we need a database?</strong> Without a database, all game progress would vanish when the server restarts. The database is a permanent storage file on the server. Every time a player completes a lesson, answers a question, or earns bullets, we write that change to the database. When they log back in tomorrow, we read it back. SQLAlchemy lets us define database tables as Python classes — each class becomes a table, each attribute becomes a column.
+</div>
 
 ### SnakesGameData Model
 
@@ -388,15 +461,26 @@ class SnakesGameData(db.Model):
     current_square  = db.Column(db.Integer, default=1)
     lives           = db.Column(db.Integer, default=5)
     time_played     = db.Column(db.Float, default=0.0)
-    selected_character    = db.Column(db.String(50))    # knight/wizard/archer/warrior
-    visited_squares       = db.Column(MutableList)      # JSON array [7, 12, 23, ...]
-    completed_lessons     = db.Column(MutableList)      # JSON array [1, 2, 3, 4, 5]
-    unlocked_sections     = db.Column(MutableList)      # ['half1'] → ['half1','half2','boss']
+    selected_character    = db.Column(db.String(50))
+    visited_squares       = db.Column(MutableList)
+    completed_lessons     = db.Column(MutableList)
+    unlocked_sections     = db.Column(MutableList)
     boss_battle_attempts  = db.Column(db.Integer, default=0)
-    game_status     = db.Column(db.String(20), default='active')  # 'active' or 'completed'
+    game_status     = db.Column(db.String(20), default='active')
     completed_at    = db.Column(db.DateTime, nullable=True)
-    last_updated    = db.Column(db.DateTime, auto-updated)
+    last_updated    = db.Column(db.DateTime)
 ```
+
+<div class="snippet-explain">
+<strong>Reading this model like a spreadsheet:</strong> Each row in this table is one player's game save. The columns are:
+<span class="line-explain"><code>id</code> / <code>user_id</code> — Unique identifiers. <code>user_id</code> links to the Users table (<code>ForeignKey</code>) and is <code>unique=True</code> so each user gets exactly one game record.</span>
+<span class="line-explain"><code>total_bullets</code> — Currency earned from lessons and correct answers. Carries over to boss battle as ammo.</span>
+<span class="line-explain"><code>current_square</code> — Player's position on the board (1–56). Defaults to square 1.</span>
+<span class="line-explain"><code>visited_squares</code> — A JSON list like <code>[7, 12, 23, 34]</code> tracking which question squares the player has landed on. <code>MutableList</code> means SQLAlchemy detects when we <code>.append()</code> to it and auto-saves the change.</span>
+<span class="line-explain"><code>completed_lessons</code> — A JSON list like <code>[1, 2, 3, 4, 5]</code>. When all 5 are present, the server unlocks the next section.</span>
+<span class="line-explain"><code>unlocked_sections</code> — Controls what parts of the game the player can access: <code>['half1']</code> → <code>['half1','half2']</code> → <code>['half1','half2','boss']</code>.</span>
+<span class="line-explain"><code>game_status</code> / <code>completed_at</code> — Flips to <code>'completed'</code> with a timestamp when the player finishes. Used by the Hall of Champions to list winners in order.</span>
+</div>
 
 ### Entity Relationships
 
@@ -416,11 +500,11 @@ class SnakesGameData(db.Model):
     <div class="flow-step">BossBattleStats</div>
 </div>
 
-Key design decisions:
-- **One game record per user** (`user_id` is unique) — prevents duplicate state
-- **MutableList JSON columns** for `visited_squares`, `completed_lessons`, `unlocked_sections` — enables in-place list mutation without separate join tables
-- **`last_updated` auto-timestamp** — powers the "active players" query (players updated within 10 seconds)
-- **`completed_at` nullable** — only set when `game_status` flips to `'completed'`, used for Hall of Champions ordering
+<div class="explain-box">
+<strong>What do 1:1 and 1:N mean?</strong><br>
+- <strong>1:1 (one-to-one):</strong> Each User has exactly one SnakesGameData record. One player, one save file.<br>
+- <strong>1:N (one-to-many):</strong> One SnakesGameData record can have many SquareCompletion records — because one player visits many squares. Similarly, one BossRoom can have many BossPlayers (up to 10 in co-op).
+</div>
 
 ---
 
@@ -445,11 +529,13 @@ Key design decisions:
 
 </div>
 
+<div class="explain-box">
+<strong>Why bcrypt?</strong> We never store passwords as plain text. Bcrypt is a hashing algorithm that turns "mypassword123" into an unreadable string like <code>$2b$12$LJ3m4...</code>. Even if someone stole the database, they couldn't reverse the hashes back into passwords. When a user logs in, we hash what they typed and compare it to the stored hash.
+</div>
+
 ---
 
 ## Admin Panel
-
-The admin panel provides a dashboard at `/api/admin/dashboard` with aggregated stats:
 
 ```python
 @admin_api.route('/dashboard', methods=['GET'])
@@ -462,6 +548,14 @@ def admin_dashboard():
     # + boss battle stats, squares completed, etc.
 ```
 
+<div class="snippet-explain">
+<strong>Line-by-line:</strong>
+<span class="line-explain"><code>@admin_api.route('/dashboard', methods=['GET'])</code> — This function runs when someone visits <code>/api/admin/dashboard</code> with a GET request.</span>
+<span class="line-explain"><code>@admin_required()</code> — Before running, it checks: (1) is the user logged in? (2) is their role <code>'Admin'</code>? If not, it returns a 403 Forbidden error. Regular players can never access this.</span>
+<span class="line-explain"><code>User.query.count()</code> — Counts every row in the Users table (total registered users).</span>
+<span class="line-explain"><code>db.func.sum(GameProgress.bullets).scalar()</code> — SQL SUM function — adds up the <code>bullets</code> column across all players. <code>.scalar()</code> returns a single number. The <code>or 0</code> handles the case where no records exist (returns 0 instead of <code>None</code>).</span>
+</div>
+
 **Admin capabilities:**
 - View total users, active players, total bullets earned, total time played
 - List all player progress records with game state details
@@ -472,20 +566,22 @@ def admin_dashboard():
 
 ## Docker & Deployment
 
+<div class="explain-box">
+<strong>Why Docker?</strong> "It works on my machine" is a classic developer problem. Docker solves this by packaging the app, Python 3.11, and every library into a <strong>container</strong> — a lightweight, isolated environment. The container runs the same way on a developer's laptop, on a teammate's laptop, and on the production server. Think of it like shipping a product in a sealed box instead of loose parts.
+</div>
+
 ### Dockerfile
 
 ```dockerfile
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir gunicorn eventlet
 
 COPY . /app
 
-# Eventlet worker for WebSocket support
 ENV GUNICORN_CMD_ARGS="--worker-class eventlet --workers=1 \
     --bind=0.0.0.0:8306 --timeout=120"
 
@@ -493,6 +589,17 @@ EXPOSE 8306
 CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", \
      "--bind", "0.0.0.0:8306", "main:app"]
 ```
+
+<div class="snippet-explain">
+<strong>Line-by-line:</strong>
+<span class="line-explain"><code>FROM python:3.11-slim</code> — Start with a minimal Linux image that has Python 3.11 pre-installed. "slim" means no extra tools we don't need, keeping the image small.</span>
+<span class="line-explain"><code>WORKDIR /app</code> — Set the working directory inside the container to <code>/app</code>. All following commands run from here.</span>
+<span class="line-explain"><code>COPY requirements.txt .</code> then <code>RUN pip install</code> — Copy the dependency list first and install packages. Docker caches this layer — so if we change our code but not our dependencies, it skips reinstalling (much faster rebuilds).</span>
+<span class="line-explain"><code>COPY . /app</code> — Copy our actual source code into the container.</span>
+<span class="line-explain"><code>--worker-class eventlet --workers=1</code> — Use eventlet (async) instead of default sync workers. We need exactly 1 worker because Socket.IO keeps state in memory — multiple workers would create separate copies and players couldn't see each other.</span>
+<span class="line-explain"><code>--bind=0.0.0.0:8306</code> — Listen on all network interfaces on port 8306. <code>0.0.0.0</code> means "accept connections from anywhere," not just localhost.</span>
+<span class="line-explain"><code>CMD ["gunicorn", ...]</code> — The command that runs when the container starts. Gunicorn is a production WSGI server — unlike Flask's built-in dev server, it can handle many concurrent requests reliably.</span>
+</div>
 
 ### docker-compose.yml
 
@@ -510,34 +617,40 @@ services:
     restart: unless-stopped
 ```
 
+<div class="snippet-explain">
+<strong>What this does:</strong> Docker Compose defines how to run our container. <code>build: .</code> means "build the Dockerfile in the current directory." <code>ports: "8306:8306"</code> maps the container's internal port to the host machine's port so outside traffic can reach it. <code>volumes</code> mounts a folder from the host into the container — this is critical because it keeps the SQLite database file on the host machine, so the data survives even if we rebuild the container. <code>restart: unless-stopped</code> means if the container crashes, Docker automatically restarts it.
+</div>
+
 ### Common Docker Commands
 
 ```bash
-# Build and start the container
+# Build the image and start the container in detached (background) mode
 docker-compose up --build -d
 
-# View logs
+# Stream live server logs (Ctrl+C to stop watching)
 docker-compose logs -f web
 
-# Restart after code changes
+# Stop the container, rebuild with new code, and restart
 docker-compose down && docker-compose up --build -d
 
-# Shell into the running container
+# Open a terminal inside the running container (for debugging)
 docker exec -it <container_id> /bin/bash
 
-# Check container status
+# List all running containers (find container IDs here)
 docker ps
 
-# Rebuild without cache (clean build)
+# Rebuild from scratch, ignoring cached layers
 docker-compose build --no-cache
 
-# View resource usage
+# Monitor CPU/memory usage of running containers
 docker stats
 ```
 
 ### Nginx Reverse Proxy
 
-Nginx routes traffic from the domain to the Docker container:
+<div class="explain-box">
+<strong>What is a reverse proxy?</strong> Our Flask app runs on port 8306, but users visit <code>snakes.opencodingsociety.com</code> (port 80/443). Nginx sits between the internet and our app — it receives requests on the standard web port and forwards them to Flask on 8306. It also handles SSL (HTTPS), load balancing, and serving static files faster than Python can.
+</div>
 
 ```nginx
 server {
@@ -548,7 +661,8 @@ server {
         proxy_pass http://localhost:8306;
         proxy_http_version 1.1;
 
-        # WebSocket support
+        # WebSocket support — these headers tell Nginx to upgrade
+        # the HTTP connection to a persistent WebSocket connection
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
 
@@ -558,7 +672,14 @@ server {
 }
 ```
 
-The `Upgrade` and `Connection` headers are critical — without them, Socket.IO WebSocket connections fall back to long-polling.
+<div class="snippet-explain">
+<strong>Key lines:</strong>
+<span class="line-explain"><code>listen 80</code> — Nginx listens on port 80 (standard HTTP port).</span>
+<span class="line-explain"><code>server_name snakes.opencodingsociety.com</code> — Only handle requests for this domain.</span>
+<span class="line-explain"><code>proxy_pass http://localhost:8306</code> — Forward all requests to Flask running on port 8306.</span>
+<span class="line-explain"><code>Upgrade</code> / <code>Connection "upgrade"</code> — These headers are <strong>essential for WebSocket</strong>. Without them, Socket.IO connections would fail and fall back to slow HTTP polling. These headers tell Nginx: "this isn't a normal request — upgrade it to a persistent two-way connection."</span>
+<span class="line-explain"><code>X-Real-IP</code> — Passes the user's real IP address to Flask (otherwise Flask would only see Nginx's local IP).</span>
+</div>
 
 ---
 
@@ -582,6 +703,17 @@ The `Upgrade` and `Connection` headers are critical — without them, Socket.IO 
     <div class="flow-step">JSON Response</div>
 </div>
 
+<div class="explain-box">
+<strong>Walking through a real request:</strong> A player clicks "Roll Dice" and lands on square 23. Here's what happens:<br>
+1. <strong>Browser</strong> sends <code>POST /api/snakes/answer-question</code> with <code>{square: 23, correct: true, bullets_earned: 5}</code><br>
+2. <strong>Nginx</strong> receives the HTTPS request at <code>snakes.opencodingsociety.com</code> and forwards it to <code>localhost:8306</code><br>
+3. <strong>Gunicorn</strong> hands the request to the Flask app<br>
+4. <strong>Flask</strong> looks at the URL and matches it to the <code>answer_question()</code> function in the <code>snakes_bp</code> blueprint<br>
+5. <strong>@token_required</strong> runs first — extracts the JWT from the cookie, decodes it, loads the user from the DB<br>
+6. <strong>SQLAlchemy</strong> finds the player's <code>SnakesGameData</code> record, updates <code>current_square=23</code>, appends 23 to <code>visited_squares</code>, adds 5 to <code>total_bullets</code>, and commits to the database<br>
+7. <strong>JSON Response</strong> is sent back: <code>{"current_square": 23, "total_bullets": 45, "visited_squares": [7,12,18,23], ...}</code>
+</div>
+
 ### Multiplayer Data Flow
 
 <div class="flow-container">
@@ -596,6 +728,10 @@ The `Upgrade` and `Connection` headers are critical — without them, Socket.IO 
     <div class="flow-step">All clients render</div>
 </div>
 
+<div class="explain-box">
+<strong>Example — Boss Battle:</strong> Player A presses W to move up and clicks to shoot. Their browser emits a <code>boss_player_move</code> and <code>boss_shoot</code> event via Socket.IO. The server receives these, checks if the new position is within arena bounds, runs collision detection against the boss and other players using <code>resolve_player_collision()</code>, then broadcasts the validated positions to <em>every player in the room</em>. All clients receive this and update their canvas to show Player A's new position and bullet. This happens 20 times per second (50ms intervals).
+</div>
+
 ### Section Unlocking Logic
 
 <div class="flow-container">
@@ -606,6 +742,10 @@ The `Upgrade` and `Connection` headers are critical — without them, Socket.IO 
     <div class="flow-step">Reach square 56<br><small>+= 'boss'</small></div>
     <span class="flow-arrow">→</span>
     <div class="flow-step">Defeat boss<br><small>game_status = 'completed'</small></div>
+</div>
+
+<div class="explain-box">
+<strong>Why this matters:</strong> This is the <strong>sequencing</strong> that College Board requires. The game isn't just "click any page" — there's a forced order enforced by the backend. The <code>unlocked_sections</code> list in the database acts as a key ring. You start with one key (<code>half1</code>). Completing all lessons gives you the second key (<code>half2</code>). Reaching square 56 gives you the boss key. The frontend hides locked sections, and the backend rejects any API calls that try to access locked content.
 </div>
 
 ---
@@ -680,7 +820,7 @@ The `Upgrade` and `Connection` headers are critical — without them, Socket.IO 
 
 ## Key Backend Code Snippets
 
-**Server-authoritative collision resolution:**
+### 1. Server-Authoritative Collision Resolution
 
 ```python
 # socketio_handlers/boss_battle.py
@@ -697,7 +837,18 @@ def resolve_player_collision(desired_x, desired_y, other_x, other_y, min_dist):
     return desired_x + nx * overlap, desired_y + ny * overlap, True
 ```
 
-**Section unlock on lesson completion:**
+<div class="snippet-explain">
+<strong>What this does in plain English:</strong> This function checks if two players are overlapping and pushes them apart if so. It takes 5 parameters — the position a player wants to move to (<code>desired_x/y</code>), the other player's position (<code>other_x/y</code>), and the minimum allowed distance between them (<code>min_dist</code>).
+<span class="line-explain"><code>dx</code> / <code>dy</code> — Calculate the horizontal and vertical distance between the two players.</span>
+<span class="line-explain"><code>dist = math.sqrt(dx*dx + dy*dy)</code> — Use the <strong>Pythagorean theorem</strong> (distance formula) to get the actual straight-line distance between them.</span>
+<span class="line-explain"><code>if dist < 0.001</code> — Edge case: if both players are in the exact same spot (distance ~0), push one to the right by <code>min_dist</code> to avoid division by zero.</span>
+<span class="line-explain"><code>if dist >= min_dist</code> — If they're far enough apart, no collision. Return the desired position unchanged, with <code>False</code> meaning "no collision happened."</span>
+<span class="line-explain"><code>overlap = min_dist - dist</code> — How much they're overlapping (e.g., if they need 56px apart but are only 40px apart, overlap = 16px).</span>
+<span class="line-explain"><code>nx, ny = dx/dist, dy/dist</code> — Normalize the direction vector (make it length 1) so we can push in the right direction.</span>
+<span class="line-explain"><strong>Return:</strong> Push the player's position outward along that direction by the overlap amount. Return <code>True</code> meaning "collision was resolved."</span>
+</div>
+
+### 2. Section Unlock on Lesson Completion
 
 ```python
 # api/snakes_extended.py
@@ -708,7 +859,15 @@ if lesson_number not in record.completed_lessons:
         record.unlocked_sections.append('half2')
 ```
 
-**Admin dashboard aggregation:**
+<div class="snippet-explain">
+<strong>What this does:</strong>
+<span class="line-explain"><code>if lesson_number not in record.completed_lessons</code> — Only process if this lesson hasn't been completed before (prevents exploiting the same lesson for infinite bullets).</span>
+<span class="line-explain"><code>record.completed_lessons.append(lesson_number)</code> — Add this lesson number (e.g., 3) to the player's completed list. Since this is a <code>MutableList</code> column, SQLAlchemy detects the change and will save it to the database.</span>
+<span class="line-explain"><code>record.total_bullets += bullets_earned</code> — Add the bullet reward to the player's total.</span>
+<span class="line-explain"><code>len(set(record.completed_lessons)) >= 5</code> — <code>set()</code> removes duplicates, then check if they've completed at least 5 unique lessons. If yes, and <code>'half2'</code> isn't already unlocked, unlock it. This is the <strong>gating logic</strong> — you can't skip to the questions without finishing all lessons first.</span>
+</div>
+
+### 3. Admin Dashboard Aggregation
 
 ```python
 # api/admin.py
@@ -720,17 +879,24 @@ def admin_dashboard():
     total_bullets = db.session.query(db.func.sum(GameProgress.bullets)).scalar() or 0
 ```
 
+<div class="snippet-explain">
+<strong>What this does:</strong> This powers the admin dashboard with site-wide statistics.
+<span class="line-explain"><code>@admin_required()</code> — Two checks happen before this function runs: (1) is the user logged in? (2) is their role <code>'Admin'</code>? If either fails, the request is rejected with 403 Forbidden.</span>
+<span class="line-explain"><code>User.query.count()</code> — SQL <code>SELECT COUNT(*) FROM users</code> — counts every registered user.</span>
+<span class="line-explain"><code>db.func.sum(GameProgress.bullets).scalar()</code> — SQL <code>SELECT SUM(bullets) FROM game_progress</code> — adds up all bullets across all players. <code>.scalar()</code> extracts a single number from the result. <code>or 0</code> returns 0 if there are no records (instead of <code>None</code>).</span>
+</div>
+
 ---
 
 ## Summary
 
-| Layer | Technology | Key Detail |
+| Layer | Technology | What It Does |
 |---|---|---|
-| **Frontend** | Jekyll + vanilla JS | Static site on GitHub Pages |
-| **Backend** | Flask + Flask-RESTful | 15+ Blueprints, 20+ REST endpoints |
-| **Real-time** | Socket.IO + eventlet | 30Hz tick loop, 3 multiplayer modes |
-| **Database** | SQLAlchemy (SQLite/MySQL) | MutableList JSON columns, auto-timestamps |
-| **Auth** | JWT (PyJWT) | HttpOnly cookies, `@token_required()` decorator |
-| **Admin** | `@admin_required()` | Dashboard stats, user CRUD, player management |
-| **Deployment** | Docker + Gunicorn + Nginx | eventlet worker, port 8306, auto-restart |
-| **Domain** | snakes.opencodingsociety.com | Nginx reverse proxy with WebSocket upgrade |
+| **Frontend** | Jekyll + vanilla JS | Static site on GitHub Pages — what users see and interact with |
+| **Backend** | Flask + Flask-RESTful | Python web server with 15+ Blueprints and 20+ REST endpoints |
+| **Real-time** | Socket.IO + eventlet | Persistent two-way connections for 3 multiplayer game modes |
+| **Database** | SQLAlchemy (SQLite/MySQL) | Stores all player progress, game state, and user accounts permanently |
+| **Auth** | JWT (PyJWT) + bcrypt | Secure login via encrypted tokens; passwords hashed before storage |
+| **Admin** | `@admin_required()` | Role-gated dashboard with site-wide stats and user management |
+| **Deployment** | Docker + Gunicorn + Nginx | Containerized app with production server and reverse proxy |
+| **Domain** | snakes.opencodingsociety.com | Nginx routes traffic to Docker container with WebSocket support |
