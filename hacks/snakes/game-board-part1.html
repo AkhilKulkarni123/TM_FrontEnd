@@ -1074,6 +1074,110 @@
             font-size: 0.65em;
             margin: 3px 0;
         }
+
+        /* Section 1 Instructions Overlay */
+        #section1-instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        #section1-instructions-overlay.active {
+            display: flex;
+        }
+
+        .section1-instructions-content {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(74, 222, 128, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            color: white;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.5s ease-out;
+            position: relative;
+        }
+
+        .section1-instructions-content h2 {
+            font-size: 2em;
+            margin: 0 0 20px 0;
+            color: #4ade80;
+            text-shadow: 0 2px 10px rgba(74, 222, 128, 0.3);
+        }
+
+        .section1-instructions-content .instructions-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .section1-instructions-content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin: 15px 0;
+            opacity: 0.95;
+        }
+
+        .section1-instructions-content .instructions-list {
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .section1-instructions-content .instructions-list li {
+            margin: 10px 0;
+            padding-left: 10px;
+            list-style: none;
+            position: relative;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .section1-instructions-content .instructions-list li::before {
+            content: "✓";
+            position: absolute;
+            left: -15px;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .section1-instructions-content .dismiss-text {
+            font-size: 0.9em;
+            margin-top: 25px;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        .auto-dismiss-timer {
+            display: inline-block;
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+
+
     </style>
 </head>
 <script src="../../assets/js/snakes-game-hint-leaderboard.js"></script>
@@ -1299,6 +1403,29 @@
         </div>
     </div>
 
+    <!-- Section 1 Instructions Overlay -->
+    <div id="section1-instructions-overlay">
+        <div class="section1-instructions-content">
+            <div class="instructions-icon">📚</div>
+            <h2>Welcome to Section 1!</h2>
+            <p><strong>Lesson Trail</strong></p>
+
+            <div class="instructions-list">
+                <ul>
+                    <li>Roll the dice to move along the board</li>
+                    <li>Land on a square to unlock its lesson</li>
+                    <li>Complete the mini-game to access the reading</li>
+                    <li>Answer the quiz question to earn 5 bullets</li>
+                    <li>Finish all 5 lessons to unlock Section 2!</li>
+                </ul>
+            </div>
+
+            <p class="dismiss-text">
+                Auto-closing in <span class="auto-dismiss-timer" id="section1-timer">10</span> seconds
+            </p>
+        </div>
+    </div>
+
     <!-- Dice Animation Overlay -->
     <div id="dice-overlay" class="dice-overlay hidden">
         <div class="dice-container">
@@ -1412,6 +1539,86 @@
         };
         
         window.snakesGameSection = 1;
+
+        // ============================================
+// SECTION 1 INSTRUCTIONS OVERLAY
+// ============================================
+        (function() {
+            function showSection1Instructions() {
+                var overlay = document.getElementById('section1-instructions-overlay');
+                var timerEl = document.getElementById('section1-timer');
+
+                if (!overlay) return;
+
+                // Only show once per session
+                var hasSeenInstructions = false;
+                try {
+                    hasSeenInstructions = localStorage.getItem('snakes_seen_section1_instructions') === '1';
+                } catch (e) {}
+
+                if (hasSeenInstructions) return;
+
+                // Show the overlay
+                overlay.classList.add('active');
+
+                // Mark as seen
+                try {
+                    localStorage.setItem('snakes_seen_section1_instructions', '1');
+                } catch (e) {}
+
+                // Countdown timer
+                var countdown = 10;
+                var countdownInterval = setInterval(function() {
+                    countdown--;
+                    if (timerEl) timerEl.textContent = countdown;
+
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        dismissSection1Instructions();
+                    }
+                }, 1000);
+
+                // Allow clicking anywhere to dismiss early
+                overlay.addEventListener('click', function() {
+                    clearInterval(countdownInterval);
+                    dismissSection1Instructions();
+                });
+            }
+
+            function dismissSection1Instructions() {
+                var overlay = document.getElementById('section1-instructions-overlay');
+                if (overlay) {
+                    overlay.classList.remove('active');
+                }
+            }
+
+            // Show when game container becomes visible
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    var gameContainer = document.getElementById('game-container');
+                    if (gameContainer && !gameContainer.classList.contains('hidden')) {
+                        showSection1Instructions();
+                    }
+                }, 1000);
+            });
+
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.target.id === 'game-container' &&
+                        !mutation.target.classList.contains('hidden')) {
+                        setTimeout(showSection1Instructions, 500);
+                    }
+                });
+            });
+
+            var gameContainer = document.getElementById('game-container');
+            if (gameContainer) {
+                observer.observe(gameContainer, { attributes: true, attributeFilter: ['class'] });
+            }
+
+            window.showSection1Instructions = showSection1Instructions;
+            window.dismissSection1Instructions = dismissSection1Instructions;
+        })();
 
         // Debug info
         window.addEventListener('load', function() {

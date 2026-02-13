@@ -370,6 +370,121 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Battle Arcade Instructions Overlay */
+        #battle-instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(8px);
+            animation: fadeInOverlay 0.4s ease-out;
+        }
+
+        #battle-instructions-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .battle-instructions-content {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(233, 69, 96, 0.4);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            color: white;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(233, 69, 96, 0.15);
+            animation: slideUpOverlay 0.5s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideUpOverlay {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .battle-instructions-content h2 {
+            font-size: 2em;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #ff6b6b, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .battle-instructions-content .instructions-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            animation: battleBounce 1s ease infinite;
+        }
+
+        @keyframes battleBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .battle-instructions-content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin: 15px 0;
+            opacity: 0.95;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .battle-instructions-content .instructions-list {
+            background: rgba(233, 69, 96, 0.08);
+            border: 1px solid rgba(233, 69, 96, 0.25);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .battle-instructions-content .instructions-list li {
+            margin: 10px 0;
+            padding-left: 10px;
+            list-style: none;
+            position: relative;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        .battle-instructions-content .instructions-list li::before {
+            content: "⚔️";
+            position: absolute;
+            left: -20px;
+        }
+
+        .battle-instructions-content .dismiss-text {
+            font-size: 0.9em;
+            margin-top: 25px;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .battle-auto-dismiss-timer {
+            display: inline-block;
+            background: rgba(233, 69, 96, 0.25);
+            color: #ff8fa3;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
     </style>
     <link rel="stylesheet" href="../../assets/css/snakes-theme.css">
 </head>
@@ -442,6 +557,29 @@
             </ul>
             <div class="mode-status" id="slitherrushStatus">
                 Players online: <span id="slitherrushPlayerCount">0</span> • Arenas active: <span id="slitherrushRoomCount">0</span> • Open slots: <span id="slitherrushOpenSlots">0</span>
+            </div>
+        </div>
+
+        <!-- Battle Arcade Instructions Overlay -->
+        <div id="battle-instructions-overlay">
+            <div class="battle-instructions-content">
+                <span class="instructions-icon">⚔️</span>
+                <h2>Welcome to Battle Arcade!</h2>
+                <p><strong>Choose your battle wisely</strong></p>
+
+                <div class="instructions-list">
+                    <ul>
+                        <li>Boss Battle — cooperate with up to 10 players to slay the dragon</li>
+                        <li>PVP Arena — spend your bullets in a 1v1 duel to the last shot</li>
+                        <li>SlitherRush — outlast rivals in a multiplayer snake arena</li>
+                        <li>Platformer Gauntlet — race through obstacles for bonus bullets</li>
+                    </ul>
+                </div>
+
+                <p class="dismiss-text">
+                    Click anywhere to dismiss · Auto-closing in
+                    <span class="battle-auto-dismiss-timer" id="battle-timer">10</span> seconds
+                </p>
             </div>
         </div>
 
@@ -695,6 +833,62 @@
             }
             window.location.href = 'game-board-part2.html';
         }
+
+        // ============================================
+// BATTLE ARCADE INSTRUCTIONS OVERLAY
+// ============================================
+        (function() {
+            function showBattleInstructions() {
+                var overlay = document.getElementById('battle-instructions-overlay');
+                var timerEl = document.getElementById('battle-timer');
+
+                if (!overlay) return;
+
+                // Only show once per browser session
+                var hasSeenInstructions = false;
+                try {
+                    hasSeenInstructions = localStorage.getItem('snakes_seen_battle_instructions') === '1';
+                } catch (e) {}
+
+                if (hasSeenInstructions) return;
+
+                overlay.classList.add('active');
+
+                try {
+                    localStorage.setItem('snakes_seen_battle_instructions', '1');
+                } catch (e) {}
+
+                var countdown = 10;
+                var countdownInterval = setInterval(function() {
+                    countdown--;
+                    if (timerEl) timerEl.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        dismissBattleInstructions();
+                    }
+                }, 1000);
+
+                overlay.addEventListener('click', function() {
+                    clearInterval(countdownInterval);
+                    dismissBattleInstructions();
+                });
+            }
+
+            function dismissBattleInstructions() {
+                var overlay = document.getElementById('battle-instructions-overlay');
+                if (overlay) overlay.classList.remove('active');
+            }
+
+            // Show immediately on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', showBattleInstructions);
+            } else {
+                showBattleInstructions();
+            }
+
+            window.showBattleInstructions = showBattleInstructions;
+            window.dismissBattleInstructions = dismissBattleInstructions;
+        })();
 
         // Initialize - wait for data to load before connecting
         async function initialize() {
