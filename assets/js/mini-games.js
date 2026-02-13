@@ -249,7 +249,9 @@
                     }
 
                     const cond = conditions[state.height];
-                    const isTrue = eval(cond.condition.replace(/score|lives|time|level|coins|health/g, cond.value));
+                    const varName = cond.condition.match(/[a-zA-Z_]\w*/)[0];
+                    const safeValue = typeof cond.value === 'string' ? '"' + cond.value + '"' : cond.value;
+                    const isTrue = eval(cond.condition.replace(new RegExp('\\b' + varName + '\\b', 'g'), safeValue));
                     const correctBlock = isTrue ? cond.trueBlock : cond.falseBlock;
 
                     panel.innerHTML = `
@@ -416,6 +418,8 @@
                 const stepsContainer = container.querySelector('#steps-container');
                 stepsContainer.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
 
+                var draggedItem = null;
+
                 shuffled.forEach((step, i) => {
                     const div = document.createElement('div');
                     div.className = 'step-item';
@@ -425,25 +429,27 @@
                     div.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #dee2e6;border-radius:8px;cursor:grab;display:flex;align-items:center;gap:10px;transition:all 0.2s;';
 
                     div.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', i);
+                        draggedItem = div;
+                        e.dataTransfer.effectAllowed = 'move';
                         div.style.opacity = '0.5';
                     });
-                    div.addEventListener('dragend', () => div.style.opacity = '1');
+                    div.addEventListener('dragend', () => {
+                        div.style.opacity = '1';
+                        draggedItem = null;
+                    });
                     div.addEventListener('dragover', (e) => e.preventDefault());
                     div.addEventListener('drop', (e) => {
                         e.preventDefault();
-                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                        if (!draggedItem || draggedItem === div) return;
                         const items = [...stepsContainer.children];
+                        const fromIndex = items.indexOf(draggedItem);
                         const toIndex = items.indexOf(div);
-                        if (fromIndex !== toIndex) {
-                            const item = items[fromIndex];
-                            if (fromIndex < toIndex) {
-                                div.after(item);
-                            } else {
-                                div.before(item);
-                            }
-                            updateNumbers();
+                        if (fromIndex < toIndex) {
+                            div.after(draggedItem);
+                        } else {
+                            div.before(draggedItem);
                         }
+                        updateNumbers();
                     });
 
                     stepsContainer.appendChild(div);
@@ -542,7 +548,7 @@
                         </div>
                         <div class="options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             ${shuffled.map(opt => `
-                                <button class="loop-option" data-answer="${opt}" style="padding: 14px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-family: monospace; font-size: 0.95em; text-align: center; transition: all 0.2s;">${opt}</button>
+                                <button class="loop-option" data-answer="${opt}" style="padding: 14px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-family: monospace; font-size: 0.95em; text-align: center; transition: all 0.2s; color: #000000;">${opt}</button>
                             `).join('')}
                         </div>
                     `;
