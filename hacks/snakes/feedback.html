@@ -163,7 +163,9 @@
         .top-actions {
             display: flex;
             justify-content: center;
+            gap: 16px;
             margin-top: 24px;
+            flex-wrap: wrap;
         }
 
         @media (max-width: 820px) {
@@ -209,7 +211,9 @@
         </section>
 
         <div class="top-actions">
-            <button class="btn secondary" type="button" onclick="goToVictory()">Back to Victory</button>
+            <button class="btn secondary" type="button" id="backToVictoryBtn">Back to Victory</button>
+            <button class="btn secondary" type="button" id="backToBoardBtn">Return to Board</button>
+            <button class="btn secondary" type="button" id="battleArcadeBtn">Battle Arcade</button>
         </div>
     </div>
 
@@ -409,6 +413,14 @@
         function goToVictory() {
             window.location.href = 'victory.html';
         }
+        document.getElementById('backToVictoryBtn').addEventListener('click', goToVictory);
+        document.getElementById('backToBoardBtn').addEventListener('click', function() {
+            window.location.href = 'game-board-part2.html';
+        });
+        document.getElementById('battleArcadeBtn').addEventListener('click', function() {
+            window.location.href = 'mode-selection.html';
+        });
+        
 
         async function initFeedback() {
             migrateLegacyFeedbackIfNeeded();
