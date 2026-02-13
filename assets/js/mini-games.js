@@ -642,6 +642,7 @@
                     }
 
                     const prompt = prompts[current];
+                    const shuffledPrompt = shuffleOptionsWithAnswer(prompt.options, prompt.answer);
                     const wrap = container.querySelector('#prompt-wrap');
                     wrap.innerHTML = `
                         <pre style="margin:0 0 12px 0;"><code>${escapeHtml(prompt.code)}</code></pre>
@@ -649,12 +650,12 @@
                     `;
                     const answers = wrap.querySelector('.answers-grid');
 
-                    prompt.options.forEach((opt, i) => {
+                    shuffledPrompt.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
                         btn.addEventListener('click', () => {
-                            if (i === prompt.answer) {
+                            if (i === shuffledPrompt.answer) {
                                 state.score++;
                                 container.querySelector('#score').textContent = state.score;
                                 btn.style.background = '#d1fae5';
@@ -717,6 +718,7 @@
                         return;
                     }
                     const task = tasks[current];
+                    const shuffledTask = shuffleOptionsWithAnswer(task.options, task.answer);
                     const wrap = container.querySelector('#task-wrap');
                     wrap.innerHTML = `
                         <div style="background:#fff7ed;border:2px solid #fdba74;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
@@ -727,12 +729,12 @@
                     `;
                     const answers = wrap.querySelector('.answers-grid');
 
-                    task.options.forEach((opt, i) => {
+                    shuffledTask.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
                         btn.addEventListener('click', () => {
-                            if (i === task.answer) {
+                            if (i === shuffledTask.answer) {
                                 state.score++;
                                 container.querySelector('#score').textContent = state.score;
                                 btn.style.background = '#d1fae5';
@@ -795,6 +797,7 @@
                         return;
                     }
                     const sc = scenarios[current];
+                    const shuffledScenario = shuffleOptionsWithAnswer(sc.options, sc.answer);
                     const wrap = container.querySelector('#scenario-wrap');
                     wrap.innerHTML = `
                         <div style="background:#eef2ff;border:2px solid #93c5fd;color:#111827;padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;">
@@ -805,12 +808,12 @@
                     `;
                     const answers = wrap.querySelector('.answers-grid');
 
-                    sc.options.forEach((opt, i) => {
+                    shuffledScenario.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:12px;border-radius:8px;border:2px solid #2b5ec4;background:#f7fbff;color:#0f172a;font-weight:700;cursor:pointer;';
                         btn.addEventListener('click', () => {
-                            if (i === sc.answer) {
+                            if (i === shuffledScenario.answer) {
                                 state.score++;
                                 container.querySelector('#score').textContent = state.score;
                                 btn.style.background = '#d1fae5';
@@ -1228,6 +1231,7 @@
                     }
 
                     const prompt = prompts[currentIndex];
+                    const shuffledPrompt = shuffleOptionsWithAnswer(prompt.options, prompt.answer);
                     const wrap = container.querySelector('#packet-quiz-wrap');
                     wrap.innerHTML = `
                         <div style="background:#f0f9ff;border:2px solid #7dd3fc;padding:12px;border-radius:10px;margin:8px 0 12px 0;font-weight:700;color:#0f172a;">
@@ -1237,12 +1241,12 @@
                     `;
 
                     const answers = wrap.querySelector('.answers-grid');
-                    prompt.options.forEach((opt, i) => {
+                    shuffledPrompt.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:12px;background:#f8fafc;border:2px solid #3b82f6;border-radius:8px;cursor:pointer;font-weight:700;color:#0f172a;';
                         btn.addEventListener('click', () => {
-                            if (i === prompt.answer) {
+                            if (i === shuffledPrompt.answer) {
                                 state.score++;
                                 container.querySelector('#score').textContent = state.score;
                                 btn.style.background = '#d1fae5';
@@ -2135,17 +2139,18 @@
                     }
 
                     const d = dilemmas[currentIndex];
+                    const shuffledDilemma = shuffleOptionsWithAnswer(d.options, d.answer);
                     container.querySelector('#dilemma').innerHTML = `<p style="font-size:1.1em;margin:0;">${d.question}</p>`;
 
                     const optionsDiv = container.querySelector('#options');
                     optionsDiv.innerHTML = '';
 
-                    d.options.forEach(opt => {
+                    shuffledDilemma.options.forEach((opt, i) => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
                         btn.style.cssText = 'padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;';
                         btn.addEventListener('click', () => {
-                            if (d.options.indexOf(opt) === d.answer) {
+                            if (i === shuffledDilemma.answer) {
                                 state.correct++;
                             }
                             state.answered++;
@@ -2206,6 +2211,24 @@
                 <div class="game-right-column">${rightContent}</div>
             </div>
         `;
+    }
+
+    function shuffleOptionsWithAnswer(options, answerIndex) {
+        const entries = (options || []).map((text, idx) => ({ text, idx }));
+        for (let i = entries.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = entries[i];
+            entries[i] = entries[j];
+            entries[j] = tmp;
+        }
+
+        const shuffledOptions = entries.map(e => e.text);
+        const newAnswerIndex = entries.findIndex(e => e.idx === answerIndex);
+
+        return {
+            options: shuffledOptions,
+            answer: newAnswerIndex < 0 ? 0 : newAnswerIndex
+        };
     }
 
     function startTimer(timerElement, duration, onTimeout) {
