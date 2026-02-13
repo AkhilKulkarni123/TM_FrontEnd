@@ -163,7 +163,7 @@
                         const btn = document.createElement('button');
                         btn.className = 'type-btn';
                         btn.textContent = type;
-                        btn.style.cssText = 'padding: 12px; background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;';
+                        btn.style.cssText = 'padding: 12px; background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; color: #000000;';
                         
                         btn.addEventListener('click', () => {
                             if (type === challenge.type) {
@@ -671,7 +671,7 @@
                     challenge.items.forEach(item => {
                         const btn = document.createElement('button');
                         btn.textContent = item;
-                        btn.style.cssText = 'padding:10px 20px;background:#fff;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-weight:bold;';
+                        btn.style.cssText = 'padding:10px 20px;background:#fff;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-weight:bold;color:#000000;';
                         btn.addEventListener('click', () => {
                             itemsPanel.querySelectorAll('button').forEach(b => b.style.background = '#fff');
                             btn.style.background = '#e8ebff';
@@ -1196,7 +1196,7 @@
                     options.forEach(ip => {
                         const btn = document.createElement('button');
                         btn.textContent = ip;
-                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-family:monospace;font-size:0.9em;';
+                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-family:monospace;font-size:0.9em;color:#000000;';
                         btn.addEventListener('click', () => {
                             if (ip === current.ip) {
                                 btn.style.background = '#d4edda';
@@ -1410,7 +1410,7 @@
                     options.forEach(opt => {
                         const btn = document.createElement('button');
                         btn.textContent = opt;
-                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-family:monospace;';
+                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-family:monospace;color:#000000;';
                         btn.addEventListener('click', () => {
                             if (opt === part.example) {
                                 btn.style.background = '#d4edda';
@@ -2167,7 +2167,7 @@
                     charts.forEach(chart => {
                         const btn = document.createElement('button');
                         btn.textContent = chart;
-                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-weight:bold;';
+                        btn.style.cssText = 'padding:12px;background:#f8f9fa;border:2px solid #667eea;border-radius:8px;cursor:pointer;font-weight:bold;color:#000000;';
                         btn.addEventListener('click', () => {
                             if (chart === m.chart) {
                                 btn.style.background = '#d4edda';
