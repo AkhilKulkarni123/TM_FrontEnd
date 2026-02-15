@@ -8,7 +8,8 @@
     'use strict';
 
     // Game configuration
-    const GAME_DURATION = 45000; // 45 seconds default
+    // Timer durations (not used anymore, kept for reference)
+    // const GAME_DURATION = 45000; // 45 seconds default
     const CHALLENGE_DURATION = 40000; // Slightly harder pace for board challenge rounds
     const GAMES_PER_LESSON = 5;
 
@@ -35,7 +36,6 @@
                 container.innerHTML = `
                     <div class="mini-game binary-converter" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">💾 Binary Converter</span>
                             <div class="game-score">Score: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -93,11 +93,7 @@
                 }
                 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-                
-                return state;
+return state;
             }
         },
 
@@ -124,7 +120,6 @@
                 container.innerHTML = `
                     <div class="mini-game data-type-detective" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🔍 Data Type Detective</span>
                             <div class="game-score">Found: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -191,11 +186,7 @@
                 }
                 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-                
-                return state;
+return state;
             }
         },
 
@@ -218,7 +209,6 @@
                 container.innerHTML = `
                     <div class="mini-game if-then-tower" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🏗️ If-Then Tower</span>
                             <div class="game-score">Height: <span id="score">0</span>/6</div>
                         </div>
@@ -282,11 +272,7 @@
                 }
 
                 nextCondition();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.height / state.target) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -308,7 +294,6 @@
                 container.innerHTML = `
                     <div class="mini-game bug-squasher" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🐛 Bug Squasher</span>
                             <div class="game-score">Bugs Found: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -368,11 +353,7 @@
                 }
 
                 showCode();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.found / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -404,7 +385,6 @@
                 container.innerHTML = `
                     <div class="mini-game algorithm-chef" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">👨‍🍳 Algorithm Chef: ${recipe.name}</span>
                         </div>
                         <div class="game-instructions" style="margin-bottom: 15px;">
@@ -490,12 +470,7 @@
                         }, 500);
                     }
                 });
-
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, 0);
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -516,7 +491,6 @@
                 container.innerHTML = `
                     <div class="mini-game loop-racer" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🏎️ Loop Racer</span>
                             <div class="game-score">Score: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -575,11 +549,7 @@
                 }
 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         }
     };
@@ -608,7 +578,6 @@
                 container.innerHTML = `
                     <div class="mini-game array-assembler" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">📦 Array Assembler</span>
                             <div class="game-score">Completed: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -682,11 +651,7 @@
                 }
 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -711,7 +676,6 @@
                 container.innerHTML = `
                     <div class="mini-game list-loop-tracer" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🔁 List Loop Tracer</span>
                             <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -762,10 +726,7 @@
                 }
 
                 renderPrompt();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-                return state;
+return state;
             }
         },
 
@@ -788,7 +749,6 @@
                 container.innerHTML = `
                     <div class="mini-game data-cleaner" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🧹 Data Cleaner</span>
                             <div class="game-score">Fixed: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -841,10 +801,7 @@
                 }
 
                 renderTask();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-                return state;
+return state;
             }
         },
 
@@ -867,7 +824,6 @@
                 container.innerHTML = `
                     <div class="mini-game abstraction-builder" style="width: 100%;">
                         <div class="game-header">
-                            <div class="game-timer"><span id="timer">45</span>s</div>
                             <span class="game-title">🧩 Abstraction Builder</span>
                             <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -920,10 +876,7 @@
                 }
 
                 renderScenario();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-                return state;
+return state;
             }
         },
 
@@ -965,7 +918,6 @@
                 container.innerHTML = `
                     <div class="mini-game nested-navigator" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
                             <span class="game-title">🧭 Nested Navigator</span>
                             <div class="game-score" style="font-weight: bold;">Found: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -1018,11 +970,7 @@
                 });
 
                 showChallenge();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         }
     };
@@ -1053,7 +1001,6 @@
                 container.innerHTML = `
                     <div class="mini-game ip-matcher" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
                             <span class="game-title">🌐 IP Address Matcher</span>
                             <div class="game-score" style="font-weight: bold;">Matched: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -1124,12 +1071,7 @@
                     });
                     ipsCol.appendChild(div);
                 });
-
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1152,7 +1094,6 @@
                 container.innerHTML = `
                     <div class="mini-game dns-speedrun" style="width: 100%;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
                             <span class="game-title">🌐 DNS Speed Run</span>
                             <div class="game-score" style="font-weight: bold;">Translated: <span id="score">0</span>/${state.total}</div>
                         </div>
@@ -1214,11 +1155,7 @@
                 }
 
                 showTranslation();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1303,7 +1240,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game packet-pathfinder" style="width: 100%;">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="game-instructions">
                             <strong>🎯 Goal:</strong> Pick the best networking answer for each scenario.
@@ -1353,11 +1289,7 @@
                 }
 
                 showPrompt();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1377,7 +1309,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game url-decoder">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Identified: <span id="score">0</span>/${state.total}</div>
                         <div class="url-display" style="font-family:monospace;font-size:1.1em;padding:15px;background:#1e1e1e;border-radius:10px;margin:10px 0;text-align:center;">
                             <span style="color:#e74c3c">https://</span><span style="color:#3498db">www.example.com</span><span style="color:#27ae60">/products/item</span><span style="color:#9b59b6">?id=123&color=red</span>
@@ -1428,11 +1359,7 @@
                 }
 
                 showQuestion();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1450,7 +1377,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game router-rush">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Sorted: <span id="score">0</span>/${state.total}</div>
                         <div class="packet-display" id="packet-display" style="text-align:center;padding:20px;background:#1e1e1e;border-radius:10px;margin:10px 0;">
                             <div id="current-packet" style="font-family:monospace;font-size:1.3em;color:#00ff00;"></div>
@@ -1510,11 +1436,7 @@
                 });
 
                 showPacket();
-                startTimer(container.querySelector('#timer'), CHALLENGE_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.sorted / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         }
     };
@@ -1548,7 +1470,6 @@
                 container.innerHTML = `
                     <div class="mini-game password-smash" style="max-width: 100%; overflow: hidden;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
                             <div class="game-score" style="font-weight: bold;">Correct: <span id="score">0</span>/${state.total}</div>
                         </div>
                         ${createInstructionBox(
@@ -1592,11 +1513,7 @@
                 });
 
                 showPassword();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.score / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1618,7 +1535,6 @@
                 container.innerHTML = `
                     <div class="mini-game caesar-cracker" style="max-width: 100%; overflow: hidden;">
                         <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div class="game-timer" style="background: #1e1e1e; color: #ffd700; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><span id="timer">45</span>s</div>
                             <div class="game-score" style="font-weight: bold;">Decoded: <span id="score">0</span>/${state.total}</div>
                         </div>
                         ${createInstructionBox(
@@ -1669,11 +1585,7 @@
                 });
 
                 showMessage();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.decoded / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1695,7 +1607,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game phishing-detector">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="email-display" id="email-display" style="background:#fff;border:1px solid #ddd;border-radius:10px;padding:15px;margin:10px 0;"></div>
                         <div class="detect-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
@@ -1737,11 +1648,7 @@
                 });
 
                 showEmail();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.correct / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1769,7 +1676,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game firewall-frenzy">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Accuracy: <span id="score">0</span>/${state.total}</div>
                         <div class="traffic-display" id="traffic-display" style="text-align:center;padding:20px;background:#1e1e1e;border-radius:10px;margin:10px 0;">
                             <p id="traffic-type" style="font-family:monospace;font-size:1.2em;color:#fff;"></p>
@@ -1814,11 +1720,7 @@
                 });
 
                 showTraffic();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.correct / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -1841,7 +1743,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game encryption-match">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
                         <div class="match-container" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
                             <div class="messages-col" id="messages-col"></div>
@@ -1900,12 +1801,7 @@
                     });
                     keysCol.appendChild(div);
                 });
-
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.matched / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         }
     };
@@ -1934,7 +1830,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game bias-buster">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="scenario-display" id="scenario-display" style="text-align:center;padding:20px;background:#f8f9fa;border-radius:10px;margin:10px 0;min-height:80px;"></div>
                         <div class="bias-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
@@ -1972,11 +1867,7 @@
                 });
 
                 showScenario();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.correct / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -2000,7 +1891,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game privacy-protector">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Decisions: <span id="score">0</span>/${state.total}</div>
                         <div class="permission-display" id="permission-display" style="text-align:center;padding:20px;background:#f8f9fa;border-radius:10px;margin:10px 0;"></div>
                         <div class="privacy-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
@@ -2044,11 +1934,7 @@
                 });
 
                 showPermission();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.correct / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -2070,7 +1956,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game trend-spotter">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="chart-display" id="chart-display" style="padding:15px;background:#f8f9fa;border-radius:10px;margin:10px 0;min-height:120px;"></div>
                         <div class="trend-buttons" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
@@ -2114,11 +1999,7 @@
                 });
 
                 showChart();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.correct / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -2139,7 +2020,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game chart-champion">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Matched: <span id="score">0</span>/${state.total}</div>
                         <div class="data-type-display" id="data-type" style="text-align:center;padding:15px;background:#1e1e1e;color:#00ff00;border-radius:10px;margin:10px 0;font-size:1.1em;"></div>
                         <div class="chart-options" id="chart-options" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
@@ -2185,11 +2065,7 @@
                 }
 
                 showDataType();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.matched / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         },
 
@@ -2211,7 +2087,6 @@
 
                 container.innerHTML = `
                     <div class="mini-game ethical-dash">
-                        <div class="game-timer"><span id="timer">45</span>s</div>
                         <div class="game-score">Correct: <span id="score">0</span>/${state.total}</div>
                         <div class="dilemma-display" id="dilemma" style="text-align:center;padding:20px;background:#f8f9fa;border-radius:10px;margin:10px 0;min-height:80px;"></div>
                         <div class="dilemma-options" id="options" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;"></div>
@@ -2253,11 +2128,7 @@
                 }
 
                 showDilemma();
-                startTimer(container.querySelector('#timer'), GAME_DURATION, () => {
-                    if (!state.completed) onComplete(false, Math.floor((state.answered / state.total) * 100));
-                });
-
-                return state;
+return state;
             }
         }
     };
@@ -2321,6 +2192,7 @@
         };
     }
 
+    /* Timer functionality removed - no longer needed
     function startTimer(timerElement, duration, onTimeout) {
         let remaining = Math.floor(duration / 1000);
         timerElement.textContent = remaining;
@@ -2337,6 +2209,7 @@
 
         return () => clearInterval(interval);
     }
+    */
 
     function escapeHtml(text) {
         const div = document.createElement('div');

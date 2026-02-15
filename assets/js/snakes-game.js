@@ -1728,6 +1728,93 @@ function createGameBoard() {
         }
         board.appendChild(rowDiv);
     }
+
+    // Draw visual connections for snakes and ladders
+    if (section === 2) {
+        setTimeout(function() {
+            drawSnakesAndLaddersConnections();
+        }, 100);
+    }
+}
+
+// Function to draw visual connections between snake/ladder squares
+function drawSnakesAndLaddersConnections() {
+    var board = document.getElementById('game-board');
+    if (!board) return;
+
+    // Remove any existing SVG overlay
+    var existingSvg = board.querySelector('.snakes-ladders-overlay');
+    if (existingSvg) existingSvg.remove();
+
+    // Create SVG overlay
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'snakes-ladders-overlay');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.pointerEvents = 'none';
+    svg.style.zIndex = '1';
+    board.style.position = 'relative';
+
+    // Draw connections for each snake/ladder
+    for (var fromSquare in snakesAndLaddersMap) {
+        var toSquare = snakesAndLaddersMap[fromSquare];
+        var isLadder = toSquare > fromSquare;
+
+        var fromEl = board.querySelector('[data-square="' + fromSquare + '"]');
+        var toEl = board.querySelector('[data-square="' + toSquare + '"]');
+
+        if (!fromEl || !toEl) continue;
+
+        var fromRect = fromEl.getBoundingClientRect();
+        var toRect = toEl.getBoundingClientRect();
+        var boardRect = board.getBoundingClientRect();
+
+        // Calculate center points relative to board
+        var x1 = fromRect.left - boardRect.left + fromRect.width / 2;
+        var y1 = fromRect.top - boardRect.top + fromRect.height / 2;
+        var x2 = toRect.left - boardRect.left + toRect.width / 2;
+        var y2 = toRect.top - boardRect.top + toRect.height / 2;
+
+        // Create curved path
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var curve = Math.abs(dx) * 0.5;
+
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        var pathData = 'M ' + x1 + ' ' + y1 + ' Q ' + (x1 + curve) + ' ' + (y1 + dy/2) + ' ' + x2 + ' ' + y2;
+        path.setAttribute('d', pathData);
+        path.setAttribute('stroke', isLadder ? '#4caf50' : '#f44336');
+        path.setAttribute('stroke-width', '3');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('opacity', '0.6');
+
+        // Add arrow marker
+        var marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        marker.setAttribute('cx', x2);
+        marker.setAttribute('cy', y2);
+        marker.setAttribute('r', '4');
+        marker.setAttribute('fill', isLadder ? '#4caf50' : '#f44336');
+
+        svg.appendChild(path);
+        svg.appendChild(marker);
+
+        // Add label showing the connection
+        var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', x1 + dx/2);
+        label.setAttribute('y', y1 + dy/2 - 5);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', isLadder ? '#2e7d32' : '#c62828');
+        label.setAttribute('font-size', '10');
+        label.setAttribute('font-weight', 'bold');
+        label.textContent = fromSquare + (isLadder ? '→' : '↓') + toSquare;
+        svg.appendChild(label);
+    }
+
+    board.appendChild(svg);
 }
 
 function getCharacterIcon(character) {
@@ -2179,7 +2266,8 @@ function movePlayer(steps) {
         var sectionStart = (section === 1) ? 0 : FIRST_SECTION_SIZE;
         var sectionEnd = (section === 1) ? (FIRST_SECTION_SIZE - 1) : (FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1);
 
-        var tentative = gameState.currentSquare + steps;
+        var startSquare = gameState.currentSquare;
+        var tentative = startSquare + steps;
         if (section === 1) {
             if (tentative > sectionEnd) tentative = sectionEnd;
         } else {
@@ -2188,6 +2276,7 @@ function movePlayer(steps) {
             }
         }
 
+        var finalSquare;
         if (section === 2) {
             var maxAttempts = SECOND_SECTION_SIZE;
             var attempts = 0;
@@ -2198,30 +2287,88 @@ function movePlayer(steps) {
                 attempts++;
             }
             if (attempts >= maxAttempts) newSquare = tentative;
-
-            gameState.currentSquare = newSquare;
-            if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
+            finalSquare = newSquare;
         } else {
-            var newSquare = tentative;
-            gameState.currentSquare = newSquare;
-            if (gameState.visitedSquares.indexOf(newSquare) === -1) gameState.visitedSquares.push(newSquare);
+            finalSquare = tentative;
         }
 
-        createGameBoard();
-        updatePlayerInfo();
-        saveProgress();
+        // Animate step-by-step movement
+        animateStepByStepMovement(startSquare, finalSquare, section).then(function() {
+            // Update final position
+            gameState.currentSquare = finalSquare;
+            if (gameState.visitedSquares.indexOf(finalSquare) === -1) {
+                gameState.visitedSquares.push(finalSquare);
+            }
 
-        // Add landing animation to player marker
-        var playerMarker = document.querySelector('.player-marker');
-        if (playerMarker) {
-            playerMarker.classList.add('landing');
-            setTimeout(function() {
-                playerMarker.classList.remove('landing');
-            }, 400);
+            createGameBoard();
+            updatePlayerInfo();
+            saveProgress();
+
+            // Add landing animation to player marker
+            var playerMarker = document.querySelector('.player-marker');
+            if (playerMarker) {
+                playerMarker.classList.add('landing');
+                setTimeout(function() {
+                    playerMarker.classList.remove('landing');
+                }, 400);
+            }
+
+            handleSquareEvent();
+            resolve();
+        });
+    });
+}
+
+// Animate character moving across squares step-by-step
+function animateStepByStepMovement(startSquare, endSquare, section) {
+    return new Promise(function(resolve) {
+        if (startSquare === endSquare) {
+            resolve();
+            return;
         }
 
-        handleSquareEvent();
-        resolve();
+        var path = [];
+        var current = startSquare;
+
+        // Build path from start to end
+        while (current !== endSquare) {
+            if (current < endSquare) {
+                current++;
+            } else {
+                current--;
+            }
+            path.push(current);
+        }
+
+        var currentStep = 0;
+        var stepDelay = 300; // 300ms per square
+
+        function moveToNextSquare() {
+            if (currentStep >= path.length) {
+                resolve();
+                return;
+            }
+
+            var targetSquare = path[currentStep];
+            gameState.currentSquare = targetSquare;
+            createGameBoard();
+
+            playSfx('move'); // Play movement sound
+
+            // Add moving animation class
+            var playerMarker = document.querySelector('.player-marker');
+            if (playerMarker) {
+                playerMarker.classList.add('moving');
+                setTimeout(function() {
+                    playerMarker.classList.remove('moving');
+                }, stepDelay - 50);
+            }
+
+            currentStep++;
+            setTimeout(moveToNextSquare, stepDelay);
+        }
+
+        moveToNextSquare();
     });
 }
 
@@ -2658,11 +2805,34 @@ function animateMoveToSquare(from, to) {
         return;
     }
 
+    // Show notification about the ladder/snake
+    var message = isLadder
+        ? '🪜 You found a ladder! Climbing from square ' + from + ' to ' + to + '!'
+        : '🐍 Oh no! A snake! Sliding from square ' + from + ' down to ' + to + '!';
+    showNotification(message, {
+        type: isLadder ? 'success' : 'warning',
+        duration: 3000
+    });
+
     var marker = document.createElement('div');
     marker.className = 'floating-marker';
-    marker.textContent = getCharacterIcon(gameState.character);
+
+    // Create a more visible animated marker
+    if (gameState.avatarUrl || gameState.avatarData) {
+        marker.style.backgroundImage = 'url("' + (gameState.avatarUrl || gameState.avatarData) + '")';
+        marker.style.backgroundSize = 'cover';
+        marker.style.backgroundPosition = 'center';
+        marker.style.borderRadius = '50%';
+        marker.style.border = '3px solid ' + (isLadder ? '#4caf50' : '#f44336');
+    } else {
+        marker.textContent = getCharacterIcon(gameState.character);
+    }
+
     marker.style.position = 'absolute';
     marker.style.zIndex = 9999;
+    marker.style.boxShadow = isLadder
+        ? '0 0 20px rgba(76, 175, 80, 0.8)'
+        : '0 0 20px rgba(244, 67, 54, 0.8)';
     document.body.appendChild(marker);
 
     var fromRect = fromEl.getBoundingClientRect();
@@ -2671,7 +2841,7 @@ function animateMoveToSquare(from, to) {
     // Center the larger marker properly
     marker.style.left = (fromRect.left + (fromRect.width / 2) - 20) + 'px';
     marker.style.top = (fromRect.top + (fromRect.height / 2) - 20) + 'px';
-    marker.style.transition = 'all 0.9s cubic-bezier(.2,.8,.2,1)';
+    marker.style.transition = 'all 1.2s cubic-bezier(.4,.0,.2,1)';
 
     if (isLadder) {
         playSfx('ladder');
@@ -2681,13 +2851,44 @@ function animateMoveToSquare(from, to) {
         marker.classList.add('snake-anim');
     }
 
+    // Create a path trail effect
+    var trail = document.createElement('div');
+    trail.style.position = 'absolute';
+    trail.style.width = '4px';
+    trail.style.backgroundColor = isLadder ? '#4caf50' : '#f44336';
+    trail.style.opacity = '0.5';
+    trail.style.zIndex = '9998';
+    trail.style.transformOrigin = 'top left';
+    trail.style.pointerEvents = 'none';
+
+    var dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
+    var dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
+    var distance = Math.sqrt(dx*dx + dy*dy);
+    var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    trail.style.left = (fromRect.left + fromRect.width/2) + 'px';
+    trail.style.top = (fromRect.top + fromRect.height/2) + 'px';
+    trail.style.width = distance + 'px';
+    trail.style.height = '4px';
+    trail.style.transform = 'rotate(' + angle + 'deg)';
+    trail.style.transition = 'opacity 0.5s ease-in-out';
+    document.body.appendChild(trail);
+
     setTimeout(function () {
         marker.style.left = (toRect.left + (toRect.width / 2) - 20) + 'px';
         marker.style.top = (toRect.top + (toRect.height / 2) - 20) + 'px';
     }, 20);
 
     setTimeout(function () {
-        document.body.removeChild(marker);
+        // Fade out trail
+        trail.style.opacity = '0';
+        setTimeout(function() {
+            if (trail.parentNode) trail.parentNode.removeChild(trail);
+        }, 500);
+    }, 800);
+
+    setTimeout(function () {
+        if (marker.parentNode) document.body.removeChild(marker);
         gameState.currentSquare = to;
         if (gameState.visitedSquares.indexOf(to) === -1) gameState.visitedSquares.push(to);
         createGameBoard(); updatePlayerInfo(); saveProgress();
@@ -2709,7 +2910,7 @@ function animateMoveToSquare(from, to) {
         }
 
         handleSquareEvent();
-    }, 1000);
+    }, 1300);
 }
 
 // Section navigation controls (part1 <-> part2).
