@@ -116,8 +116,12 @@
         }
         
         #game-board.game-board {
+            display: grid !important;
+            grid-template-rows: repeat(5, 1fr) !important;
             padding: 9px !important;
-            gap: 0px !important;
+            gap: 0 !important;
+            row-gap: 0 !important;
+            column-gap: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
@@ -130,12 +134,14 @@
         #game-board .board-row {
             display: grid !important;
             grid-template-columns: repeat(10, 1fr) !important;
-            gap: 0px !important;
-            column-gap: 0px !important;
-            row-gap: 0px !important;
+            gap: 0 !important;
+            column-gap: 0 !important;
+            row-gap: 0 !important;
             width: 100% !important;
+            height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            border: 0 !important;
         }
 
         #game-board .square {
