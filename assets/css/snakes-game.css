@@ -323,16 +323,17 @@ textarea:focus-visible {
 .game-board {
   display: flex; /* rows are created dynamically by JS */
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
   width: 100%;
   height: 100%;
   position: relative;
+  border: 3px solid #b45d00;
 }
 
 .board-row {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  gap: 0px;
   flex: 1;
 }
 
@@ -386,8 +387,8 @@ textarea:focus-visible {
 
 .square {
   aspect-ratio: 1;
-  border: 1px solid #d8c883;
-  border-radius: 10px;
+  border: 1.5px solid #d8c883;
+  border-radius: 0px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -471,12 +472,13 @@ textarea:focus-visible {
 }
 
 .square-number {
-  font-size: 0.72em;
-  color: #6d581f;
+  font-size: 0.95em;
+  font-weight: 700;
+  color: #5a4616;
   position: absolute;
   top: 4px;
   left: 6px;
-  text-shadow: 0 1px 0 rgba(255, 250, 226, 0.7);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .square-icon {

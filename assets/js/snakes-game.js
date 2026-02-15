@@ -1795,75 +1795,147 @@ function drawSnakesAndLaddersConnections() {
     board.appendChild(svg);
 }
 
-// Draw a ladder between two points
+// Draw a realistic ladder between two points
 function drawLadder(svg, x1, y1, x2, y2) {
     var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.setAttribute('opacity', '0.6');
+    group.setAttribute('opacity', '0.85');
 
     // Calculate ladder angle and length
     var dx = x2 - x1;
     var dy = y2 - y1;
     var length = Math.sqrt(dx * dx + dy * dy);
 
-    // Ladder side rails (two parallel lines) - thinner and cleaner
-    var railWidth = 6;
+    // Ladder parameters for realistic look
+    var railWidth = 10;
+    var perpX = -dy / length * railWidth;
+    var perpY = dx / length * railWidth;
+
+    // Left rail with 3D shadow effect
+    var rail1Shadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    rail1Shadow.setAttribute('x1', x1 + 1);
+    rail1Shadow.setAttribute('y1', y1 + 1);
+    rail1Shadow.setAttribute('x2', x2 + 1);
+    rail1Shadow.setAttribute('y2', y2 + 1);
+    rail1Shadow.setAttribute('stroke', '#5d3a1a');
+    rail1Shadow.setAttribute('stroke-width', '6');
+    rail1Shadow.setAttribute('stroke-linecap', 'round');
+    rail1Shadow.setAttribute('opacity', '0.3');
+    group.appendChild(rail1Shadow);
+
     var rail1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     rail1.setAttribute('x1', x1);
     rail1.setAttribute('y1', y1);
     rail1.setAttribute('x2', x2);
     rail1.setAttribute('y2', y2);
-    rail1.setAttribute('stroke', '#A0522D');
-    rail1.setAttribute('stroke-width', '3');
+    rail1.setAttribute('stroke', '#8B4513');
+    rail1.setAttribute('stroke-width', '6');
     rail1.setAttribute('stroke-linecap', 'round');
+    group.appendChild(rail1);
+
+    // Highlight on left rail for wood texture
+    var rail1Highlight = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    rail1Highlight.setAttribute('x1', x1);
+    rail1Highlight.setAttribute('y1', y1);
+    rail1Highlight.setAttribute('x2', x2);
+    rail1Highlight.setAttribute('y2', y2);
+    rail1Highlight.setAttribute('stroke', '#CD853F');
+    rail1Highlight.setAttribute('stroke-width', '2.5');
+    rail1Highlight.setAttribute('stroke-linecap', 'round');
+    rail1Highlight.setAttribute('opacity', '0.6');
+    group.appendChild(rail1Highlight);
+
+    // Right rail with 3D shadow effect
+    var rail2Shadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    rail2Shadow.setAttribute('x1', x1 + perpX + 1);
+    rail2Shadow.setAttribute('y1', y1 + perpY + 1);
+    rail2Shadow.setAttribute('x2', x2 + perpX + 1);
+    rail2Shadow.setAttribute('y2', y2 + perpY + 1);
+    rail2Shadow.setAttribute('stroke', '#5d3a1a');
+    rail2Shadow.setAttribute('stroke-width', '6');
+    rail2Shadow.setAttribute('stroke-linecap', 'round');
+    rail2Shadow.setAttribute('opacity', '0.3');
+    group.appendChild(rail2Shadow);
 
     var rail2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    var offset = railWidth;
-    var perpX = -dy / length * offset;
-    var perpY = dx / length * offset;
     rail2.setAttribute('x1', x1 + perpX);
     rail2.setAttribute('y1', y1 + perpY);
     rail2.setAttribute('x2', x2 + perpX);
     rail2.setAttribute('y2', y2 + perpY);
-    rail2.setAttribute('stroke', '#A0522D');
-    rail2.setAttribute('stroke-width', '3');
+    rail2.setAttribute('stroke', '#8B4513');
+    rail2.setAttribute('stroke-width', '6');
     rail2.setAttribute('stroke-linecap', 'round');
-
-    group.appendChild(rail1);
     group.appendChild(rail2);
 
-    // Add fewer, cleaner rungs
-    var numRungs = Math.max(2, Math.min(5, Math.floor(length / 30)));
+    // Highlight on right rail
+    var rail2Highlight = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    rail2Highlight.setAttribute('x1', x1 + perpX);
+    rail2Highlight.setAttribute('y1', y1 + perpY);
+    rail2Highlight.setAttribute('x2', x2 + perpX);
+    rail2Highlight.setAttribute('y2', y2 + perpY);
+    rail2Highlight.setAttribute('stroke', '#CD853F');
+    rail2Highlight.setAttribute('stroke-width', '2.5');
+    rail2Highlight.setAttribute('stroke-linecap', 'round');
+    rail2Highlight.setAttribute('opacity', '0.6');
+    group.appendChild(rail2Highlight);
+
+    // Add rungs with realistic spacing
+    var numRungs = Math.max(3, Math.min(7, Math.floor(length / 25)));
     for (var i = 1; i <= numRungs; i++) {
         var t = i / (numRungs + 1);
         var rungX = x1 + dx * t;
         var rungY = y1 + dy * t;
 
+        // Rung shadow
+        var rungShadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        rungShadow.setAttribute('x1', rungX + 1);
+        rungShadow.setAttribute('y1', rungY + 1);
+        rungShadow.setAttribute('x2', rungX + perpX + 1);
+        rungShadow.setAttribute('y2', rungY + perpY + 1);
+        rungShadow.setAttribute('stroke', '#5d3a1a');
+        rungShadow.setAttribute('stroke-width', '5');
+        rungShadow.setAttribute('stroke-linecap', 'round');
+        rungShadow.setAttribute('opacity', '0.3');
+        group.appendChild(rungShadow);
+
+        // Main rung
         var rung = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         rung.setAttribute('x1', rungX);
         rung.setAttribute('y1', rungY);
         rung.setAttribute('x2', rungX + perpX);
         rung.setAttribute('y2', rungY + perpY);
-        rung.setAttribute('stroke', '#8B4513');
-        rung.setAttribute('stroke-width', '2.5');
+        rung.setAttribute('stroke', '#A0522D');
+        rung.setAttribute('stroke-width', '5');
         rung.setAttribute('stroke-linecap', 'round');
         group.appendChild(rung);
+
+        // Rung highlight
+        var rungHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        rungHighlight.setAttribute('x1', rungX);
+        rungHighlight.setAttribute('y1', rungY);
+        rungHighlight.setAttribute('x2', rungX + perpX);
+        rungHighlight.setAttribute('y2', rungY + perpY);
+        rungHighlight.setAttribute('stroke', '#DEB887');
+        rungHighlight.setAttribute('stroke-width', '2');
+        rungHighlight.setAttribute('stroke-linecap', 'round');
+        rungHighlight.setAttribute('opacity', '0.5');
+        group.appendChild(rungHighlight);
     }
 
     svg.appendChild(group);
 }
 
-// Draw a snake between two points
+// Draw a realistic snake between two points
 function drawSnake(svg, x1, y1, x2, y2) {
     var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.setAttribute('opacity', '0.65');
+    group.setAttribute('opacity', '0.85');
 
     var dx = x2 - x1;
     var dy = y2 - y1;
     var length = Math.sqrt(dx * dx + dy * dy);
 
-    // Create a smooth wavy snake body
-    var numSegments = Math.max(3, Math.min(6, Math.floor(length / 40)));
-    var waveAmplitude = Math.min(10, length / 15); // Adaptive wave based on length
+    // Create a smooth wavy snake body with more natural curves
+    var numSegments = Math.max(4, Math.min(8, Math.floor(length / 30)));
+    var waveAmplitude = Math.min(15, length / 12);
 
     var pathData = 'M ' + x1 + ' ' + y1;
 
@@ -1872,8 +1944,8 @@ function drawSnake(svg, x1, y1, x2, y2) {
         var px = x1 + dx * t;
         var py = y1 + dy * t;
 
-        // Gentle sine wave for natural snake curve
-        var perpOffset = Math.sin(t * Math.PI * 2.5) * waveAmplitude;
+        // Natural sine wave for snake body
+        var perpOffset = Math.sin(t * Math.PI * 3) * waveAmplitude;
         var perpX = -dy / length * perpOffset;
         var perpY = dx / length * perpOffset;
 
@@ -1891,60 +1963,118 @@ function drawSnake(svg, x1, y1, x2, y2) {
     }
     pathData += ' ' + x2 + ' ' + y2;
 
-    // Snake body - cleaner, thinner design
+    // Shadow layer for depth
+    var bodyShadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bodyShadow.setAttribute('d', pathData);
+    bodyShadow.setAttribute('stroke', '#1a1a1a');
+    bodyShadow.setAttribute('stroke-width', '14');
+    bodyShadow.setAttribute('fill', 'none');
+    bodyShadow.setAttribute('stroke-linecap', 'round');
+    bodyShadow.setAttribute('stroke-linejoin', 'round');
+    bodyShadow.setAttribute('opacity', '0.2');
+    bodyShadow.setAttribute('transform', 'translate(2, 2)');
+    group.appendChild(bodyShadow);
+
+    // Main snake body - dark green
     var body = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     body.setAttribute('d', pathData);
-    body.setAttribute('stroke', '#2d5016');
-    body.setAttribute('stroke-width', '6');
+    body.setAttribute('stroke', '#1a5c0f');
+    body.setAttribute('stroke-width', '12');
     body.setAttribute('fill', 'none');
     body.setAttribute('stroke-linecap', 'round');
     body.setAttribute('stroke-linejoin', 'round');
-
-    // Subtle pattern overlay
-    var bodyPattern = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bodyPattern.setAttribute('d', pathData);
-    bodyPattern.setAttribute('stroke', '#4a7c2c');
-    bodyPattern.setAttribute('stroke-width', '4');
-    bodyPattern.setAttribute('fill', 'none');
-    bodyPattern.setAttribute('stroke-linecap', 'round');
-
     group.appendChild(body);
-    group.appendChild(bodyPattern);
 
-    // Smaller, cleaner snake head
+    // Lighter green overlay for texture
+    var bodyOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bodyOverlay.setAttribute('d', pathData);
+    bodyOverlay.setAttribute('stroke', '#2d8a1e');
+    bodyOverlay.setAttribute('stroke-width', '9');
+    bodyOverlay.setAttribute('fill', 'none');
+    bodyOverlay.setAttribute('stroke-linecap', 'round');
+    bodyOverlay.setAttribute('stroke-linejoin', 'round');
+    group.appendChild(bodyOverlay);
+
+    // Scale pattern with dashed line
+    var scalePattern = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    scalePattern.setAttribute('d', pathData);
+    scalePattern.setAttribute('stroke', '#4CAF50');
+    scalePattern.setAttribute('stroke-width', '6');
+    scalePattern.setAttribute('fill', 'none');
+    scalePattern.setAttribute('stroke-linecap', 'round');
+    scalePattern.setAttribute('stroke-dasharray', '8,4');
+    group.appendChild(scalePattern);
+
+    // Snake head - larger and more detailed
+    var headShadow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    headShadow.setAttribute('cx', x1 + 1);
+    headShadow.setAttribute('cy', y1 + 1);
+    headShadow.setAttribute('r', '9');
+    headShadow.setAttribute('fill', '#000');
+    headShadow.setAttribute('opacity', '0.2');
+    group.appendChild(headShadow);
+
     var head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     head.setAttribute('cx', x1);
     head.setAttribute('cy', y1);
-    head.setAttribute('r', '6');
-    head.setAttribute('fill', '#2d5016');
-    head.setAttribute('stroke', '#1a2e0d');
-    head.setAttribute('stroke-width', '1');
-
-    // Subtle red eyes
-    var eye1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eye1.setAttribute('cx', x1 - 2);
-    eye1.setAttribute('cy', y1 - 2);
-    eye1.setAttribute('r', '1.5');
-    eye1.setAttribute('fill', '#8B0000');
-
-    var eye2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eye2.setAttribute('cx', x1 + 2);
-    eye2.setAttribute('cy', y1 - 2);
-    eye2.setAttribute('r', '1.5');
-    eye2.setAttribute('fill', '#8B0000');
-
+    head.setAttribute('r', '9');
+    head.setAttribute('fill', '#1a5c0f');
+    head.setAttribute('stroke', '#0d3308');
+    head.setAttribute('stroke-width', '2');
     group.appendChild(head);
-    group.appendChild(eye1);
-    group.appendChild(eye2);
 
-    // Tapered tail
+    // Head highlight
+    var headHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    headHighlight.setAttribute('cx', x1 - 2);
+    headHighlight.setAttribute('cy', y1 - 2);
+    headHighlight.setAttribute('r', '4');
+    headHighlight.setAttribute('fill', '#2d8a1e');
+    headHighlight.setAttribute('opacity', '0.6');
+    group.appendChild(headHighlight);
+
+    // Snake eyes - red with white glint
+    var eye1Base = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    eye1Base.setAttribute('cx', x1 - 3);
+    eye1Base.setAttribute('cy', y1 - 2);
+    eye1Base.setAttribute('r', '2.5');
+    eye1Base.setAttribute('fill', '#CC0000');
+    group.appendChild(eye1Base);
+
+    var eye1Glint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    eye1Glint.setAttribute('cx', x1 - 2.5);
+    eye1Glint.setAttribute('cy', y1 - 2.5);
+    eye1Glint.setAttribute('r', '0.8');
+    eye1Glint.setAttribute('fill', '#fff');
+    group.appendChild(eye1Glint);
+
+    var eye2Base = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    eye2Base.setAttribute('cx', x1 + 3);
+    eye2Base.setAttribute('cy', y1 - 2);
+    eye2Base.setAttribute('r', '2.5');
+    eye2Base.setAttribute('fill', '#CC0000');
+    group.appendChild(eye2Base);
+
+    var eye2Glint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    eye2Glint.setAttribute('cx', x1 + 3.5);
+    eye2Glint.setAttribute('cy', y1 - 2.5);
+    eye2Glint.setAttribute('r', '0.8');
+    eye2Glint.setAttribute('fill', '#fff');
+    group.appendChild(eye2Glint);
+
+    // Tapered tail with gradient effect
     var tail = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     tail.setAttribute('cx', x2);
     tail.setAttribute('cy', y2);
-    tail.setAttribute('r', '3');
-    tail.setAttribute('fill', '#2d5016');
-
+    tail.setAttribute('r', '5');
+    tail.setAttribute('fill', '#1a5c0f');
     group.appendChild(tail);
+
+    var tailTip = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    tailTip.setAttribute('cx', x2);
+    tailTip.setAttribute('cy', y2);
+    tailTip.setAttribute('r', '2.5');
+    tailTip.setAttribute('fill', '#0d3308');
+    group.appendChild(tailTip);
 
     svg.appendChild(group);
 }
