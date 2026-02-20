@@ -58,7 +58,7 @@ microblog: True
     <div class="hero-selection-layout">
       <section class="hero-selector-main" aria-labelledby="hero-selection-title">
         <h2 id="hero-selection-title">Choose Your Hero</h2>
-        <p class="character-select-instruction">Click arrows to browse - Click centered character twice to select</p>
+        <p class="character-select-instruction">Click arrows to browse - Click and hold on your desired character to select</p>
         <div class="character-carousel">
           <button class="carousel-btn prev-btn" id="prev-character" aria-label="Previous hero">&#9668;</button>
           <div class="carousel-container">
@@ -478,7 +478,7 @@ microblog: True
       loadoutApi.saveLoadout(gameState.character, gameState.weaponType, { useSession: !!gameState.isGuest });
     }
     var charName = card.querySelector('.character-name').textContent;
-    alert(charName + ' selected! Click START ADVENTURE to begin.');
+    showGameNotification('🎉 Congrats! You\'ve selected ' + charName + '. Click START ADVENTURE to begin your quest!', 'success');
     if (!gameState.isGuest && gameState.userId) {
       fetch(API_URL + '/snakes/', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
         .then(function(r) {
@@ -523,6 +523,47 @@ microblog: True
     }
     var startBtn = document.getElementById('start-game-btn');
     if (startBtn) startBtn.disabled = false;
+  }
+
+  function showGameNotification(message, type) {
+    var existing = document.getElementById('landing-notification');
+    if (existing) existing.remove();
+
+    var toast = document.createElement('div');
+    toast.id = 'landing-notification';
+    toast.style.cssText = [
+      'position: fixed',
+      'top: 20px',
+      'right: 20px',
+      'background: ' + (type === 'success' ? 'linear-gradient(135deg, #28a745, #20c997)' : 'linear-gradient(135deg, #ff9966, #ff5e62)'),
+      'color: white',
+      'padding: 14px 20px',
+      'border-radius: 12px',
+      'font-size: 0.95rem',
+      'font-weight: 600',
+      'max-width: 320px',
+      'box-shadow: 0 6px 20px rgba(0,0,0,0.3)',
+      'z-index: 9999',
+      'opacity: 0',
+      'transform: translateX(40px)',
+      'transition: all 0.35s ease',
+      'cursor: pointer'
+    ].join(';');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(function() {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(0)';
+    });
+
+    toast.addEventListener('click', function() { toast.remove(); });
+
+    setTimeout(function() {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(40px)';
+      setTimeout(function() { if (toast.parentNode) toast.remove(); }, 350);
+    }, 4000);
   }
 
   function startGame() {
@@ -742,10 +783,29 @@ microblog: True
     prevBtn.addEventListener('click', function() { currentIndex = (currentIndex - 1 + cards.length) % cards.length; updateCarousel(); lastClickedIndex = -1; });
     nextBtn.addEventListener('click', function() { currentIndex = (currentIndex + 1) % cards.length; updateCarousel(); lastClickedIndex = -1; });
     cards.forEach(function(card, index) {
-      card.addEventListener('click', function() {
-        if (index !== currentIndex) { currentIndex = index; updateCarousel(); lastClickedIndex = -1; }
-        else if (lastClickedIndex === index) { selectCharacter(card); lastClickedIndex = -1; }
-        else { lastClickedIndex = index; card.style.transform = 'scale(1.2)'; setTimeout(function() { card.style.transform = ''; }, 200); if (clickTimer) clearTimeout(clickTimer); clickTimer = setTimeout(function() { lastClickedIndex = -1; }, 2000); }
+      var holdTimer = null;
+      var holding = false;
+
+      card.addEventListener('mousedown', function() {
+        if (index !== currentIndex) { currentIndex = index; updateCarousel(); return; }
+        holding = false;
+        card.style.transition = 'transform 0.3s ease';
+        card.style.transform = 'scale(1.08)';
+        holdTimer = setTimeout(function() {
+          holding = true;
+          card.style.transform = '';
+          selectCharacter(card);
+        }, 300);
+      });
+
+      card.addEventListener('mouseup', function() {
+        clearTimeout(holdTimer);
+        card.style.transform = '';
+      });
+
+      card.addEventListener('mouseleave', function() {
+        clearTimeout(holdTimer);
+        card.style.transform = '';
       });
     });
     document.addEventListener('keydown', function(e) {
