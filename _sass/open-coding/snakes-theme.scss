@@ -40,6 +40,17 @@ body.snakes-theme,
   --mode-pvp-border: #4facfe;
   --mode-slitherrush-border: #f1c40f;
   --mode-slitherrush-glow: rgba(241, 196, 15, 0.28);
+  --qboard-frame-light: #f0c36e;
+  --qboard-frame-mid: #cb8b3c;
+  --qboard-frame-dark: #7b4a1d;
+  --qboard-outline: rgba(var(--accent-rgb), 0.45);
+  --qboard-tile-light: #fff8ea;
+  --qboard-tile-dark: #e34a2f;
+  --qboard-tile-border-light: #e8d7b6;
+  --qboard-tile-border-dark: #d97a65;
+  --qboard-square-border: #d9a54d;
+  --qboard-ink-light: #fffef8;
+  --qboard-ink-dark: #171717;
 }
 
 body.snakes-theme[data-theme='aurora-mint'],
@@ -65,6 +76,16 @@ body[data-theme='aurora-mint'] .snakes-theme,
   --mode-pvp-border: #42d9f8;
   --mode-slitherrush-border: #c7ff7b;
   --mode-slitherrush-glow: rgba(199, 255, 123, 0.3);
+  --qboard-frame-light: #6ce0c8;
+  --qboard-frame-mid: #2f9f8f;
+  --qboard-frame-dark: #16665c;
+  --qboard-tile-light: #eafff6;
+  --qboard-tile-dark: #2fbf98;
+  --qboard-tile-border-light: #b9eedf;
+  --qboard-tile-border-dark: #57d2b3;
+  --qboard-square-border: #3fbfa3;
+  --qboard-ink-light: #f4fffb;
+  --qboard-ink-dark: #12372f;
 }
 
 body.snakes-theme[data-theme='emberforge'],
@@ -90,6 +111,16 @@ body[data-theme='emberforge'] .snakes-theme,
   --mode-pvp-border: #ffb347;
   --mode-slitherrush-border: #ffd166;
   --mode-slitherrush-glow: rgba(255, 209, 102, 0.32);
+  --qboard-frame-light: #ffba7a;
+  --qboard-frame-mid: #d86a34;
+  --qboard-frame-dark: #7f2f16;
+  --qboard-tile-light: #fff1e8;
+  --qboard-tile-dark: #f05f37;
+  --qboard-tile-border-light: #ffd8c4;
+  --qboard-tile-border-dark: #e9886b;
+  --qboard-square-border: #df835e;
+  --qboard-ink-light: #fff8f3;
+  --qboard-ink-dark: #3d1a10;
 }
 
 body.snakes-theme[data-theme='midnight-violet'],
@@ -115,6 +146,16 @@ body[data-theme='midnight-violet'] .snakes-theme,
   --mode-pvp-border: #8f9cff;
   --mode-slitherrush-border: #d5b3ff;
   --mode-slitherrush-glow: rgba(213, 179, 255, 0.34);
+  --qboard-frame-light: #b9a5ff;
+  --qboard-frame-mid: #6f57c9;
+  --qboard-frame-dark: #322066;
+  --qboard-tile-light: #f4edff;
+  --qboard-tile-dark: #7f61dd;
+  --qboard-tile-border-light: #d9c8fb;
+  --qboard-tile-border-dark: #9c86e7;
+  --qboard-square-border: #8167d1;
+  --qboard-ink-light: #fdfbff;
+  --qboard-ink-dark: #22163f;
 }
 
 body.snakes-theme[data-theme='solar-flare'],
@@ -140,6 +181,16 @@ body[data-theme='solar-flare'] .snakes-theme,
   --mode-pvp-border: #ffb703;
   --mode-slitherrush-border: #ffe07a;
   --mode-slitherrush-glow: rgba(255, 224, 122, 0.34);
+  --qboard-frame-light: #ffd366;
+  --qboard-frame-mid: #f08e1f;
+  --qboard-frame-dark: #8e4209;
+  --qboard-tile-light: #fff8e6;
+  --qboard-tile-dark: #f0833f;
+  --qboard-tile-border-light: #ffe7b9;
+  --qboard-tile-border-dark: #eaa06b;
+  --qboard-square-border: #df9451;
+  --qboard-ink-light: #fffdf5;
+  --qboard-ink-dark: #3f240d;
 }
 
 body.snakes-theme[data-theme='oceanic-depths'],
@@ -165,6 +216,16 @@ body[data-theme='oceanic-depths'] .snakes-theme,
   --mode-pvp-border: #4fd4ff;
   --mode-slitherrush-border: #9ee9ff;
   --mode-slitherrush-glow: rgba(158, 233, 255, 0.3);
+  --qboard-frame-light: #72d8ea;
+  --qboard-frame-mid: #2a8ca9;
+  --qboard-frame-dark: #12536a;
+  --qboard-tile-light: #e9faff;
+  --qboard-tile-dark: #2fa3c6;
+  --qboard-tile-border-light: #bbe5f2;
+  --qboard-tile-border-dark: #68bdd7;
+  --qboard-square-border: #4ca5c2;
+  --qboard-ink-light: #f5fdff;
+  --qboard-ink-dark: #113a4a;
 }
 
 body.snakes-theme[data-theme='rose-nebula'],
@@ -190,6 +251,16 @@ body[data-theme='rose-nebula'] .snakes-theme,
   --mode-pvp-border: #ff9cc2;
   --mode-slitherrush-border: #ffd1e2;
   --mode-slitherrush-glow: rgba(255, 209, 226, 0.34);
+  --qboard-frame-light: #ff9fc4;
+  --qboard-frame-mid: #d95791;
+  --qboard-frame-dark: #7d2451;
+  --qboard-tile-light: #fff0f6;
+  --qboard-tile-dark: #e55d93;
+  --qboard-tile-border-light: #ffd0e2;
+  --qboard-tile-border-dark: #e98ab0;
+  --qboard-square-border: #d4729e;
+  --qboard-ink-light: #fff9fc;
+  --qboard-ink-dark: #45172e;
 }
 
 body.snakes-theme[data-theme='cyber-lime'],
@@ -215,6 +286,16 @@ body[data-theme='cyber-lime'] .snakes-theme,
   --mode-pvp-border: #bbff5a;
   --mode-slitherrush-border: #e6ffaf;
   --mode-slitherrush-glow: rgba(230, 255, 175, 0.34);
+  --qboard-frame-light: #c2f07b;
+  --qboard-frame-mid: #6aa82a;
+  --qboard-frame-dark: #2d5f12;
+  --qboard-tile-light: #f4ffe4;
+  --qboard-tile-dark: #8ecf43;
+  --qboard-tile-border-light: #d9f6ba;
+  --qboard-tile-border-dark: #a9dc74;
+  --qboard-square-border: #84bb4d;
+  --qboard-ink-light: #fbfff3;
+  --qboard-ink-dark: #2a4514;
 }
 
 body.snakes-theme[data-theme='glacier-blue'],
@@ -240,6 +321,16 @@ body[data-theme='glacier-blue'] .snakes-theme,
   --mode-pvp-border: #9ad2ff;
   --mode-slitherrush-border: #d0e8ff;
   --mode-slitherrush-glow: rgba(208, 232, 255, 0.34);
+  --qboard-frame-light: #9ac6ff;
+  --qboard-frame-mid: #4a86d8;
+  --qboard-frame-dark: #1f4478;
+  --qboard-tile-light: #f0f7ff;
+  --qboard-tile-dark: #679fe8;
+  --qboard-tile-border-light: #cfe2fb;
+  --qboard-tile-border-dark: #89afe4;
+  --qboard-square-border: #6e98d1;
+  --qboard-ink-light: #fbfdff;
+  --qboard-ink-dark: #1d3255;
 }
 
 body.snakes-theme[data-theme='sandstone-gold'],
@@ -265,6 +356,16 @@ body[data-theme='sandstone-gold'] .snakes-theme,
   --mode-pvp-border: #e9c46a;
   --mode-slitherrush-border: #f6db9f;
   --mode-slitherrush-glow: rgba(246, 219, 159, 0.36);
+  --qboard-frame-light: #eac27f;
+  --qboard-frame-mid: #b47c42;
+  --qboard-frame-dark: #6c4422;
+  --qboard-tile-light: #fff7e9;
+  --qboard-tile-dark: #d99155;
+  --qboard-tile-border-light: #efd8af;
+  --qboard-tile-border-dark: #d3a171;
+  --qboard-square-border: #b98552;
+  --qboard-ink-light: #fffcf4;
+  --qboard-ink-dark: #3a2815;
 }
 
 .character-select-active {
@@ -461,10 +562,16 @@ body.snakes-theme,
     border-radius: 12px;
   }
 
-  #game-board,
-  .game-board {
+  #game-board:not([data-scale='question']),
+  .game-board:not([data-scale='question']) {
     background: rgba(0, 0, 0, 0.35);
     border-radius: 10px;
+  }
+
+  #game-board[data-scale='question'],
+  .game-board[data-scale='question'] {
+    background: transparent;
+    border-radius: 14px;
   }
 
   .question-header,

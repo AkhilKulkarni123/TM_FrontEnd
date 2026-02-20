@@ -673,11 +673,13 @@ textarea:focus-visible {
 }
 
 .board-stage[data-scale="question"] {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   height: auto;
-  min-height: 0;
+  min-height: auto;
   justify-content: flex-start;
   padding: 8px 0 8px 0;
+  align-items: flex-start;
+  overflow: visible;
 }
 
 .board-grid-frame {
@@ -700,25 +702,64 @@ textarea:focus-visible {
 .board-grid-frame[data-scale="lesson"] {
   max-width: 420px;
   height: auto;
+  align-items: flex-start;
 }
 
 .board-grid-frame[data-scale="lesson"] .game-board {
   height: auto;
   max-height: none;
+  display: block;
+  grid-template-rows: none;
+  padding: 10px;
 }
 
 .board-grid-frame[data-scale="question"] {
-  max-width: min(580px, 100%);
+  max-width: min(760px, 100%);
+  width: min(760px, 100%);
   justify-content: flex-start;
+  align-items: flex-start !important;
+  height: auto !important;
+  border-radius: 0 !important;
 }
 
 .board-grid-frame[data-scale="question"] .game-board {
-  padding: 0.5px;
+  --question-board-wood-light: var(--qboard-frame-light, #f0c36e);
+  --question-board-wood-mid: var(--qboard-frame-mid, #cb8b3c);
+  --question-board-wood-dark: var(--qboard-frame-dark, #7b4a1d);
+  --question-board-tile-light: var(--qboard-tile-light, #fff8ea);
+  --question-board-tile-dark: var(--qboard-tile-dark, #e34a2f);
+  --question-board-outline: var(--qboard-outline, rgba(var(--accent-rgb, 102, 126, 234), 0.45));
+  --question-board-tile-border-dark: var(--qboard-tile-border-dark, #d97a65);
+  --question-board-tile-border-light: var(--qboard-tile-border-light, #e8d7b6);
+  --question-board-square-border: var(--qboard-square-border, #d9a54d);
+  --question-board-ink-dark: var(--qboard-ink-dark, #171717);
+  --question-board-ink-light: var(--qboard-ink-light, #fffef8);
+  padding: 9px;
+  border-radius: 0 !important;
+  border: 4px solid var(--question-board-wood-dark);
+  background: var(--question-board-wood-mid);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.28),
+    inset 0 0 0 6px rgba(0, 0, 0, 0.18),
+    0 18px 30px rgba(0, 0, 0, 0.25),
+    0 0 0 2px var(--question-board-outline);
+  height: auto !important;
+  max-height: none !important;
+  align-self: flex-start !important;
 }
 
 .game-board[data-scale="lesson"] {
   max-width: 420px;
   height: auto;
+  min-height: unset;
+  align-self: flex-start;
+  background:
+    linear-gradient(135deg, #f3c46f 0%, #cf8c2f 55%, #b16f22 100%);
+  border-color: #7a4d1f;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.12),
+    0 14px 24px rgba(0, 0, 0, 0.18);
 }
 
 .game-board[data-scale="lesson"] .square {
@@ -736,6 +777,110 @@ textarea:focus-visible {
 
 .game-board[data-scale="question"] .square {
   font-size: 0.45em;
+  border-color: var(--question-board-square-border);
+  border-width: 1px;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  box-shadow: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.game-board[data-scale="question"] {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}
+
+.game-board[data-scale="question"] .board-row {
+  display: grid !important;
+  grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+  height: auto !important;
+  gap: 4px !important;
+  column-gap: 4px !important;
+  row-gap: 4px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+}
+
+.game-board[data-scale="question"] .board-row:last-child {
+  padding-bottom: 0 !important;
+}
+
+.game-board[data-scale="question"] .board-row .square {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+}
+
+.game-board[data-scale="question"] .board-row:nth-child(odd) .square:nth-child(odd),
+.game-board[data-scale="question"] .board-row:nth-child(even) .square:nth-child(even) {
+  background: var(--question-board-tile-dark);
+  border-color: var(--question-board-tile-border-dark);
+}
+
+.game-board[data-scale="question"] .board-row:nth-child(odd) .square:nth-child(even),
+.game-board[data-scale="question"] .board-row:nth-child(even) .square:nth-child(odd) {
+  background: var(--question-board-tile-light);
+  border-color: var(--question-board-tile-border-light);
+}
+
+.game-board[data-scale="question"] .board-row:nth-child(odd) .square:nth-child(odd) .square-number,
+.game-board[data-scale="question"] .board-row:nth-child(even) .square:nth-child(even) .square-number {
+  color: var(--question-board-ink-light);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.42);
+}
+
+.game-board[data-scale="question"] .board-row:nth-child(odd) .square:nth-child(even) .square-number,
+.game-board[data-scale="question"] .board-row:nth-child(even) .square:nth-child(odd) .square-number {
+  color: var(--question-board-ink-dark);
+  text-shadow: none;
+}
+
+.game-board[data-scale="question"] .square:hover {
+  transform: scale(1.03);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.36), 0 6px 10px rgba(0, 0, 0, 0.25);
+}
+
+.game-board[data-scale="question"] .square.snake,
+.game-board[data-scale="question"] .square.ladder,
+.game-board[data-scale="question"] .square.start,
+.game-board[data-scale="question"] .square.boss,
+.game-board[data-scale="question"] .square.visited {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.game-board[data-scale="question"] .square.snake {
+  border-color: #8f2c1f;
+  box-shadow: inset 0 0 0 2px rgba(174, 47, 31, 0.72);
+}
+
+.game-board[data-scale="question"] .square.ladder {
+  border-color: #2f7f58;
+  box-shadow: inset 0 0 0 2px rgba(47, 127, 88, 0.78);
+}
+
+.game-board[data-scale="question"] .square.start {
+  border-color: #297cb8;
+  box-shadow: inset 0 0 0 2px rgba(41, 124, 184, 0.75);
+}
+
+.game-board[data-scale="question"] .square.boss {
+  border-color: #8d5b1e;
+  box-shadow: inset 0 0 0 2px rgba(191, 126, 42, 0.85);
+}
+
+.game-board[data-scale="question"] .square.current {
+  animation: pulse 1s infinite;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.88),
+    0 0 0 2px rgba(var(--accent-rgb, 102, 126, 234), 0.58),
+    0 0 14px rgba(var(--accent-rgb, 102, 126, 234), 0.5);
 }
 
 .board-nav {

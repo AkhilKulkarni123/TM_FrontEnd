@@ -1763,7 +1763,7 @@ function drawSnakesAndLaddersConnections() {
     svg.style.height = '100%';
     svg.style.pointerEvents = 'none';
     svg.style.zIndex = '1';
-    svg.style.opacity = '0.82';
+    svg.style.opacity = '0.74';
     board.style.position = 'relative';
 
     // Draw snakes and ladders for each connection
@@ -1799,37 +1799,25 @@ function drawSnakesAndLaddersConnections() {
 // Draw a realistic ladder between two points
 function drawLadder(svg, x1, y1, x2, y2) {
     var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.setAttribute('opacity', '0.85');
+    group.setAttribute('opacity', '0.66');
 
     // Calculate ladder angle and length
     var dx = x2 - x1;
     var dy = y2 - y1;
     var length = Math.sqrt(dx * dx + dy * dy);
 
-    // Ladder parameters for realistic look
-    var railWidth = 14;
+    // Ladder parameters tuned to match the classic board reference style
+    var railWidth = 10;
     var perpX = -dy / length * railWidth;
     var perpY = dx / length * railWidth;
-
-    // Left rail with 3D shadow effect
-    var rail1Shadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    rail1Shadow.setAttribute('x1', x1 + 1);
-    rail1Shadow.setAttribute('y1', y1 + 1);
-    rail1Shadow.setAttribute('x2', x2 + 1);
-    rail1Shadow.setAttribute('y2', y2 + 1);
-    rail1Shadow.setAttribute('stroke', '#5d3a1a');
-    rail1Shadow.setAttribute('stroke-width', '4');
-    rail1Shadow.setAttribute('stroke-linecap', 'round');
-    rail1Shadow.setAttribute('opacity', '0.3');
-    group.appendChild(rail1Shadow);
 
     var rail1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     rail1.setAttribute('x1', x1);
     rail1.setAttribute('y1', y1);
     rail1.setAttribute('x2', x2);
     rail1.setAttribute('y2', y2);
-    rail1.setAttribute('stroke', '#8B4513');
-    rail1.setAttribute('stroke-width', '4');
+    rail1.setAttribute('stroke', '#a56633');
+    rail1.setAttribute('stroke-width', '3.1');
     rail1.setAttribute('stroke-linecap', 'round');
     group.appendChild(rail1);
 
@@ -1839,31 +1827,19 @@ function drawLadder(svg, x1, y1, x2, y2) {
     rail1Highlight.setAttribute('y1', y1);
     rail1Highlight.setAttribute('x2', x2);
     rail1Highlight.setAttribute('y2', y2);
-    rail1Highlight.setAttribute('stroke', '#CD853F');
-    rail1Highlight.setAttribute('stroke-width', '1.5');
+    rail1Highlight.setAttribute('stroke', '#d7ab7b');
+    rail1Highlight.setAttribute('stroke-width', '1.1');
     rail1Highlight.setAttribute('stroke-linecap', 'round');
-    rail1Highlight.setAttribute('opacity', '0.6');
+    rail1Highlight.setAttribute('opacity', '0.8');
     group.appendChild(rail1Highlight);
-
-    // Right rail with 3D shadow effect
-    var rail2Shadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    rail2Shadow.setAttribute('x1', x1 + perpX + 1);
-    rail2Shadow.setAttribute('y1', y1 + perpY + 1);
-    rail2Shadow.setAttribute('x2', x2 + perpX + 1);
-    rail2Shadow.setAttribute('y2', y2 + perpY + 1);
-    rail2Shadow.setAttribute('stroke', '#5d3a1a');
-    rail2Shadow.setAttribute('stroke-width', '4');
-    rail2Shadow.setAttribute('stroke-linecap', 'round');
-    rail2Shadow.setAttribute('opacity', '0.3');
-    group.appendChild(rail2Shadow);
 
     var rail2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     rail2.setAttribute('x1', x1 + perpX);
     rail2.setAttribute('y1', y1 + perpY);
     rail2.setAttribute('x2', x2 + perpX);
     rail2.setAttribute('y2', y2 + perpY);
-    rail2.setAttribute('stroke', '#8B4513');
-    rail2.setAttribute('stroke-width', '4');
+    rail2.setAttribute('stroke', '#a56633');
+    rail2.setAttribute('stroke-width', '3.1');
     rail2.setAttribute('stroke-linecap', 'round');
     group.appendChild(rail2);
 
@@ -1873,30 +1849,18 @@ function drawLadder(svg, x1, y1, x2, y2) {
     rail2Highlight.setAttribute('y1', y1 + perpY);
     rail2Highlight.setAttribute('x2', x2 + perpX);
     rail2Highlight.setAttribute('y2', y2 + perpY);
-    rail2Highlight.setAttribute('stroke', '#CD853F');
-    rail2Highlight.setAttribute('stroke-width', '1.5');
+    rail2Highlight.setAttribute('stroke', '#d7ab7b');
+    rail2Highlight.setAttribute('stroke-width', '1.1');
     rail2Highlight.setAttribute('stroke-linecap', 'round');
-    rail2Highlight.setAttribute('opacity', '0.6');
+    rail2Highlight.setAttribute('opacity', '0.8');
     group.appendChild(rail2Highlight);
 
-    // Add rungs with realistic spacing
+    // Add rungs with moderate spacing like the classic board art
     var numRungs = Math.max(3, Math.min(7, Math.floor(length / 25)));
     for (var i = 1; i <= numRungs; i++) {
         var t = i / (numRungs + 1);
         var rungX = x1 + dx * t;
         var rungY = y1 + dy * t;
-
-        // Rung shadow
-        var rungShadow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        rungShadow.setAttribute('x1', rungX + 1);
-        rungShadow.setAttribute('y1', rungY + 1);
-        rungShadow.setAttribute('x2', rungX + perpX + 1);
-        rungShadow.setAttribute('y2', rungY + perpY + 1);
-        rungShadow.setAttribute('stroke', '#5d3a1a');
-        rungShadow.setAttribute('stroke-width', '3.5');
-        rungShadow.setAttribute('stroke-linecap', 'round');
-        rungShadow.setAttribute('opacity', '0.3');
-        group.appendChild(rungShadow);
 
         // Main rung
         var rung = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1904,8 +1868,8 @@ function drawLadder(svg, x1, y1, x2, y2) {
         rung.setAttribute('y1', rungY);
         rung.setAttribute('x2', rungX + perpX);
         rung.setAttribute('y2', rungY + perpY);
-        rung.setAttribute('stroke', '#A0522D');
-        rung.setAttribute('stroke-width', '3.5');
+        rung.setAttribute('stroke', '#a56633');
+        rung.setAttribute('stroke-width', '2.7');
         rung.setAttribute('stroke-linecap', 'round');
         group.appendChild(rung);
 
@@ -1915,10 +1879,10 @@ function drawLadder(svg, x1, y1, x2, y2) {
         rungHighlight.setAttribute('y1', rungY);
         rungHighlight.setAttribute('x2', rungX + perpX);
         rungHighlight.setAttribute('y2', rungY + perpY);
-        rungHighlight.setAttribute('stroke', '#DEB887');
-        rungHighlight.setAttribute('stroke-width', '1.5');
+        rungHighlight.setAttribute('stroke', '#e4be95');
+        rungHighlight.setAttribute('stroke-width', '0.9');
         rungHighlight.setAttribute('stroke-linecap', 'round');
-        rungHighlight.setAttribute('opacity', '0.5');
+        rungHighlight.setAttribute('opacity', '0.82');
         group.appendChild(rungHighlight);
     }
 
@@ -1928,76 +1892,129 @@ function drawLadder(svg, x1, y1, x2, y2) {
 // Draw a realistic snake between two points
 function drawSnake(svg, x1, y1, x2, y2) {
     var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.setAttribute('opacity', '0.9');
+    group.setAttribute('opacity', '0.96');
 
     var dx = x2 - x1;
     var dy = y2 - y1;
     var length = Math.sqrt(dx * dx + dy * dy);
+    if (!length) return;
 
-    var pathData = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+    // Build a multi-bend snake body using sinusoidal offsets so the shape resembles
+    // classic Snakes & Ladders art rather than a single straight/soft curve.
+    var nx = -dy / length;
+    var ny = dx / length;
+    var seed = Math.abs(Math.round(x1 * 13 + y1 * 7 + x2 * 5 + y2 * 3));
+    var segments = 7;
+    var waves = 1.6 + ((seed % 5) * 0.18);
+    var phase = (seed % 360) * (Math.PI / 180);
+    var amplitude = Math.min(46, Math.max(20, length * 0.14));
+    var points = [];
 
-    // Shadow
-    var bodyShadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bodyShadow.setAttribute('d', pathData);
-    bodyShadow.setAttribute('stroke', '#1a1a1a');
-    bodyShadow.setAttribute('stroke-width', '7');
-    bodyShadow.setAttribute('fill', 'none');
-    bodyShadow.setAttribute('stroke-linecap', 'round');
-    bodyShadow.setAttribute('opacity', '0.15');
-    bodyShadow.setAttribute('transform', 'translate(2, 2)');
-    group.appendChild(bodyShadow);
+    for (var i = 0; i <= segments; i++) {
+        var t = i / segments;
+        var bx = x1 + (dx * t);
+        var by = y1 + (dy * t);
+        var envelope = Math.sin(Math.PI * t); // zero at both ends
+        var wave = Math.sin((2 * Math.PI * waves * t) + phase);
+        var offset = amplitude * envelope * wave;
+        points.push({
+            x: bx + (nx * offset),
+            y: by + (ny * offset)
+        });
+    }
 
-    // Main body - thinner
+    // Keep exact endpoints on source/destination tiles.
+    points[0].x = x1;
+    points[0].y = y1;
+    points[points.length - 1].x = x2;
+    points[points.length - 1].y = y2;
+
+    var pathData = 'M ' + points[0].x + ' ' + points[0].y;
+    for (var p = 1; p < points.length - 1; p++) {
+        var xc = (points[p].x + points[p + 1].x) / 2;
+        var yc = (points[p].y + points[p + 1].y) / 2;
+        pathData += ' Q ' + points[p].x + ' ' + points[p].y + ' ' + xc + ' ' + yc;
+    }
+    pathData += ' Q ' + points[points.length - 1].x + ' ' + points[points.length - 1].y + ' ' + points[points.length - 1].x + ' ' + points[points.length - 1].y;
+
+    // Dark outline underlayer for edge definition.
+    var outline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    outline.setAttribute('d', pathData);
+    outline.setAttribute('stroke', '#2a2515');
+    outline.setAttribute('stroke-width', '12.5');
+    outline.setAttribute('fill', 'none');
+    outline.setAttribute('stroke-linecap', 'round');
+    outline.setAttribute('stroke-linejoin', 'round');
+    group.appendChild(outline);
+
+    // Green body layer.
     var body = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     body.setAttribute('d', pathData);
-    body.setAttribute('stroke', '#2d7a1f');
-    body.setAttribute('stroke-width', '7');
+    body.setAttribute('stroke', '#58a64b');
+    body.setAttribute('stroke-width', '9.3');
     body.setAttribute('fill', 'none');
     body.setAttribute('stroke-linecap', 'round');
     body.setAttribute('stroke-linejoin', 'round');
     group.appendChild(body);
 
-    // Lighter overlay
-    var bodyOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bodyOverlay.setAttribute('d', pathData);
-    bodyOverlay.setAttribute('stroke', '#4CAF50');
-    bodyOverlay.setAttribute('stroke-width', '3.5');
-    bodyOverlay.setAttribute('fill', 'none');
-    bodyOverlay.setAttribute('stroke-linecap', 'round');
-    bodyOverlay.setAttribute('stroke-dasharray', '7,5');
-    group.appendChild(bodyOverlay);
+    // Slight inner pattern for segmentation.
+    var bodyPattern = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bodyPattern.setAttribute('d', pathData);
+    bodyPattern.setAttribute('stroke', '#86c779');
+    bodyPattern.setAttribute('stroke-width', '2.9');
+    bodyPattern.setAttribute('fill', 'none');
+    bodyPattern.setAttribute('stroke-linecap', 'round');
+    bodyPattern.setAttribute('stroke-dasharray', '11,12');
+    bodyPattern.setAttribute('opacity', '0.68');
+    group.appendChild(bodyPattern);
 
-    // Head
-    var head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    head.setAttribute('cx', x1);
-    head.setAttribute('cy', y1);
-    head.setAttribute('r', '6');
-    head.setAttribute('fill', '#1a5c0f');
-    head.setAttribute('stroke', '#0d3308');
-    head.setAttribute('stroke-width', '1.5');
-    group.appendChild(head);
+    // Snake head, aligned with first segment direction.
+    var tx = points[1].x - points[0].x;
+    var ty = points[1].y - points[0].y;
+    var headAngle = Math.atan2(ty, tx) * (180 / Math.PI);
+    var headGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    headGroup.setAttribute('transform', 'translate(' + x1 + ' ' + y1 + ') rotate(' + headAngle + ')');
 
-    // Eyes
+    var head = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    head.setAttribute('cx', '0');
+    head.setAttribute('cy', '0');
+    head.setAttribute('rx', '9.4');
+    head.setAttribute('ry', '7.2');
+    head.setAttribute('fill', '#66b65a');
+    head.setAttribute('stroke', '#2a2515');
+    head.setAttribute('stroke-width', '1.9');
+    headGroup.appendChild(head);
+
+    var snout = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    snout.setAttribute('d', 'M 2.4 -3.1 Q 10.2 0 2.4 3.1');
+    snout.setAttribute('fill', '#8ecf83');
+    snout.setAttribute('opacity', '0.9');
+    headGroup.appendChild(snout);
+
     var eye1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eye1.setAttribute('cx', x1 - 2);
-    eye1.setAttribute('cy', y1 - 1.5);
-    eye1.setAttribute('r', '1.8');
-    eye1.setAttribute('fill', '#CC0000');
-    group.appendChild(eye1);
+    eye1.setAttribute('cx', '1.1');
+    eye1.setAttribute('cy', '-2.2');
+    eye1.setAttribute('r', '1.15');
+    eye1.setAttribute('fill', '#111');
+    headGroup.appendChild(eye1);
 
     var eye2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    eye2.setAttribute('cx', x1 + 2);
-    eye2.setAttribute('cy', y1 - 1.5);
-    eye2.setAttribute('r', '1.8');
-    eye2.setAttribute('fill', '#CC0000');
-    group.appendChild(eye2);
+    eye2.setAttribute('cx', '1.1');
+    eye2.setAttribute('cy', '2.2');
+    eye2.setAttribute('r', '1.15');
+    eye2.setAttribute('fill', '#111');
+    headGroup.appendChild(eye2);
+
+    group.appendChild(headGroup);
 
     // Tail
     var tail = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     tail.setAttribute('cx', x2);
     tail.setAttribute('cy', y2);
-    tail.setAttribute('r', '3');
-    tail.setAttribute('fill', '#1a5c0f');
+    tail.setAttribute('r', '3.4');
+    tail.setAttribute('fill', '#58a64b');
+    tail.setAttribute('stroke', '#2a2515');
+    tail.setAttribute('stroke-width', '1.2');
     group.appendChild(tail);
 
     svg.appendChild(group);
