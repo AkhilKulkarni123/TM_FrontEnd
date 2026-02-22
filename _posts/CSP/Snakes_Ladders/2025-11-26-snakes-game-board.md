@@ -478,7 +478,8 @@ microblog: True
       loadoutApi.saveLoadout(gameState.character, gameState.weaponType, { useSession: !!gameState.isGuest });
     }
     var charName = card.querySelector('.character-name').textContent;
-    showGameNotification('🎉 Congrats! You\'ve selected ' + charName + '. Click START ADVENTURE to begin your quest!', 'success');
+    var charDesc = card.querySelector('.character-description').textContent;
+    showGameNotification('🎉 Congrats! You\'ve selected ' + charName + ', the amazing ' + charDesc + '. Click START ADVENTURE to begin your quest!', 'success');
     if (!gameState.isGuest && gameState.userId) {
       fetch(API_URL + '/snakes/', { method: 'GET', mode: fetchOpts.mode, cache: fetchOpts.cache, credentials: fetchOpts.credentials, headers: fetchOpts.headers })
         .then(function(r) {
