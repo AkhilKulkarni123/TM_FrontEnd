@@ -962,14 +962,55 @@
                 const r = hazard.r;
                 if (x + r < -40 || x - r > state.view.width + 40 || y + r < -40 || y - r > state.view.height + 40) return;
                 const pulse = 0.84 + Math.sin(t + hazard.baseX * 0.002) * 0.18;
-                const glow = ctx.createRadialGradient(x, y, 3, x, y, r * 2.2);
-                glow.addColorStop(0, 'rgba(255,255,255,0.95)');
-                glow.addColorStop(0.35, 'rgba(255,130,150,0.85)');
+                
+                // Outer danger glow (sickly red-orange pulse)
+                const glow = ctx.createRadialGradient(x, y, 2, x, y, r * 3.2);
+                glow.addColorStop(0, `rgba(255, 60, 30, ${0.55 + pulse * 0.25})`);
+                glow.addColorStop(0.4, `rgba(220, 20, 20, ${0.35 + pulse * 0.15})`);
                 glow.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = glow;
                 ctx.beginPath();
-                ctx.arc(x, y, r * 2.2 * pulse, 0, Math.PI * 2);
+                ctx.arc(x, y, r * 3.2 * pulse, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Dark core
+                const core = ctx.createRadialGradient(x - r * 0.28, y - r * 0.28, 1, x, y, r * pulse);
+                core.addColorStop(0, 'rgba(255,140,60,1)');
+                core.addColorStop(0.45, 'rgba(210,30,30,1)');
+                core.addColorStop(1, 'rgba(80,0,0,1)');
+                ctx.beginPath();
+                ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = core;
+                ctx.fill();
+
+                // Skull-like inner shadow ring
+                ctx.beginPath();
+                ctx.arc(x, y, r * pulse * 0.62, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0,0,0,${0.55 + pulse * 0.2})`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Spinning danger cross/spikes
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(t * 0.9);
+                ctx.strokeStyle = `rgba(255, 80, 30, ${0.7 + pulse * 0.3})`;
+                ctx.lineWidth = 2.2;
+                for (let s = 0; s < 4; s++) {
+                    ctx.rotate(Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(r * 0.55, 0);
+                    ctx.lineTo(r * 1.45, 0);
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // White hot center gleam
+                ctx.beginPath();
+                ctx.arc(x - r * 0.22, y - r * 0.22, r * 0.22 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,220,180,${0.7 + pulse * 0.3})`;
+                ctx.fill();
+
                 ctx.fillStyle = level.palette.hazard;
                 ctx.beginPath();
                 ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
