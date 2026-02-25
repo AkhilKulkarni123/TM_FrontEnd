@@ -937,9 +937,26 @@
         const spikeW = 28;
         const spikeH = 26;
         ctx.save();
+
+        // Glow pass — draw blurred larger spikes behind
+        ctx.shadowColor = 'rgba(255, 60, 80, 0.9)';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = 'rgba(255, 80, 100, 0.55)';
+        for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
+            ctx.beginPath();
+            ctx.moveTo(x, spikeY + spikeH);
+            ctx.lineTo(x + spikeW / 2, spikeY - 6);
+            ctx.lineTo(x + spikeW, spikeY + spikeH);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Main spike fill
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255, 40, 70, 0.8)';
         ctx.fillStyle = level.palette.hazard;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 160, 170, 0.55)';
+        ctx.lineWidth = 1.2;
         for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
             ctx.beginPath();
             ctx.moveTo(x, spikeY + spikeH);
@@ -949,6 +966,19 @@
             ctx.fill();
             ctx.stroke();
         }
+
+        // Bright tip gleam
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = 'rgba(255, 200, 210, 1)';
+        ctx.strokeStyle = 'rgba(255, 220, 225, 0.9)';
+        ctx.lineWidth = 1.5;
+        for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
+            ctx.beginPath();
+            ctx.moveTo(x + spikeW * 0.3, spikeY + spikeH * 0.38);
+            ctx.lineTo(x + spikeW / 2, spikeY);
+            ctx.stroke();
+        }
+
         ctx.restore();
     }
 
@@ -962,7 +992,7 @@
                 const r = hazard.r;
                 if (x + r < -40 || x - r > state.view.width + 40 || y + r < -40 || y - r > state.view.height + 40) return;
                 const pulse = 0.84 + Math.sin(t + hazard.baseX * 0.002) * 0.18;
-                
+
                 // Outer danger glow (sickly red-orange pulse)
                 const glow = ctx.createRadialGradient(x, y, 2, x, y, r * 3.2);
                 glow.addColorStop(0, `rgba(255, 60, 30, ${0.55 + pulse * 0.25})`);

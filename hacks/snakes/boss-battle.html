@@ -985,7 +985,7 @@
                     To Victory Page
                 </button>
                 <button class="btn" onclick="returnToBoard()">Return to Board</button>
-            </div>
+                <button class="btn" onclick="returnToArcade()" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">Return to Arcade</button>            </div>
         </div>
 
         <!-- Sidebar: Players & Chat -->
@@ -5316,8 +5316,7 @@ function getDamageMultiplier() {
                     }).catch(() => {});
                 }
                 setBossSocialActivitySafe('', 'Leaving Boss Battle');
-                returnToBoard();
-            }
+                window.location.href = 'mode-selection.html';            }
         }
 
         function goToVictoryPage() {
@@ -5352,6 +5351,12 @@ function getDamageMultiplier() {
             } else {
                 window.location.href = 'game-board-part2.html';
             }
+        }
+
+        function returnToArcade() {
+            stopPositionBroadcast();
+            roomId = null;
+            window.location.href = 'mode-selection.html';
         }
 
         window.addEventListener('resize', () => {
