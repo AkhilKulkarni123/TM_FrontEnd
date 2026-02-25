@@ -937,26 +937,9 @@
         const spikeW = 28;
         const spikeH = 26;
         ctx.save();
-
-        // Glow pass — draw blurred larger spikes behind
-        ctx.shadowColor = 'rgba(255, 60, 80, 0.9)';
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = 'rgba(255, 80, 100, 0.55)';
-        for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
-            ctx.beginPath();
-            ctx.moveTo(x, spikeY + spikeH);
-            ctx.lineTo(x + spikeW / 2, spikeY - 6);
-            ctx.lineTo(x + spikeW, spikeY + spikeH);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // Main spike fill
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(255, 40, 70, 0.8)';
         ctx.fillStyle = level.palette.hazard;
-        ctx.strokeStyle = 'rgba(255, 160, 170, 0.55)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.lineWidth = 1;
         for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
             ctx.beginPath();
             ctx.moveTo(x, spikeY + spikeH);
@@ -966,22 +949,9 @@
             ctx.fill();
             ctx.stroke();
         }
-
-        // Bright tip gleam
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = 'rgba(255, 200, 210, 1)';
-        ctx.strokeStyle = 'rgba(255, 220, 225, 0.9)';
-        ctx.lineWidth = 1.5;
-        for (let x = -state.camera.x; x < state.view.width + spikeW; x += spikeW) {
-            ctx.beginPath();
-            ctx.moveTo(x + spikeW * 0.3, spikeY + spikeH * 0.38);
-            ctx.lineTo(x + spikeW / 2, spikeY);
-            ctx.stroke();
-        }
-
         ctx.restore();
     }
-
+    
     function drawHazards(now) {
         const level = getCurrentLevel();
         const t = now * 0.004;
