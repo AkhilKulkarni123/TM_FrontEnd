@@ -665,7 +665,7 @@
         .notification-container {
             position: fixed;
             top: 20px;
-            right: 20px;
+            right: 320px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
@@ -2038,12 +2038,16 @@
                     // Add players with their socket sid as key
                     data.players.forEach(p => {
                         if (p.sid && p.sid !== socket.id) {
+                            const px = Number.isFinite(Number(p.x)) ? Number(p.x) : null;
+                            const py = Number.isFinite(Number(p.y)) ? Number(p.y) : null;
                             gameState.otherPlayers[p.sid] = Object.assign({}, p, {
                                 weaponType: resolveWeaponType(p.character, p.weapon_type || p.selected_weapon),
                                 avatarUrl: p.avatar_url || p.avatarUrl || '',
                                 avatarData: p.avatar_data || p.avatarData || '',
-                                targetX: Number.isFinite(Number(p.x)) ? Number(p.x) : null,
-                                targetY: Number.isFinite(Number(p.y)) ? Number(p.y) : null
+                                x: px,
+                                y: py,
+                                targetX: px,
+                                targetY: py
                             });
                         }
                     });
@@ -2064,12 +2068,18 @@
                 const nextPlayers = {};
                 data.players.forEach(p => {
                     if (p.sid && p.sid !== socket.id) {
+                        const existing = gameState.otherPlayers[p.sid];
+                        const serverX = Number.isFinite(Number(p.x)) ? Number(p.x) : null;
+                        const serverY = Number.isFinite(Number(p.y)) ? Number(p.y) : null;
                         nextPlayers[p.sid] = Object.assign({}, p, {
                             weaponType: resolveWeaponType(p.character, p.weapon_type || p.selected_weapon),
                             avatarUrl: p.avatar_url || p.avatarUrl || '',
                             avatarData: p.avatar_data || p.avatarData || '',
-                            targetX: Number.isFinite(Number(p.x)) ? Number(p.x) : null,
-                            targetY: Number.isFinite(Number(p.y)) ? Number(p.y) : null
+                            // Preserve smooth interpolation position from existing player data
+                            x: (existing && Number.isFinite(existing.x)) ? existing.x : (serverX != null ? serverX : p.x),
+                            y: (existing && Number.isFinite(existing.y)) ? existing.y : (serverY != null ? serverY : p.y),
+                            targetX: serverX,
+                            targetY: serverY
                         });
                     }
                 });
@@ -2084,12 +2094,16 @@
             socket.on('boss_player_joined', (data) => {
                 console.log('Player joined:', data);
                 if (data.player && data.player.sid !== socket.id) {
+                    const px = Number.isFinite(Number(data.player.x)) ? Number(data.player.x) : null;
+                    const py = Number.isFinite(Number(data.player.y)) ? Number(data.player.y) : null;
                     gameState.otherPlayers[data.player.sid] = Object.assign({}, data.player, {
                         weaponType: resolveWeaponType(data.player.character, data.player.weapon_type || data.player.selected_weapon),
                         avatarUrl: data.player.avatar_url || data.player.avatarUrl || '',
                         avatarData: data.player.avatar_data || data.player.avatarData || '',
-                        targetX: Number.isFinite(Number(data.player.x)) ? Number(data.player.x) : null,
-                        targetY: Number.isFinite(Number(data.player.y)) ? Number(data.player.y) : null
+                        x: px,
+                        y: py,
+                        targetX: px,
+                        targetY: py
                     });
                     updatePlayersList();
                     addSystemMessage(`${data.player.username} joined the battle!`);
@@ -4106,7 +4120,7 @@ function getDamageMultiplier() {
 
             // Draw other players
             Object.values(gameState.otherPlayers).forEach(player => {
-                if (!player.x || !player.y) return;
+                if (!Number.isFinite(player.x) || !Number.isFinite(player.y)) return;
 
                 const charConfig = CHARACTER_CONFIG[player.character] || CHARACTER_CONFIG.knight;
 
@@ -4888,8 +4902,11 @@ function getDamageMultiplier() {
             _updatePlayersListDOM();
         }
         function updatePlayersList() {
-            // For backward compat, schedule + immediate if not in tight loop
             schedulePlayersListUpdate();
+            // If game loop isn't running, flush immediately since gameLoop won't do it
+            if (!gameActive) {
+                _updatePlayersListDOM();
+            }
         }
         function _updatePlayersListDOM() {
             const list = document.getElementById('playersList');
@@ -5077,7 +5094,6 @@ function getDamageMultiplier() {
 
         // Show a notification toast in the top-right corner during battle
         function showNotification(message, type) {
-            if (!gameActive) return; // Only show during battle
             const container = document.getElementById('notificationContainer');
             const toast = document.createElement('div');
             toast.className = `notification-toast ${type}`;
