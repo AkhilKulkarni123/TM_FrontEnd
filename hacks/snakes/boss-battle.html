@@ -1916,25 +1916,19 @@
 
         // Handle page unload/close - ensure proper cleanup
         window.addEventListener('beforeunload', () => {
-            if (socket && socket.connected) {
-                if (gameActive && roomId) {
-                    // Leave battle room
-                    socket.emit('boss_leave_room', { room_id: roomId });
-                } else {
-                    // Leave lobby if we were in pre-battle lobby
-                    socket.emit('boss_leave_lobby', {});
-                }
+            if (roomId) {
+                cleanupBattleRoom();
+            } else if (socket && socket.connected) {
+                socket.emit('boss_leave_lobby', {});
             }
         });
 
         // Handle page hide (mobile tab switching, etc.)
         window.addEventListener('pagehide', () => {
-            if (socket && socket.connected) {
-                if (gameActive && roomId) {
-                    socket.emit('boss_leave_room', { room_id: roomId });
-                } else {
-                    socket.emit('boss_leave_lobby', {});
-                }
+            if (roomId) {
+                cleanupBattleRoom();
+            } else if (socket && socket.connected) {
+                socket.emit('boss_leave_lobby', {});
             }
         });
 
@@ -2473,14 +2467,13 @@
                                     lives: gameState.player.lives
                                 }
                             });
+                            // Start position broadcasting and room sync AFTER socket join
+                            startPositionBroadcast();
+                            startRoomSync();
                             // Delay powerup requests until after room is joined on server
                             setTimeout(() => startPowerupSpawnRequests(), 800);
                         }
                     }, 500);
-
-                    // Start position broadcasting
-                    startPositionBroadcast();
-                    startRoomSync();
 
                     // Start powerup spawn requests
 
@@ -2576,13 +2569,22 @@
                 bounds: getBattleBounds()
             };
 
+            function afterGuestJoin() {
+                // Start sync AFTER socket join emit
+                setTimeout(() => {
+                    startPositionBroadcast();
+                    startRoomSync();
+                    startPowerupSpawnRequests();
+                }, 500);
+            }
+
             if (socket && socket.connected) {
                 socket.emit('join_boss_battle', joinPayload);
-                setTimeout(() => startPowerupSpawnRequests(), 1200);
+                afterGuestJoin();
             } else {
                 socket.once('connect', () => {
                     socket.emit('join_boss_battle', joinPayload);
-                    setTimeout(() => startPowerupSpawnRequests(), 1200);
+                    afterGuestJoin();
                 });
             }
 
@@ -2590,9 +2592,6 @@
             gameState.player.lives = getMaxLives();
             updateLives();
             savePlayerState({ lives: gameState.player.lives });
-
-            startPositionBroadcast();
-            startRoomSync();
             gameActive = true;
 
             // Reset ability and creative attack state
@@ -5114,11 +5113,49 @@ function getDamageMultiplier() {
             }
         }
 
-        function endGame(victory, allPlayerStats = []) {
-            gameActive = false;
+        // Centralized cleanup for leaving a battle (socket + REST API)
+        function cleanupBattleRoom() {
+            const currentRoomId = roomId;
+            if (!currentRoomId) return;
+
+            // Socket leave
+            if (socket && socket.connected) {
+                socket.emit('boss_leave_room', { room_id: currentRoomId });
+            }
+
+            // REST API leave (fire-and-forget to clean up DB records)
+            const leavePayload = { room_id: currentRoomId };
+            if (isGuestSession()) {
+                try {
+                    const guestId = sessionStorage.getItem('snakes_user_id');
+                    if (guestId) leavePayload.guest_id = guestId;
+                } catch (e) {}
+            }
+            // Use sendBeacon for reliability during page unload, fetch otherwise
+            const leaveUrl = `${GAME_API_ROOT}/boss/leave`;
+            try {
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(leaveUrl, new Blob([JSON.stringify(leavePayload)], { type: 'application/json' }));
+                } else {
+                    fetch(leaveUrl, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(leavePayload),
+                        keepalive: true
+                    }).catch(() => {});
+                }
+            } catch (e) {}
+
             stopPositionBroadcast();
             stopPowerupSpawnRequests();
             stopOfflinePowerupSpawner();
+            stopRoomSync();
+        }
+
+        function endGame(victory, allPlayerStats = []) {
+            gameActive = false;
+            cleanupBattleRoom();
 
             // Clear any remaining powerups and creative attacks
             gameState.powerups = [];
@@ -5274,10 +5311,8 @@ function getDamageMultiplier() {
             // Store victory status for redirect
             gameOver.dataset.victory = victory ? 'true' : 'false';
 
-            if (socket && roomId) {
-                socket.emit('boss_leave_room', { room_id: roomId });
-            }
-                setBossSocialActivitySafe('', 'In Boss Battle Lobby');
+            setBossSocialActivitySafe('', 'In Boss Battle Lobby');
+            roomId = null;
         }
 
         function showVictoryAnimation() {
@@ -5311,34 +5346,17 @@ function getDamageMultiplier() {
         function leaveBattle() {
             if (confirm('Are you sure you want to leave the battle?')) {
                 gameActive = false;
-                stopPositionBroadcast();
-                stopPowerupSpawnRequests();
-                stopOfflinePowerupSpawner();
+                cleanupBattleRoom();
                 gameState.powerups = [];
                 deactivateBattleMode();
-
-                if (roomId && socket) {
-                    socket.emit('boss_leave_room', { room_id: roomId });
-                    const leavePayload = { room_id: roomId };
-                    if (isGuestSession()) {
-                        try {
-                            const guestId = sessionStorage.getItem('snakes_user_id');
-                            if (guestId) leavePayload.guest_id = guestId;
-                        } catch (e) {}
-                    }
-                    fetch(`${GAME_API_ROOT}/boss/leave`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(leavePayload)
-                    }).catch(() => {});
-                }
                 setBossSocialActivitySafe('', 'Leaving Boss Battle');
-                window.location.href = 'mode-selection.html';            }
+                roomId = null;
+                window.location.href = 'mode-selection.html';
+            }
         }
 
         function goToVictoryPage() {
-            stopPositionBroadcast();
+            cleanupBattleRoom();
             roomId = null;
             
             // Mark that player just won so victory page can auto-complete
@@ -5352,7 +5370,7 @@ function getDamageMultiplier() {
         }
 
         function returnToBoard() {
-            stopPositionBroadcast();
+            cleanupBattleRoom();
             roomId = null;
 
             // Check if this was a victory - redirect to victory page
@@ -5372,7 +5390,7 @@ function getDamageMultiplier() {
         }
 
         function returnToArcade() {
-            stopPositionBroadcast();
+            cleanupBattleRoom();
             roomId = null;
             window.location.href = 'mode-selection.html';
         }
