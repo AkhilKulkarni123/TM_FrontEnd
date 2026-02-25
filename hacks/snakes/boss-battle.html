@@ -2459,6 +2459,8 @@
                                     lives: gameState.player.lives
                                 }
                             });
+                            // Delay powerup requests until after room is joined on server
+                            setTimeout(() => startPowerupSpawnRequests(), 800);
                         }
                     }, 500);
 
@@ -2467,7 +2469,6 @@
                     startRoomSync();
 
                     // Start powerup spawn requests
-                    startPowerupSpawnRequests();
 
                     gameActive = true;
 
@@ -2563,9 +2564,11 @@
 
             if (socket && socket.connected) {
                 socket.emit('join_boss_battle', joinPayload);
+                setTimeout(() => startPowerupSpawnRequests(), 1200);
             } else {
                 socket.once('connect', () => {
                     socket.emit('join_boss_battle', joinPayload);
+                    setTimeout(() => startPowerupSpawnRequests(), 1200);
                 });
             }
 
@@ -2576,7 +2579,6 @@
 
             startPositionBroadcast();
             startRoomSync();
-            startPowerupSpawnRequests();
             gameActive = true;
 
             // Reset ability and creative attack state
