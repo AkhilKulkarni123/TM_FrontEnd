@@ -119,13 +119,25 @@ Open two browser tabs (or have a second player join). Show the full flow: **lobb
 <td>Upper banner</td>
 </tr>
 <tr>
-<td class="ts">0:28 – 0:40</td>
-<td>Click or press Space to fire at the boss. Show the boss health bar dropping. A powerup icon appears — walk over it to collect it. The chat shows a system message about the powerup.</td>
+<td class="ts">0:28 – 0:35</td>
+<td>Click or press Space to fire at the boss. Show the boss health bar dropping for both players simultaneously.</td>
 <td><span class="caption-pill">Bullets earned from AP CSP questions become ammo · Boss HP synced to all players</span></td>
 <td>Lower-third banner</td>
 </tr>
 <tr>
-<td class="ts">0:40 – 0:48</td>
+<td class="ts">0:35 – 0:40</td>
+<td>Let the boss hit your player — the HUD heart/lives counter visibly drops. A notification pops in the top-right corner of the screen.</td>
+<td><span class="caption-pill">Output: lives lost → HUD updates instantly for that player</span></td>
+<td>Lower-third banner</td>
+</tr>
+<tr>
+<td class="ts">0:40 – 0:44</td>
+<td>A powerup icon appears on the canvas — walk over it. A system notification slides in from the right edge of the screen confirming the pickup.</td>
+<td><span class="caption-pill">Output: server emits powerup event → notification rendered in real time</span></td>
+<td>Top-right corner label (point arrow at the notification)</td>
+</tr>
+<tr>
+<td class="ts">0:44 – 0:48</td>
 <td>Boss health hits 0. Victory overlay appears with per-player stats (damage dealt, bullets used).</td>
 <td><span class="caption-pill">Boss defeated! · Server aggregates every player's stats</span></td>
 <td>Center overlay caption</td>
