@@ -7,12 +7,19 @@ import { pythonURI } from 'assets/js/api/config.js';
  */
 export async function getUserData() {
     try {
+        // Include Bearer token from localStorage for cross-origin reliability
+        const token = localStorage.getItem('token');
+        const headers = {
+            "Content-Type": "application/json"
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${pythonURI}/api/id`, {
             method: "GET",
             credentials: "include",   // Required so JWT cookie is sent
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers
         });
 
         if (!response.ok) {

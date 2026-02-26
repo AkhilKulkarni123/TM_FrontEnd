@@ -239,6 +239,48 @@ body {
     background: rgba(255, 193, 7, 0.1);
 }
 
+/* Show/Hide Password Toggle */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #ccc;
+}
+
+/* Welcome Back Message */
+.welcome-back-message {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: none;
+    font-size: 15px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .login-container {
@@ -256,13 +298,17 @@ body {
     <!-- Login Card -->
     <div class="login-card">
         <h1>User Login</h1>
+        <div id="welcomeBackMessage" class="welcome-back-message"></div>
         <hr>
         <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
                 <input type="text" id="uid" placeholder="GitHub ID" required>
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="Password" required>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)" title="Show password">👁️</button>
+                </div>
             </div>
             <div class="form-group">
                 <input type="text" id="loginDisplayName" placeholder="Display Name (optional)">
@@ -292,11 +338,17 @@ body {
                 <input type="email" id="signupEmail" placeholder="Email" required>
             </div>
             <div class="form-group">
-                <input type="password" id="signupPassword" placeholder="Password" required minlength="8">
+                <div class="password-wrapper">
+                    <input type="password" id="signupPassword" placeholder="Password" required minlength="8">
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('signupPassword', this)" title="Show password">👁️</button>
+                </div>
             </div>
             
             <div class="form-group">
-                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                <div class="password-wrapper">
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)" title="Show password">👁️</button>
+                </div>
                 <div id="password-validation-message" class="validation-message"></div>
             </div>
             <p>
@@ -327,6 +379,20 @@ body {
     console.log('Python URI:', pythonURI);
     console.log('Java URI:', javaURI);
     console.log('Fetch Options:', fetchOptions);
+
+    // Toggle password visibility
+    window.togglePasswordVisibility = function(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🙈';
+            btn.title = 'Hide password';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁️';
+            btn.title = 'Show password';
+        }
+    };
 
     let validationTimeout = null;
     const DISPLAY_NAME_KEY = 'snakes_display_name';
@@ -487,6 +553,8 @@ body {
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('hasSignedUp', 'true');
+                localStorage.setItem('lastLoginUid', uid);
                 const storedDisplayName = loginDisplayName || localStorage.getItem(DISPLAY_NAME_KEY) || data.user?.display_name || '';
                 if (storedDisplayName) {
                     localStorage.setItem(DISPLAY_NAME_KEY, storedDisplayName);
@@ -497,7 +565,11 @@ body {
                 trySpringLogin(uid, password);
 
                 // Redirect to profile
-                showLoginMessage('Login successful! Redirecting...', false);
+                showLoginMessage(data.message + ' Redirecting...', false);;
+                // Hide welcome back message on successful login
+                const welcomeMsg = document.getElementById('welcomeBackMessage');
+                if (welcomeMsg) welcomeMsg.style.display = 'none';
+
                 setTimeout(() => {
                     window.location.href = '{{site.baseurl}}/profile';
                 }, 1000);
@@ -633,6 +705,8 @@ body {
                     localStorage.setItem('user', JSON.stringify(flaskResult.value.user));
                     localStorage.setItem('token', flaskResult.value.token);
                     localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('hasSignedUp', 'true');
+                    localStorage.setItem('lastLoginUid', formData.uid);
                     if (formData.display_name) {
                         localStorage.setItem(DISPLAY_NAME_KEY, formData.display_name);
                     }
@@ -669,10 +743,18 @@ body {
         // Check if already logged in - verify with backend first
         if (localStorage.getItem('isAuthenticated') === 'true') {
             try {
+                // Include Bearer token for cross-origin reliability
+                const token = localStorage.getItem('token');
+                const headers = { ...fetchOptions.headers };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 // Verify the session is still valid with the backend
                 const response = await fetch(`${pythonURI}/api/id`, {
                     ...fetchOptions,
-                    method: 'GET'
+                    method: 'GET',
+                    headers
                 });
 
                 if (response.ok) {
@@ -688,11 +770,23 @@ body {
                     localStorage.removeItem('javaAuthenticated');
                 }
             } catch (error) {
-                // Network error or backend down - clear localStorage to be safe
-                console.log('Could not verify session:', error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-                localStorage.removeItem('isAuthenticated');
+                // Network error or backend down — DON'T clear localStorage
+                // The user may still have a valid session. Let them stay logged in
+                // so they aren't logged out due to temporary network issues.
+                console.log('Could not verify session (network issue, keeping auth state):', error);
+            }
+        }
+
+        // Show welcome back message for returning users
+        const hasSignedUpBefore = localStorage.getItem('hasSignedUp') === 'true';
+        if (hasSignedUpBefore && localStorage.getItem('isAuthenticated') !== 'true') {
+            const welcomeMsg = document.getElementById('welcomeBackMessage');
+            const userStr = localStorage.getItem('lastLoginUid');
+            if (welcomeMsg) {
+                welcomeMsg.textContent = userStr 
+                    ? `Welcome back, ${userStr}! Log in to continue.`
+                    : 'Welcome back! Log in to continue.';
+                welcomeMsg.style.display = 'block';
             }
         }
     });

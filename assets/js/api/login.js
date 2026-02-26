@@ -66,9 +66,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function getCredentials(baseurl) {
     const URL = pythonURI + '/api/id';
+    // Build headers with Bearer token from localStorage for cross-origin reliability
+    const token = localStorage.getItem('token');
+    const headers = { ...fetchOptions.headers };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
     return fetch(URL, {
         ...fetchOptions,
-        credentials: 'include' // Add this to include cookies
+        headers,
+        credentials: 'include'
     })
     .then(response => {
         if (!response.ok) {
