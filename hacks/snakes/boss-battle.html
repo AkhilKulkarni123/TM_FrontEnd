@@ -1974,6 +1974,9 @@
                             lives: gameState.player.lives
                         }
                     });
+                    // Restart broadcasts in case they weren't running (e.g. reconnect after failed join)
+                    startPositionBroadcast();
+                    startRoomSync();
                 } else {
                     // Join lobby for pre-battle chat
                     socket.emit('boss_join_lobby', {
@@ -2076,7 +2079,13 @@
                         });
                     }
                 });
-                gameState.otherPlayers = nextPlayers;
+                // Only replace otherPlayers if we got real data back, or the room is confirmed empty
+                // (prevents a stale/empty response from wiping players we know exist)
+                const hasNewPlayers = Object.keys(nextPlayers).length > 0;
+                const serverSaysOnlyUs = typeof data.playerCount === 'number' && data.playerCount <= 1;
+                if (hasNewPlayers || serverSaysOnlyUs) {
+                    gameState.otherPlayers = nextPlayers;
+                }
                 updatePlayersList();
                 if (typeof data.playerCount !== 'undefined') {
                     document.getElementById('playerCount').textContent = data.playerCount;
@@ -2371,6 +2380,12 @@
                     gameState.powerups = data.powerups;
                 }
             });
+
+            // Server-side error during room join or other operations
+            socket.on('boss_error', (data) => {
+                console.error('[BOSS] Server error:', data.message);
+                addSystemMessage('Error: ' + (data.message || 'Unknown server error'));
+            });
         }
 
         async function startBattle() {
@@ -2444,9 +2459,12 @@
 
                     // Leave lobby and join battle room
                     connectSocket();
-                    setTimeout(() => {
+                    // Always start position broadcasting and room sync - they check connectivity internally
+                    startPositionBroadcast();
+                    startRoomSync();
+                    // Helper to emit socket join - retries until socket is connected
+                    function doSocketJoin(retriesLeft) {
                         if (socket && socket.connected) {
-                            // Leave the pre-battle lobby
                             socket.emit('boss_leave_lobby', {});
                             socket.emit('boss_join_room', {
                                 room_id: roomId,
@@ -2466,13 +2484,12 @@
                                     lives: gameState.player.lives
                                 }
                             });
-                            // Start position broadcasting and room sync AFTER socket join
-                            startPositionBroadcast();
-                            startRoomSync();
-                            // Delay powerup requests until after room is joined on server
                             setTimeout(() => startPowerupSpawnRequests(), 800);
+                        } else if (retriesLeft > 0) {
+                            setTimeout(() => doSocketJoin(retriesLeft - 1), 300);
                         }
-                    }, 500);
+                    }
+                    setTimeout(() => doSocketJoin(10), 500);
 
                     // Start powerup spawn requests
 
@@ -2555,37 +2572,46 @@
             document.getElementById('roomCode').textContent = roomId;
             document.getElementById('playerCount').textContent = 1;
 
-            const joinPayload = {
-                username: gameState.player.username || 'Guest',
-                user_id: (function () {
-                    try { return sessionStorage.getItem('snakes_user_id') || 'guest'; } catch (e) { return 'guest'; }
-                })(),
-                bullets: gameState.player.bullets,
-                character: gameState.player.character,
-                weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
-                avatar_url: gameState.player.avatarUrl || null,
-                avatar_data: gameState.player.avatarData || null,
-                bounds: getBattleBounds()
-            };
+            const guestUserId = (function () {
+                try { return sessionStorage.getItem('snakes_user_id') || 'guest'; } catch (e) { return 'guest'; }
+            })();
 
-            function afterGuestJoin() {
-                // Start sync AFTER socket join emit
-                setTimeout(() => {
-                    startPositionBroadcast();
-                    startRoomSync();
-                    startPowerupSpawnRequests();
-                }, 500);
+            // Build payload in the same format as boss_join_room expects
+            function buildGuestJoinPayload() {
+                return {
+                    room_id: roomId,
+                    boss_health: gameState.boss.health,
+                    max_boss_health: gameState.boss.maxHealth,
+                    bounds: getBattleBounds(),
+                    player: {
+                        user_id: guestUserId,
+                        username: gameState.player.username || 'Guest',
+                        character: gameState.player.character,
+                        weapon_type: gameState.player.weaponType || resolveWeaponType(gameState.player.character),
+                        avatar_url: gameState.player.avatarUrl || null,
+                        avatar_data: gameState.player.avatarData || null,
+                        x: gameState.player.x,
+                        y: gameState.player.y,
+                        bullets: gameState.player.bullets,
+                        lives: gameState.player.lives
+                    }
+                };
             }
 
-            if (socket && socket.connected) {
-                socket.emit('join_boss_battle', joinPayload);
-                afterGuestJoin();
-            } else {
-                socket.once('connect', () => {
-                    socket.emit('join_boss_battle', joinPayload);
-                    afterGuestJoin();
-                });
+            // Start broadcasts immediately (they check connectivity before each emit)
+            startPositionBroadcast();
+            startRoomSync();
+
+            function doGuestJoin(retriesLeft) {
+                if (socket && socket.connected) {
+                    socket.emit('boss_leave_lobby', {});
+                    socket.emit('boss_join_room', buildGuestJoinPayload());
+                    setTimeout(() => startPowerupSpawnRequests(), 800);
+                } else if (retriesLeft > 0) {
+                    setTimeout(() => doGuestJoin(retriesLeft - 1), 300);
+                }
             }
+            setTimeout(() => doGuestJoin(10), 500);
 
             ensureBattleAmmo();
             gameState.player.lives = getMaxLives();
