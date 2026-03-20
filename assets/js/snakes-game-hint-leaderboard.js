@@ -302,11 +302,97 @@ function bindLeaderboardRowSocialActions(tr, entry, currentUserId) {
     });
 }
 
+// Resolve the leaderboard API base URL once.
+function getLeaderboardApiUrl() {
+    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+        return "http://localhost:8306/api";
+    }
+    return "https://snakes.opencodingsociety.com/api";
+}
+
+// Find the current user's index within a leaderboard array (-1 if absent).
+function findCurrentUserIndex(leaderboardData, currentUserId) {
+    if (!currentUserId) return -1;
+    for (var i = 0; i < leaderboardData.length; i++) {
+        if (leaderboardData[i].user_id === currentUserId) return i;
+    }
+    return -1;
+}
+
+// Render the top-10 rows into the leaderboard tbody.
+function renderTopTenSection(tbody, leaderboardData, currentUserId) {
+    var headerRow = document.createElement('tr');
+    headerRow.className = 'leaderboard-meta-row';
+    headerRow.innerHTML = '<td colspan="4" class="leaderboard-section-header">🏆 Top 10 Players</td>';
+    tbody.appendChild(headerRow);
+
+    for (var i = 0; i < Math.min(10, leaderboardData.length); i++) {
+        var tr = createLeaderboardRow(leaderboardData[i], i, currentUserId);
+        tbody.appendChild(tr);
+    }
+}
+
+// Append a section divider and "Your Position" header to the tbody.
+function appendYourPositionHeader(tbody) {
+    var dividerRow = document.createElement('tr');
+    dividerRow.className = 'leaderboard-meta-row';
+    dividerRow.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
+    tbody.appendChild(dividerRow);
+
+    var yourPosHeader = document.createElement('tr');
+    yourPosHeader.className = 'leaderboard-meta-row';
+    yourPosHeader.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
+    tbody.appendChild(yourPosHeader);
+}
+
+// Render the user's position block with neighboring context when they are outside the top 10.
+function renderUserPositionSection(tbody, leaderboardData, currentUserIndex, currentUserId) {
+    appendYourPositionHeader(tbody);
+
+    var userEntry = leaderboardData[currentUserIndex];
+    var userRow = createLeaderboardRow(userEntry, currentUserIndex, currentUserId);
+    tbody.appendChild(userRow);
+
+    var contextBefore = Math.max(10, currentUserIndex - 1);
+    var contextAfter = Math.min(leaderboardData.length - 1, currentUserIndex + 1);
+
+    if (contextBefore > 10 && contextBefore < currentUserIndex) {
+        var beforeRow = createLeaderboardRow(leaderboardData[contextBefore], contextBefore, currentUserId);
+        tbody.insertBefore(beforeRow, userRow);
+    }
+
+    if (contextAfter > currentUserIndex && contextAfter < leaderboardData.length) {
+        var afterRow = createLeaderboardRow(leaderboardData[contextAfter], contextAfter, currentUserId);
+        tbody.appendChild(afterRow);
+    }
+}
+
+// Render a synthetic row for users not yet ranked on the server.
+function renderSyntheticUserRow(tbody, leaderboardData) {
+    appendYourPositionHeader(tbody);
+
+    var characterIcons = { knight: '🛡️', wizard: '🧙', archer: '🏹', warrior: '⚔️' };
+    var userRank = leaderboardData.length + 1;
+    var userName = (typeof gameState !== 'undefined' && gameState.username) ? gameState.username : 'You';
+    var userChar = (typeof gameState !== 'undefined' && gameState.character) ? gameState.character : '';
+    var userBullets = (typeof gameState !== 'undefined') ? (gameState.bullets || 0) : 0;
+    var charIcon = characterIcons[userChar] || '🙂';
+
+    var syntheticRow = document.createElement('tr');
+    syntheticRow.className = 'current-user-row leaderboard-entry-row';
+    syntheticRow.innerHTML =
+        '<td class="rank-col"><span class="rank-badge regular">' + userRank + '</span></td>' +
+        '<td class="player-col"><div class="leaderboard-player-cell"><span class="leaderboard-player-name">' + charIcon + ' ' + userName + '<span class="user-position-badge">👤 YOU</span></span></div></td>' +
+        '<td class="bullets-col">' + userBullets + '</td>' +
+        '<td class="time-col">-</td>';
+    tbody.appendChild(syntheticRow);
+}
+
 // Enhanced leaderboard flow: fetch broad ranking data, then render top + personal context.
 function viewLeaderboardEnhanced() {
     var modal = document.getElementById('leaderboard-modal');
     var tbody = document.querySelector('#leaderboard-table tbody');
-    
+
     if (!tbody) {
         console.error('Leaderboard table body not found');
         return;
@@ -317,18 +403,11 @@ function viewLeaderboardEnhanced() {
                       '<div class="leaderboard-loading-spinner"></div>' +
                       '<p>Loading leaderboard...</p>' +
                       '</td></tr>';
-    
+
     if (modal) modal.classList.remove('hidden');
 
-    // Determine API URL
-    var API_URL;
-    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-        API_URL = "http://localhost:8306/api";
-    } else {
-        API_URL = "https://snakes.opencodingsociety.com/api";
-    }
+    var API_URL = getLeaderboardApiUrl();
 
-    // Fetch full leaderboard (up to 100 players to find user's position)
     fetch(API_URL + '/snakes/leaderboard?limit=100', {
         method: 'GET',
         mode: 'cors',
@@ -339,14 +418,14 @@ function viewLeaderboardEnhanced() {
             'X-Origin': 'client'
         }
     })
-    .then(function (res) { 
-        if (!res.ok) throw new Error('Failed to fetch leaderboard'); 
-        return res.json(); 
+    .then(function (res) {
+        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        return res.json();
     })
     .then(function (data) {
         tbody.innerHTML = '';
         var leaderboardData = data.leaderboard || [];
-        
+
         if (leaderboardData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-leaderboard">' +
                             '<div class="empty-leaderboard-icon">🏆</div>' +
@@ -356,104 +435,17 @@ function viewLeaderboardEnhanced() {
             return;
         }
 
-        // Find current user's position so we can show a personalized section when needed.
-        var currentUserId = null;
-        var currentUserIndex = -1;
-        
-        if (typeof gameState !== 'undefined' && gameState.userId) {
-            currentUserId = gameState.userId;
-        }
-        
-        // Find user in leaderboard
-        for (var i = 0; i < leaderboardData.length; i++) {
-            if (leaderboardData[i].user_id === currentUserId) {
-                currentUserIndex = i;
-                break;
-            }
-        }
+        var currentUserId = (typeof gameState !== 'undefined' && gameState.userId) ? gameState.userId : null;
+        var currentUserIndex = findCurrentUserIndex(leaderboardData, currentUserId);
 
-        // Always show Top 10 first as the primary competitive view.
-        var headerAdded = false;
-        for (var i = 0; i < Math.min(10, leaderboardData.length); i++) {
-            if (!headerAdded) {
-                var headerRow = document.createElement('tr');
-                headerRow.className = 'leaderboard-meta-row';
-                headerRow.innerHTML = '<td colspan="4" class="leaderboard-section-header">🏆 Top 10 Players</td>';
-                tbody.appendChild(headerRow);
-                headerAdded = true;
-            }
-            
-            var entry = leaderboardData[i];
-            var tr = createLeaderboardRow(entry, i, currentUserId);
-            tbody.appendChild(tr);
-        }
+        renderTopTenSection(tbody, leaderboardData, currentUserId);
 
-        // If user is outside Top 10, add a focused "Your Position" block for motivation.
         if (currentUserIndex >= 10) {
-            // Add divider
-            var dividerRow = document.createElement('tr');
-            dividerRow.className = 'leaderboard-meta-row';
-            dividerRow.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
-            tbody.appendChild(dividerRow);
-
-            // Add "Your Position" header
-            var yourPosHeader = document.createElement('tr');
-            yourPosHeader.className = 'leaderboard-meta-row';
-            yourPosHeader.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
-            tbody.appendChild(yourPosHeader);
-
-            // Show user's row
-            var userEntry = leaderboardData[currentUserIndex];
-            var userRow = createLeaderboardRow(userEntry, currentUserIndex, currentUserId);
-            tbody.appendChild(userRow);
-
-            // Add immediate neighbors for local ranking context.
-            var contextBefore = Math.max(10, currentUserIndex - 1);
-            var contextAfter = Math.min(leaderboardData.length - 1, currentUserIndex + 1);
-
-            // Show one player before if available and not already shown
-            if (contextBefore > 10 && contextBefore < currentUserIndex) {
-                var beforeEntry = leaderboardData[contextBefore];
-                var beforeRow = createLeaderboardRow(beforeEntry, contextBefore, currentUserId);
-                tbody.insertBefore(beforeRow, userRow);
-            }
-
-            // Show one player after if available
-            if (contextAfter > currentUserIndex && contextAfter < leaderboardData.length) {
-                var afterEntry = leaderboardData[contextAfter];
-                var afterRow = createLeaderboardRow(afterEntry, contextAfter, currentUserId);
-                tbody.appendChild(afterRow);
-            }
+            renderUserPositionSection(tbody, leaderboardData, currentUserIndex, currentUserId);
         }
 
-        // New/zero-score players may be absent from API ranking; synthesize a local row for clarity.
         if (currentUserIndex === -1 && currentUserId) {
-            var dividerRow2 = document.createElement('tr');
-            dividerRow2.className = 'leaderboard-meta-row';
-            dividerRow2.innerHTML = '<td colspan="4"><div class="leaderboard-divider"></div></td>';
-            tbody.appendChild(dividerRow2);
-
-            var yourPosHeader2 = document.createElement('tr');
-            yourPosHeader2.className = 'leaderboard-meta-row';
-            yourPosHeader2.innerHTML = '<td colspan="4" class="leaderboard-section-header">📍 Your Position</td>';
-            tbody.appendChild(yourPosHeader2);
-
-            // Build a synthetic entry from gameState
-            var characterIcons = { knight: '🛡️', wizard: '🧙', archer: '🏹', warrior: '⚔️' };
-            var userRank = leaderboardData.length + 1;
-            var userName = (typeof gameState !== 'undefined' && gameState.username) ? gameState.username : 'You';
-            var userChar = (typeof gameState !== 'undefined' && gameState.character) ? gameState.character : '';
-            var userBullets = (typeof gameState !== 'undefined') ? (gameState.bullets || 0) : 0;
-            var charIcon = characterIcons[userChar] || '🙂';
-
-            var syntheticRow = document.createElement('tr');
-            syntheticRow.className = 'current-user-row leaderboard-entry-row';
-            syntheticRow.innerHTML =
-                '<td class="rank-col"><span class="rank-badge regular">' + userRank + '</span></td>' +
-                '<td class="player-col"><div class="leaderboard-player-cell"><span class="leaderboard-player-name">' + charIcon + ' ' + userName + '<span class="user-position-badge">👤 YOU</span></span></div></td>' +
-                '<td class="bullets-col">' + userBullets + '</td>' +
-                '<td class="time-col">-</td>';
-            tbody.appendChild(syntheticRow);
+            renderSyntheticUserRow(tbody, leaderboardData);
         }
     })
     .catch(function (err) {
@@ -467,45 +459,38 @@ function viewLeaderboardEnhanced() {
     });
 }
 
+// Map a 0-based leaderboard rank to its CSS class name.
+function getRankClass(index) {
+    if (index === 0) return 'gold';
+    if (index === 1) return 'silver';
+    if (index === 2) return 'bronze';
+    return 'regular';
+}
+
+// Shared character icon lookup used across leaderboard rendering.
+var LEADERBOARD_CHARACTER_ICONS = {
+    knight: '🛡️',
+    wizard: '🧙',
+    archer: '🏹',
+    warrior: '⚔️'
+};
+
 // Shared row renderer keeps visual formatting consistent across top/user/context sections.
 function createLeaderboardRow(entry, index, currentUserId) {
     var tr = document.createElement('tr');
     var targetUserId = Number(entry.user_id || entry.id || 0) || 0;
     var isCurrentUser = !!targetUserId && targetUserId === Number(currentUserId || 0);
-    
+
     if (isCurrentUser) {
         tr.classList.add('current-user-row');
     }
     tr.classList.add('leaderboard-entry-row');
-    if (index === 0) tr.classList.add('rank-row-1');
-    else if (index === 1) tr.classList.add('rank-row-2');
-    else if (index === 2) tr.classList.add('rank-row-3');
+    if (index <= 2) tr.classList.add('rank-row-' + (index + 1));
 
-    var rankClass = '';
-    var rankBadge = '';
-    
-    if (index === 0) {
-        rankClass = 'gold';
-        rankBadge = '<span class="rank-badge ' + rankClass + '">' + (index + 1) + '</span>';
-    } else if (index === 1) {
-        rankClass = 'silver';
-        rankBadge = '<span class="rank-badge ' + rankClass + '">' + (index + 1) + '</span>';
-    } else if (index === 2) {
-        rankClass = 'bronze';
-        rankBadge = '<span class="rank-badge ' + rankClass + '">' + (index + 1) + '</span>';
-    } else {
-        rankClass = 'regular';
-        rankBadge = '<span class="rank-badge ' + rankClass + '">' + (index + 1) + '</span>';
-    }
+    var rankClass = getRankClass(index);
+    var rankBadge = '<span class="rank-badge ' + rankClass + '">' + (index + 1) + '</span>';
 
-    // Get character icon
-    var characterIcons = {
-        knight: '🛡️',
-        wizard: '🧙',
-        archer: '🏹',
-        warrior: '⚔️'
-    };
-    var characterIcon = characterIcons[entry.selected_character] || '🙂';
+    var characterIcon = LEADERBOARD_CHARACTER_ICONS[entry.selected_character] || '🙂';
 
     var playerName = entry.username || 'Unknown';
     if (isCurrentUser) {

@@ -310,26 +310,47 @@ function enableDemoMode() {
     console.log('Demo mode enabled - progress will not be saved to server or reflected in leaderboard');
 }
 
+// Serialize current gameState into a plain progress snapshot object.
+function serializeProgressSnapshot() {
+    return {
+        bullets: gameState.bullets,
+        currentSquare: gameState.currentSquare,
+        visitedSquares: gameState.visitedSquares,
+        completedLessons: gameState.completedLessons,
+        completedQuestions: gameState.completedQuestions,
+        unlockedSections: gameState.unlockedSections,
+        lives: gameState.lives,
+        timeElapsed: gameState.timeElapsed,
+        character: gameState.character,
+        weaponType: gameState.weaponType,
+        avatarData: gameState.avatarData,
+        avatarUrl: gameState.avatarUrl
+    };
+}
+
+// Apply a deserialized progress snapshot onto the live gameState.
+function applyProgressSnapshot(data) {
+    gameState.bullets = data.bullets || 0;
+    gameState.currentSquare = data.currentSquare || 0;
+    gameState.visitedSquares = data.visitedSquares || [0];
+    gameState.completedLessons = data.completedLessons || [];
+    gameState.completedQuestions = data.completedQuestions || [];
+    gameState.unlockedSections = data.unlockedSections || ['half1'];
+    gameState.lives = data.lives || BASE_MAX_LIVES;
+    gameState.timeElapsed = data.timeElapsed || 0;
+    if (data.character) gameState.character = data.character;
+    gameState.weaponType = resolveWeaponType(gameState.character, data.weaponType);
+    if (data.avatarData) gameState.avatarData = data.avatarData;
+    if (data.avatarUrl) gameState.avatarUrl = data.avatarUrl;
+    applyCharacterPerks();
+}
+
 // Guest mode: session-only progress (no server persistence)
 function saveGuestProgress() {
     if (!gameState.isGuest) return;
 
     try {
-        var guestData = {
-            bullets: gameState.bullets,
-            currentSquare: gameState.currentSquare,
-            visitedSquares: gameState.visitedSquares,
-            completedLessons: gameState.completedLessons,
-            completedQuestions: gameState.completedQuestions,
-            unlockedSections: gameState.unlockedSections,
-            lives: gameState.lives,
-            timeElapsed: gameState.timeElapsed,
-            character: gameState.character,
-            weaponType: gameState.weaponType,
-            avatarData: gameState.avatarData,
-            avatarUrl: gameState.avatarUrl
-        };
-        sessionStorage.setItem('snakes_guest_progress', JSON.stringify(guestData));
+        sessionStorage.setItem('snakes_guest_progress', JSON.stringify(serializeProgressSnapshot()));
     } catch (e) {
         console.error('Error saving guest progress:', e);
     }
@@ -340,20 +361,7 @@ function loadGuestProgress() {
     try {
         var stored = sessionStorage.getItem('snakes_guest_progress');
         if (stored) {
-            var guestData = JSON.parse(stored);
-            gameState.bullets = guestData.bullets || 0;
-            gameState.currentSquare = guestData.currentSquare || 0;
-            gameState.visitedSquares = guestData.visitedSquares || [0];
-            gameState.completedLessons = guestData.completedLessons || [];
-            gameState.completedQuestions = guestData.completedQuestions || [];
-            gameState.unlockedSections = guestData.unlockedSections || ['half1'];
-            gameState.lives = guestData.lives || BASE_MAX_LIVES;
-            gameState.timeElapsed = guestData.timeElapsed || 0;
-            if (guestData.character) gameState.character = guestData.character;
-            gameState.weaponType = resolveWeaponType(gameState.character, guestData.weaponType);
-            if (guestData.avatarData) gameState.avatarData = guestData.avatarData;
-            if (guestData.avatarUrl) gameState.avatarUrl = guestData.avatarUrl;
-            applyCharacterPerks();
+            applyProgressSnapshot(JSON.parse(stored));
             return true;
         }
     } catch (e) {
@@ -361,28 +369,7 @@ function loadGuestProgress() {
     }
     // Fallback: if demo mode is active for guest, load demo progress
     if (gameState.isDemoMode) {
-        try {
-            var demoStored = sessionStorage.getItem('snakes_demo_progress');
-            if (demoStored) {
-                var demoData = JSON.parse(demoStored);
-                gameState.bullets = demoData.bullets || 0;
-                gameState.currentSquare = demoData.currentSquare || 0;
-                gameState.visitedSquares = demoData.visitedSquares || [0];
-                gameState.completedLessons = demoData.completedLessons || [];
-                gameState.completedQuestions = demoData.completedQuestions || [];
-                gameState.unlockedSections = demoData.unlockedSections || ['half1'];
-                gameState.lives = demoData.lives || BASE_MAX_LIVES;
-                gameState.timeElapsed = demoData.timeElapsed || 0;
-                if (demoData.character) gameState.character = demoData.character;
-                gameState.weaponType = resolveWeaponType(gameState.character, demoData.weaponType);
-                if (demoData.avatarData) gameState.avatarData = demoData.avatarData;
-                if (demoData.avatarUrl) gameState.avatarUrl = demoData.avatarUrl;
-                applyCharacterPerks();
-                return true;
-            }
-        } catch (e) {
-            console.error('Error loading demo progress for guest:', e);
-        }
+        return loadDemoProgress();
     }
     return false;
 }
@@ -392,21 +379,7 @@ function saveDemoProgress() {
     if (!gameState.isDemoMode) return;
 
     try {
-        var demoData = {
-            bullets: gameState.bullets,
-            currentSquare: gameState.currentSquare,
-            visitedSquares: gameState.visitedSquares,
-            completedLessons: gameState.completedLessons,
-            completedQuestions: gameState.completedQuestions,
-            unlockedSections: gameState.unlockedSections,
-            lives: gameState.lives,
-            timeElapsed: gameState.timeElapsed,
-            character: gameState.character,
-            weaponType: gameState.weaponType,
-            avatarData: gameState.avatarData,
-            avatarUrl: gameState.avatarUrl
-        };
-        sessionStorage.setItem('snakes_demo_progress', JSON.stringify(demoData));
+        sessionStorage.setItem('snakes_demo_progress', JSON.stringify(serializeProgressSnapshot()));
         console.log('Demo progress saved to session');
     } catch (e) {
         console.error('Error saving demo progress:', e);
@@ -423,18 +396,7 @@ function loadDemoProgress() {
         var stored = sessionStorage.getItem('snakes_demo_progress');
         if (stored) {
             var demoData = JSON.parse(stored);
-            gameState.bullets = demoData.bullets || 0;
-            gameState.currentSquare = demoData.currentSquare || 0;
-            gameState.visitedSquares = demoData.visitedSquares || [0];
-            gameState.completedLessons = demoData.completedLessons || [];
-            gameState.completedQuestions = demoData.completedQuestions || [];
-            gameState.unlockedSections = demoData.unlockedSections || ['half1'];
-            gameState.lives = demoData.lives || BASE_MAX_LIVES;
-            gameState.timeElapsed = demoData.timeElapsed || 0;
-            if (demoData.character) gameState.character = demoData.character;
-            gameState.weaponType = resolveWeaponType(gameState.character, demoData.weaponType);
-            if (demoData.avatarData) gameState.avatarData = demoData.avatarData;
-            if (demoData.avatarUrl) gameState.avatarUrl = demoData.avatarUrl;
+            applyProgressSnapshot(demoData);
             console.log('Demo progress loaded from session:', demoData);
             return true;
         }
@@ -907,12 +869,7 @@ function useExistingLogin() {
                 persistLoadoutToStorage();
 
                 // Skip character selection and go directly to game
-                if (loginContainer) loginContainer.classList.add('hidden');
-                if (characterSelection) characterSelection.classList.add('hidden');
-                if (gameContainer) gameContainer.classList.remove('hidden');
-
-                if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+                launchGameplayUI();
                 return;
             }
 
@@ -1256,13 +1213,6 @@ function startGame() {
             }
         })
         .then(function () {
-            var characterSelection = document.getElementById('character-selection');
-            var gameContainer = document.getElementById('game-container');
-            var loginContainer = document.getElementById('login-container');
-            if (characterSelection) characterSelection.classList.add('hidden');
-            if (gameContainer) gameContainer.classList.remove('hidden');
-            if (loginContainer) loginContainer.classList.add('hidden');
-
             try {
                 if (gameState.isGuest) {
                     sessionStorage.setItem('snakes_started', '1');
@@ -1277,15 +1227,7 @@ function startGame() {
                 }
             } catch (e) {}
 
-            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-
-            startTimer();
-            startAutosave();
-            createGameBoard();
-            updatePlayerInfo();
-            checkSectionLock();
-            startMultiplayerRefresh();
-            startBulletRefresh();
+            launchGameplayUI();
 
             // ADD THIS: Show roll prompt for Section 1 only on first load
             var section = window.snakesGameSection || 1;
@@ -1357,6 +1299,27 @@ function dismissRollPrompt() {
 window.showRollPrompt = showRollPrompt;
 window.dismissRollPrompt = dismissRollPrompt;
 
+// Remove all Snakes-related keys from localStorage and sessionStorage.
+function clearSnakesLocalStorage() {
+    try {
+        localStorage.removeItem('snakes_selected_character');
+        localStorage.removeItem('snakes_selected_weapon');
+        localStorage.removeItem('snakes_avatar_data');
+        localStorage.removeItem('snakes_avatar_url');
+        localStorage.removeItem('snakes_started');
+        localStorage.removeItem('snakes_user_id');
+        sessionStorage.removeItem('snakes_isGuest');
+        sessionStorage.removeItem('snakes_guest_name');
+        sessionStorage.removeItem('snakes_user_id');
+    } catch (e) {}
+}
+
+// Build the redirect URL to the snakes landing page.
+function getSnakesLandingUrl() {
+    var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
+    return base + '/snakes-game';
+}
+
 // Resume logic for returning logged-in users and returning guest sessions.
 function autoResumeIfReady() {
     var storedName = getStoredDisplayName();
@@ -1398,21 +1361,12 @@ function autoResumeIfReady() {
             loadGuestProgress();
             persistLoadoutToStorage();
 
-            var guestCharacterSelection = document.getElementById('character-selection');
-            var guestGameContainer = document.getElementById('game-container');
-            var guestLoginContainer = document.getElementById('login-container');
-            if (guestCharacterSelection) guestCharacterSelection.classList.add('hidden');
-            if (guestGameContainer) guestGameContainer.classList.remove('hidden');
-            if (guestLoginContainer) guestLoginContainer.classList.add('hidden');
-
-            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+            launchGameplayUI();
             return Promise.resolve();
         }
 
         // Guest without selection/start: redirect to landing page for character selection
-        var guestBase = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
-        window.location.replace(guestBase + '/snakes-game');
+        window.location.replace(getSnakesLandingUrl());
         return Promise.resolve();
     }
 
@@ -1433,17 +1387,7 @@ function autoResumeIfReady() {
     }
 
     if (shouldClearStorage) {
-        try {
-            localStorage.removeItem('snakes_selected_character');
-            localStorage.removeItem('snakes_selected_weapon');
-            localStorage.removeItem('snakes_avatar_data');
-            localStorage.removeItem('snakes_avatar_url');
-            localStorage.removeItem('snakes_started');
-            localStorage.removeItem('snakes_user_id');
-            sessionStorage.removeItem('snakes_isGuest');
-            sessionStorage.removeItem('snakes_guest_name');
-            sessionStorage.removeItem('snakes_user_id');
-        } catch (e) {}
+        clearSnakesLocalStorage();
         storedChar = null;
         hasStarted = false;
         storedUserId = null;
@@ -1457,15 +1401,7 @@ function autoResumeIfReady() {
         loadProfileFromStorage();
 
         return loadOrCreateGameData().then(function () { return loadProgress(); }).then(function () {
-            var characterSelection = document.getElementById('character-selection');
-            var gameContainer = document.getElementById('game-container');
-            var loginContainer = document.getElementById('login-container');
-            if (characterSelection) characterSelection.classList.add('hidden');
-            if (gameContainer) gameContainer.classList.remove('hidden');
-            if (loginContainer) loginContainer.classList.add('hidden');
-
-            if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-            startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+            launchGameplayUI();
         }).catch(function () {});
     }
 
@@ -1484,16 +1420,8 @@ function autoResumeIfReady() {
                 // No game data exists - this is a NEW user
                 // Redirect to landing page for login + character selection
                 console.log('New user detected - redirecting to landing page');
-                try {
-                    localStorage.removeItem('snakes_selected_character');
-                    localStorage.removeItem('snakes_selected_weapon');
-                    localStorage.removeItem('snakes_avatar_data');
-                    localStorage.removeItem('snakes_avatar_url');
-                    localStorage.removeItem('snakes_started');
-                    localStorage.removeItem('snakes_user_id');
-                } catch(e) {}
-                var base = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
-                window.location.replace(base + '/snakes-game');
+                clearSnakesLocalStorage();
+                window.location.replace(getSnakesLandingUrl());
                 return null;
             }
             return response.json();
@@ -1539,144 +1467,100 @@ function autoResumeIfReady() {
                 } catch (e) {}
 
                 return loadProgress().then(function () {
-                    var characterSelection = document.getElementById('character-selection');
-                    var gameContainer = document.getElementById('game-container');
-                    var loginContainer = document.getElementById('login-container');
-                    if (characterSelection) characterSelection.classList.add('hidden');
-                    if (gameContainer) gameContainer.classList.remove('hidden');
-                    if (loginContainer) loginContainer.classList.add('hidden');
-
-                    if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
-                    startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+                    launchGameplayUI();
                 });
             } else {
                 // User needs to select character - clear stale data and redirect to landing page
                 console.log('Redirecting to landing page - serverCharacter:', serverCharacter, 'wasStartedBefore:', wasStartedBefore);
-                try {
-                    localStorage.removeItem('snakes_selected_character');
-                    localStorage.removeItem('snakes_selected_weapon');
-                    localStorage.removeItem('snakes_avatar_data');
-                    localStorage.removeItem('snakes_avatar_url');
-                    localStorage.removeItem('snakes_started');
-                    localStorage.removeItem('snakes_user_id');
-                } catch(e) {}
-                var base2 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
-                window.location.replace(base2 + '/snakes-game');
+                clearSnakesLocalStorage();
+                window.location.replace(getSnakesLandingUrl());
             }
         })
         .catch(function (error) {
             console.error('Error checking game data:', error);
             // On error, clear stale data and redirect to landing page as fallback
             console.log('Error occurred - redirecting to landing page');
-            try {
-                localStorage.removeItem('snakes_selected_character');
-                localStorage.removeItem('snakes_selected_weapon');
-                localStorage.removeItem('snakes_avatar_data');
-                localStorage.removeItem('snakes_avatar_url');
-                localStorage.removeItem('snakes_started');
-                localStorage.removeItem('snakes_user_id');
-            } catch(e) {}
-            var base3 = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
-            window.location.replace(base3 + '/snakes-game');
+            clearSnakesLocalStorage();
+            window.location.replace(getSnakesLandingUrl());
         });
     }
 
     // No valid session found - clear stale data and redirect to landing page
-    try {
-        localStorage.removeItem('snakes_selected_character');
-        localStorage.removeItem('snakes_selected_weapon');
-        localStorage.removeItem('snakes_avatar_data');
-        localStorage.removeItem('snakes_avatar_url');
-        localStorage.removeItem('snakes_started');
-        localStorage.removeItem('snakes_user_id');
-    } catch(e) {}
-    var baseFallback = window.location.pathname.replace(/\/hacks\/snakes\/.*$/, '');
-    window.location.replace(baseFallback + '/snakes-game');
+    clearSnakesLocalStorage();
+    window.location.replace(getSnakesLandingUrl());
     return Promise.resolve();
 }
 
-// Board renderer for both sections:
-// - Section 1: linear lesson track.
-// - Section 2: snake/ladder grid with question squares.
-function createGameBoard() {
-    var board = document.getElementById('game-board');
-    if (!board) return;
+// Transition the UI from login/character-selection to the active game board
+// and kick off all background systems (timer, autosave, multiplayer, etc.).
+function launchGameplayUI() {
+    var characterSelection = document.getElementById('character-selection');
+    var gameContainer = document.getElementById('game-container');
+    var loginContainer = document.getElementById('login-container');
+    if (characterSelection) characterSelection.classList.add('hidden');
+    if (gameContainer) gameContainer.classList.remove('hidden');
+    if (loginContainer) loginContainer.classList.add('hidden');
 
-    board.innerHTML = '';
+    if (gameState.timeStarted === null) gameState.timeStarted = Date.now() - (gameState.timeElapsed * 1000);
+    startTimer(); startAutosave(); createGameBoard(); updatePlayerInfo(); checkSectionLock(); startMultiplayerRefresh(); startBulletRefresh();
+}
 
-    var section = window.snakesGameSection || 1;
-    board.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
-    if (board.parentElement) {
-        board.parentElement.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
-        if (board.parentElement.parentElement) {
-            var stage = board.parentElement.parentElement;
-            if (stage.classList.contains('board-stage')) {
-                stage.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
-            }
+// Build the Section 1 linear lesson track into the given board element.
+function buildLessonBoard(board) {
+    var row = document.createElement('div');
+    row.className = 'board-row single-row';
+    row.style.setProperty('--first-size', FIRST_SECTION_SIZE);
+    row.style.setProperty('--board-scale', 'lesson');
+    for (var i = 0; i < FIRST_SECTION_SIZE; i++) {
+        var squareNum = i;
+        var square = document.createElement('div');
+        square.className = 'square small-lesson';
+        square.setAttribute('data-square', squareNum);
+
+        if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');
+        if (squareNum === gameState.currentSquare) square.classList.add('current');
+
+        var lessonNum = squareNum;
+        var isLessonCompleted = gameState.completedLessons.indexOf(lessonNum) !== -1;
+        if (isLessonCompleted) {
+            square.classList.add('lesson-completed');
         }
-    }
-    
-    if (section === 1) {
-        var row = document.createElement('div');
-        row.className = 'board-row single-row';
-        row.style.setProperty('--first-size', FIRST_SECTION_SIZE);
-        row.style.setProperty('--board-scale', 'lesson');
-        for (var i = 0; i < FIRST_SECTION_SIZE; i++) {
-            var squareNum = i;
-            var square = document.createElement('div');
-            square.className = 'square small-lesson';
-            square.setAttribute('data-square', squareNum);
 
-            if (gameState.visitedSquares.indexOf(squareNum) !== -1) square.classList.add('visited');
-            if (squareNum === gameState.currentSquare) square.classList.add('current');
+        var numSpan = document.createElement('span');
+        numSpan.className = 'square-number';
+        numSpan.textContent = (squareNum === 0) ? 'START' : squareNum;
+        if (squareNum === 0) square.classList.add('start');
+        square.appendChild(numSpan);
 
-            // Check if this lesson is completed
-            var lessonNum = squareNum;
-            var isLessonCompleted = gameState.completedLessons.indexOf(lessonNum) !== -1;
-            if (isLessonCompleted) {
-                square.classList.add('lesson-completed');
-            }
+        var icon = document.createElement('div');
+        icon.className = 'square-icon';
+        icon.textContent = isLessonCompleted ? '✅' : '📘';
+        square.appendChild(icon);
 
-            var numSpan = document.createElement('span');
-            numSpan.className = 'square-number';
-            numSpan.textContent = (squareNum === 0) ? 'START' : squareNum;
-            if (squareNum === 0) square.classList.add('start');
-            square.appendChild(numSpan);
-
-            var icon = document.createElement('div');
-            icon.className = 'square-icon';
-            // Show checkmark for completed lessons, book for incomplete
-            if (isLessonCompleted) {
-                icon.textContent = '✅';
-            } else {
-                icon.textContent = '📘';
-            }
-            square.appendChild(icon);
-
-            if (squareNum === gameState.currentSquare) {
-                var marker = createPlayerMarker(gameState.character, gameState.username, gameState.avatarUrl || gameState.avatarData);
-                square.appendChild(marker);
-            }
-
-            // Add click handler for visited lesson squares (not START)
-            if (squareNum > 0 && gameState.visitedSquares.indexOf(squareNum) !== -1) {
-                square.style.cursor = 'pointer';
-                (function(sq) {
-                    square.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        goToLesson(sq);
-                    });
-                })(squareNum);
-            }
-
-            renderOtherPlayersOnSquare(square, squareNum);
-
-            row.appendChild(square);
+        if (squareNum === gameState.currentSquare) {
+            var marker = createPlayerMarker(gameState.character, gameState.username, gameState.avatarUrl || gameState.avatarData);
+            square.appendChild(marker);
         }
-        board.appendChild(row);
-        return;
-    }
 
+        if (squareNum > 0 && gameState.visitedSquares.indexOf(squareNum) !== -1) {
+            square.style.cursor = 'pointer';
+            (function(sq) {
+                square.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    goToLesson(sq);
+                });
+            })(squareNum);
+        }
+
+        renderOtherPlayersOnSquare(square, squareNum);
+
+        row.appendChild(square);
+    }
+    board.appendChild(row);
+}
+
+// Build the Section 2 snake/ladder grid with question squares into the given board element.
+function buildQuestionBoard(board) {
     var start = FIRST_SECTION_SIZE;
     var cols = 10;
     var rows = 5;
@@ -1686,7 +1570,6 @@ function createGameBoard() {
         rowDiv.className = 'board-row';
         for (var c = 0; c < cols; c++) {
             var squareNum;
-            var globalIdx = (r * cols) + c;
             if (r % 2 === 1) {
                 squareNum = start + (r * cols) + (cols - 1 - c);
             } else {
@@ -1708,14 +1591,12 @@ function createGameBoard() {
             var icon = document.createElement('div');
             icon.className = 'square-icon';
 
-            // Only show finish flag, not snake/ladder emojis
             if (squareNum === (FIRST_SECTION_SIZE + SECOND_SECTION_SIZE - 1)) {
                 icon.textContent = '🏁';
                 square.classList.add('boss');
                 square.appendChild(icon);
             }
 
-            // Add classes for styling but don't show emojis
             if (snakesAndLaddersMap[squareNum]) {
                 if (snakesAndLaddersMap[squareNum] > squareNum) {
                     square.classList.add('ladder');
@@ -1735,6 +1616,33 @@ function createGameBoard() {
         }
         board.appendChild(rowDiv);
     }
+}
+
+// Board renderer: delegates to section-specific builders after setting shared layout attributes.
+function createGameBoard() {
+    var board = document.getElementById('game-board');
+    if (!board) return;
+
+    board.innerHTML = '';
+
+    var section = window.snakesGameSection || 1;
+    board.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+    if (board.parentElement) {
+        board.parentElement.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+        if (board.parentElement.parentElement) {
+            var stage = board.parentElement.parentElement;
+            if (stage.classList.contains('board-stage')) {
+                stage.setAttribute('data-scale', section === 1 ? 'lesson' : 'question');
+            }
+        }
+    }
+    
+    if (section === 1) {
+        buildLessonBoard(board);
+        return;
+    }
+
+    buildQuestionBoard(board);
 
     // Draw visual connections for snakes and ladders
     if (section === 2) {
